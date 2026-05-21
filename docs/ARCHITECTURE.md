@@ -2,7 +2,10 @@
 
 ## Project Structure Overview
 
+All application code lives under `src/`. The path alias `@/*` (in `tsconfig.json`) resolves to `./src/*`, so every import in this doc and the codebase uses `@/<area>/...`.
+
 ```
+src/
 ├── app/                              # Routing Layer (thin entry points)
 │   ├── _layout.tsx                   # Root layout (PIN gate, providers)
 │   ├── index.tsx                     # Redirect to dashboard or auth
@@ -164,12 +167,12 @@
 │   ├── colors.ts                     # App color palette
 │   └── config.ts                     # App-wide configuration values
 │
-├── types/
-│   └── global.ts                     # Shared TypeScript types used everywhere
-│
-└── assets/
-    ├── fonts/
-    └── images/
+└── types/
+    └── global.ts                     # Shared TypeScript types used everywhere
+
+assets/                               # Static assets at repo root (referenced via @/assets/*)
+├── fonts/
+└── images/
 ```
 
 ---
@@ -244,10 +247,10 @@ Route files must never contain:
 
 ## Database Schema Location
 
-The SQLite schema, migrations, and seed data live in `services/database.ts` and a dedicated migrations folder:
+The SQLite schema, migrations, and seed data live in `src/services/database.ts` and a dedicated migrations folder:
 
 ```
-services/
+src/services/
 ├── database.ts           # Connection, migration runner
 └── migrations/
     ├── 001_create_tables.ts
@@ -255,7 +258,7 @@ services/
     └── ...
 ```
 
-This is shared infrastructure because every feature reads/writes to the same local database. Feature services (e.g., `expenses.service.ts`) call database helpers — they never open raw SQLite connections directly.
+This is shared infrastructure because every feature reads/writes to the same local database. Feature services (e.g., `src/features/finance/expenses/expenses.service.ts`) call database helpers — they never open raw SQLite connections directly.
 
 ---
 
@@ -285,3 +288,87 @@ Before creating any new feature, verify:
 - [ ] Is every reusable piece extracted to shared infrastructure?
 - [ ] Are all imports using `@/` absolute paths?
 - [ ] Is the route file thin (no logic, just renders the feature screen)?
+
+---
+
+## Claude Code Configuration
+
+The `.claude/` directory and `CLAUDE.md` files are scaffolded **before VS-01**. Every implementation task afterward runs under these rules.
+
+### CLAUDE.md File Hierarchy
+
+Each `CLAUDE.md` is scoped to its directory. Claude loads the nearest one when working in that area.
+
+| Location                                          | Scope of rules it carries                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `CLAUDE.md` (root)                                | Project overview, tech stack, ExFeAr summary, import rules, naming, TDD, commit format.                |
+| `AGENTS.md` (root)                                | Project-wide rules: Expo v55 doc lookup, FCFA-only currency, TDD discipline, dependency-rules summary. |
+| `src/app/CLAUDE.md`                               | Thin-route rule. Route files render a feature screen and nothing else.                                 |
+| `src/features/finance/CLAUDE.md`                  | Feature-slice conventions: file naming, hook/service split, approved cross-feature imports.            |
+| `src/features/finance/<slice>/CLAUDE.md`          | Per-slice domain context: tables owned, business rules, file list. One per slice.                      |
+| `src/services/CLAUDE.md`                          | Migration-runner rules; database helpers; sync rules.                                                  |
+| `src/notifications/CLAUDE.md`                     | Trigger registration pattern, channel/permission setup.                                                |
+
+### Subagents (`.claude/agents/`)
+
+| Agent           | File                              | Role                                                                                                                                                                                                       |
+| --------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code-reviewer` | `.claude/agents/code-reviewer.md` | Read-only review of branch diffs. Checks dependency rules, route-file thinness, naming conventions, FCFA-only currency, TDD coverage on new logic, and forbidden cross-feature imports. Invoked per slice. |
+
+### Utility Skills (`.claude/commands/`)
+
+Low-level helpers invoked directly or composed by the workflow commands below.
+
+| Skill            | File                                | What it does                                                                                                                |
+| ---------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/new-slice`     | `.claude/commands/new-slice.md`     | Scaffolds a feature slice under `src/features/finance/<name>/`: `Screen.tsx`, `*.hooks.ts`, `*.service.ts`, `*.types.ts` stubs. |
+| `/new-migration` | `.claude/commands/new-migration.md` | Generates the next numbered file in `src/services/migrations/` with up/down stubs and registers it with the runner.            |
+| `/check-arch`    | `.claude/commands/check-arch.md`    | Scans the diff for dependency-rule violations and forbidden cross-feature imports.                                          |
+| `/log-slice`     | `.claude/commands/log-slice.md`     | Updates the KANBAN.md status table for a vertical slice (Backlog → In Progress → Done).                                     |
+
+### Workflow Commands (`.claude/commands/workflows/`)
+
+Top-level entry points for everyday work. These read the issue file, optionally invoke utility skills, and drive the implementation loop.
+
+| Command                                  | When to type it                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------- |
+| `/workflows:fast ISSUE-00X`              | Simple tasks — one pattern, no design decisions.                              |
+| `/workflows:full:implement ISSUE-00X`    | All milestone subtasks. The main daily command.                              |
+| `/workflows:full:approved`               | After reviewing the plan or the implementation. Signals go-ahead to proceed. |
+| `/workflows:full:review-todo ISSUE-00X`  | Before starting a milestone — validates coverage of the implementation plan. |
+
+### Issues Backlog (`issues/`)
+
+A flat folder of markdown files. Not a project-management tool — just files Claude can read.
+
+- **Layout:** `issues/ISSUE-00X/implementation-plan.md` per slice. Each file maps to one KANBAN `VS-XX`.
+- **Contents:** problem statement, user stories, implementation decisions reached during the Grill Me phase, testing decisions. Cuts vertically through database → service → hooks → UI → route (mirrors KANBAN's vertical-slice model).
+- **Purpose:** the implementation plan is the document Claude Code reads **before writing a single line**. The KANBAN gives the board view; the issue file gives the working spec.
+
+### Backlog Injection (`scripts/once.sh`)
+
+A bash script that `cat`s every markdown file under `issues/` into a single string and passes it as part of the agent prompt. Claude gets the full outstanding backlog in one shot, then picks the next task by priority:
+
+1. Critical bug fixes
+2. Tracer bullets (thin end-to-end slices)
+3. Net-new feature work
+4. Polishing / refactoring (lowest)
+
+### Doc-Rot Prevention
+
+When an issue is complete, its file is **deleted** (or moved to `issues/done/`). The `issues/` folder reflects only outstanding work. Permanent documentation lives in `docs/`, never in `issues/`. This stops Claude from being misled by stale plans on subsequent runs.
+
+### AFK Loop
+
+`once.sh` + `/workflows:full:implement` enable an autonomous loop: the agent reads the injected backlog, selects the highest-priority issue, drafts a plan, waits for `/workflows:full:approved`, implements, deletes the completed issue file, and repeats. Human review is concentrated at the approval checkpoint rather than between every keystroke.
+
+### Settings (`.claude/settings.json`)
+
+Enables the official `expo` plugin so versioned Expo docs are available during implementation. Permissions, hooks, and additional plugins are added per slice as needs surface — none are required to start.
+
+### Order of Construction
+
+1. Write `.claude/` (settings, agents, commands, workflows) and all `CLAUDE.md` files. Commit as one standalone change.
+2. Write `scripts/once.sh` and create the `issues/` folder.
+3. For each slice in KANBAN order: write `issues/ISSUE-00X/implementation-plan.md`, run `/workflows:full:review-todo ISSUE-00X`, then `/workflows:full:implement ISSUE-00X`, approve with `/workflows:full:approved`, delete the completed issue file.
+4. Changes to anything under `.claude/`, any `CLAUDE.md`, or `scripts/once.sh` ship in their own commit so the audit trail of rule changes stays clean.
