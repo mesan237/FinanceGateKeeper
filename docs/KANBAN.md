@@ -453,7 +453,7 @@ These tasks can run simultaneously if using multiple agents:
 
 | Task                          | Status     | Notes |
 | ----------------------------- | ---------- | ----- |
-| VS-01: Project Scaffold       | 🔲 Backlog |       |
+| VS-01: Project Scaffold       | 🟡 In Progress |       |
 | VS-02: PIN Auth               | 🔲 Backlog |       |
 | VS-03: Expense Logging        | 🔲 Backlog |       |
 | VS-04: Category Management    | 🔲 Backlog |       |
