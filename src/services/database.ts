@@ -1,11 +1,12 @@
-import type { SQLiteDatabase } from 'expo-sqlite';
-import { openDatabaseAsync } from 'expo-sqlite';
+import type { SQLiteBindValue, SQLiteDatabase } from 'expo-sqlite';
 
 import { migrations as registeredMigrations } from '@/services/migrations';
 
+export type SqlBindValue = SQLiteBindValue;
+
 export interface SqliteDriver {
-  execute(sql: string, params?: ReadonlyArray<unknown>): Promise<void>;
-  query<T>(sql: string, params?: ReadonlyArray<unknown>): Promise<T[]>;
+  execute(sql: string, params?: ReadonlyArray<SqlBindValue>): Promise<void>;
+  query<T>(sql: string, params?: ReadonlyArray<SqlBindValue>): Promise<T[]>;
 }
 
 export interface Migration {
@@ -17,9 +18,11 @@ export interface Migration {
 const DATABASE_FILENAME = 'finance.db';
 
 let connection: SQLiteDatabase | null = null;
+let migrationsApplied = false;
 
 async function openConnection(): Promise<SQLiteDatabase> {
   if (!connection) {
+    const { openDatabaseAsync } = await import('expo-sqlite');
     connection = await openDatabaseAsync(DATABASE_FILENAME);
   }
   return connection;
@@ -28,39 +31,50 @@ async function openConnection(): Promise<SQLiteDatabase> {
 function expoDriverFor(db: SQLiteDatabase): SqliteDriver {
   return {
     async execute(sql, params = []) {
-      await db.runAsync(sql, params as never[]);
+      await db.runAsync(sql, [...params]);
     },
-    async query<T>(sql: string, params: ReadonlyArray<unknown> = []) {
-      return db.getAllAsync<T>(sql, params as never[]);
+    async query<T>(sql, params = []) {
+      return db.getAllAsync<T>(sql, [...params]);
     },
   };
 }
 
+async function ensureMigrationsApplied(db: SQLiteDatabase): Promise<void> {
+  if (migrationsApplied) return;
+  await runMigrations(expoDriverFor(db), registeredMigrations);
+  migrationsApplied = true;
+}
+
 /**
  * Returns the singleton expo-sqlite database, opening it on first call and
- * running any pending migrations before yielding the connection.
+ * running any pending migrations exactly once per process.
  */
 export async function getDb(): Promise<SQLiteDatabase> {
   const db = await openConnection();
-  await runMigrations(expoDriverFor(db), registeredMigrations);
+  await ensureMigrationsApplied(db);
   return db;
 }
 
 /**
  * Closes the singleton connection and releases the underlying file lock.
- * Subsequent calls to getDb() will reopen the database.
+ * Subsequent calls to getDb() will reopen the database and re-check
+ * migration state.
  */
 export async function closeDb(): Promise<void> {
   if (connection) {
     await connection.closeAsync();
     connection = null;
+    migrationsApplied = false;
   }
 }
 
 /**
  * Runs a write SQL statement against the singleton expo-sqlite database.
  */
-export async function execute(sql: string, params: ReadonlyArray<unknown> = []): Promise<void> {
+export async function execute(
+  sql: string,
+  params: ReadonlyArray<SqlBindValue> = [],
+): Promise<void> {
   const db = await getDb();
   await expoDriverFor(db).execute(sql, params);
 }
@@ -71,7 +85,7 @@ export async function execute(sql: string, params: ReadonlyArray<unknown> = []):
  */
 export async function query<T>(
   sql: string,
-  params: ReadonlyArray<unknown> = [],
+  params: ReadonlyArray<SqlBindValue> = [],
 ): Promise<T[]> {
   const db = await getDb();
   return expoDriverFor(db).query<T>(sql, params);
@@ -79,8 +93,8 @@ export async function query<T>(
 
 /**
  * Applies every migration in `migrations` that has not yet been recorded in
- * the `_migrations` table. Migrations run in registry order and are tracked by
- * numeric id. Calling this twice is a no-op for already-applied migrations.
+ * the `_migrations` table. Migrations run in registry order and are tracked
+ * by numeric id. Calling this twice is a no-op for already-applied migrations.
  */
 export async function runMigrations(
   driver: SqliteDriver,
@@ -113,8 +127,8 @@ export async function runMigrations(
  */
 export function createBetterSqliteDriver(db: {
   prepare(sql: string): {
-    run(...params: unknown[]): unknown;
-    all(...params: unknown[]): unknown[];
+    run(...params: SqlBindValue[]): unknown;
+    all(...params: SqlBindValue[]): unknown[];
   };
   exec(sql: string): unknown;
 }): SqliteDriver {
@@ -126,7 +140,7 @@ export function createBetterSqliteDriver(db: {
       }
       db.prepare(sql).run(...params);
     },
-    async query<T>(sql: string, params: ReadonlyArray<unknown> = []) {
+    async query<T>(sql, params = []) {
       return db.prepare(sql).all(...params) as T[];
     },
   };
