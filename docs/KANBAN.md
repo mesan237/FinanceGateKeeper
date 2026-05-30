@@ -454,7 +454,7 @@ These tasks can run simultaneously if using multiple agents:
 | Task                          | Status     | Notes |
 | ----------------------------- | ---------- | ----- |
 | VS-01: Project Scaffold       | ✅ Done    | Scaffold, migration runner, primitives, tab routing, notifications stub. 14/14 tests passing. |
-| VS-02: PIN Auth               | 🔲 Backlog |       |
+| VS-02: PIN Auth               | ✅ Done    | SHA-256 PIN with random salt, AuthProvider/useAuth context, AuthScreen + Keypad, route gates in (auth) and (tabs) layouts. 26 new tests (40 total passing). |
 | VS-03: Expense Logging        | 🔲 Backlog |       |
 | VS-04: Category Management    | 🔲 Backlog |       |
 | VS-05: Income Logging         | 🔲 Backlog |       |
