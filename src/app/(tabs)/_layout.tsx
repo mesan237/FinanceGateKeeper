@@ -1,9 +1,14 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 
 import { PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { useAuth } from '@/features/finance/auth/auth.hooks';
 
 export default function TabsLayout() {
+  const { isReady, hasPin, isLocked } = useAuth();
+  if (!isReady) return null;
+  if (!hasPin || isLocked) return <Redirect href="/(auth)/pin" />;
+
   return (
     <Tabs
       screenOptions={{

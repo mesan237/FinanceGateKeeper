@@ -1,6 +1,15 @@
-import { Stack } from 'expo-router';
+import { Slot } from 'expo-router';
 import React from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { AuthProvider } from '@/features/finance/auth/auth.hooks';
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <Slot />
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
 }
