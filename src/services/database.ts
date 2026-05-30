@@ -56,6 +56,16 @@ export async function getDb(): Promise<SQLiteDatabase> {
 }
 
 /**
+ * Returns a `SqliteDriver` wrapping the singleton expo-sqlite database, after
+ * migrations have run. Feature services use this to issue queries via the
+ * same interface the migration runner uses.
+ */
+export async function getDriver(): Promise<SqliteDriver> {
+  const db = await getDb();
+  return expoDriverFor(db);
+}
+
+/**
  * Closes the singleton connection and releases the underlying file lock.
  * Subsequent calls to getDb() will reopen the database and re-check
  * migration state.

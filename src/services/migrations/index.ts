@@ -1,3 +1,5 @@
 import type { Migration } from '@/services/database';
 
-export const migrations: ReadonlyArray<Migration> = [];
+import { migration as createUsersTable } from '@/services/migrations/002_create_users_table';
+
+export const migrations: ReadonlyArray<Migration> = [createUsersTable];
