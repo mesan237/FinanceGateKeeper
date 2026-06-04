@@ -19,6 +19,14 @@ export function TransactionsScreen() {
     <View style={styles.container}>
       <TransactionList />
       <View style={styles.fab}>
+        <View style={styles.secondaryRow}>
+          <View style={styles.grow}>
+            <Button label="Quick Add" onPress={() => router.push('/expenses/quick-add')} />
+          </View>
+          <View style={styles.grow}>
+            <Button label="Recurring" onPress={() => router.push('/expenses/recurring')} />
+          </View>
+        </View>
         <Button label="+ Log Expense" onPress={() => router.push('/expenses/log')} />
       </View>
     </View>
@@ -34,5 +42,13 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     bottom: 24,
+    gap: 8,
+  },
+  secondaryRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  grow: {
+    flex: 1,
   },
 });

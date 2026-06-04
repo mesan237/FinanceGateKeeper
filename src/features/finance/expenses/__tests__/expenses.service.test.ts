@@ -20,20 +20,37 @@ jest.mock('@/services/database', () => {
 });
 
 import {
+  advanceDueDate,
   createCategory,
   createExpense,
+  createQuickAddTemplate,
+  createRecurringExpense,
   deleteCategory,
+  deleteQuickAddTemplate,
+  deleteRecurringExpense,
   getAllCategories,
   getAllExpenses,
   getCategories,
   getExpensesByCategory,
   getExpensesByDateRange,
+  getQuickAddTemplates,
+  getRecurringExpenses,
   getSubcategories,
+  logFromQuickAddTemplate,
   renameCategory,
   reorderCategories,
+  runRecurringAutoLog,
   setCategoryHidden,
+  setRecurringActive,
+  skipRecurringOccurrence,
+  updateQuickAddTemplate,
+  updateRecurringExpense,
 } from '@/features/finance/expenses/expenses.service';
-import type { NewExpense } from '@/features/finance/expenses/expenses.types';
+import type {
+  NewExpense,
+  NewQuickAddTemplate,
+  NewRecurringExpense,
+} from '@/features/finance/expenses/expenses.types';
 
 let sqlite: Database.Database;
 
@@ -281,5 +298,258 @@ describe('reorderCategories', () => {
     await reorderCategories(reversed);
     const after = (await getCategories()).map((c) => c.id);
     expect(after).toEqual(reversed);
+  });
+});
+
+// ---- VS-07: quick-add templates --------------------------------------------
+
+function newTemplate(overrides: Partial<NewQuickAddTemplate> = {}): NewQuickAddTemplate {
+  return {
+    label: 'Taxi 500',
+    amount: 500,
+    categoryId: 2, // Transport
+    subcategoryId: null,
+    ...overrides,
+  };
+}
+
+describe('createQuickAddTemplate / getQuickAddTemplates', () => {
+  it('creates a template and includes it in the listing', async () => {
+    const id = await createQuickAddTemplate(newTemplate());
+    expect(id).toBeGreaterThan(0);
+
+    const templates = await getQuickAddTemplates();
+    expect(templates).toHaveLength(1);
+    expect(templates[0]).toMatchObject({ id, label: 'Taxi 500', amount: 500, categoryId: 2 });
+  });
+
+  it('appends new templates after existing siblings via sort_order', async () => {
+    const first = await createQuickAddTemplate(newTemplate({ label: 'Taxi 500' }));
+    const second = await createQuickAddTemplate(newTemplate({ label: 'Lunch 1500', amount: 1500 }));
+    const templates = await getQuickAddTemplates();
+    expect(templates.map((t) => t.id)).toEqual([first, second]);
+    expect(templates[0].sortOrder).toBeLessThan(templates[1].sortOrder);
+  });
+
+  it('rejects an empty label', async () => {
+    await expect(createQuickAddTemplate(newTemplate({ label: '   ' }))).rejects.toThrow();
+    expect(await getQuickAddTemplates()).toHaveLength(0);
+  });
+
+  it('rejects a zero or negative amount', async () => {
+    await expect(createQuickAddTemplate(newTemplate({ amount: 0 }))).rejects.toThrow();
+    await expect(createQuickAddTemplate(newTemplate({ amount: -500 }))).rejects.toThrow();
+    expect(await getQuickAddTemplates()).toHaveLength(0);
+  });
+
+  it('rejects an unknown category id', async () => {
+    await expect(createQuickAddTemplate(newTemplate({ categoryId: 99999 }))).rejects.toThrow();
+    expect(await getQuickAddTemplates()).toHaveLength(0);
+  });
+});
+
+describe('updateQuickAddTemplate', () => {
+  it('mutates only the touched field', async () => {
+    const id = await createQuickAddTemplate(newTemplate({ amount: 500 }));
+    await updateQuickAddTemplate(id, { amount: 700 });
+    const [template] = await getQuickAddTemplates();
+    expect(template).toMatchObject({ id, amount: 700, label: 'Taxi 500' });
+  });
+
+  it('no-ops on an empty patch', async () => {
+    const id = await createQuickAddTemplate(newTemplate());
+    await expect(updateQuickAddTemplate(id, {})).resolves.toBeUndefined();
+    const [template] = await getQuickAddTemplates();
+    expect(template).toMatchObject({ amount: 500, label: 'Taxi 500' });
+  });
+
+  it('rejects an invalid amount', async () => {
+    const id = await createQuickAddTemplate(newTemplate());
+    await expect(updateQuickAddTemplate(id, { amount: 0 })).rejects.toThrow();
+  });
+});
+
+describe('deleteQuickAddTemplate', () => {
+  it('removes the row', async () => {
+    const id = await createQuickAddTemplate(newTemplate());
+    await deleteQuickAddTemplate(id);
+    expect(await getQuickAddTemplates()).toHaveLength(0);
+  });
+});
+
+describe('logFromQuickAddTemplate', () => {
+  it('creates an expense matching the template, dated today by default', async () => {
+    const id = await createQuickAddTemplate(
+      newTemplate({ amount: 500, categoryId: 2, subcategoryId: null }),
+    );
+    const today = new Date().toISOString().slice(0, 10);
+    const expenseId = await logFromQuickAddTemplate(id);
+
+    const [expense] = await getAllExpenses();
+    expect(expense.id).toBe(expenseId);
+    expect(expense).toMatchObject({ amount: 500, categoryId: 2, date: today, isRecurring: false });
+  });
+
+  it('honors an explicit date', async () => {
+    const id = await createQuickAddTemplate(newTemplate());
+    await logFromQuickAddTemplate(id, '2026-05-01');
+    const [expense] = await getAllExpenses();
+    expect(expense.date).toBe('2026-05-01');
+  });
+
+  it('throws when the template is missing', async () => {
+    await expect(logFromQuickAddTemplate(99999)).rejects.toThrow();
+  });
+});
+
+// ---- VS-07: recurring expenses ---------------------------------------------
+
+function newRecurring(overrides: Partial<NewRecurringExpense> = {}): NewRecurringExpense {
+  return {
+    label: 'Rent',
+    amount: 150000,
+    categoryId: 3, // Bills
+    subcategoryId: null,
+    frequency: 'monthly',
+    nextDueDate: '2026-07-01',
+    isActive: true,
+    ...overrides,
+  };
+}
+
+describe('createRecurringExpense / getRecurringExpenses', () => {
+  it('creates a recurring expense and lists it', async () => {
+    const id = await createRecurringExpense(newRecurring());
+    expect(id).toBeGreaterThan(0);
+    const [row] = await getRecurringExpenses();
+    expect(row).toMatchObject({
+      id,
+      label: 'Rent',
+      amount: 150000,
+      frequency: 'monthly',
+      nextDueDate: '2026-07-01',
+      isActive: true,
+    });
+  });
+
+  it('orders by next_due_date ascending then id', async () => {
+    const later = await createRecurringExpense(newRecurring({ nextDueDate: '2026-08-01' }));
+    const earlier = await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+    const rows = await getRecurringExpenses();
+    expect(rows.map((r) => r.id)).toEqual([earlier, later]);
+  });
+
+  it('rejects a malformed next due date', async () => {
+    await expect(createRecurringExpense(newRecurring({ nextDueDate: '07/01/2026' }))).rejects.toThrow();
+  });
+
+  it('rejects a zero amount, empty label, unknown category, invalid frequency', async () => {
+    await expect(createRecurringExpense(newRecurring({ amount: 0 }))).rejects.toThrow();
+    await expect(createRecurringExpense(newRecurring({ label: '  ' }))).rejects.toThrow();
+    await expect(createRecurringExpense(newRecurring({ categoryId: 99999 }))).rejects.toThrow();
+    await expect(
+      createRecurringExpense(newRecurring({ frequency: 'yearly' as never })),
+    ).rejects.toThrow();
+    expect(await getRecurringExpenses()).toHaveLength(0);
+  });
+});
+
+describe('updateRecurringExpense', () => {
+  it('mutates only the touched field', async () => {
+    const id = await createRecurringExpense(newRecurring({ amount: 150000 }));
+    await updateRecurringExpense(id, { amount: 160000 });
+    const [row] = await getRecurringExpenses();
+    expect(row).toMatchObject({ id, amount: 160000, label: 'Rent' });
+  });
+
+  it('rejects an invalid touched field', async () => {
+    const id = await createRecurringExpense(newRecurring());
+    await expect(updateRecurringExpense(id, { nextDueDate: 'nope' })).rejects.toThrow();
+  });
+});
+
+describe('setRecurringActive', () => {
+  it('toggles the flag and survives a re-read', async () => {
+    const id = await createRecurringExpense(newRecurring());
+    await setRecurringActive(id, false);
+    expect((await getRecurringExpenses())[0].isActive).toBe(false);
+    await setRecurringActive(id, true);
+    expect((await getRecurringExpenses())[0].isActive).toBe(true);
+  });
+});
+
+describe('deleteRecurringExpense', () => {
+  it('removes the row but keeps already-logged expenses', async () => {
+    const id = await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+    await runRecurringAutoLog('2026-07-01');
+    await deleteRecurringExpense(id);
+    expect(await getRecurringExpenses()).toHaveLength(0);
+    expect(await getAllExpenses()).toHaveLength(1);
+  });
+});
+
+describe('skipRecurringOccurrence', () => {
+  it('advances by one period and logs nothing', async () => {
+    const id = await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+    await skipRecurringOccurrence(id);
+    const [row] = await getRecurringExpenses();
+    expect(row.nextDueDate).toBe('2026-08-01');
+    expect(await getAllExpenses()).toHaveLength(0);
+  });
+
+  it('throws when the row is inactive', async () => {
+    const id = await createRecurringExpense(newRecurring({ isActive: true }));
+    await setRecurringActive(id, false);
+    await expect(skipRecurringOccurrence(id)).rejects.toThrow();
+  });
+});
+
+describe('runRecurringAutoLog', () => {
+  it('logs one occurrence and advances, idempotent on a same-day re-run', async () => {
+    await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+
+    const first = await runRecurringAutoLog('2026-07-01');
+    expect(first.loggedCount).toBe(1);
+    expect((await getRecurringExpenses())[0].nextDueDate).toBe('2026-08-01');
+
+    const second = await runRecurringAutoLog('2026-07-01');
+    expect(second.loggedCount).toBe(0);
+    expect(await getAllExpenses()).toHaveLength(1);
+  });
+
+  it('replays every missed occurrence inside the window', async () => {
+    await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+
+    const result = await runRecurringAutoLog('2026-09-15');
+    expect(result.loggedCount).toBe(3);
+
+    const dates = (await getAllExpenses()).map((e) => e.date).sort();
+    expect(dates).toEqual(['2026-07-01', '2026-08-01', '2026-09-01']);
+    expect((await getAllExpenses()).every((e) => e.isRecurring)).toBe(true);
+    expect((await getRecurringExpenses())[0].nextDueDate).toBe('2026-10-01');
+  });
+
+  it('ignores inactive rows even when due', async () => {
+    const id = await createRecurringExpense(newRecurring({ nextDueDate: '2026-07-01' }));
+    await setRecurringActive(id, false);
+    const result = await runRecurringAutoLog('2026-09-15');
+    expect(result.loggedCount).toBe(0);
+    expect(await getAllExpenses()).toHaveLength(0);
+  });
+});
+
+describe('advanceDueDate', () => {
+  it('clamps the day to the target month last day', () => {
+    expect(advanceDueDate('2026-01-31', 'monthly')).toBe('2026-02-28');
+    expect(advanceDueDate('2024-02-29', 'monthly')).toBe('2024-03-29');
+  });
+
+  it('rolls over the year boundary', () => {
+    expect(advanceDueDate('2026-12-31', 'monthly')).toBe('2027-01-31');
+  });
+
+  it('adds seven days for weekly', () => {
+    expect(advanceDueDate('2026-06-12', 'weekly')).toBe('2026-06-19');
+    expect(advanceDueDate('2026-06-28', 'weekly')).toBe('2026-07-05');
   });
 });

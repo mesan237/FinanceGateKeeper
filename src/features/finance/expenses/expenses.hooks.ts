@@ -3,7 +3,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toISODate } from '@/utils/formatDate';
 
 import * as expenseService from './expenses.service';
-import type { Category, Expense, NewCategory, TransactionFilter } from './expenses.types';
+import type {
+  Category,
+  Expense,
+  NewCategory,
+  NewQuickAddTemplate,
+  NewRecurringExpense,
+  QuickAddTemplate,
+  RecurringExpense,
+  TransactionFilter,
+} from './expenses.types';
 
 /**
  * Form state for the expense log screen. Exposes individual field setters
@@ -216,4 +225,136 @@ export function useCategories() {
     toggleHidden,
     reorder,
   };
+}
+
+/**
+ * Loads quick-add templates and exposes one-tap logging plus CRUD. Like the
+ * other hooks here, mutations re-fetch on success rather than patching an
+ * in-memory cache. `log(id)` instantly creates an expense from the template.
+ */
+export function useQuickAdd() {
+  const [templates, setTemplates] = useState<QuickAddTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      setTemplates(await expenseService.getQuickAddTemplates());
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load quick-add templates.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const log = useCallback(async (id: number): Promise<number | null> => {
+    try {
+      const expenseId = await expenseService.logFromQuickAddTemplate(id);
+      setError(null);
+      return expenseId;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to log from template.');
+      return null;
+    }
+  }, []);
+
+  const add = useCallback(
+    async (input: NewQuickAddTemplate) => {
+      await expenseService.createQuickAddTemplate(input);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const update = useCallback(
+    async (id: number, patch: Partial<NewQuickAddTemplate>) => {
+      await expenseService.updateQuickAddTemplate(id, patch);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const remove = useCallback(
+    async (id: number) => {
+      await expenseService.deleteQuickAddTemplate(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { templates, loading, error, refresh, log, add, update, remove };
+}
+
+/**
+ * Loads recurring expenses and exposes CRUD plus the active toggle and the
+ * "skip next occurrence" action. Mutations re-fetch on success.
+ */
+export function useRecurring() {
+  const [recurring, setRecurring] = useState<RecurringExpense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    try {
+      setRecurring(await expenseService.getRecurringExpenses());
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load recurring expenses.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const add = useCallback(
+    async (input: NewRecurringExpense) => {
+      await expenseService.createRecurringExpense(input);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const update = useCallback(
+    async (id: number, patch: Partial<NewRecurringExpense>) => {
+      await expenseService.updateRecurringExpense(id, patch);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const setActive = useCallback(
+    async (id: number, isActive: boolean) => {
+      await expenseService.setRecurringActive(id, isActive);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const skip = useCallback(
+    async (id: number) => {
+      await expenseService.skipRecurringOccurrence(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const remove = useCallback(
+    async (id: number) => {
+      await expenseService.deleteRecurringExpense(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { recurring, loading, error, refresh, add, update, setActive, skip, remove };
 }

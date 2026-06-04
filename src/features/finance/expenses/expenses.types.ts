@@ -43,3 +43,48 @@ export interface TransactionFilter {
   from?: string;
   to?: string;
 }
+
+/**
+ * The closed set of recurrence cadences. A small, fixed enum (like
+ * `IncomeSource`) — guarded by a `CHECK` constraint at the DB layer and a
+ * runtime check in the service. Lives in the slice (not `constants/`) because
+ * nothing outside the expenses feature references it.
+ */
+export type Frequency = 'monthly' | 'weekly';
+
+/**
+ * A one-tap quick-add template: a pre-filled label + amount + category that
+ * logs an expense instantly when tapped. `sortOrder` keeps the grid stable.
+ */
+export interface QuickAddTemplate {
+  id: number;
+  label: string;
+  amount: number;
+  categoryId: number;
+  subcategoryId: number | null;
+  sortOrder: number;
+  createdAt: string;
+}
+
+/** Input for `createQuickAddTemplate` — id, sortOrder, and createdAt are assigned on insert. */
+export type NewQuickAddTemplate = Omit<QuickAddTemplate, 'id' | 'sortOrder' | 'createdAt'>;
+
+/**
+ * A registered recurring expense. The auto-logger inserts an expense and
+ * advances `nextDueDate` by one `frequency` period each time the due date is
+ * reached. `isActive` pauses auto-logging without losing the template.
+ */
+export interface RecurringExpense {
+  id: number;
+  label: string;
+  amount: number;
+  categoryId: number;
+  subcategoryId: number | null;
+  frequency: Frequency;
+  nextDueDate: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/** Input for `createRecurringExpense` — id and createdAt are assigned on insert. */
+export type NewRecurringExpense = Omit<RecurringExpense, 'id' | 'createdAt'>;
