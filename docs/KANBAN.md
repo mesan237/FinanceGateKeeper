@@ -457,7 +457,7 @@ These tasks can run simultaneously if using multiple agents:
 | VS-02: PIN Auth               | 🔲 Backlog |       |
 | VS-03: Expense Logging        | ✅ Done    | Tracer bullet: migrations→service→hooks→UI→routes. 51/51 tests passing. |
 | VS-04: Category Management    | ✅ Done    | CRUD + hide/reorder + delete-with-reassignment. is_hidden migration. 69/69 tests passing. |
-| VS-05: Income Logging         | 🔲 Backlog |       |
+| VS-05: Income Logging         | ✅ Done    | Source-tagged income: migration 004 → service → hooks → picker/screen → route. Inline recent-income list, no edit/delete (VS-05 scope). 26/26 slice tests; 95/95 total. |
 | VS-06: Budget Allocation      | 🔲 Backlog |       |
 | VS-07: Quick-Add & Recurring  | 🔲 Backlog |       |
 | VS-08: Daily Reminder & Modes | 🔲 Backlog |       |
