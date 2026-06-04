@@ -41,6 +41,18 @@ function asDate(value: Date | string): Date {
 }
 
 /**
+ * Returns the current month as `YYYY-MM`, in UTC. Used by every budget
+ * lookup to key allocations and totals — UTC keeps the month boundary stable
+ * across timezones.
+ */
+export function currentMonthISO(): string {
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+}
+
+/**
  * Formats a date as a UTC-stable `YYYY-MM-DD` string for storage in SQLite.
  *
  * @param d The date to format.

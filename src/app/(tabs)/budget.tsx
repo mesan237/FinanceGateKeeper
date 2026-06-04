@@ -1,6 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import { BudgetOverview } from '@/features/finance/budget/BudgetOverview';
 
 export default function BudgetRoute() {
-  return <View />;
+  return <BudgetOverview />;
 }

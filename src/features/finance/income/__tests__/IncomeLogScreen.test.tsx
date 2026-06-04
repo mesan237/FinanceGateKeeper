@@ -1,7 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import type { Income } from '@/features/finance/income/income.types';
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush, replace: jest.fn() }),
+}));
 
 jest.mock('@/features/finance/income/income.service', () => ({
   createIncome: jest.fn().mockResolvedValue(1),
@@ -11,30 +14,16 @@ jest.mock('@/features/finance/income/income.service', () => ({
 }));
 
 import { IncomeLogScreen } from '@/features/finance/income/IncomeLogScreen';
-import { createIncome, getAllIncome } from '@/features/finance/income/income.service';
+import { createIncome } from '@/features/finance/income/income.service';
 
 const mockedCreate = createIncome as jest.MockedFunction<typeof createIncome>;
-const mockedGetAll = getAllIncome as jest.MockedFunction<typeof getAllIncome>;
-
-function row(overrides: Partial<Income> = {}): Income {
-  return {
-    id: 1,
-    amount: 350000,
-    source: 'salary',
-    note: null,
-    date: '2026-06-12',
-    createdAt: '2026-06-12T00:00:00.000Z',
-    ...overrides,
-  };
-}
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockedGetAll.mockResolvedValue([]);
 });
 
 describe('IncomeLogScreen', () => {
-  it('renders the amount field, three source pills, note, date, and save button', async () => {
+  it('renders the amount field, three source pills, note, date, and save button', () => {
     render(<IncomeLogScreen />);
 
     expect(screen.getByLabelText('Amount')).toBeTruthy();
@@ -44,11 +33,9 @@ describe('IncomeLogScreen', () => {
     expect(screen.getByLabelText('Note')).toBeTruthy();
     expect(screen.getByLabelText('Date')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
-
-    await waitFor(() => expect(mockedGetAll).toHaveBeenCalled());
   });
 
-  it('keeps save disabled until an amount and a source are set', async () => {
+  it('keeps save disabled until an amount and a source are set', () => {
     render(<IncomeLogScreen />);
     const save = screen.getByRole('button', { name: 'Save' });
     expect(save).toBeDisabled();
@@ -58,8 +45,6 @@ describe('IncomeLogScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
-
-    await waitFor(() => expect(mockedGetAll).toHaveBeenCalled());
   });
 
   it('calls createIncome once with the entered values on save', async () => {
@@ -75,16 +60,31 @@ describe('IncomeLogScreen', () => {
     );
   });
 
-  it('shows the saved entry in the recent-income list, tagged by source', async () => {
-    // First load is empty; after save the refresh returns the new row.
-    mockedGetAll.mockResolvedValueOnce([]).mockResolvedValue([row({ amount: 350000, source: 'salary' })]);
+  it('navigates to /income/allocate with amount and month after a successful save', async () => {
+    render(<IncomeLogScreen />);
+
+    fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
+    fireEvent.changeText(screen.getByLabelText('Date'), '2026-06-12');
+    fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/income/allocate',
+        params: { amount: '350000', month: '2026-06' },
+      }),
+    );
+  });
+
+  it('does not navigate when the save fails', async () => {
+    mockedCreate.mockRejectedValueOnce(new Error('boom'));
     render(<IncomeLogScreen />);
 
     fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
-    expect(await screen.findByText('350 000 FCFA')).toBeTruthy();
-    expect(screen.getByText(/Salary · /)).toBeTruthy();
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalled());
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
