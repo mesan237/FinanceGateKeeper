@@ -1,3 +1,18 @@
 import type { Migration } from '@/services/database';
+import { migration as createCategoriesTable } from '@/services/migrations/001_create_categories_table';
+import { migration as createExpensesTable } from '@/services/migrations/002_create_expenses_table';
+import { migration as addCategoryIsHidden } from '@/services/migrations/003_add_category_is_hidden';
+import { migration as createIncomeTable } from '@/services/migrations/004_create_income_table';
+import { migration as createAllocationsTable } from '@/services/migrations/005_create_allocations_table';
+import { migration as createQuickAddTemplatesTable } from '@/services/migrations/006_create_quick_add_templates_table';
+import { migration as createRecurringExpensesTable } from '@/services/migrations/007_create_recurring_expenses_table';
 
-export const migrations: ReadonlyArray<Migration> = [];
+export const migrations: ReadonlyArray<Migration> = [
+  createCategoriesTable,
+  createExpensesTable,
+  addCategoryIsHidden,
+  createIncomeTable,
+  createAllocationsTable,
+  createQuickAddTemplatesTable,
+  createRecurringExpensesTable,
+];

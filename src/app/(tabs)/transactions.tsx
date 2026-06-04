@@ -1,6 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import { TransactionsScreen } from '@/features/finance/expenses/TransactionsScreen';
 
 export default function TransactionsRoute() {
-  return <View />;
+  return <TransactionsScreen />;
 }

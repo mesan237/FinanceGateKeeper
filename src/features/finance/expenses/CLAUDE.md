@@ -21,15 +21,17 @@ Handles daily expense logging, quick-add templates, recurring expenses, zero-day
 - Before saving any expense, call `budget.service.ts` `checkOverBudget()` to determine if alert is needed.
 
 ## Default Categories
+Seeded by migration `001_create_categories_table.ts` from `@/constants/categories`
+(`DEFAULT_CATEGORIES`). Array order sets each row's `sort_order`.
 ```
-Housing: Rent, Electricity
-Transport: (user defines)
-Food & Drink: Raw food, Eating out, Groceries, Drinks
-Communication: Phone data, Phone credit
-Shopping: Clothing, Personal care, Household items
-Gifts & Help: Gifts, Financial help
-Health: Pharmacy, Consultation
-Other: (catch-all)
+Food: Groceries, Restaurant, Snacks
+Transport: Taxi, Fuel, Public Transport
+Bills: Rent, Electricity, Water, Internet, Phone
+Health: Pharmacy, Doctor
+Entertainment: Streaming, Outings
+Education: Books, Courses
+Shopping: Clothing, Household
+Other: Miscellaneous
 ```
 
 ## Files in This Feature
