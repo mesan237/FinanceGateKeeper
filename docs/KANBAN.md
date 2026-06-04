@@ -459,7 +459,7 @@ These tasks can run simultaneously if using multiple agents:
 | VS-04: Category Management    | ✅ Done    | CRUD + hide/reorder + delete-with-reassignment. is_hidden migration. 69/69 tests passing. |
 | VS-05: Income Logging         | ✅ Done    | Source-tagged income: migration 004 → service → hooks → picker/screen → route. Inline recent-income list, no edit/delete (VS-05 scope). 26/26 slice tests; 95/95 total. |
 | VS-06: Budget Allocation      | ✅ Done    | Migration 005 → service (allocation math, lock-per-month, monthly composition) → hooks → AllocationSettings/Screen/BudgetOverview → routes; income save now navigates to /income/allocate. Approved with nits addressed. 45/45 slice tests; 140/140 total. |
-| VS-07: Quick-Add & Recurring  | 🔲 Backlog |       |
+| VS-07: Quick-Add & Recurring  | ✅ Done    | Migrations 006 (quick_add_templates) & 007 (recurring_expenses) → service (quick-add + recurring CRUD, advanceDueDate, idempotent replay-safe runRecurringAutoLog with per-row transactions) → useQuickAdd/useRecurring → QuickAddScreen/QuickAddTemplateForm, RecurringExpensesScreen/RecurringExpenseForm, RecurringAutoLogger (root-mount auto-log) → quick-add/recurring routes + Transactions nav links. Approved (no BLOCK; nits addressed). 42/42 slice tests; 182/182 total. |
 | VS-08: Daily Reminder & Modes | 🔲 Backlog |       |
 | VS-09: Funds                  | 🔲 Backlog |       |
 | VS-10: Projects               | 🔲 Backlog |       |
