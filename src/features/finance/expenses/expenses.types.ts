@@ -7,6 +7,13 @@ export interface Category {
   name: string;
   parentId: number | null;
   isDefault: boolean;
+  isHidden: boolean;
+}
+
+/** Input for creating a category (parent when `parentId` is null) or subcategory. */
+export interface NewCategory {
+  name: string;
+  parentId: number | null;
 }
 
 /**

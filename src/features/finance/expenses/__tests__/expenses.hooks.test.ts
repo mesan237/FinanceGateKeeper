@@ -5,9 +5,10 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   getAllExpenses: jest.fn().mockResolvedValue([]),
   getExpensesByCategory: jest.fn().mockResolvedValue([]),
   getExpensesByDateRange: jest.fn().mockResolvedValue([]),
+  createCategory: jest.fn().mockResolvedValue(99),
   getAllCategories: jest.fn().mockResolvedValue([
-    { id: 1, name: 'Food', parentId: null, isDefault: true },
-    { id: 2, name: 'Restaurant', parentId: 1, isDefault: true },
+    { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
+    { id: 2, name: 'Restaurant', parentId: 1, isDefault: true, isHidden: false },
   ]),
 }));
 
@@ -103,5 +104,37 @@ describe('useCategories', () => {
     expect(result.current.categories[0].name).toBe('Food');
     expect(result.current.labelFor(1, 2)).toBe('Restaurant'); // subcategory name
     expect(result.current.labelFor(1, null)).toBe('Food'); // parent fallback
+  });
+
+  it('excludes hidden parents from `categories` but keeps them in `managedCategories`', async () => {
+    mocked.getAllCategories.mockResolvedValue([
+      { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
+      { id: 5, name: 'Archived', parentId: null, isDefault: false, isHidden: true },
+    ]);
+    const { result } = renderHook(() => useCategories());
+    await waitFor(() => expect(result.current.managedCategories).toHaveLength(2));
+
+    expect(result.current.categories.map((c) => c.name)).toEqual(['Food']);
+    expect(result.current.managedCategories.map((c) => c.name)).toEqual(['Food', 'Archived']);
+  });
+
+  it('addCategory creates then re-fetches the updated list', async () => {
+    mocked.getAllCategories
+      .mockResolvedValueOnce([
+        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
+      ])
+      .mockResolvedValueOnce([
+        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
+        { id: 6, name: 'Freelance', parentId: null, isDefault: false, isHidden: false },
+      ]);
+    const { result } = renderHook(() => useCategories());
+    await waitFor(() => expect(result.current.categories).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.addCategory({ name: 'Freelance', parentId: null });
+    });
+
+    expect(mocked.createCategory).toHaveBeenCalledWith({ name: 'Freelance', parentId: null });
+    expect(result.current.categories.map((c) => c.name)).toEqual(['Food', 'Freelance']);
   });
 });

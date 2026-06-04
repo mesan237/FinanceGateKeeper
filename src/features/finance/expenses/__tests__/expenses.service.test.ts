@@ -20,13 +20,18 @@ jest.mock('@/services/database', () => {
 });
 
 import {
+  createCategory,
   createExpense,
+  deleteCategory,
   getAllCategories,
   getAllExpenses,
   getCategories,
   getExpensesByCategory,
   getExpensesByDateRange,
   getSubcategories,
+  renameCategory,
+  reorderCategories,
+  setCategoryHidden,
 } from '@/features/finance/expenses/expenses.service';
 import type { NewExpense } from '@/features/finance/expenses/expenses.types';
 
@@ -163,5 +168,118 @@ describe('seeded categories', () => {
     const children = all.filter((c) => c.parentId !== null);
     expect(parents).toHaveLength(8);
     expect(children.length).toBeGreaterThan(8);
+  });
+});
+
+async function parentIdByName(name: string): Promise<number> {
+  const parents = await getCategories();
+  const match = parents.find((c) => c.name === name);
+  if (!match) throw new Error(`No parent category named ${name}`);
+  return match.id;
+}
+
+describe('createCategory', () => {
+  it('adds a custom parent category', async () => {
+    const id = await createCategory({ name: 'Freelance Tools', parentId: null });
+    const parents = await getCategories();
+    expect(parents.find((c) => c.id === id)?.name).toBe('Freelance Tools');
+  });
+
+  it('adds a subcategory under a parent', async () => {
+    const parentId = await createCategory({ name: 'Freelance Tools', parentId: null });
+    const subId = await createCategory({ name: 'Software Subscriptions', parentId });
+    const subs = await getSubcategories(parentId);
+    expect(subs.map((s) => s.id)).toContain(subId);
+    expect(subs.find((s) => s.id === subId)?.parentId).toBe(parentId);
+  });
+
+  it('rejects a blank name', async () => {
+    await expect(createCategory({ name: '   ', parentId: null })).rejects.toThrow();
+  });
+});
+
+describe('renameCategory', () => {
+  it('changes the name', async () => {
+    const id = await createCategory({ name: 'Freelnce', parentId: null });
+    await renameCategory(id, 'Freelance');
+    const parents = await getCategories();
+    expect(parents.find((c) => c.id === id)?.name).toBe('Freelance');
+  });
+
+  it('rejects a blank name', async () => {
+    const id = await createCategory({ name: 'Freelance', parentId: null });
+    await expect(renameCategory(id, '  ')).rejects.toThrow();
+  });
+});
+
+describe('setCategoryHidden', () => {
+  it('removes a category from the picker query but keeps the row', async () => {
+    const foodId = await parentIdByName('Food');
+    await setCategoryHidden(foodId, true);
+
+    const visible = await getCategories();
+    expect(visible.find((c) => c.id === foodId)).toBeUndefined();
+
+    const all = await getAllCategories();
+    expect(all.find((c) => c.id === foodId)?.isHidden).toBe(true);
+  });
+});
+
+describe('deleteCategory', () => {
+  it('reassigns the category and its subcategory expenses to the target, then removes it', async () => {
+    const parentId = await createCategory({ name: 'Freelance', parentId: null });
+    const subId = await createCategory({ name: 'Tools', parentId });
+    const otherId = await parentIdByName('Other');
+
+    const expenseId = await createExpense({
+      amount: 1500,
+      categoryId: parentId,
+      subcategoryId: subId,
+      note: null,
+      date: '2026-06-12',
+      isRecurring: false,
+    });
+
+    await deleteCategory(parentId, otherId);
+
+    const [moved] = await getExpensesByCategory(otherId);
+    expect(moved.id).toBe(expenseId);
+    expect(moved.subcategoryId).toBeNull();
+
+    const all = await getAllCategories();
+    expect(all.find((c) => c.id === parentId)).toBeUndefined();
+    expect(all.find((c) => c.id === subId)).toBeUndefined();
+  });
+
+  it('refuses to delete a default category', async () => {
+    const foodId = await parentIdByName('Food');
+    const otherId = await parentIdByName('Other');
+    await expect(deleteCategory(foodId, otherId)).rejects.toThrow();
+  });
+
+  it('refuses an unknown reassignment target', async () => {
+    const id = await createCategory({ name: 'Freelance', parentId: null });
+    await expect(deleteCategory(id, 99999)).rejects.toThrow();
+  });
+
+  it('refuses to reassign a category to itself', async () => {
+    const id = await createCategory({ name: 'Freelance', parentId: null });
+    await expect(deleteCategory(id, id)).rejects.toThrow();
+  });
+
+  it('refuses to reassign expenses into one of the deleted subcategories', async () => {
+    const parentId = await createCategory({ name: 'Freelance', parentId: null });
+    const subId = await createCategory({ name: 'Tools', parentId });
+    await expect(deleteCategory(parentId, subId)).rejects.toThrow();
+  });
+});
+
+describe('reorderCategories', () => {
+  it('persists a new sort order for the given ids', async () => {
+    const before = (await getCategories()).map((c) => c.id);
+    const reversed = [...before].reverse();
+    await reorderCategories(reversed);
+    const after = (await getCategories()).map((c) => c.id);
+    expect(after).toEqual(reversed);
   });
 });

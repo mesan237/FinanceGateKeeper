@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Modal } from '@/components/Modal';
@@ -27,8 +28,15 @@ export interface CategoryPickerProps {
  * alone (no subcategory). Either choice closes the picker.
  */
 export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerProps) {
-  const { categories, subcategoriesOf } = useCategories();
+  const router = useRouter();
+  const { categories, subcategoriesOf, refresh } = useCategories();
   const [parent, setParent] = useState<Category | null>(null);
+
+  // Re-fetch whenever the picker opens so categories edited in the manager
+  // (added / renamed / hidden) show up without remounting the log screen.
+  useEffect(() => {
+    if (visible) void refresh();
+  }, [visible, refresh]);
 
   const reset = () => setParent(null);
 
@@ -92,6 +100,18 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
               )),
             ]}
       </ScrollView>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Manage categories"
+        style={styles.manage}
+        onPress={() => {
+          close();
+          router.push('/expenses/categories');
+        }}
+      >
+        <Typography style={styles.action}>Manage categories</Typography>
+      </Pressable>
     </Modal>
   );
 }
@@ -114,5 +134,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E0E0E0',
+  },
+  manage: {
+    paddingTop: 14,
+    alignItems: 'center',
   },
 });

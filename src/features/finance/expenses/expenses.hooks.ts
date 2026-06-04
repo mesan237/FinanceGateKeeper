@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toISODate } from '@/utils/formatDate';
 
 import * as expenseService from './expenses.service';
-import type { Category, Expense, TransactionFilter } from './expenses.types';
+import type { Category, Expense, NewCategory, TransactionFilter } from './expenses.types';
 
 /**
  * Form state for the expense log screen. Exposes individual field setters
@@ -105,13 +105,24 @@ export function useTransactions(filter?: TransactionFilter) {
 }
 
 /**
- * Loads the full category tree once and derives helpers from it: the parent
- * categories, a synchronous subcategory lookup, and a label resolver that
- * prefers the subcategory name and falls back to the parent name.
+ * Loads the full category tree (including hidden rows, so labels always
+ * resolve) and exposes derived views plus category CRUD. Mutations re-fetch
+ * rather than patching an in-memory cache — cheap and coherent for a local DB.
+ *
+ * - `categories` — visible parents, for the picker.
+ * - `managedCategories` — all parents incl. hidden, for the manager.
+ * - `subcategoriesOf(parentId, includeHidden?)` — children (visible by default).
+ * - `labelFor` — subcategory name, falling back to the parent name.
  */
 export function useCategories() {
   const [all, setAll] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    const rows = await expenseService.getAllCategories();
+    setAll(rows);
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -127,12 +138,18 @@ export function useCategories() {
     };
   }, []);
 
-  const categories = useMemo(() => all.filter((c) => c.parentId === null), [all]);
+  const categories = useMemo(
+    () => all.filter((c) => c.parentId === null && !c.isHidden),
+    [all],
+  );
+
+  const managedCategories = useMemo(() => all.filter((c) => c.parentId === null), [all]);
 
   const byId = useMemo(() => new Map(all.map((c) => [c.id, c])), [all]);
 
   const subcategoriesOf = useCallback(
-    (parentId: number) => all.filter((c) => c.parentId === parentId),
+    (parentId: number, includeHidden = false) =>
+      all.filter((c) => c.parentId === parentId && (includeHidden || !c.isHidden)),
     [all],
   );
 
@@ -146,5 +163,57 @@ export function useCategories() {
     [byId],
   );
 
-  return { categories, subcategoriesOf, labelFor, loading };
+  const addCategory = useCallback(
+    async (input: NewCategory) => {
+      await expenseService.createCategory(input);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const rename = useCallback(
+    async (id: number, name: string) => {
+      await expenseService.renameCategory(id, name);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const remove = useCallback(
+    async (id: number, reassignToId: number) => {
+      await expenseService.deleteCategory(id, reassignToId);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const toggleHidden = useCallback(
+    async (id: number, hidden: boolean) => {
+      await expenseService.setCategoryHidden(id, hidden);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  const reorder = useCallback(
+    async (orderedIds: number[]) => {
+      await expenseService.reorderCategories(orderedIds);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return {
+    categories,
+    managedCategories,
+    subcategoriesOf,
+    labelFor,
+    loading,
+    refresh,
+    addCategory,
+    rename,
+    remove,
+    toggleHidden,
+    reorder,
+  };
 }

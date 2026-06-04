@@ -456,7 +456,7 @@ These tasks can run simultaneously if using multiple agents:
 | VS-01: Project Scaffold       | ✅ Done    | Scaffold, migration runner, primitives, tab routing, notifications stub. 14/14 tests passing. |
 | VS-02: PIN Auth               | 🔲 Backlog |       |
 | VS-03: Expense Logging        | ✅ Done    | Tracer bullet: migrations→service→hooks→UI→routes. 51/51 tests passing. |
-| VS-04: Category Management    | 🔲 Backlog |       |
+| VS-04: Category Management    | ✅ Done    | CRUD + hide/reorder + delete-with-reassignment. is_hidden migration. 69/69 tests passing. |
 | VS-05: Income Logging         | 🔲 Backlog |       |
 | VS-06: Budget Allocation      | 🔲 Backlog |       |
 | VS-07: Quick-Add & Recurring  | 🔲 Backlog |       |
