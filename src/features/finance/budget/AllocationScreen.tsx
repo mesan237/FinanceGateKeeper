@@ -9,6 +9,7 @@ import { DANGER } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { depositToFund } from '@/features/finance/funds/funds.service';
+import { fundProjects } from '@/features/finance/projects/projects.service';
 
 import { useAllocation } from './budget.hooks';
 import { calculateBreakdown, redistributeEmergencyPct } from './budget.service';
@@ -90,6 +91,10 @@ function AllocationScreenBody({
       // the other buckets so future income stops being parked in a full fund.
       if (emergencyMetNow) {
         await redistributeEmergencyPct(monthISO);
+      }
+      // Fund projects by priority cascade with the projects-bucket amount.
+      if (breakdown.projects > 0) {
+        await fundProjects(breakdown.projects, reason);
       }
       await onLock();
       router.replace('/(tabs)/dashboard');

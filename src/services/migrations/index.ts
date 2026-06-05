@@ -10,6 +10,8 @@ import { migration as createUsersTable } from '@/services/migrations/008_create_
 import { migration as createZeroDaysTable } from '@/services/migrations/009_create_zero_days_table';
 import { migration as createFundsTable } from '@/services/migrations/010_create_funds_table';
 import { migration as createFundTransactionsTable } from '@/services/migrations/011_create_fund_transactions_table';
+import { migration as createProjectsTable } from '@/services/migrations/012_create_projects_table';
+import { migration as createProjectTransactionsTable } from '@/services/migrations/013_create_project_transactions_table';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -23,4 +25,6 @@ export const migrations: ReadonlyArray<Migration> = [
   createZeroDaysTable,
   createFundsTable,
   createFundTransactionsTable,
+  createProjectsTable,
+  createProjectTransactionsTable,
 ];

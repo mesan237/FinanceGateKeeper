@@ -27,9 +27,14 @@ jest.mock('@/features/finance/funds/funds.service', () => ({
   depositToFund: jest.fn(),
 }));
 
+jest.mock('@/features/finance/projects/projects.service', () => ({
+  fundProjects: jest.fn(),
+}));
+
 import { AllocationScreen } from '@/features/finance/budget/AllocationScreen';
 import * as budgetService from '@/features/finance/budget/budget.service';
 import * as fundsService from '@/features/finance/funds/funds.service';
+import * as projectsService from '@/features/finance/projects/projects.service';
 
 const mockedGetOrCreate = budgetService.getOrCreateCurrentAllocation as jest.MockedFunction<
   typeof budgetService.getOrCreateCurrentAllocation
@@ -45,6 +50,9 @@ const mockedRedistribute = budgetService.redistributeEmergencyPct as jest.Mocked
 >;
 const mockedDeposit = fundsService.depositToFund as jest.MockedFunction<
   typeof fundsService.depositToFund
+>;
+const mockedFundProjects = projectsService.fundProjects as jest.MockedFunction<
+  typeof projectsService.fundProjects
 >;
 
 function depositResult(targetNewlyMet: boolean) {
@@ -80,6 +88,7 @@ beforeEach(() => {
   mockedLock.mockResolvedValue(undefined);
   mockedRedistribute.mockResolvedValue(undefined);
   mockedDeposit.mockResolvedValue(depositResult(false));
+  mockedFundProjects.mockResolvedValue(undefined);
 });
 
 describe('AllocationScreen', () => {
@@ -175,5 +184,36 @@ describe('AllocationScreen', () => {
     await waitFor(() => expect(mockedLock).toHaveBeenCalled());
     expect(mockedDeposit).not.toHaveBeenCalledWith('emergency', expect.anything(), expect.anything());
     expect(mockedDeposit).toHaveBeenCalledWith('savings', 40000, 'Allocation 2026-06');
+  });
+
+  it('funds projects with the projects-bucket amount on confirm', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    // 400 000 × 15% = 60 000 to projects.
+    await waitFor(() =>
+      expect(mockedFundProjects).toHaveBeenCalledWith(60000, 'Allocation 2026-06'),
+    );
+    await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
+  });
+
+  it('skips project funding when the projects amount is zero', async () => {
+    const noProjects: Allocation = {
+      ...UNLOCKED,
+      projectsPct: 0,
+      expensesPct: 80,
+    };
+    mockedGetOrCreate.mockResolvedValue(noProjects);
+    mockedGetAllocation.mockResolvedValue(noProjects);
+
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => expect(mockedLock).toHaveBeenCalled());
+    expect(mockedFundProjects).not.toHaveBeenCalled();
   });
 });

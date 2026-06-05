@@ -27,7 +27,7 @@ Three layers — never violate these:
 
 ## Approved Cross-Feature Dependencies
 - `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`
-- `budget` → reads from `expenses` (categories), `funds` (redistribution)
+- `budget` → reads from `expenses` (categories), `funds` (redistribution), `projects` (funds on allocation confirm)
 - `reports` → reads from `expenses`, `income`, `budget`, `funds`, `projects`, `debt`
 - `income` → calls `budget` (triggers allocation after income log)
 - `funds` → reads `budget` (allocation percentages)

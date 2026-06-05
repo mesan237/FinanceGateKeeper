@@ -66,6 +66,22 @@ export function toISODate(d: Date): string {
 }
 
 /**
+ * Adds `n` whole months to a date, UTC-stably, returning a `YYYY-MM-DD` string.
+ * Used to project a future completion date (e.g. project timelines). Day-of-
+ * month overflow follows JS `Date` semantics (e.g. Jan 31 + 1 → Mar 3); callers
+ * here use day 1–28-ish anchors so this is not a concern in practice.
+ *
+ * @param d A `Date` or `YYYY-MM-DD` string.
+ * @param n Number of months to add (may be 0).
+ * @returns e.g. `addMonths('2026-11-15', 3)` -> "2027-02-15".
+ */
+export function addMonths(d: Date | string, n: number): string {
+  const date = asDate(d);
+  date.setUTCMonth(date.getUTCMonth() + n);
+  return toISODate(date);
+}
+
+/**
  * Formats a date as a short, day-and-month label for transaction rows.
  *
  * @param d A `Date` or `YYYY-MM-DD` string.

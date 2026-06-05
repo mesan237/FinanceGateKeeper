@@ -1,4 +1,28 @@
-import { currentMonthISO, formatDateLong, formatDateShort, toISODate } from '@/utils/formatDate';
+import {
+  addMonths,
+  currentMonthISO,
+  formatDateLong,
+  formatDateShort,
+  toISODate,
+} from '@/utils/formatDate';
+
+describe('addMonths', () => {
+  it('adds whole months and returns a UTC-stable YYYY-MM-DD string', () => {
+    expect(addMonths('2026-06-15', 3)).toBe('2026-09-15');
+  });
+
+  it('crosses the year boundary', () => {
+    expect(addMonths('2026-11-15', 3)).toBe('2027-02-15');
+  });
+
+  it('accepts a Date and is UTC-stable for a late time', () => {
+    expect(addMonths(new Date('2026-06-30T23:59:00Z'), 1)).toBe('2026-07-30');
+  });
+
+  it('adding zero months returns the same day', () => {
+    expect(addMonths('2026-06-15', 0)).toBe('2026-06-15');
+  });
+});
 
 describe('toISODate', () => {
   it('returns a UTC-stable YYYY-MM-DD string', () => {

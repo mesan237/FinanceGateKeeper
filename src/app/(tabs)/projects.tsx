@@ -1,6 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import { ProjectListScreen } from '@/features/finance/projects/ProjectListScreen';
 
 export default function ProjectsRoute() {
-  return <View />;
+  return <ProjectListScreen />;
 }
