@@ -5,6 +5,7 @@ import { toISODate } from '@/utils/formatDate';
 import * as expenseService from './expenses.service';
 import type {
   Category,
+  DayActivityStatus,
   Expense,
   NewCategory,
   NewQuickAddTemplate,
@@ -357,4 +358,31 @@ export function useRecurring() {
   );
 
   return { recurring, loading, error, refresh, add, update, setActive, skip, remove };
+}
+
+/**
+ * Tracks today's zero-day status and exposes a one-tap confirmation. `confirm()`
+ * records a zero-day for today, then re-reads the status so the prompt's gate
+ * closes. Used by the zero-day prompt; the day defaults to today.
+ */
+export function useZeroDay() {
+  const [status, setStatus] = useState<DayActivityStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    setStatus(await expenseService.getDayActivityStatus());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const confirm = useCallback(async () => {
+    await expenseService.confirmZeroDay();
+    await refresh();
+  }, [refresh]);
+
+  return { status, loading, refresh, confirm };
 }

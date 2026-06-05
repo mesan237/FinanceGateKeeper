@@ -3,6 +3,7 @@ import { toISODate } from '@/utils/formatDate';
 
 import type {
   Category,
+  DayActivityStatus,
   Expense,
   Frequency,
   NewCategory,
@@ -674,4 +675,54 @@ export async function runRecurringAutoLog(
     }
   }
   return { loggedCount };
+}
+
+// ---- VS-08: zero-day confirmation ------------------------------------------
+
+/**
+ * Records that the user spent nothing on `dateISO` (default: today). Idempotent
+ * via the `zero_days.date` UNIQUE constraint — a repeat confirmation of the same
+ * day is ignored rather than duplicated.
+ */
+export async function confirmZeroDay(dateISO: string = toISODate(new Date())): Promise<void> {
+  assertISODate(dateISO);
+  await execute('INSERT OR IGNORE INTO zero_days (date, confirmed_at) VALUES (?, ?)', [
+    dateISO,
+    new Date().toISOString(),
+  ]);
+}
+
+/** Whether the given day (default: today) has an explicit zero-day confirmation. */
+export async function isZeroDayConfirmed(
+  dateISO: string = toISODate(new Date()),
+): Promise<boolean> {
+  const [row] = await query<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM zero_days WHERE date = ?',
+    [dateISO],
+  );
+  return row.count > 0;
+}
+
+/** Whether any expense is logged on the given day (default: today). */
+export async function hasExpensesOn(
+  dateISO: string = toISODate(new Date()),
+): Promise<boolean> {
+  const [row] = await query<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM expenses WHERE date = ?',
+    [dateISO],
+  );
+  return row.count > 0;
+}
+
+/**
+ * Returns whether the given day (default: today) already has activity that
+ * should suppress the zero-day prompt — a logged expense or a confirmation.
+ */
+export async function getDayActivityStatus(
+  dateISO: string = toISODate(new Date()),
+): Promise<DayActivityStatus> {
+  return {
+    hasExpenses: await hasExpensesOn(dateISO),
+    zeroDayConfirmed: await isZeroDayConfirmed(dateISO),
+  };
 }

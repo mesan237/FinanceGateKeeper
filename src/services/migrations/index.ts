@@ -6,6 +6,8 @@ import { migration as createIncomeTable } from '@/services/migrations/004_create
 import { migration as createAllocationsTable } from '@/services/migrations/005_create_allocations_table';
 import { migration as createQuickAddTemplatesTable } from '@/services/migrations/006_create_quick_add_templates_table';
 import { migration as createRecurringExpensesTable } from '@/services/migrations/007_create_recurring_expenses_table';
+import { migration as createUsersTable } from '@/services/migrations/008_create_users_table';
+import { migration as createZeroDaysTable } from '@/services/migrations/009_create_zero_days_table';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -15,4 +17,6 @@ export const migrations: ReadonlyArray<Migration> = [
   createAllocationsTable,
   createQuickAddTemplatesTable,
   createRecurringExpensesTable,
+  createUsersTable,
+  createZeroDaysTable,
 ];
