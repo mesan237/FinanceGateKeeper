@@ -26,6 +26,9 @@ export function TransactionsScreen() {
           <View style={styles.grow}>
             <Button label="Recurring" onPress={() => router.push('/expenses/recurring')} />
           </View>
+          <View style={styles.grow}>
+            <Button label="Settings" onPress={() => router.push('/settings')} />
+          </View>
         </View>
         <Button label="+ Log Expense" onPress={() => router.push('/expenses/log')} />
       </View>

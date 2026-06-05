@@ -88,3 +88,23 @@ export interface RecurringExpense {
 
 /** Input for `createRecurringExpense` — id and createdAt are assigned on insert. */
 export type NewRecurringExpense = Omit<RecurringExpense, 'id' | 'createdAt'>;
+
+/**
+ * A confirmed zero-day: a calendar day the user explicitly marked as "I spent
+ * nothing". Distinguishes a genuinely frugal day from a day the user simply
+ * forgot to log. One row per `date`.
+ */
+export interface ZeroDay {
+  id: number;
+  date: string;
+  confirmedAt: string;
+}
+
+/**
+ * Whether a given day already has activity that should suppress the zero-day
+ * prompt: either a logged expense or an explicit zero-day confirmation.
+ */
+export interface DayActivityStatus {
+  hasExpenses: boolean;
+  zeroDayConfirmed: boolean;
+}

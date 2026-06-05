@@ -10,12 +10,18 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
     { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
     { id: 2, name: 'Restaurant', parentId: 1, isDefault: true, isHidden: false },
   ]),
+  getDayActivityStatus: jest.fn().mockResolvedValue({
+    hasExpenses: false,
+    zeroDayConfirmed: false,
+  }),
+  confirmZeroDay: jest.fn().mockResolvedValue(undefined),
 }));
 
 import {
   useCategories,
   useExpenseLog,
   useTransactions,
+  useZeroDay,
 } from '@/features/finance/expenses/expenses.hooks';
 import * as service from '@/features/finance/expenses/expenses.service';
 
@@ -136,5 +142,39 @@ describe('useCategories', () => {
 
     expect(mocked.createCategory).toHaveBeenCalledWith({ name: 'Freelance', parentId: null });
     expect(result.current.categories.map((c) => c.name)).toEqual(['Food', 'Freelance']);
+  });
+});
+
+describe('useZeroDay', () => {
+  it("loads today's activity status on mount", async () => {
+    mocked.getDayActivityStatus.mockResolvedValue({
+      hasExpenses: true,
+      zeroDayConfirmed: false,
+    });
+    const { result } = renderHook(() => useZeroDay());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.status).toEqual({ hasExpenses: true, zeroDayConfirmed: false });
+    expect(mocked.getDayActivityStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('confirms a zero-day and re-reads the status', async () => {
+    mocked.getDayActivityStatus.mockResolvedValue({
+      hasExpenses: false,
+      zeroDayConfirmed: false,
+    });
+    const { result } = renderHook(() => useZeroDay());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    mocked.getDayActivityStatus.mockResolvedValue({
+      hasExpenses: false,
+      zeroDayConfirmed: true,
+    });
+    await act(async () => {
+      await result.current.confirm();
+    });
+
+    expect(mocked.confirmZeroDay).toHaveBeenCalledTimes(1);
+    expect(result.current.status).toEqual({ hasExpenses: false, zeroDayConfirmed: true });
   });
 });

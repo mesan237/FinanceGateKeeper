@@ -21,6 +21,7 @@ jest.mock('@/services/database', () => {
 
 import {
   advanceDueDate,
+  confirmZeroDay,
   createCategory,
   createExpense,
   createQuickAddTemplate,
@@ -29,6 +30,9 @@ import {
   deleteQuickAddTemplate,
   deleteRecurringExpense,
   getAllCategories,
+  getDayActivityStatus,
+  hasExpensesOn,
+  isZeroDayConfirmed,
   getAllExpenses,
   getCategories,
   getExpensesByCategory,
@@ -551,5 +555,50 @@ describe('advanceDueDate', () => {
   it('adds seven days for weekly', () => {
     expect(advanceDueDate('2026-06-12', 'weekly')).toBe('2026-06-19');
     expect(advanceDueDate('2026-06-28', 'weekly')).toBe('2026-07-05');
+  });
+});
+
+describe('zero-day confirmation', () => {
+  it('confirms a zero-day and reads it back', async () => {
+    await confirmZeroDay('2026-06-05');
+    expect(await isZeroDayConfirmed('2026-06-05')).toBe(true);
+    expect(await isZeroDayConfirmed('2026-06-06')).toBe(false);
+  });
+
+  it('is idempotent for the same date', async () => {
+    await confirmZeroDay('2026-06-05');
+    await confirmZeroDay('2026-06-05');
+    const [{ count }] = sqlite
+      .prepare('SELECT COUNT(*) AS count FROM zero_days WHERE date = ?')
+      .all('2026-06-05') as { count: number }[];
+    expect(count).toBe(1);
+  });
+
+  it('rejects a malformed date', async () => {
+    await expect(confirmZeroDay('05-06-2026')).rejects.toThrow();
+  });
+
+  it('detects whether a day has expenses', async () => {
+    await createExpense(newExpense({ date: '2026-06-10' }));
+    expect(await hasExpensesOn('2026-06-10')).toBe(true);
+    expect(await hasExpensesOn('2026-06-11')).toBe(false);
+  });
+
+  it('reports combined day activity status', async () => {
+    await createExpense(newExpense({ date: '2026-06-10' }));
+    await confirmZeroDay('2026-06-11');
+
+    expect(await getDayActivityStatus('2026-06-10')).toEqual({
+      hasExpenses: true,
+      zeroDayConfirmed: false,
+    });
+    expect(await getDayActivityStatus('2026-06-11')).toEqual({
+      hasExpenses: false,
+      zeroDayConfirmed: true,
+    });
+    expect(await getDayActivityStatus('2026-06-12')).toEqual({
+      hasExpenses: false,
+      zeroDayConfirmed: false,
+    });
   });
 });
