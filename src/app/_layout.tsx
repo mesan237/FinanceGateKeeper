@@ -4,6 +4,7 @@ import React from 'react';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
+import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
 import { RecurringAutoLogger } from '@/features/finance/expenses/RecurringAutoLogger';
 import { ZeroDayGate } from '@/features/finance/expenses/ZeroDayGate';
 
@@ -16,14 +17,16 @@ export default function RootLayout() {
   return (
     <AppModeProvider>
       <RecurringAutoLogger>
-        <DailyReminderScheduler>
-          <ZeroDayGate
-            reminderTime={settings?.reminderTime ?? '21:00'}
-            notificationsEnabled={settings?.notificationsEnabled ?? false}
-          >
-            <Stack screenOptions={{ headerShown: false }} />
-          </ZeroDayGate>
-        </DailyReminderScheduler>
+        <DebtReminderScheduler>
+          <DailyReminderScheduler>
+            <ZeroDayGate
+              reminderTime={settings?.reminderTime ?? '21:00'}
+              notificationsEnabled={settings?.notificationsEnabled ?? false}
+            >
+              <Stack screenOptions={{ headerShown: false }} />
+            </ZeroDayGate>
+          </DailyReminderScheduler>
+        </DebtReminderScheduler>
       </RecurringAutoLogger>
     </AppModeProvider>
   );
