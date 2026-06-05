@@ -18,12 +18,18 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   getAllocation: jest.fn(),
   updateAllocation: jest.fn(),
   lockAllocation: jest.fn(),
+  redistributeEmergencyPct: jest.fn(),
   getMonthlyBudget: jest.fn(),
   getExpensesMonthlyTotal: jest.fn(),
 }));
 
+jest.mock('@/features/finance/funds/funds.service', () => ({
+  depositToFund: jest.fn(),
+}));
+
 import { AllocationScreen } from '@/features/finance/budget/AllocationScreen';
 import * as budgetService from '@/features/finance/budget/budget.service';
+import * as fundsService from '@/features/finance/funds/funds.service';
 
 const mockedGetOrCreate = budgetService.getOrCreateCurrentAllocation as jest.MockedFunction<
   typeof budgetService.getOrCreateCurrentAllocation
@@ -34,6 +40,26 @@ const mockedGetAllocation = budgetService.getAllocation as jest.MockedFunction<
 const mockedLock = budgetService.lockAllocation as jest.MockedFunction<
   typeof budgetService.lockAllocation
 >;
+const mockedRedistribute = budgetService.redistributeEmergencyPct as jest.MockedFunction<
+  typeof budgetService.redistributeEmergencyPct
+>;
+const mockedDeposit = fundsService.depositToFund as jest.MockedFunction<
+  typeof fundsService.depositToFund
+>;
+
+function depositResult(targetNewlyMet: boolean) {
+  return {
+    targetNewlyMet,
+    fund: {
+      id: 1,
+      type: 'emergency' as const,
+      targetAmount: 500000,
+      currentAmount: 0,
+      isTargetMet: targetNewlyMet,
+      createdAt: '2026-06-01T00:00:00.000Z',
+    },
+  };
+}
 
 const UNLOCKED: Allocation = {
   id: 1,
@@ -52,6 +78,8 @@ beforeEach(() => {
   mockedGetOrCreate.mockResolvedValue(UNLOCKED);
   mockedGetAllocation.mockResolvedValue(UNLOCKED);
   mockedLock.mockResolvedValue(undefined);
+  mockedRedistribute.mockResolvedValue(undefined);
+  mockedDeposit.mockResolvedValue(depositResult(false));
 });
 
 describe('AllocationScreen', () => {
@@ -99,5 +127,53 @@ describe('AllocationScreen', () => {
     await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
     expect(mockedLock).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/dashboard'));
+  });
+
+  it('deposits the emergency and savings portions on confirm', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    // 400 000 × 10% = 40 000 to each of emergency and savings.
+    await waitFor(() =>
+      expect(mockedDeposit).toHaveBeenCalledWith('emergency', 40000, 'Allocation 2026-06'),
+    );
+    expect(mockedDeposit).toHaveBeenCalledWith('savings', 40000, 'Allocation 2026-06');
+    expect(mockedRedistribute).not.toHaveBeenCalled();
+  });
+
+  it('triggers redistribution once when the emergency deposit meets the target', async () => {
+    mockedDeposit.mockImplementation(async (type) =>
+      depositResult(type === 'emergency'),
+    );
+
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => expect(mockedRedistribute).toHaveBeenCalledWith('2026-06'));
+    expect(mockedRedistribute).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
+  });
+
+  it('skips depositing a zero-amount bucket', async () => {
+    const noEmergency: Allocation = {
+      ...UNLOCKED,
+      emergencyFundPct: 0,
+      expensesPct: 75,
+    };
+    mockedGetOrCreate.mockResolvedValue(noEmergency);
+    mockedGetAllocation.mockResolvedValue(noEmergency);
+
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => expect(mockedLock).toHaveBeenCalled());
+    expect(mockedDeposit).not.toHaveBeenCalledWith('emergency', expect.anything(), expect.anything());
+    expect(mockedDeposit).toHaveBeenCalledWith('savings', 40000, 'Allocation 2026-06');
   });
 });

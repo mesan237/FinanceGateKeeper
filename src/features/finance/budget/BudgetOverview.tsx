@@ -50,6 +50,7 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
       )}
 
       <Button label="Edit allocation" onPress={() => router.push('/budget/settings')} />
+      <Button label="Funds" onPress={() => router.push('/funds')} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>
