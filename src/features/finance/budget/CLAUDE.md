@@ -12,8 +12,8 @@ Manages percentage-based income allocation, monthly category budgets, over-budge
 - Priority order: emergency_fund → savings → projects → expenses (default). User can reorder.
 - Allocations are locked per month. Once confirmed, percentages cannot change until next month.
 - When income is logged, navigate to AllocationScreen showing breakdown. User confirms, allocation records are updated.
-- Category budgets subdivide the expense allocation across categories. User sets per-category amounts that must sum to total expense allocation.
-- Over-budget check: `checkOverBudget(categoryId, newExpenseAmount)` returns `{ isOver: boolean, overage: number, categoryName: string }`.
+- Over-budget check (VS-12): `checkOverBudget(monthISO, newExpenseAmount)` returns `{ isOver, overage, remaining, expenseBudget }`. It compares (expenses logged this month + the new amount) against the month's expense allocation, and only flags once the allocation is **locked** (so it stays inert in learning mode and before the month is confirmed). The expense screens consume it via `useOverBudgetCheck` + `OverBudgetAlert`.
+- Per-category budgets (a `category_budgets` table subdividing the expense allocation, with a per-category overage) are **not built yet** — deferred to a follow-up slice.
 - Remaining budget = (total income for month × expenses_pct) − (total expenses for month).
 
 ## Allocation Flow

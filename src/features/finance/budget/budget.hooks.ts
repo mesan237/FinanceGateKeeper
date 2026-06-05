@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { currentMonthISO } from '@/utils/formatDate';
+
 import * as budgetService from './budget.service';
-import type { Allocation, AllocationDraft, MonthlyBudget } from './budget.types';
+import type {
+  Allocation,
+  AllocationDraft,
+  MonthlyBudget,
+  OverBudgetCheck,
+} from './budget.types';
 
 /**
  * Loads (and auto-creates on first call) the allocation for `monthISO` and
@@ -87,4 +94,22 @@ export function useBudgetStatus(monthISO: string) {
   }, [refresh]);
 
   return { budget, loading, error, refresh };
+}
+
+/**
+ * Imperative pre-save guard for the expense screens. Exposes `check(amount)`,
+ * which asks the budget service whether logging `amount` this month would
+ * exceed the confirmed expense allocation. Not a mount-loading hook — callers
+ * run it on demand at save time, with the typed amount. `monthISO` defaults to
+ * the current month.
+ */
+export function useOverBudgetCheck(monthISO?: string) {
+  const month = monthISO ?? currentMonthISO();
+
+  const check = useCallback(
+    (amount: number): Promise<OverBudgetCheck> => budgetService.checkOverBudget(month, amount),
+    [month],
+  );
+
+  return { check };
 }

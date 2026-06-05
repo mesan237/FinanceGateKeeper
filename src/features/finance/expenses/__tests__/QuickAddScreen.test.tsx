@@ -7,6 +7,14 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
 
+const mockCheck = jest.fn();
+jest.mock('@/features/finance/budget/budget.hooks', () => ({
+  useOverBudgetCheck: () => ({ check: mockCheck }),
+}));
+
+const NOT_OVER = { isOver: false, overage: 0, remaining: 0, expenseBudget: 0 };
+const over = (overage: number) => ({ isOver: true, overage, remaining: 0, expenseBudget: 0 });
+
 const TAXI: QuickAddTemplate = {
   id: 1,
   label: 'Taxi 500',
@@ -54,6 +62,7 @@ const mockedCreate = createQuickAddTemplate as jest.MockedFunction<typeof create
 beforeEach(() => {
   jest.clearAllMocks();
   mockedGet.mockResolvedValue([TAXI, LUNCH]);
+  mockCheck.mockResolvedValue(NOT_OVER);
 });
 
 describe('QuickAddScreen', () => {
@@ -69,6 +78,29 @@ describe('QuickAddScreen', () => {
   it('logs an expense once when a tile is tapped', async () => {
     render(<QuickAddScreen />);
     fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+
+    await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
+    expect(mockedLog).toHaveBeenCalledWith(1);
+  });
+
+  it('runs the over-budget check with the template amount and logs instantly when within budget', async () => {
+    render(<QuickAddScreen />);
+    fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+
+    await waitFor(() => expect(mockCheck).toHaveBeenCalledWith(TAXI.amount));
+    await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('over-budget-proceed')).toBeNull();
+  });
+
+  it('shows the over-budget modal on an over-budget tile and logs only after Proceed', async () => {
+    mockCheck.mockResolvedValue(over(3000));
+    render(<QuickAddScreen />);
+    fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+
+    await waitFor(() => expect(screen.getByTestId('over-budget-proceed')).toBeTruthy());
+    expect(mockedLog).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByTestId('over-budget-proceed'));
 
     await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
     expect(mockedLog).toHaveBeenCalledWith(1);
