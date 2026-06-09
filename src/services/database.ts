@@ -18,53 +18,60 @@ export interface Migration {
 const DATABASE_FILENAME = 'finance.db';
 
 let connection: SQLiteDatabase | null = null;
-let migrationsApplied = false;
-
-async function openConnection(): Promise<SQLiteDatabase> {
-  if (!connection) {
-    const { openDatabaseAsync } = await import('expo-sqlite');
-    connection = await openDatabaseAsync(DATABASE_FILENAME);
-  }
-  return connection;
-}
+let initPromise: Promise<SQLiteDatabase> | null = null;
 
 function expoDriverFor(db: SQLiteDatabase): SqliteDriver {
   return {
-    async execute(sql, params = []) {
+    async execute(sql: string, params: ReadonlyArray<SqlBindValue> = []) {
       await db.runAsync(sql, [...params]);
     },
-    async query<T>(sql, params = []) {
+    async query<T>(sql: string, params: ReadonlyArray<SqlBindValue> = []) {
       return db.getAllAsync<T>(sql, [...params]);
     },
   };
 }
 
-async function ensureMigrationsApplied(db: SQLiteDatabase): Promise<void> {
-  if (migrationsApplied) return;
+async function openAndMigrate(): Promise<SQLiteDatabase> {
+  const { openDatabaseAsync } = await import('expo-sqlite');
+  const db = await openDatabaseAsync(DATABASE_FILENAME);
   await runMigrations(expoDriverFor(db), registeredMigrations);
-  migrationsApplied = true;
+  connection = db;
+  return db;
 }
 
 /**
  * Returns the singleton expo-sqlite database, opening it on first call and
  * running any pending migrations exactly once per process.
+ *
+ * The open-and-migrate work is memoized as a single in-flight promise so that
+ * concurrent callers at startup (every tab screen plus the root providers mount
+ * and query at once) share one connection and one migration pass. Without this,
+ * each caller would race to call `openDatabaseAsync` and run migrations in
+ * parallel against the same file, which crashes expo-sqlite on Android with a
+ * `NativeDatabase.prepareAsync` NullPointerException. If initialization fails,
+ * the memoized promise is cleared so a later call (e.g. the Retry button) can
+ * try again from scratch.
  */
 export async function getDb(): Promise<SQLiteDatabase> {
-  const db = await openConnection();
-  await ensureMigrationsApplied(db);
-  return db;
+  if (!initPromise) {
+    initPromise = openAndMigrate().catch((error) => {
+      initPromise = null;
+      throw error;
+    });
+  }
+  return initPromise;
 }
 
 /**
  * Closes the singleton connection and releases the underlying file lock.
- * Subsequent calls to getDb() will reopen the database and re-check
- * migration state.
+ * Subsequent calls to getDb() will reopen the database and re-run the
+ * open-and-migrate pass.
  */
 export async function closeDb(): Promise<void> {
   if (connection) {
     await connection.closeAsync();
     connection = null;
-    migrationsApplied = false;
+    initPromise = null;
   }
 }
 
@@ -133,14 +140,14 @@ export function createBetterSqliteDriver(db: {
   exec(sql: string): unknown;
 }): SqliteDriver {
   return {
-    async execute(sql, params = []) {
+    async execute(sql: string, params: ReadonlyArray<SqlBindValue> = []) {
       if (params.length === 0) {
         db.exec(sql);
         return;
       }
       db.prepare(sql).run(...params);
     },
-    async query<T>(sql, params = []) {
+    async query<T>(sql: string, params: ReadonlyArray<SqlBindValue> = []) {
       return db.prepare(sql).all(...params) as T[];
     },
   };
