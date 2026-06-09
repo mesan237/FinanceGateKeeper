@@ -3,9 +3,16 @@ import { StyleSheet, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
+import { DANGER, SUCCESS, WARNING } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import type { FundProgress } from './funds.types';
+
+function progressColor(pct: number): string {
+  if (pct >= 75) return SUCCESS;
+  if (pct >= 40) return WARNING;
+  return DANGER;
+}
 
 export interface FundProgressBarProps {
   progress: FundProgress;
@@ -33,9 +40,9 @@ export function FundProgressBar({ progress, testID }: FundProgressBarProps) {
         <Typography variant="muted">
           {`${formatCurrency(progress.current)} / ${formatCurrency(progress.target)}`}
         </Typography>
-        <Typography>{`${progress.pct}%`}</Typography>
+        <Typography variant="muted" style={styles.pct}>{`${progress.pct}%`}</Typography>
       </View>
-      <ProgressBar value={progress.pct} testID={testID} />
+      <ProgressBar value={progress.pct} color={progressColor(progress.pct)} testID={testID} />
     </View>
   );
 }
@@ -47,5 +54,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  pct: {
+    fontWeight: '600',
   },
 });
