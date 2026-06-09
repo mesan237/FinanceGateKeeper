@@ -1,9 +1,40 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '@/components/Button';
+import { Typography } from '@/components/Typography';
+import {
+  DANGER,
+  DANGER_LIGHT,
+  PRIMARY_GREEN,
+  PRIMARY_LIGHT,
+  TEXT_MUTED,
+} from '@/constants/colors';
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
+
+interface ActionButtonProps {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  onPress: () => void;
+  tint: string;
+  iconColor: string;
+  testID?: string;
+}
+
+function ActionButton({ icon, label, onPress, tint, iconColor, testID }: ActionButtonProps) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.button, { backgroundColor: tint }, pressed && styles.pressed]}
+    >
+      <Ionicons name={icon} size={20} color={iconColor} />
+      <Typography style={[styles.buttonLabel, { color: iconColor }]}>{label}</Typography>
+    </Pressable>
+  );
+}
 
 interface QuickActionBarProps {
   zeroDay: DayActivityStatus;
@@ -11,9 +42,8 @@ interface QuickActionBarProps {
 }
 
 /**
- * Fixed action bar at the bottom of the dashboard with shortcuts to the three
- * most common actions. "Confirm Zero Day" is hidden once the day has activity
- * (an expense logged or an explicit zero-day confirmation).
+ * Sticky action bar with shortcuts to the three most common actions.
+ * "Confirm Zero Day" is hidden once the day has activity.
  */
 export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProps) {
   const router = useRouter();
@@ -21,24 +51,30 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
 
   return (
     <View style={styles.bar}>
-      <Button
+      <ActionButton
         testID="quick-log-expense"
+        icon="arrow-up-circle"
         label="Log Expense"
         onPress={() => router.push('/expenses/log')}
-        style={styles.button}
+        tint={DANGER_LIGHT}
+        iconColor={DANGER}
       />
-      <Button
+      <ActionButton
         testID="quick-log-income"
+        icon="arrow-down-circle"
         label="Log Income"
         onPress={() => router.push('/income/log')}
-        style={styles.button}
+        tint={PRIMARY_LIGHT}
+        iconColor={PRIMARY_GREEN}
       />
       {showZeroDay && (
-        <Button
+        <ActionButton
           testID="quick-confirm-zero-day"
+          icon="checkmark-circle"
           label="Zero Day"
           onPress={onConfirmZeroDay}
-          style={styles.button}
+          tint="#F3F4F6"
+          iconColor={TEXT_MUTED}
         />
       )}
     </View>
@@ -48,10 +84,23 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 12,
+    gap: 10,
   },
   button: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 11,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+  },
+  pressed: {
+    opacity: 0.75,
+  },
+  buttonLabel: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

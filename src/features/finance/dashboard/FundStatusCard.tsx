@@ -20,7 +20,7 @@ interface FundStatusCardProps {
 export function FundStatusCard({ funds }: FundStatusCardProps) {
   return (
     <Card testID="fund-status-card">
-      <Typography variant="subheading">Funds</Typography>
+      <Typography variant="label">Funds</Typography>
       <View style={styles.list}>
         <View style={styles.row}>
           <Typography variant="muted">{FUND_TYPE_LABELS.emergency}</Typography>
