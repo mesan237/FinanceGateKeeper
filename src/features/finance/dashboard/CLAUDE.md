@@ -16,5 +16,11 @@ Dashboard is read-only aggregation. No dedicated database tables.
 ## Cross-Feature Reads
 Imports services from: `expenses`, `budget`, `funds`, `projects`, `debt`. All read-only.
 
+## Learning-Mode Gate
+The dashboard never imports `auth`. `app/(tabs)/dashboard.tsx` reads `useAppMode()` and passes
+`includeBudgetData={mode === 'control'}` as a prop — app-mode gating lives at the routing layer,
+not in the feature (mirrors VS-08 precedent).
+
 ## Files
-- `DashboardScreen.tsx`, `BudgetSummaryCard.tsx`, `FundStatusCard.tsx`, `QuickActionBar.tsx`, `dashboard.hooks.ts`, `dashboard.types.ts`
+- `DashboardScreen.tsx`, `BudgetSummaryCard.tsx`, `FundStatusCard.tsx`, `QuickActionBar.tsx`
+- `dashboard.hooks.ts`, `dashboard.service.ts`, `dashboard.types.ts`
