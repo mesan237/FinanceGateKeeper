@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
 import { BACKGROUND, PRIMARY_GREEN } from '@/constants/colors';
@@ -45,7 +45,12 @@ export function TransactionList() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.chips}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipsScroll}
+        contentContainerStyle={styles.chips}
+      >
         <Chip label="All" active={categoryId === null} onPress={() => setCategoryId(null)} />
         {categories.map((category) => (
           <Chip
@@ -55,7 +60,7 @@ export function TransactionList() {
             onPress={() => setCategoryId(category.id)}
           />
         ))}
-      </View>
+      </ScrollView>
 
       {expenses.length === 0 ? (
         <Typography variant="muted" style={styles.empty}>
@@ -65,6 +70,7 @@ export function TransactionList() {
         <FlatList
           data={expenses}
           keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Typography>{formatCurrency(item.amount)}</Typography>
@@ -84,11 +90,19 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  chipsScroll: {
+    flexGrow: 0,
+    marginBottom: 12,
+  },
   chips: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 8,
-    marginBottom: 12,
+  },
+  listContent: {
+    // Clear the floating action bar (Quick Add / … / Log Expense) in
+    // TransactionsScreen so the last rows aren't hidden behind it.
+    paddingBottom: 140,
   },
   chip: {
     paddingVertical: 6,
