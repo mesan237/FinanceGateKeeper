@@ -21,16 +21,16 @@ export function TransactionsScreen() {
       <View style={styles.fab}>
         <View style={styles.secondaryRow}>
           <View style={styles.grow}>
-            <Button label="Quick Add" onPress={() => router.push('/expenses/quick-add')} />
+            <Button compact label="Quick Add" onPress={() => router.push('/expenses/quick-add')} />
           </View>
           <View style={styles.grow}>
-            <Button label="Recurring" onPress={() => router.push('/expenses/recurring')} />
+            <Button compact label="Recurring" onPress={() => router.push('/expenses/recurring')} />
           </View>
           <View style={styles.grow}>
-            <Button label="Debts" onPress={() => router.push('/debt')} />
+            <Button compact label="Debts" onPress={() => router.push('/debt')} />
           </View>
           <View style={styles.grow}>
-            <Button label="Settings" onPress={() => router.push('/settings')} />
+            <Button compact label="Settings" onPress={() => router.push('/settings')} />
           </View>
         </View>
         <Button label="+ Log Expense" onPress={() => router.push('/expenses/log')} />
