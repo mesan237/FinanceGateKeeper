@@ -13,6 +13,7 @@ import { migration as createFundTransactionsTable } from '@/services/migrations/
 import { migration as createProjectsTable } from '@/services/migrations/012_create_projects_table';
 import { migration as createProjectTransactionsTable } from '@/services/migrations/013_create_project_transactions_table';
 import { migration as createDebtsTable } from '@/services/migrations/014_create_debts_table';
+import { migration as dedupeCategories } from '@/services/migrations/015_dedupe_categories';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -29,4 +30,5 @@ export const migrations: ReadonlyArray<Migration> = [
   createProjectsTable,
   createProjectTransactionsTable,
   createDebtsTable,
+  dedupeCategories,
 ];
