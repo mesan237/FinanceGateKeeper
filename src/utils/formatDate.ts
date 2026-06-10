@@ -81,6 +81,24 @@ export function addMonths(d: Date | string, n: number): string {
   return toISODate(date);
 }
 
+const MS_PER_DAY = 86_400_000;
+
+/**
+ * Whole-day signed delta from `a` to `b` (a future `b` is positive). Both ends
+ * are floored to their UTC calendar day first, so a late-evening and an
+ * early-morning timestamp on adjacent days count as one day apart — the
+ * classification that debt due-soon/overdue checks need. Pure.
+ *
+ * @param a The reference day (a `Date` or `YYYY-MM-DD` string).
+ * @param b The day to measure to.
+ * @returns e.g. `daysBetween('2026-06-12', '2026-06-15')` -> 3.
+ */
+export function daysBetween(a: Date | string, b: Date | string): number {
+  const startOfDay = (value: Date | string): number =>
+    asDate(toISODate(asDate(value))).getTime();
+  return Math.round((startOfDay(b) - startOfDay(a)) / MS_PER_DAY);
+}
+
 /**
  * Formats a date as a short, day-and-month label for transaction rows.
  *

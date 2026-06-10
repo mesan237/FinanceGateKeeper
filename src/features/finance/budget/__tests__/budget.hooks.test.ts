@@ -1,7 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
-import type { Allocation, MonthlyBudget } from '@/features/finance/budget/budget.types';
+import type {
+  Allocation,
+  MonthlyBudget,
+  OverBudgetCheck,
+} from '@/features/finance/budget/budget.types';
+import { currentMonthISO } from '@/utils/formatDate';
 
 jest.mock('@/features/finance/budget/budget.service', () => ({
   getOrCreateCurrentAllocation: jest.fn(),
@@ -9,9 +14,14 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   updateAllocation: jest.fn(),
   lockAllocation: jest.fn(),
   getMonthlyBudget: jest.fn(),
+  checkOverBudget: jest.fn(),
 }));
 
-import { useAllocation, useBudgetStatus } from '@/features/finance/budget/budget.hooks';
+import {
+  useAllocation,
+  useBudgetStatus,
+  useOverBudgetCheck,
+} from '@/features/finance/budget/budget.hooks';
 import * as budgetService from '@/features/finance/budget/budget.service';
 
 const mockedGetOrCreate = budgetService.getOrCreateCurrentAllocation as jest.MockedFunction<
@@ -28,6 +38,9 @@ const mockedLock = budgetService.lockAllocation as jest.MockedFunction<
 >;
 const mockedGetBudget = budgetService.getMonthlyBudget as jest.MockedFunction<
   typeof budgetService.getMonthlyBudget
+>;
+const mockedCheckOverBudget = budgetService.checkOverBudget as jest.MockedFunction<
+  typeof budgetService.checkOverBudget
 >;
 
 const DEFAULT_ROW: Allocation = {
@@ -173,5 +186,38 @@ describe('useBudgetStatus', () => {
     });
 
     await waitFor(() => expect(result.current.budget?.expensesRemaining).toBe(243000));
+  });
+});
+
+describe('useOverBudgetCheck', () => {
+  const OVER: OverBudgetCheck = {
+    isOver: true,
+    overage: 3000,
+    remaining: 5000,
+    expenseBudget: 260000,
+  };
+
+  it('check() delegates to the service for the given month', async () => {
+    mockedCheckOverBudget.mockResolvedValue(OVER);
+    const { result } = renderHook(() => useOverBudgetCheck('2026-06'));
+
+    let out: OverBudgetCheck | undefined;
+    await act(async () => {
+      out = await result.current.check(8000);
+    });
+
+    expect(mockedCheckOverBudget).toHaveBeenCalledWith('2026-06', 8000);
+    expect(out).toEqual(OVER);
+  });
+
+  it('defaults to the current month when none is given', async () => {
+    mockedCheckOverBudget.mockResolvedValue({ ...OVER, isOver: false, overage: 0 });
+    const { result } = renderHook(() => useOverBudgetCheck());
+
+    await act(async () => {
+      await result.current.check(100);
+    });
+
+    expect(mockedCheckOverBudget).toHaveBeenCalledWith(currentMonthISO(), 100);
   });
 });

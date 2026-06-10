@@ -1,10 +1,39 @@
 import {
   addMonths,
   currentMonthISO,
+  daysBetween,
   formatDateLong,
   formatDateShort,
   toISODate,
 } from '@/utils/formatDate';
+
+describe('daysBetween', () => {
+  it('counts whole days from a to b (future is positive)', () => {
+    expect(daysBetween('2026-06-12', '2026-06-15')).toBe(3);
+  });
+
+  it('is negative when b is before a', () => {
+    expect(daysBetween('2026-06-15', '2026-06-12')).toBe(-3);
+  });
+
+  it('is zero for the same day', () => {
+    expect(daysBetween('2026-06-12', '2026-06-12')).toBe(0);
+  });
+
+  it('counts across a month boundary', () => {
+    expect(daysBetween('2026-06-28', '2026-07-01')).toBe(3);
+  });
+
+  it('counts across a year boundary', () => {
+    expect(daysBetween('2026-12-31', '2027-01-01')).toBe(1);
+  });
+
+  it('is UTC-stable when given Dates with late times', () => {
+    expect(
+      daysBetween(new Date('2026-06-12T23:00:00Z'), new Date('2026-06-13T01:00:00Z')),
+    ).toBe(1);
+  });
+});
 
 describe('addMonths', () => {
   it('adds whole months and returns a UTC-stable YYYY-MM-DD string', () => {

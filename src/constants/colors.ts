@@ -1,7 +1,14 @@
 export const PRIMARY_GREEN = '#2E7D32';
+export const PRIMARY_LIGHT = '#E8F5E9';
 export const BACKGROUND = '#F5F7FA';
+export const SURFACE = '#FFFFFF';
+export const BORDER = '#E5E7EB';
 export const TEXT_PRIMARY = '#1A1A1A';
+export const TEXT_SECONDARY = '#374151';
 export const TEXT_MUTED = '#6B7280';
 export const DANGER = '#D32F2F';
+export const DANGER_LIGHT = '#FFEBEE';
 export const WARNING = '#F9A825';
+export const WARNING_LIGHT = '#FFFDE7';
 export const SUCCESS = '#388E3C';
+export const SUCCESS_LIGHT = '#E8F5E9';

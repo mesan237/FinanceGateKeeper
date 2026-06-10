@@ -5,9 +5,11 @@ import { PRIMARY_GREEN } from '@/constants/colors';
 
 export interface ProgressBarProps extends ViewProps {
   value: number;
+  /** Fill color — defaults to PRIMARY_GREEN. Pass DANGER/WARNING/SUCCESS for semantic states. */
+  color?: string;
 }
 
-export function ProgressBar({ value, testID, style, ...rest }: ProgressBarProps) {
+export function ProgressBar({ value, color = PRIMARY_GREEN, testID, style, ...rest }: ProgressBarProps) {
   const clamped = Math.min(100, Math.max(0, value));
 
   return (
@@ -20,7 +22,7 @@ export function ProgressBar({ value, testID, style, ...rest }: ProgressBarProps)
       <View
         testID={testID ? `${testID}-fill` : undefined}
         accessibilityValue={{ now: clamped, min: 0, max: 100 }}
-        style={[styles.fill, { width: `${clamped}%` }]}
+        style={[styles.fill, { width: `${clamped}%`, backgroundColor: color }]}
       />
     </View>
   );
@@ -35,6 +37,5 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: '100%',
-    backgroundColor: PRIMARY_GREEN,
   },
 });

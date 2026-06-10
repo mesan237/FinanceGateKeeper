@@ -38,3 +38,16 @@ export interface MonthlyBudget {
   expensesLogged: number;
   expensesRemaining: number;
 }
+
+/**
+ * Result of a pre-save over-budget check for one prospective expense.
+ * `overage` is 0 when not over; `remaining` is the expense budget left before
+ * the prospective expense; `expenseBudget` is the month's allocated expense
+ * bucket. `isOver` is only ever true once the month's allocation is locked.
+ */
+export interface OverBudgetCheck {
+  isOver: boolean;
+  overage: number;
+  remaining: number;
+  expenseBudget: number;
+}

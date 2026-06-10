@@ -6,6 +6,11 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 
+const mockCheck = jest.fn();
+jest.mock('@/features/finance/budget/budget.hooks', () => ({
+  useOverBudgetCheck: () => ({ check: mockCheck }),
+}));
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(1),
   getAllCategories: jest.fn().mockResolvedValue([
@@ -20,8 +25,12 @@ import { createExpense, getAllCategories } from '@/features/finance/expenses/exp
 const mockedCreate = createExpense as jest.MockedFunction<typeof createExpense>;
 const mockedGetAll = getAllCategories as jest.MockedFunction<typeof getAllCategories>;
 
+const NOT_OVER = { isOver: false, overage: 0, remaining: 0, expenseBudget: 0 };
+const over = (overage: number) => ({ isOver: true, overage, remaining: 0, expenseBudget: 0 });
+
 beforeEach(() => {
   jest.clearAllMocks();
+  mockCheck.mockResolvedValue(NOT_OVER);
 });
 
 async function selectFoodRestaurant() {
@@ -72,5 +81,51 @@ describe('ExpenseLogScreen', () => {
       }),
     );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/transactions'));
+  });
+
+  it('runs the over-budget check against the entered amount and skips the modal when within budget', async () => {
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount'), '1500');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockCheck).toHaveBeenCalledWith(1500));
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    expect(screen.queryByTestId('over-budget-proceed')).toBeNull();
+  });
+
+  it('shows the over-budget modal and does not save until Proceed', async () => {
+    mockCheck.mockResolvedValue(over(3000));
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount'), '8000');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    // Modal appears; nothing saved yet.
+    await waitFor(() => expect(screen.getByTestId('over-budget-proceed')).toBeTruthy());
+    expect(mockedCreate).not.toHaveBeenCalled();
+    expect(screen.getByText(/3 000 FCFA/)).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('over-budget-proceed'));
+
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/transactions'));
+  });
+
+  it('Cancel on the over-budget modal saves nothing', async () => {
+    mockCheck.mockResolvedValue(over(3000));
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount'), '8000');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.getByTestId('over-budget-cancel')).toBeTruthy());
+
+    fireEvent.press(screen.getByTestId('over-budget-cancel'));
+
+    expect(mockedCreate).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByTestId('over-budget-proceed')).toBeNull());
   });
 });

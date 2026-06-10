@@ -6,6 +6,8 @@ import { Button } from '@/components/Button';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
+import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
+import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
 import { useExpenseLog } from './expenses.hooks';
@@ -18,14 +20,26 @@ import { useExpenseLog } from './expenses.hooks';
 export function ExpenseLogScreen() {
   const router = useRouter();
   const log = useExpenseLog();
+  const { check } = useOverBudgetCheck();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
+  // Set to the overage (FCFA) while the over-budget warning is showing.
+  const [overage, setOverage] = useState<number | null>(null);
 
-  const handleSave = async () => {
+  const persist = async () => {
     const id = await log.submit();
     if (id !== null) {
       router.replace('/(tabs)/transactions');
     }
+  };
+
+  const handleSave = async () => {
+    const result = await check(Math.trunc(Number(log.amount)));
+    if (result.isOver) {
+      setOverage(result.overage);
+      return;
+    }
+    await persist();
   };
 
   return (
@@ -74,6 +88,16 @@ export function ExpenseLogScreen() {
           setCategoryLabel(selection.label);
           setPickerVisible(false);
         }}
+      />
+
+      <OverBudgetAlert
+        visible={overage !== null}
+        overage={overage ?? 0}
+        onProceed={() => {
+          setOverage(null);
+          void persist();
+        }}
+        onCancel={() => setOverage(null)}
       />
     </View>
   );

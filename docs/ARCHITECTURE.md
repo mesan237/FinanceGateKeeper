@@ -214,6 +214,7 @@ Some features legitimately need each other. These are the **approved cross-featu
 | ----------- | --------------------------------------------------------------------------------------------- |
 | `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation)                     |
 | `budget`    | `expenses` (reads categories), `funds` (triggers redistribution), `projects` (funds on allocation confirm) |
+| `expenses`  | `budget` (pre-save over-budget check on the expense log and quick-add screens)                |
 | `reports`   | `expenses`, `income`, `budget`, `funds`, `projects`, `debt` (read-only for report generation) |
 | `income`    | `budget` (triggers allocation screen after income log)                                        |
 | `funds`     | `budget` (reads allocation percentages)                                                       |

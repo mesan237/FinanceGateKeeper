@@ -3,6 +3,8 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
 import { PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
+import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { QuickAddTemplateForm } from './QuickAddTemplateForm';
@@ -28,8 +30,13 @@ const TOAST_MS = 2000;
  */
 export function QuickAddScreen() {
   const { templates, add, update, remove, log } = useQuickAdd();
+  const { check } = useOverBudgetCheck();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
   const [toast, setToast] = useState<string | null>(null);
+  // Holds the template awaiting confirmation while the over-budget warning shows.
+  const [pending, setPending] = useState<{ template: QuickAddTemplate; overage: number } | null>(
+    null,
+  );
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear a pending toast timer on unmount so it can't fire after teardown.
@@ -46,11 +53,20 @@ export function QuickAddScreen() {
     toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
   };
 
-  const handleLog = async (template: QuickAddTemplate) => {
+  const performLog = async (template: QuickAddTemplate) => {
     const id = await log(template.id);
     if (id !== null) {
       flashToast(`Logged ${formatCurrency(template.amount)} · ${template.label}`);
     }
+  };
+
+  const handleLog = async (template: QuickAddTemplate) => {
+    const result = await check(template.amount);
+    if (result.isOver) {
+      setPending({ template, overage: result.overage });
+      return;
+    }
+    await performLog(template);
   };
 
   const data: GridItem[] = [...templates, ADD_TILE];
@@ -115,6 +131,17 @@ export function QuickAddScreen() {
         }}
         onDelete={remove}
         onClose={() => setModal({ mode: 'idle' })}
+      />
+
+      <OverBudgetAlert
+        visible={pending !== null}
+        overage={pending?.overage ?? 0}
+        onProceed={() => {
+          const template = pending?.template;
+          setPending(null);
+          if (template) void performLog(template);
+        }}
+        onCancel={() => setPending(null)}
       />
     </View>
   );

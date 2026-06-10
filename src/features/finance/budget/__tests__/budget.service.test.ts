@@ -22,6 +22,7 @@ jest.mock('@/services/database', () => {
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
 import {
   calculateBreakdown,
+  checkOverBudget,
   getAllocation,
   getExpensesMonthlyTotal,
   getMonthlyBudget,
@@ -321,6 +322,75 @@ describe('getMonthlyBudget', () => {
     });
     expect(budget.expensesLogged).toBe(0);
     expect(budget.expensesRemaining).toBe(0);
+  });
+});
+
+describe('checkOverBudget', () => {
+  // 400000 income under the defaults (65% expenses) → expense budget = 260000.
+  async function seedLockedJune(): Promise<void> {
+    await createIncome({ amount: 400000, source: 'salary', note: null, date: '2026-06-12' });
+    await getOrCreateCurrentAllocation('2026-06');
+    await lockAllocation('2026-06');
+  }
+
+  it('reports not over when the expense stays within the budget', async () => {
+    await seedLockedJune();
+    await createExpense({
+      amount: 250000,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: '2026-06-10',
+      isRecurring: false,
+    });
+
+    const result = await checkOverBudget('2026-06', 5000); // 255000 ≤ 260000
+    expect(result.isOver).toBe(false);
+    expect(result.overage).toBe(0);
+    expect(result.expenseBudget).toBe(260000);
+    expect(result.remaining).toBe(10000);
+  });
+
+  it('reports over with the exact overage when the expense exceeds the budget', async () => {
+    await seedLockedJune();
+    await createExpense({
+      amount: 250000,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: '2026-06-10',
+      isRecurring: false,
+    });
+
+    const result = await checkOverBudget('2026-06', 15000); // 265000 > 260000
+    expect(result.isOver).toBe(true);
+    expect(result.overage).toBe(5000);
+  });
+
+  it('treats an expense landing exactly on the budget as not over', async () => {
+    await seedLockedJune();
+    await createExpense({
+      amount: 250000,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: '2026-06-10',
+      isRecurring: false,
+    });
+
+    const result = await checkOverBudget('2026-06', 10000); // 260000 == budget
+    expect(result.isOver).toBe(false);
+    expect(result.overage).toBe(0);
+  });
+
+  it('never reports over while the allocation is unlocked (learning / unconfirmed month)', async () => {
+    // Income exists and the auto-created allocation has a non-zero expense
+    // budget, but the month is not locked, so the guard stays inert.
+    await createIncome({ amount: 400000, source: 'salary', note: null, date: '2026-07-12' });
+
+    const result = await checkOverBudget('2026-07', 999999);
+    expect(result.isOver).toBe(false);
+    expect(result.overage).toBe(0);
   });
 });
 
