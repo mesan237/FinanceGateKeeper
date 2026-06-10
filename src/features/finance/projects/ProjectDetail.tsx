@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { ProgressBar } from '@/components/ProgressBar';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
@@ -44,6 +45,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader title="Project" />
       <View style={styles.rowHeader}>
         <Typography variant="heading">{project.name}</Typography>
         <Typography variant="muted">{PROJECT_STATUS_LABELS[project.status]}</Typography>

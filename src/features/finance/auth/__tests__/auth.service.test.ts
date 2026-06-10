@@ -17,8 +17,10 @@ jest.mock('@/services/database', () => {
 });
 
 import {
+  getActionBarStyle,
   getAppSettings,
   isMonth1Complete,
+  setActionBarStyle,
   setAppMode,
   setNotificationsEnabled,
   setReminderTime,
@@ -86,6 +88,21 @@ describe('setNotificationsEnabled', () => {
   it('toggles and survives a re-read', async () => {
     await setNotificationsEnabled(false);
     expect((await getAppSettings()).notificationsEnabled).toBe(false);
+  });
+});
+
+describe('getActionBarStyle', () => {
+  it('returns "explicit" when no users row exists yet', async () => {
+    expect(await getActionBarStyle()).toBe('explicit');
+  });
+
+  it('returns the updated value after setActionBarStyle', async () => {
+    await setActionBarStyle('speed_dial');
+    expect(await getActionBarStyle()).toBe('speed_dial');
+  });
+
+  it('setActionBarStyle throws for an unrecognised value', async () => {
+    await expect(setActionBarStyle('marquee' as never)).rejects.toThrow();
   });
 });
 

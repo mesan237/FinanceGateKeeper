@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { getTransactionFeed } from '@/services/transactions';
+import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
 
 import * as expenseService from './expenses.service';
@@ -12,7 +14,6 @@ import type {
   NewRecurringExpense,
   QuickAddTemplate,
   RecurringExpense,
-  TransactionFilter,
 } from './expenses.types';
 
 /**
@@ -74,44 +75,46 @@ export function useExpenseLog() {
 }
 
 /**
- * Loads transactions, re-querying whenever the filter changes. Filtering is
- * done in SQL (not in memory): a category filter takes precedence, then a
- * date range, otherwise all expenses are returned.
+ * Loads the unified income+expense feed for a calendar month, re-querying
+ * whenever `monthISO` or `categoryId` changes. An optional `categoryId` filter
+ * is applied client-side: expense rows matching the category are kept; income
+ * rows are always included regardless of the active category chip.
+ *
+ * @param monthISO YYYY-MM string, e.g. "2026-06".
+ * @param categoryId If set, hides expense rows that don't match this category.
  */
-export function useTransactions(filter?: TransactionFilter) {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+export function useTransactions(
+  monthISO: string,
+  categoryId?: number | null,
+): { entries: TransactionEntry[]; loading: boolean; error: string | null; refresh: () => void } {
+  const [allEntries, setAllEntries] = useState<TransactionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const categoryId = filter?.categoryId;
-  const from = filter?.from;
-  const to = filter?.to;
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      let result: Expense[];
-      if (categoryId != null) {
-        result = await expenseService.getExpensesByCategory(categoryId);
-      } else if (from != null && to != null) {
-        result = await expenseService.getExpensesByDateRange(from, to);
-      } else {
-        result = await expenseService.getAllExpenses();
-      }
-      setExpenses(result);
+      setAllEntries(await getTransactionFeed(monthISO));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load transactions.');
     } finally {
       setLoading(false);
     }
-  }, [categoryId, from, to]);
+  }, [monthISO]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  return { expenses, loading, error, refresh };
+  const entries = useMemo(() => {
+    if (categoryId == null) return allEntries;
+    return allEntries.filter(
+      (e) => e.type === 'income' || e.categoryId === categoryId,
+    );
+  }, [allEntries, categoryId]);
+
+  return { entries, loading, error, refresh };
 }
 
 /**

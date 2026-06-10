@@ -1,102 +1,214 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import type { Expense } from '@/features/finance/expenses/expenses.types';
+import type { TransactionEntry } from '@/types/transactions';
 
-const FOOD_BIG: Expense = {
-  id: 10,
-  amount: 2000,
-  categoryId: 1,
-  subcategoryId: 2,
-  note: null,
-  date: '2026-06-20',
-  isRecurring: false,
-  createdAt: '2026-06-20T00:00:00.000Z',
-};
-const TRANSPORT: Expense = {
-  id: 11,
-  amount: 1500,
-  categoryId: 3,
-  subcategoryId: 4,
-  note: null,
-  date: '2026-06-10',
-  isRecurring: false,
-  createdAt: '2026-06-10T00:00:00.000Z',
-};
-const FOOD_SMALL: Expense = {
-  id: 12,
-  amount: 500,
-  categoryId: 1,
-  subcategoryId: null,
-  note: null,
-  date: '2026-06-01',
-  isRecurring: false,
-  createdAt: '2026-06-01T00:00:00.000Z',
-};
+const mockGetFeed = jest.fn();
+jest.mock('@/services/transactions', () => ({
+  getTransactionFeed: (...args: unknown[]) => mockGetFeed(...args),
+}));
 
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
-  getAllExpenses: jest.fn(),
-  getExpensesByCategory: jest.fn(),
-  getExpensesByDateRange: jest.fn(),
   getAllCategories: jest.fn().mockResolvedValue([
-    { id: 1, name: 'Food', parentId: null, isDefault: true },
-    { id: 2, name: 'Restaurant', parentId: 1, isDefault: true },
-    { id: 3, name: 'Transport', parentId: null, isDefault: true },
-    { id: 4, name: 'Taxi', parentId: 3, isDefault: true },
+    { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, sortOrder: 0 },
+    { id: 5, name: 'Transport', parentId: null, isDefault: true, isHidden: false, sortOrder: 1 },
   ]),
 }));
 
-import { TransactionList } from '@/features/finance/expenses/TransactionList';
-import {
-  getAllExpenses,
-  getExpensesByCategory,
-} from '@/features/finance/expenses/expenses.service';
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+}));
 
-const mockedGetAll = getAllExpenses as jest.MockedFunction<typeof getAllExpenses>;
-const mockedByCategory = getExpensesByCategory as jest.MockedFunction<
-  typeof getExpensesByCategory
->;
+// Freeze "today" so date-label tests are deterministic.
+const TODAY = '2026-06-10';
+jest.mock('@/utils/formatDate', () => {
+  const actual = jest.requireActual('@/utils/formatDate');
+  return {
+    ...actual,
+    currentMonthISO: () => '2026-06',
+    toISODate: actual.toISODate,
+    formatSectionDate: (d: string) => actual.formatSectionDate(d, TODAY),
+  };
+});
+
+import { TransactionList } from '@/features/finance/expenses/TransactionList';
+
+const EXPENSE_TODAY: TransactionEntry = {
+  type: 'expense',
+  id: 1,
+  amount: 2000,
+  date: TODAY,
+  categoryId: 1,
+  categoryLabel: 'Food',
+  subcategoryId: null,
+  subcategoryLabel: null,
+  note: null,
+};
+
+const INCOME_TODAY: TransactionEntry = {
+  type: 'income',
+  id: 10,
+  amount: 50000,
+  date: TODAY,
+  source: 'salary',
+  sourceLabel: 'Salary',
+  note: null,
+};
+
+const EXPENSE_YESTERDAY: TransactionEntry = {
+  type: 'expense',
+  id: 2,
+  amount: 1500,
+  date: '2026-06-09',
+  categoryId: 5,
+  categoryLabel: 'Transport',
+  subcategoryId: null,
+  subcategoryLabel: null,
+  note: null,
+};
+
+const EXPENSE_OTHER_MONTH: TransactionEntry = {
+  type: 'expense',
+  id: 3,
+  amount: 3000,
+  date: '2026-05-15',
+  categoryId: 1,
+  categoryLabel: 'Food',
+  subcategoryId: null,
+  subcategoryLabel: null,
+  note: null,
+};
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockGetFeed.mockResolvedValue([]);
 });
 
 describe('TransactionList', () => {
-  it('renders one row per expense, newest-first as returned by the service', async () => {
-    mockedGetAll.mockResolvedValue([FOOD_BIG, TRANSPORT, FOOD_SMALL]);
+  it('renders section headers with correct date labels', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY, EXPENSE_YESTERDAY]);
     render(<TransactionList />);
 
-    await screen.findByText('2 000 FCFA');
-    const amounts = screen.getAllByText(/FCFA/).map((node) => node.props.children);
-    expect(amounts).toEqual(['2 000 FCFA', '1 500 FCFA', '500 FCFA']);
+    await waitFor(() => {
+      expect(screen.getByTestId('section-net-2026-06-10')).toBeTruthy();
+    });
+    // The section title is a sibling Typography in the same header row.
+    expect(screen.getByText('Today')).toBeTruthy();
+    expect(screen.getByText('Yesterday')).toBeTruthy();
   });
 
-  it('labels a row with the subcategory name, falling back to the parent', async () => {
-    mockedGetAll.mockResolvedValue([FOOD_BIG, FOOD_SMALL]);
+  it('section header right side shows the day net total', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY, INCOME_TODAY]);
     render(<TransactionList />);
 
-    expect(await screen.findByText('Restaurant · 20 Jun')).toBeTruthy(); // subcategory
-    expect(screen.getByText('Food · 1 Jun')).toBeTruthy(); // parent fallback
+    // Net = expenses - income. Income 50000 - Expense 2000 = net income 48000
+    // Negative net (income surplus) displays as −48 000 FCFA
+    await waitFor(() => {
+      expect(screen.getByTestId('section-net-2026-06-10')).toBeTruthy();
+    });
   });
 
-  it('hides non-matching rows when filtered by category', async () => {
-    mockedGetAll.mockResolvedValue([FOOD_BIG, TRANSPORT, FOOD_SMALL]);
-    mockedByCategory.mockResolvedValue([FOOD_BIG, FOOD_SMALL]);
+  it('income rows have green left-border testID', async () => {
+    mockGetFeed.mockResolvedValue([INCOME_TODAY]);
     render(<TransactionList />);
 
-    await screen.findByText('Taxi · 10 Jun');
+    await waitFor(() => {
+      expect(screen.getByTestId('tx-row-income-10')).toBeTruthy();
+    });
+  });
 
+  it('expense rows have muted left-border testID', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tx-row-expense-1')).toBeTruthy();
+    });
+  });
+
+  it('income rows are not tappable (no onPress)', async () => {
+    mockGetFeed.mockResolvedValue([INCOME_TODAY]);
+    render(<TransactionList />);
+
+    const row = await screen.findByTestId('tx-row-income-10');
+    // Pressing an income row should not throw (it simply has no handler)
+    expect(() => fireEvent.press(row)).not.toThrow();
+  });
+
+  it('renders empty state when feed is empty', async () => {
+    mockGetFeed.mockResolvedValue([]);
+    render(<TransactionList />);
+
+    expect(await screen.findByText(/No transactions in/)).toBeTruthy();
+  });
+
+  it('category chip filter shows income rows always; hides non-matching expenses', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY, INCOME_TODAY, EXPENSE_YESTERDAY]);
+    render(<TransactionList />);
+
+    await screen.findByTestId('tx-row-expense-1');
+
+    // Press the "Food" chip → only Food expenses and all income should remain
     fireEvent.press(screen.getByRole('button', { name: 'Food' }));
 
-    await waitFor(() => expect(mockedByCategory).toHaveBeenCalledWith(1));
-    await waitFor(() => expect(screen.queryByText('Taxi · 10 Jun')).toBeNull());
-    expect(screen.getByText('2 000 FCFA')).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.queryByTestId('tx-row-expense-2')).toBeNull(); // Transport gone
+    });
+    expect(screen.getByTestId('tx-row-income-10')).toBeTruthy(); // income stays
+    expect(screen.getByTestId('tx-row-expense-1')).toBeTruthy(); // Food stays
   });
 
-  it('shows the empty state when no expenses match', async () => {
-    mockedGetAll.mockResolvedValue([]);
+  it('prev arrow navigates to the previous month and re-fetches', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
     render(<TransactionList />);
 
-    expect(await screen.findByText('No transactions yet.')).toBeTruthy();
+    await screen.findByTestId('tx-row-expense-1');
+    fireEvent.press(screen.getByTestId('month-nav-prev'));
+
+    await waitFor(() => {
+      expect(mockGetFeed).toHaveBeenCalledWith('2026-05');
+    });
+  });
+
+  it('next arrow is disabled when viewing the current calendar month', async () => {
+    mockGetFeed.mockResolvedValue([]);
+    render(<TransactionList />);
+
+    await screen.findByText(/No transactions in/);
+    const nextBtn = screen.getByTestId('month-nav-next');
+    expect(nextBtn.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('expense rows render the mapped category icon', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tx-icon-expense-1')).toBeTruthy();
+    });
+  });
+
+  it('income rows render the mapped source icon', async () => {
+    mockGetFeed.mockResolvedValue([INCOME_TODAY]);
+    render(<TransactionList />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tx-icon-income-10')).toBeTruthy();
+    });
+  });
+
+  it('an expense with unknown category renders a letter-avatar fallback', async () => {
+    const unknownCatExpense: TransactionEntry = {
+      ...EXPENSE_TODAY,
+      id: 99,
+      categoryId: 99999,
+      categoryLabel: 'Zap',
+    };
+    mockGetFeed.mockResolvedValue([unknownCatExpense]);
+    render(<TransactionList />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('tx-avatar-expense-99')).toBeTruthy();
+    });
   });
 });

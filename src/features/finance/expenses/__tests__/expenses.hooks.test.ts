@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
+jest.mock('@/services/transactions', () => ({ getTransactionFeed: jest.fn() }));
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(7),
   getAllExpenses: jest.fn().mockResolvedValue([]),
@@ -24,11 +26,14 @@ import {
   useZeroDay,
 } from '@/features/finance/expenses/expenses.hooks';
 import * as service from '@/features/finance/expenses/expenses.service';
+import { getTransactionFeed } from '@/services/transactions';
 
 const mocked = service as jest.Mocked<typeof service>;
+const mockedGetFeed = getTransactionFeed as jest.MockedFunction<typeof getTransactionFeed>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockedGetFeed.mockResolvedValue([]);
 });
 
 describe('useExpenseLog', () => {
@@ -83,22 +88,41 @@ describe('useExpenseLog', () => {
 });
 
 describe('useTransactions', () => {
-  it('loads all expenses when no filter is given', async () => {
-    renderHook(() => useTransactions());
-    await waitFor(() => expect(mocked.getAllExpenses).toHaveBeenCalledTimes(1));
-    expect(mocked.getExpensesByCategory).not.toHaveBeenCalled();
+  const EXPENSE_ENTRY = {
+    type: 'expense' as const,
+    id: 1, amount: 1000, date: '2026-06-01',
+    categoryId: 3, categoryLabel: 'Food',
+    subcategoryId: null, subcategoryLabel: null, note: null,
+  };
+  const TRANSPORT_ENTRY = {
+    type: 'expense' as const,
+    id: 2, amount: 2000, date: '2026-06-01',
+    categoryId: 5, categoryLabel: 'Transport',
+    subcategoryId: null, subcategoryLabel: null, note: null,
+  };
+  const INCOME_ENTRY = {
+    type: 'income' as const,
+    id: 3, amount: 50000, date: '2026-06-01',
+    source: 'salary', sourceLabel: 'Salary', note: null,
+  };
+
+  it('calls getTransactionFeed with the given monthISO on mount', async () => {
+    renderHook(() => useTransactions('2026-06'));
+    await waitFor(() => expect(mockedGetFeed).toHaveBeenCalledWith('2026-06'));
   });
 
-  it('filters by category when a categoryId is given', async () => {
-    renderHook(() => useTransactions({ categoryId: 3 }));
-    await waitFor(() => expect(mocked.getExpensesByCategory).toHaveBeenCalledWith(3));
+  it('returns all entries when no categoryId filter is provided', async () => {
+    mockedGetFeed.mockResolvedValue([EXPENSE_ENTRY, INCOME_ENTRY]);
+    const { result } = renderHook(() => useTransactions('2026-06'));
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(result.current.entries).toEqual([EXPENSE_ENTRY, INCOME_ENTRY]);
   });
 
-  it('filters by date range when from/to are given', async () => {
-    renderHook(() => useTransactions({ from: '2026-06-01', to: '2026-06-30' }));
-    await waitFor(() =>
-      expect(mocked.getExpensesByDateRange).toHaveBeenCalledWith('2026-06-01', '2026-06-30'),
-    );
+  it('filters expense entries by categoryId but keeps all income entries', async () => {
+    mockedGetFeed.mockResolvedValue([EXPENSE_ENTRY, TRANSPORT_ENTRY, INCOME_ENTRY]);
+    const { result } = renderHook(() => useTransactions('2026-06', 3));
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(result.current.entries.map((e) => e.id)).toEqual([1, 3]);
   });
 });
 

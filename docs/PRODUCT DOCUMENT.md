@@ -45,6 +45,7 @@ Rules:
 - **Quick-add:** user-configurable shortcuts (e.g., "Taxi 500 FCFA").
 - **Recurring expenses:** rent, data, electricity auto-log on schedule; editable/skippable.
 - **Zero-day confirmation:** if nothing logged by end of day, app asks the user to confirm a no-spend day.
+- **Edit / Delete:** tapping an existing expense row opens a pre-filled edit form. Any field (amount, category, note, date) can be corrected and saved. The over-budget check re-runs when the amount changes. Expenses can be deleted with a one-step confirmation modal.
 
 ### 5.4 Categories & Subcategories
 Defaults (all user-editable: add, rename, delete):
@@ -99,6 +100,16 @@ Category is required on every expense; subcategory is optional but encouraged.
 
 **Monthly:** income vs. expenses, allocation performance per bucket, category/subcategory breakdown with charts, fund and project progress, ledger summary, MoM comparison, optimization suggestions.
 
+### 5.13 Navigation & Action Bar
+
+- Every pushed screen (forms, detail views, list screens outside the tab bar) shows a header with a back button. Form screens show "Cancel" to signal that navigating back discards unsaved changes.
+- The Transactions tab action bar supports two styles, selectable in Settings:
+  - **Explicit buttons (default):** Quick Add as a compact secondary button; + Log Expense as the primary button — both always visible.
+  - **Speed dial:** a single "+" FAB that expands to Log Expense and Quick Add as labelled options.
+- Log Income is accessible from the Dashboard `QuickActionBar` only, where the allocation and budget-pace impact is immediately visible on screen.
+
+---
+
 ### 5.12 Notifications
 
 | Trigger                                    | Message                                                                                      |
@@ -113,9 +124,11 @@ Category is required on every expense; subcategory is optional but encouraged.
 
 ## 6. Information Architecture
 
-**Bottom tabs:** Dashboard · Transactions · Budget · Projects · Reports.
+**Bottom tabs:** Dashboard · Transactions · Budget · Projects · Reports. Each tab header contains a gear icon (top-right) that opens the Settings screen.
 
-**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Settings (PIN, percentages, notifications, backup, categories).
+**Transactions tab:** Shows income entries and expense entries together in a single unified feed, grouped by day with a date section header. Default scope is the current calendar month; prev/next arrows navigate between months. A category chip row filters within the selected month. Expense rows are tappable (opens the expense edit screen); income rows are read-only in this view. Type is distinguished by a colored left border (green = income, muted = expense). Each row shows a category or source icon (Ionicons) beside the label; user-created custom categories without a mapped icon fall back to a color-letter avatar.
+
+**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Expense Detail/Edit, Settings (app mode, reminder time, notifications, action bar style, backup).
 
 ---
 

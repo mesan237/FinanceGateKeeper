@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { DANGER, TEXT_MUTED } from '@/constants/colors';
 import { DEBT_DIRECTION_LABELS, DEBT_STATUS_LABELS } from '@/constants/debt';
@@ -49,6 +50,7 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
 
   return (
     <View style={styles.container}>
+      <ScreenHeader title="Debt" />
       <Card>
         <View style={styles.rowHeader}>
           <Typography variant="heading">{debt.personName}</Typography>

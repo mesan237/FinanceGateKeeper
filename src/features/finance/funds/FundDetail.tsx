@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
@@ -41,7 +42,7 @@ export function FundDetail({ fundId }: FundDetailProps) {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">{FUND_TYPE_LABELS[fund.type]}</Typography>
+      <ScreenHeader title="Fund" />
       <FundProgressBar progress={getFundProgress(fund)} testID="fund-detail-progress" />
 
       <View style={styles.actions}>

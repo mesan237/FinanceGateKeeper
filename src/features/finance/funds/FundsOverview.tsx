@@ -3,6 +3,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { FUND_TYPE_LABELS } from '@/constants/funds';
@@ -21,7 +22,7 @@ export function FundsOverview() {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Funds</Typography>
+      <ScreenHeader title="Funds" />
 
       {loading ? (
         <Typography variant="muted">Loading…</Typography>

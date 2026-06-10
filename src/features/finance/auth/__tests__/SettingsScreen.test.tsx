@@ -7,6 +7,8 @@ jest.mock('@/features/finance/auth/auth.service', () => ({
   setAppMode: jest.fn().mockResolvedValue(undefined),
   setReminderTime: jest.fn().mockResolvedValue(undefined),
   setNotificationsEnabled: jest.fn().mockResolvedValue(undefined),
+  getActionBarStyle: jest.fn().mockResolvedValue('explicit'),
+  setActionBarStyle: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),

@@ -1,19 +1,60 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Modal } from '@/components/Modal';
+import type { ActionBarStyle } from '@/types/settings';
 
 import { TransactionList } from './TransactionList';
 
+export interface TransactionsScreenProps {
+  actionBarStyle: ActionBarStyle;
+}
+
 /**
- * The Transactions tab: the filterable transaction list plus the floating
- * "+ Log Expense" entry point. Keeping the CTA and its navigation here (not in
- * the route file) preserves the thin-route rule and keeps `TransactionList`
- * free of navigation concerns.
+ * The Transactions tab: unified income+expense feed plus the floating action
+ * bar. In `explicit` mode the bar always shows Quick Add (compact) and Log
+ * Expense (primary). In `speed_dial` mode a single "+" FAB expands to a Modal
+ * with both options — keeping the screen clean without losing discoverability.
  */
-export function TransactionsScreen() {
+export function TransactionsScreen({ actionBarStyle }: TransactionsScreenProps) {
   const router = useRouter();
+  const [dialOpen, setDialOpen] = useState(false);
+
+  if (actionBarStyle === 'speed_dial') {
+    return (
+      <View style={styles.container}>
+        <TransactionList />
+        <View style={styles.fab}>
+          <Button
+            testID="speed-dial-fab"
+            label="+"
+            onPress={() => setDialOpen(true)}
+          />
+        </View>
+
+        <Modal visible={dialOpen} onRequestClose={() => setDialOpen(false)} transparent animationType="fade">
+          <View style={styles.dialOptions}>
+            <Button
+              label="+ Log Expense"
+              onPress={() => {
+                setDialOpen(false);
+                router.push('/expenses/log');
+              }}
+            />
+            <Button
+              label="Quick Add"
+              onPress={() => {
+                setDialOpen(false);
+                router.push('/expenses/quick-add');
+              }}
+            />
+          </View>
+        </Modal>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -22,15 +63,6 @@ export function TransactionsScreen() {
         <View style={styles.secondaryRow}>
           <View style={styles.grow}>
             <Button compact label="Quick Add" onPress={() => router.push('/expenses/quick-add')} />
-          </View>
-          <View style={styles.grow}>
-            <Button compact label="Recurring" onPress={() => router.push('/expenses/recurring')} />
-          </View>
-          <View style={styles.grow}>
-            <Button compact label="Debts" onPress={() => router.push('/debt')} />
-          </View>
-          <View style={styles.grow}>
-            <Button compact label="Settings" onPress={() => router.push('/settings')} />
           </View>
         </View>
         <Button label="+ Log Expense" onPress={() => router.push('/expenses/log')} />
@@ -56,5 +88,10 @@ const styles = StyleSheet.create({
   },
   grow: {
     flex: 1,
+  },
+  dialOptions: {
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
 });

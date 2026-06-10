@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
+import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
 
 import { useAppModeContext } from './AppModeProvider';
-import { useAppSettings } from './auth.hooks';
+import { useActionBarStyle, useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
 /**
@@ -26,6 +27,7 @@ export function SettingsScreen() {
     setNotificationsEnabled,
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
+  const { style: actionBarStyle, setStyle: setActionBarStyle } = useActionBarStyle();
 
   const [reminderInput, setReminderInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -67,8 +69,8 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Typography variant="heading">Settings</Typography>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <ScreenHeader title="Settings" />
 
       <View style={styles.section}>
         <Typography variant="subheading">App mode</Typography>
@@ -112,15 +114,42 @@ export function SettingsScreen() {
           />
         </View>
       </View>
-    </View>
+
+      <View style={styles.section}>
+        <Typography variant="subheading">Action bar style</Typography>
+        <Typography variant="muted">
+          Controls how the Transactions tab action bar appears.
+        </Typography>
+        {(['explicit', 'speed_dial'] as const).map((option) => (
+          <Pressable
+            key={option}
+            testID={`settings-action-bar-${option}`}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: actionBarStyle === option }}
+            style={[styles.optionRow, actionBarStyle === option && styles.optionRowActive]}
+            onPress={() => void setActionBarStyle(option)}
+          >
+            <Typography style={actionBarStyle === option ? styles.optionTextActive : undefined}>
+              {option === 'explicit' ? 'Explicit buttons' : 'Speed dial'}
+            </Typography>
+            {actionBarStyle === option ? (
+              <Typography style={styles.checkmark}>✓</Typography>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
+  },
+  container: {
     padding: 16,
     gap: 20,
+    paddingBottom: 40,
   },
   section: {
     gap: 8,
@@ -136,5 +165,27 @@ const styles = StyleSheet.create({
   },
   error: {
     color: DANGER,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  optionRowActive: {
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: '#E8F5E9',
+  },
+  optionTextActive: {
+    color: PRIMARY_GREEN,
+    fontWeight: '600',
+  },
+  checkmark: {
+    color: PRIMARY_GREEN,
+    fontWeight: '700',
   },
 });

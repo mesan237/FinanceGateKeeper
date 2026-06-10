@@ -1,3 +1,5 @@
+const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
 const MONTHS_SHORT = [
   'Jan',
   'Feb',
@@ -97,6 +99,27 @@ export function daysBetween(a: Date | string, b: Date | string): number {
   const startOfDay = (value: Date | string): number =>
     asDate(toISODate(asDate(value))).getTime();
   return Math.round((startOfDay(b) - startOfDay(a)) / MS_PER_DAY);
+}
+
+/**
+ * Formats a date as a section-header label for the transaction list.
+ * Returns "Today", "Yesterday", or a short weekday+day+month string
+ * like "Mon 9 Jun". The `today` param is injectable for tests.
+ *
+ * @param dateISO YYYY-MM-DD string.
+ * @param todayISO Reference "today" (default: current UTC date).
+ */
+export function formatSectionDate(dateISO: string, todayISO?: string): string {
+  const ref = todayISO ?? toISODate(new Date());
+  if (dateISO === ref) return 'Today';
+
+  const refDate = asDate(ref);
+  refDate.setUTCDate(refDate.getUTCDate() - 1);
+  if (dateISO === toISODate(refDate)) return 'Yesterday';
+
+  const d = asDate(dateISO);
+  const day = DAYS_SHORT[d.getUTCDay()];
+  return `${day} ${d.getUTCDate()} ${MONTHS_SHORT[d.getUTCMonth()]}`;
 }
 
 /**
