@@ -27,6 +27,7 @@ import {
   getMonthlyBudget,
   getOrCreateCurrentAllocation,
   lockAllocation,
+  redistributeEmergencyPct,
   updateAllocation,
 } from '@/features/finance/budget/budget.service';
 import { createIncome } from '@/features/finance/income/income.service';
@@ -320,5 +321,50 @@ describe('getMonthlyBudget', () => {
     });
     expect(budget.expensesLogged).toBe(0);
     expect(budget.expensesRemaining).toBe(0);
+  });
+});
+
+describe('redistributeEmergencyPct', () => {
+  it('zeroes emergency and splits its pct proportionally, still summing to 100', async () => {
+    // Default: emergency 10, savings 10, projects 15, expenses 65 (others = 90).
+    await getOrCreateCurrentAllocation('2026-06');
+
+    await redistributeEmergencyPct('2026-06');
+
+    const a = await getAllocation('2026-06');
+    expect(a?.emergencyFundPct).toBe(0);
+    // floor(10*10/90)=1 → savings 11; floor(10*15/90)=1 → projects 16;
+    // expenses takes the remainder → 65 + (10 - 1 - 1) = 73.
+    expect(a?.savingsPct).toBe(11);
+    expect(a?.projectsPct).toBe(16);
+    expect(a?.expensesPct).toBe(73);
+    expect(
+      (a?.emergencyFundPct ?? 0) +
+        (a?.savingsPct ?? 0) +
+        (a?.projectsPct ?? 0) +
+        (a?.expensesPct ?? 0),
+    ).toBe(100);
+  });
+
+  it('is a no-op when the emergency percentage is already 0', async () => {
+    await getOrCreateCurrentAllocation('2026-06');
+    await redistributeEmergencyPct('2026-06');
+    const once = await getAllocation('2026-06');
+
+    await redistributeEmergencyPct('2026-06');
+    const twice = await getAllocation('2026-06');
+
+    expect(twice).toEqual(once);
+  });
+
+  it('writes through a locked allocation (the documented lock exception)', async () => {
+    await getOrCreateCurrentAllocation('2026-06');
+    await lockAllocation('2026-06');
+
+    await redistributeEmergencyPct('2026-06');
+
+    const a = await getAllocation('2026-06');
+    expect(a?.isLocked).toBe(true);
+    expect(a?.emergencyFundPct).toBe(0);
   });
 });

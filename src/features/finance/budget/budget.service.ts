@@ -13,6 +13,10 @@ import type {
   MonthlyBudget,
 } from './budget.types';
 
+// Redistribution lives in its own module (decoupled, no cross-import) but is
+// re-exported here so callers keep a single budget-service entry point.
+export { redistributeEmergencyPct } from './budget.redistribution';
+
 interface AllocationRow {
   id: number;
   month: string;

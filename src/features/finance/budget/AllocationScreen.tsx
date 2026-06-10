@@ -8,8 +8,11 @@ import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
 import { DANGER } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { depositToFund } from '@/features/finance/funds/funds.service';
+import { fundProjects } from '@/features/finance/projects/projects.service';
+
 import { useAllocation } from './budget.hooks';
-import { calculateBreakdown } from './budget.service';
+import { calculateBreakdown, redistributeEmergencyPct } from './budget.service';
 import type { Allocation, AllocationBreakdown } from './budget.types';
 
 export interface AllocationScreenProps {
@@ -59,6 +62,7 @@ interface AllocationScreenBodyProps {
 
 function AllocationScreenBody({
   amountFCFA,
+  monthISO,
   allocation,
   onLock,
   error,
@@ -71,6 +75,27 @@ function AllocationScreenBody({
     if (isConfirming) return;
     setIsConfirming(true);
     try {
+      const reason = `Allocation ${monthISO}`;
+      // Deposit this income's emergency/savings portions to their funds. A
+      // zero-amount bucket (e.g. emergency after redistribution) is skipped —
+      // `depositToFund` rejects non-positive amounts.
+      let emergencyMetNow = false;
+      if (breakdown.emergencyFund > 0) {
+        const result = await depositToFund('emergency', breakdown.emergencyFund, reason);
+        emergencyMetNow = result.targetNewlyMet;
+      }
+      if (breakdown.savings > 0) {
+        await depositToFund('savings', breakdown.savings, reason);
+      }
+      // When the emergency fund first meets its target, fold its percentage into
+      // the other buckets so future income stops being parked in a full fund.
+      if (emergencyMetNow) {
+        await redistributeEmergencyPct(monthISO);
+      }
+      // Fund projects by priority cascade with the projects-bucket amount.
+      if (breakdown.projects > 0) {
+        await fundProjects(breakdown.projects, reason);
+      }
       await onLock();
       router.replace('/(tabs)/dashboard');
     } finally {
