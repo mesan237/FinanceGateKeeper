@@ -27,10 +27,12 @@ import {
   createQuickAddTemplate,
   createRecurringExpense,
   deleteCategory,
+  deleteExpense,
   deleteQuickAddTemplate,
   deleteRecurringExpense,
   getAllCategories,
   getDayActivityStatus,
+  getExpenseById,
   hasExpensesOn,
   isZeroDayConfirmed,
   getAllExpenses,
@@ -47,6 +49,7 @@ import {
   setCategoryHidden,
   setRecurringActive,
   skipRecurringOccurrence,
+  updateExpense,
   updateQuickAddTemplate,
   updateRecurringExpense,
 } from '@/features/finance/expenses/expenses.service';
@@ -600,5 +603,77 @@ describe('zero-day confirmation', () => {
       hasExpenses: false,
       zeroDayConfirmed: false,
     });
+  });
+});
+
+describe('getExpenseById', () => {
+  it('returns the expense for a known id', async () => {
+    const id = await createExpense(newExpense({ amount: 2500, date: '2026-06-10' }));
+    const expense = await getExpenseById(id);
+    expect(expense).not.toBeNull();
+    expect(expense!.id).toBe(id);
+    expect(expense!.amount).toBe(2500);
+    expect(expense!.date).toBe('2026-06-10');
+  });
+
+  it('returns null for an unknown id', async () => {
+    const expense = await getExpenseById(99999);
+    expect(expense).toBeNull();
+  });
+});
+
+describe('updateExpense', () => {
+  it('persists a changed amount; re-fetching returns the new value', async () => {
+    const id = await createExpense(newExpense({ amount: 1000 }));
+    await updateExpense(id, { amount: 3000 });
+    const updated = await getExpenseById(id);
+    expect(updated!.amount).toBe(3000);
+  });
+
+  it('persists a changed categoryId; other fields remain unchanged', async () => {
+    const id = await createExpense(newExpense({ amount: 1000, categoryId: 1, note: 'keep' }));
+    await updateExpense(id, { categoryId: 9 });
+    const updated = await getExpenseById(id);
+    expect(updated!.categoryId).toBe(9);
+    expect(updated!.amount).toBe(1000);
+    expect(updated!.note).toBe('keep');
+  });
+
+  it('persists a changed note (including null)', async () => {
+    const id = await createExpense(newExpense({ note: 'old note' }));
+    await updateExpense(id, { note: null });
+    const updated = await getExpenseById(id);
+    expect(updated!.note).toBeNull();
+  });
+
+  it('persists a changed date', async () => {
+    const id = await createExpense(newExpense({ date: '2026-06-01' }));
+    await updateExpense(id, { date: '2026-06-15' });
+    const updated = await getExpenseById(id);
+    expect(updated!.date).toBe('2026-06-15');
+  });
+
+  it('throws for a non-existent id', async () => {
+    await expect(updateExpense(99999, { amount: 500 })).rejects.toThrow('Expense not found.');
+  });
+
+  it('throws when amount in patch is not a positive integer', async () => {
+    const id = await createExpense(newExpense({ amount: 1000 }));
+    await expect(updateExpense(id, { amount: 0 })).rejects.toThrow();
+    await expect(updateExpense(id, { amount: -100 })).rejects.toThrow();
+    await expect(updateExpense(id, { amount: 1.5 })).rejects.toThrow();
+  });
+});
+
+describe('deleteExpense', () => {
+  it('removes the row; subsequent getExpenseById returns null', async () => {
+    const id = await createExpense(newExpense());
+    await deleteExpense(id);
+    const result = await getExpenseById(id);
+    expect(result).toBeNull();
+  });
+
+  it('throws for a non-existent id', async () => {
+    await expect(deleteExpense(99999)).rejects.toThrow('Expense not found.');
   });
 });

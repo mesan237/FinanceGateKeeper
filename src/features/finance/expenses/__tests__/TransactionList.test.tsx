@@ -15,8 +15,9 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   ]),
 }));
 
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+  useRouter: () => ({ push: mockPush, back: jest.fn() }),
 }));
 
 // Freeze "today" so date-label tests are deterministic.
@@ -82,6 +83,7 @@ const EXPENSE_OTHER_MONTH: TransactionEntry = {
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetFeed.mockResolvedValue([]);
+  mockPush.mockReset();
 });
 
 describe('TransactionList', () => {
@@ -210,5 +212,25 @@ describe('TransactionList', () => {
     await waitFor(() => {
       expect(screen.getByTestId('tx-avatar-expense-99')).toBeTruthy();
     });
+  });
+
+  it('expense rows are tappable — pressing one calls router.push with the correct path', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    const row = await screen.findByTestId('tx-row-expense-1');
+    fireEvent.press(row);
+
+    expect(mockPush).toHaveBeenCalledWith('/expenses/1');
+  });
+
+  it('income rows are not tappable — pressing one does not call router.push', async () => {
+    mockGetFeed.mockResolvedValue([INCOME_TODAY]);
+    render(<TransactionList />);
+
+    const row = await screen.findByTestId('tx-row-income-10');
+    fireEvent.press(row);
+
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
