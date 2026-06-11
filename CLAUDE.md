@@ -26,13 +26,13 @@ Three layers — never violate these:
 - Shared infra NEVER imports from features or routes.
 
 ## Approved Cross-Feature Dependencies
-- `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`
+- `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`, `accounts` (Wallets summary)
 - `budget` → reads from `expenses` (categories), `funds` (redistribution), `projects` (funds on allocation confirm)
 - `reports` → reads from `expenses`, `income`, `budget`, `funds`, `projects`, `debt`
-- `income` → calls `budget` (triggers allocation after income log)
-- `funds` → reads `budget` (allocation percentages)
-- `projects` → reads `budget` (allocation percentages)
-- `expenses` → reads `budget` (pre-save over-budget check on the log/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry)
+- `income` → calls `budget` (triggers allocation after income log); reads `accounts` (AccountPicker on income log)
+- `funds` → reads `budget` (allocation percentages); reads `accounts` (reserved — service-level `accountId` on deposits; manual-deposit picker UI deferred)
+- `projects` → reads `budget` (allocation percentages); reads `accounts` (AccountPicker on manual contribution)
+- `expenses` → reads `budget` (pre-save over-budget check on the log/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
 All other cross-feature imports are forbidden.
 
 ## Naming Conventions

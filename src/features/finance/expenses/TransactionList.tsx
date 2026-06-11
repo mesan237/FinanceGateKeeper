@@ -7,7 +7,7 @@ import { Typography } from '@/components/Typography';
 import { BACKGROUND, DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import type { TransactionEntry } from '@/types/transactions';
+import type { ExpenseEntry, IncomeEntry, TransactionEntry } from '@/types/transactions';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { currentMonthISO, formatSectionDate } from '@/utils/formatDate';
 
@@ -30,8 +30,12 @@ function buildSections(entries: TransactionEntry[]): Section[] {
   const sortedDates = Array.from(byDate.keys()).sort((a, b) => (a > b ? -1 : 1));
   return sortedDates.map((date) => {
     const rows = byDate.get(date)!;
+    // Transfers move money between wallets without entering or leaving the
+    // budget, so they do not affect a day's net total.
     const netTotal = rows.reduce((acc, e) => {
-      return e.type === 'expense' ? acc + e.amount : acc - e.amount;
+      if (e.type === 'expense') return acc + e.amount;
+      if (e.type === 'income') return acc - e.amount;
+      return acc;
     }, 0);
     return { title: formatSectionDate(date), date, netTotal, data: rows };
   });
@@ -57,7 +61,7 @@ function Chip({ label, active, onPress }: ChipProps) {
 }
 
 interface RowIconProps {
-  entry: TransactionEntry;
+  entry: ExpenseEntry | IncomeEntry;
 }
 
 function RowIcon({ entry }: RowIconProps) {
@@ -200,6 +204,23 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
             </View>
           )}
           renderItem={({ item }) => {
+            if (item.type === 'transfer') {
+              return (
+                <View
+                  testID={`tx-row-transfer-${item.id}`}
+                  style={[styles.row, styles.rowTransferBorder]}
+                >
+                  <Typography style={styles.rowEmoji}>⇄</Typography>
+                  <Typography style={styles.rowLabel}>
+                    {item.fromAccountName} → {item.toAccountName}
+                  </Typography>
+                  <Typography style={styles.rowAmountTransfer}>
+                    {formatCurrency(item.amount)}
+                  </Typography>
+                </View>
+              );
+            }
+
             const label =
               item.type === 'expense'
                 ? (item.subcategoryLabel ?? item.categoryLabel)
@@ -209,7 +230,18 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
             const rowContent = (
               <>
                 <RowIcon entry={item} />
-                <Typography style={styles.rowLabel}>{label}</Typography>
+                <View style={styles.rowLabel}>
+                  <Typography>{label}</Typography>
+                  {item.accountLabel ? (
+                    <Typography
+                      testID={`tx-account-chip-${item.type}-${item.id}`}
+                      variant="muted"
+                      style={styles.accountChip}
+                    >
+                      {item.accountLabel}
+                    </Typography>
+                  ) : null}
+                </View>
                 <Typography style={isIncome ? styles.rowAmountIncome : styles.rowAmountExpense}>
                   {isIncome ? formatCurrency(item.amount) : `−${formatCurrency(item.amount)}`}
                 </Typography>
@@ -316,8 +348,19 @@ const styles = StyleSheet.create({
   rowExpenseBorder: {
     borderLeftColor: TEXT_MUTED,
   },
+  rowTransferBorder: {
+    borderLeftColor: PRIMARY_GREEN,
+  },
   rowLabel: {
     flex: 1,
+  },
+  accountChip: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  rowAmountTransfer: {
+    color: TEXT_MUTED,
+    fontWeight: '600',
   },
   rowAmountIncome: {
     color: SUCCESS,

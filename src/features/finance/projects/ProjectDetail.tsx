@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -9,6 +9,8 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { PROJECT_STATUS_LABELS } from '@/constants/projects';
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -40,7 +42,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
     );
   }
 
-  const pct = Math.round((project.fundedAmount / project.targetAmount) * 100);
+  const pct = Math.min(100, Math.round((project.fundedAmount / project.targetAmount) * 100));
   const paused = project.status === 'paused';
 
   return (
@@ -82,8 +84,8 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
       <AddFundsModal
         visible={addOpen}
         onClose={() => setAddOpen(false)}
-        onSubmit={async (amount) => {
-          await contribute(amount);
+        onSubmit={async (amount, accountId) => {
+          await contribute(amount, accountId);
           setAddOpen(false);
         }}
       />
@@ -108,13 +110,19 @@ function TransactionRow({ txn }: { txn: ProjectTransaction }) {
 interface AddFundsModalProps {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (amount: number) => void | Promise<void>;
+  onSubmit: (amount: number, accountId: number | null) => void | Promise<void>;
 }
 
 function AddFundsModal({ visible, onClose, onSubmit }: AddFundsModalProps) {
+  const defaultAccountId = useDefaultAccountId();
   const [amount, setAmount] = useState('');
+  const [accountId, setAccountId] = useState<number | null>(null);
   const parsed = Number(amount);
   const valid = Number.isInteger(parsed) && parsed > 0;
+
+  useEffect(() => {
+    if (accountId === null && defaultAccountId !== null) setAccountId(defaultAccountId);
+  }, [defaultAccountId, accountId]);
 
   return (
     <Modal visible={visible} onRequestClose={onClose}>
@@ -126,9 +134,19 @@ function AddFundsModal({ visible, onClose, onSubmit }: AddFundsModalProps) {
         value={amount}
         onChangeText={setAmount}
       />
+      <AccountPicker
+        testID="contribution-account"
+        label="From which account?"
+        value={accountId}
+        onChange={setAccountId}
+      />
       <View style={styles.actions}>
         <Button label="Cancel" onPress={onClose} />
-        <Button label="Confirm contribution" disabled={!valid} onPress={() => onSubmit(parsed)} />
+        <Button
+          label="Confirm contribution"
+          disabled={!valid}
+          onPress={() => onSubmit(parsed, accountId)}
+        />
       </View>
     </Modal>
   );

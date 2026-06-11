@@ -24,6 +24,7 @@ import { formatDateLong } from '@/utils/formatDate';
 import { BudgetSummaryCard } from './BudgetSummaryCard';
 import { FundStatusCard } from './FundStatusCard';
 import { QuickActionBar } from './QuickActionBar';
+import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
 interface DashboardScreenProps {
@@ -86,6 +87,10 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
 
         {/* Budget / funds / project (control mode only) */}
         {state?.budget ? <BudgetSummaryCard summary={state.budget} /> : null}
+
+        {/* Wallets — live balance per account (VS-18) */}
+        <WalletsCard />
+
         {state?.funds ? <FundStatusCard funds={state.funds} /> : null}
 
         {state?.topProject ? (

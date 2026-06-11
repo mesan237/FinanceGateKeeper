@@ -164,15 +164,16 @@ async function applyContribution(
   amount: number,
   source: 'allocation' | 'manual',
   dateISO: string,
+  accountId: number | null = null,
 ): Promise<void> {
   const newFunded = project.fundedAmount + amount;
   const status = statusFor(newFunded, project.targetAmount, project.status);
   await execute('BEGIN TRANSACTION');
   try {
     await execute(
-      `INSERT INTO project_transactions (project_id, amount, date, source, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
-      [project.id, amount, dateISO, source, new Date().toISOString()],
+      `INSERT INTO project_transactions (project_id, amount, date, source, account_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [project.id, amount, dateISO, source, accountId, new Date().toISOString()],
     );
     await execute('UPDATE projects SET funded_amount = ?, status = ? WHERE id = ?', [
       newFunded,
@@ -219,12 +220,13 @@ export async function contributeManually(
   id: number,
   amount: number,
   dateISO: string = toISODate(new Date()),
+  accountId: number | null = null,
 ): Promise<void> {
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new Error('Contribution amount must be a positive integer.');
   }
   const project = await requireProject(id);
-  await applyContribution(project, amount, 'manual', dateISO);
+  await applyContribution(project, amount, 'manual', dateISO, accountId);
 }
 
 /** Returns a project's contributions, newest first. */

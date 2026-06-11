@@ -88,6 +88,8 @@ describe('ProjectDetail', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Add funds' }));
     fireEvent.changeText(screen.getByTestId('contribution-amount'), '15000');
     fireEvent.press(screen.getByRole('button', { name: 'Confirm contribution' }));
-    await waitFor(() => expect(contribute).toHaveBeenCalledWith(15000));
+    // Second arg is the selected account id; null here since the test does not
+    // mock the accounts service so no default resolves.
+    await waitFor(() => expect(contribute).toHaveBeenCalledWith(15000, null));
   });
 });

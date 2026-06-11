@@ -509,6 +509,76 @@ Action bar style preference (migration + settings):
 
 ---
 
+### VS-18: Accounts & Payment Channels
+
+**Priority:** High
+**Blocked by:** VS-16, VS-17
+
+**Scope:**
+
+New feature slice — `src/features/finance/accounts/`:
+
+- `accounts.types.ts`: `AccountType = 'cash' | 'mobile_money' | 'bank' | 'card'`. `AccountPurpose = 'spending' | 'saving' | 'emergency' | 'general'`. `Account` (id, name, type, purpose, openingBalance, isDefault, isActive, createdAt). `Transfer` (id, fromAccountId, toAccountId, amount, date, note, createdAt). `AccountStats` (accountId, monthISO, totalIncome, totalExpenses, incomePercent, expensePercent).
+- `accounts.service.ts`: `getAccounts()`, `getAccountById(id)`, `createAccount(fields)`, `updateAccount(id, fields)`, `hideAccount(id)` (soft-delete, is_active = false), `setDefaultAccount(id)` (clears previous default first), `getAccountBalance(id)` — computed, never stored: `opening_balance + SUM(income WHERE account_id) − SUM(expenses WHERE account_id) + SUM(transfers WHERE to_account_id) − SUM(transfers WHERE from_account_id) − SUM(fund_transactions WHERE account_id AND type='deposit') − SUM(project_transactions WHERE account_id AND type='contribution')`. Automated allocation deposits carry no account_id and are excluded. `getAccountStats(id, monthISO)` — income % and expense % of that month's totals across all accounts. `logTransfer(fromId, toId, amount, date, note)`. `getTransfers(monthISO)`.
+- `accounts.hooks.ts`: `useAccounts()`, `useAccountDetail(id)`, `useAccountStats(id, monthISO)`, `useTransferLog()`.
+- `AccountsOverview.tsx`: one card per active account — account name, type icon (Ionicons: cash → `cash-outline`, mobile\_money → `phone-portrait-outline`, bank → `business-outline`, card → `card-outline`), computed balance, purpose badge, this-month income % and expense %. "Add account" button. Tap card → AccountDetail.
+- `AccountDetail.tsx` + `AccountDetailRoute.tsx`: balance hero. Stats row (month income %, expense %). Scrollable transaction history filtered to this account: income credits, expense debits, transfers in/out, manual fund contributions out, manual project contributions out — each entry shows type icon, label, amount, date. Edit button → AccountForm (edit mode).
+- `AccountForm.tsx`: name input (required), type picker with icons, purpose picker, optional opening balance input labelled "Current balance — leave blank to start from 0", set-as-default toggle. Used for both create and edit.
+- `AccountPicker.tsx`: modal listing active accounts with type icon and a default marker ("✓ Default"). Accepts `value: number | null` and `onChange: (id: number) => void`. Used by ExpenseLogScreen, ExpenseDetailScreen, IncomeLogScreen, TransferLogScreen, FundDetail, ProjectDetail.
+- `TransferLogScreen.tsx`: from-account picker (defaults to is\_default account), to-account picker, amount input, date (defaults today), optional note. Validates that from ≠ to. Save calls `logTransfer` and navigates back.
+
+Migrations:
+
+- Migration 018: create `accounts` table. Seed three rows: `{ name: 'Cash', type: 'cash', purpose: 'spending', opening_balance: 0, is_default: 1 }`, `{ name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', opening_balance: 0, is_default: 0 }`, `{ name: 'Orange Money', type: 'mobile_money', purpose: 'general', opening_balance: 0, is_default: 0 }`.
+- Migration 019: add nullable `account_id INTEGER REFERENCES accounts(id)` to `expenses`, `income`, `fund_transactions`, `project_transactions`. Existing rows get NULL (legacy; no account associated).
+- Migration 020: create `transfers` table (id INTEGER PRIMARY KEY, from\_account\_id INTEGER NOT NULL REFERENCES accounts(id), to\_account\_id INTEGER NOT NULL REFERENCES accounts(id), amount INTEGER NOT NULL, date TEXT NOT NULL, note TEXT, created\_at TEXT NOT NULL).
+
+Routes:
+
+- `app/accounts/index.tsx` → thin route, renders `AccountsOverview`.
+- `app/accounts/[id].tsx` → thin route, renders `AccountDetailRoute`.
+- `app/accounts/create.tsx` → thin route, renders `AccountForm` in create mode.
+- `app/transfers/log.tsx` → thin route, renders `TransferLogScreen`.
+
+Updates to existing code:
+
+- `ExpenseLogScreen.tsx` + `ExpenseDetailScreen.tsx`: add optional `AccountPicker` (defaults to is\_default account). Passes selected `accountId` to `createExpense` / `updateExpense`.
+- `IncomeLogScreen.tsx`: add optional `AccountPicker` (defaults to is\_default).
+- `QuickAddScreen.tsx` template form (`QuickAddTemplateForm.tsx`): add account field so each template carries a default account.
+- `FundDetail.tsx`: manual deposit section adds `AccountPicker` labelled "From which account?".
+- `ProjectDetail.tsx`: manual contribution section adds `AccountPicker`.
+- `TransactionsScreen.tsx`: FAB updated — explicit mode: Quick Add (compact) | Transfer (compact) | + Log Expense (primary); speed-dial mode: expands to Log Expense, Quick Add, Log Transfer. Transfer button navigates to `/transfers/log`.
+- `services/transactions.ts` (VS-16): `getTransactionFeed` extended to join and include transfers. `TransactionEntry` union type extended with `TransferEntry` (type: `'transfer'`, fromAccountName, toAccountName, amount, date).
+- `TransactionList.tsx`: transfer rows render with `⇄` icon, "Cash → MTN MoMo" label, amount. Expense and income rows gain a small account name chip (omitted when `account_id` is null — legacy records before VS-18).
+- `DashboardScreen.tsx`: add a compact "Wallets" section below the budget summary — one row per active account showing name and live balance. Tap navigates to `/accounts`.
+- `expenses.service.ts`: `createExpense` + `updateExpense` accept optional `accountId`.
+- `income.service.ts`: `createIncome` accepts optional `accountId`.
+- `funds.service.ts`: manual deposit function accepts optional `accountId`, stored on the `fund_transactions` row.
+- `projects.service.ts`: `contributeManually` accepts optional `accountId`, stored on the `project_transactions` row.
+
+Approved cross-feature edges to add (ARCHITECTURE.md + CLAUDE.md):
+
+- `expenses` → reads from `accounts` (AccountPicker in ExpenseLogScreen and ExpenseDetailScreen)
+- `income` → reads from `accounts` (AccountPicker in IncomeLogScreen)
+- `funds` → reads from `accounts` (AccountPicker in FundDetail manual deposit)
+- `projects` → reads from `accounts` (AccountPicker in ProjectDetail manual contribution)
+- `dashboard` → reads from `accounts` (Wallets summary section)
+
+**TDD Anchor:**
+
+- Test: `accounts.service.ts` — migration seeds Cash, MTN MoMo, Orange Money correctly; `getAccountBalance` correctly sums income credits, expense debits, transfers in/out, manual fund contributions, and manual project contributions while excluding automated allocation deposits (null account\_id rows); `logTransfer` creates the transfer record; `getAccountStats` returns correct income/expense percentages for a month where multiple accounts are active; `setDefaultAccount` clears the previous default before setting the new one; `hideAccount` removes the account from `getAccounts` but does not delete its transaction history.
+- Test: `AccountsOverview` — renders all active accounts with balance and purpose badge; hidden accounts absent; "Add account" navigates to `/accounts/create`; tapping a card navigates to `/accounts/[id]`.
+- Test: `AccountDetail` — renders balance and stats; shows income entries, expense entries, transfers, and fund/project contributions for that account only; edit button navigates to `AccountForm` in edit mode.
+- Test: `AccountForm` — name is required; type and purpose pickers persist; optional balance defaults to 0 when blank; set-as-default toggle calls `setDefaultAccount`; submit in create mode calls `createAccount`, in edit mode calls `updateAccount`.
+- Test: `AccountPicker` — renders active accounts with type icons; default account shows checkmark marker; selecting an account fires `onChange` with its id; hidden accounts not listed.
+- Test: `TransferLogScreen` — from and to account pickers are required; selecting the same account for both shows a validation error; amount must be > 0; save calls `logTransfer` with correct params and navigates back.
+- Test: `TransactionList` — transfer entries render with `⇄` icon and from→to label; expense rows with non-null account\_id show account chip; expense rows with null account\_id (legacy) render without chip.
+- Test: `DashboardScreen` Wallets section — renders one row per active account; balance reflects mock service return; tapping navigates to `/accounts`.
+
+**Done when:** The Dashboard shows a Wallets section with live balances per account. AccountsOverview shows income % and expense % per account for the current month alongside purpose badges. Tapping an account shows its full transaction history. Transfers are logged from the Transactions FAB (explicit and speed-dial modes), appear in the unified feed with a `⇄` icon, and correctly adjust both account balances. Expense, income, manual fund deposit, and project contribution screens have an optional account picker that pre-fills with the default account. Automated allocation deposits do not affect account balances. All tests pass.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -529,7 +599,8 @@ VS-01 (Scaffold)
 ├── VS-14 (Reports) ◄── VS-03, VS-05, VS-06, VS-09, VS-10, VS-11
 ├── VS-15 (Supabase Sync) ◄── VS-02, VS-03, VS-05, VS-06
 ├── VS-16 (Transaction UX) ◄── VS-03, VS-05, VS-08
-└── VS-17 (Expense Edit & Delete) ◄── VS-16
+│   ├── VS-17 (Expense Edit & Delete) ◄── VS-16
+│   └── VS-18 (Accounts & Payment Channels) ◄── VS-16, VS-17
 ```
 
 ## PARALLEL LANES
@@ -546,7 +617,8 @@ These tasks can run simultaneously if using multiple agents:
 | VS-10  | VS-12  | —      |
 | VS-13  | VS-14  | VS-15  |
 | VS-16  | VS-14  | VS-15  |
-| VS-17  | —      | —      |
+| VS-17  | VS-18  | —      |
+| VS-18  | —      | —      |
 
 ---
 
@@ -571,3 +643,4 @@ These tasks can run simultaneously if using multiple agents:
 | VS-15: Supabase Sync          | ✅ Done | Decoupled email/password cloud identity (SecureStore session, not PIN-linked) → migration 017 adds uuid/updated_at/sync_status + dirty-marking triggers (with `_sync_guard` + `NEW.uuid IS NULL` loop-suppression) + `sync_meta` cursor to 12 financial tables (users excluded; default categories get deterministic uuids) → services/sync.ts local-first push/pull, last-write-wins (local breaks ties), FK uuid↔local-id round-trip via sync.mapping.ts → useCloudSync + useBackgroundSync (on-open/on-foreground, signed-in-guarded, mounted in _layout) → Settings "Cloud backup" section. Supabase fully mocked in tests; supabase/schema.sql (uuid-keyed, owner-scoped RLS; supersedes the old integer-id schema) for manual server setup. code-reviewer APPROVE (no BLOCK). 523/523 tests (1 pre-existing flaky auth CHECK test unrelated to VS-15). |
 | VS-16: Transaction UX Enhancement | ✅ Done | ScreenHeader shared component, Settings gear in tab headers, SectionList date grouping, unified income+expense feed (services/transactions.ts), month-scoped filter with prev/next nav, FAB = Quick Add + Log Expense only (Log Income stays on Dashboard), action bar style preference (explicit/speed-dial) with migration 016 + settings toggle, category icons via Ionicons (constants/categoryIcons.ts) in TransactionList + QuickAddScreen + CategoryPicker. ActionBarStyle lifted to src/types/settings.ts (no cross-feature edge). Blocked by VS-03, VS-05, VS-08. 460/460 tests passing. |
 | VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |
+| VS-18: Accounts & Payment Channels | ✅ Done | accounts feature slice (AccountsOverview, AccountDetail+Route, AccountForm, AccountPicker, TransferLogScreen) + accounts.service/balance/hooks/types/accountIcons; migrations 018 (accounts table + seed Cash/MTN MoMo/Orange Money), 019 (account_id nullable on expenses/income/fund_transactions/project_transactions), 020 (transfers table), 021 (sync wiring: accounts/transfers join SYNCED_TABLES + account_id FK mapping in sync.mapping + recreated child update triggers; 017 refactored to export addSyncColumns/createUpdateTrigger/DATA_COLUMNS and skip not-yet-existing tables); getAccountBalance computed from history (opening + income + transfers_in − expenses − transfers_out − manual fund/project deposits; null account_id = automated allocation, excluded); getAccountStats income/expense %; Wallets section on Dashboard (WalletsCard); "Log a transfer" link in the Add-Transaction sheet → /transfers/log; AccountPicker (defaults to is_default) on ExpenseEntryPanel, ExpenseDetailScreen, IncomeEntryPanel, ProjectDetail; transfer (⇄) entries + account chips in unified feed (services/transactions.ts + TransferEntry); cross-feature edges expenses/income/projects/dashboard → accounts (funds → accounts reserved: service-level accountId, manual-deposit UI deferred since fund deposits are allocation-driven). Blocked by VS-16, VS-17. code-reviewer APPROVE WITH NITS (nits addressed: default-set wrapped in txns, redundant ORDER BY dropped, funds edge annotated). 591/592 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |

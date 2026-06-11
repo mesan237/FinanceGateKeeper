@@ -11,6 +11,7 @@ export const SYNCED_TABLES = [
   'categories',
   'funds',
   'projects',
+  'accounts',
   'expenses',
   'income',
   'allocations',
@@ -20,9 +21,17 @@ export const SYNCED_TABLES = [
   'recurring_expenses',
   'zero_days',
   'debts',
+  'transfers',
 ] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
+
+// `accounts` and `transfers` are created by later migrations (018/020), so this
+// migration cannot provision their sync columns — migration 021 does that. This
+// migration only touches the tables that already exist when it runs.
+const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
+  (t) => t !== 'accounts' && t !== 'transfers',
+);
 
 /**
  * The data columns per synced table (every original column except the `id`
@@ -30,8 +39,14 @@ export type SyncedTable = (typeof SYNCED_TABLES)[number];
  * these changes — never when the engine writes `uuid`/`updated_at`/`sync_status`
  * — so marking a row synced after a push cannot re-arm the dirty flag.
  */
-const DATA_COLUMNS: Record<SyncedTable, string[]> = {
+// The child tables (expenses/income/fund_transactions/project_transactions)
+// deliberately omit `account_id` here: this migration runs before migration 019
+// adds that column, so its trigger cannot reference it. Migration 021 recreates
+// those triggers with `account_id` appended once the column exists.
+export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
   categories: ['name', 'parent_id', 'is_default', 'sort_order', 'is_hidden'],
+  accounts: ['name', 'type', 'purpose', 'opening_balance', 'is_default', 'is_active', 'created_at'],
+  transfers: ['from_account_id', 'to_account_id', 'amount', 'date', 'note', 'created_at'],
   funds: ['type', 'target_amount', 'current_amount', 'is_target_met', 'created_at'],
   projects: [
     'name',
@@ -100,7 +115,32 @@ const NOW = `strftime('%Y-%m-%dT%H:%M:%fZ','now')`;
 const NEW_UUID = `lower(hex(randomblob(16)))`;
 const GUARD_OFF = `(SELECT active FROM _sync_guard WHERE id = 1) = 0`;
 
-async function addSyncColumns(db: SqliteDriver, table: SyncedTable): Promise<void> {
+/**
+ * Creates (replacing any existing) the dirty-marking `AFTER UPDATE OF` trigger
+ * for a table over the given data columns. Exported so migration 021 can rebuild
+ * the child-table triggers once `account_id` exists. Fires only when a data
+ * column changes (not the sync columns), and only while the sync engine is not
+ * mid-write — so a pull keeps its cloud timestamp instead of re-marking pending.
+ */
+export async function createUpdateTrigger(
+  db: SqliteDriver,
+  table: string,
+  dataColumns: ReadonlyArray<string>,
+): Promise<void> {
+  await db.execute(`DROP TRIGGER IF EXISTS trg_${table}_upd`);
+  await db.execute(
+    `CREATE TRIGGER trg_${table}_upd
+       AFTER UPDATE OF ${dataColumns.join(', ')} ON ${table}
+       WHEN ${GUARD_OFF}
+     BEGIN
+       UPDATE ${table}
+         SET updated_at = ${NOW}, sync_status = 'pending'
+         WHERE rowid = NEW.rowid;
+     END`,
+  );
+}
+
+export async function addSyncColumns(db: SqliteDriver, table: SyncedTable): Promise<void> {
   await db.execute(`ALTER TABLE ${table} ADD COLUMN uuid TEXT`);
   await db.execute(`ALTER TABLE ${table} ADD COLUMN updated_at TEXT`);
   await db.execute(
@@ -141,20 +181,7 @@ async function addSyncColumns(db: SqliteDriver, table: SyncedTable): Promise<voi
      END`,
   );
 
-  // Fires only when a data column changes (not the sync columns), and only while
-  // the engine is not mid-write — so a pull overwriting a row keeps its cloud
-  // timestamp and synced status instead of bouncing back as pending.
-  const dataCols = DATA_COLUMNS[table].join(', ');
-  await db.execute(
-    `CREATE TRIGGER IF NOT EXISTS trg_${table}_upd
-       AFTER UPDATE OF ${dataCols} ON ${table}
-       WHEN ${GUARD_OFF}
-     BEGIN
-       UPDATE ${table}
-         SET updated_at = ${NOW}, sync_status = 'pending'
-         WHERE rowid = NEW.rowid;
-     END`,
-  );
+  await createUpdateTrigger(db, table, DATA_COLUMNS[table]);
 }
 
 /**
@@ -179,7 +206,7 @@ export const migration: Migration = {
       `CREATE TABLE IF NOT EXISTS sync_meta (key TEXT PRIMARY KEY, value TEXT)`,
     );
 
-    for (const table of SYNCED_TABLES) {
+    for (const table of TABLES_PROVISIONED_HERE) {
       await addSyncColumns(db, table);
     }
   },

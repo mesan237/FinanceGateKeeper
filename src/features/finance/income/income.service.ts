@@ -9,10 +9,11 @@ interface IncomeRow {
   source: Income['source'];
   note: string | null;
   date: string;
+  account_id: number | null;
   created_at: string;
 }
 
-const INCOME_COLUMNS = 'id, amount, source, note, date, created_at';
+const INCOME_COLUMNS = 'id, amount, source, note, date, account_id, created_at';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
 function mapIncome(row: IncomeRow): Income {
@@ -22,6 +23,7 @@ function mapIncome(row: IncomeRow): Income {
     source: row.source,
     note: row.note,
     date: row.date,
+    accountId: row.account_id,
     createdAt: row.created_at,
   };
 }
@@ -44,9 +46,16 @@ export async function createIncome(input: NewIncome): Promise<number> {
   }
 
   await execute(
-    `INSERT INTO income (amount, source, note, date, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
-    [input.amount, input.source, input.note ?? null, input.date, new Date().toISOString()],
+    `INSERT INTO income (amount, source, note, date, account_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      input.amount,
+      input.source,
+      input.note ?? null,
+      input.date,
+      input.accountId ?? null,
+      new Date().toISOString(),
+    ],
   );
 
   const [row] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');

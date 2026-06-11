@@ -12,11 +12,13 @@ export type Row = Record<string, unknown>;
  */
 export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
   categories: { parent_id: 'categories' },
-  expenses: { category_id: 'categories', subcategory_id: 'categories' },
+  expenses: { category_id: 'categories', subcategory_id: 'categories', account_id: 'accounts' },
+  income: { account_id: 'accounts' },
   quick_add_templates: { category_id: 'categories', subcategory_id: 'categories' },
   recurring_expenses: { category_id: 'categories', subcategory_id: 'categories' },
-  fund_transactions: { fund_id: 'funds' },
-  project_transactions: { project_id: 'projects' },
+  fund_transactions: { fund_id: 'funds', account_id: 'accounts' },
+  project_transactions: { project_id: 'projects', account_id: 'accounts' },
+  transfers: { from_account_id: 'accounts', to_account_id: 'accounts' },
 };
 
 const columnCache = new Map<string, string[]>();

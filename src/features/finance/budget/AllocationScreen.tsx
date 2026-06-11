@@ -94,8 +94,9 @@ function AllocationScreenBody({
         await redistributeEmergencyPct(monthISO);
       }
       // Fund projects by priority cascade with the projects-bucket amount.
+      // (No reason/date arg — fundProjects records each contribution dated today.)
       if (breakdown.projects > 0) {
-        await fundProjects(breakdown.projects, reason);
+        await fundProjects(breakdown.projects);
       }
       await onLock();
       router.replace('/(tabs)/dashboard');

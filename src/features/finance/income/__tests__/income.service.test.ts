@@ -55,6 +55,21 @@ afterEach(() => {
   mockState.driver = null;
 });
 
+describe('account attribution (VS-18)', () => {
+  it('persists accountId on create and exposes it on read', async () => {
+    // accounts seeded by migration 018 (Cash = 1).
+    const id = await createIncome(newIncome({ amount: 1000, accountId: 1 }));
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.accountId).toBe(1);
+  });
+
+  it('defaults accountId to null when not supplied', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.accountId).toBeNull();
+  });
+});
+
 describe('createIncome / getAllIncome', () => {
   it('creates an income and includes it in getAllIncome', async () => {
     const id = await createIncome(newIncome({ amount: 350000, source: 'salary' }));

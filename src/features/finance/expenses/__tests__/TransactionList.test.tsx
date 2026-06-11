@@ -44,6 +44,8 @@ const EXPENSE_TODAY: TransactionEntry = {
   subcategoryId: null,
   subcategoryLabel: null,
   note: null,
+  accountId: null,
+  accountLabel: null,
 };
 
 const INCOME_TODAY: TransactionEntry = {
@@ -54,6 +56,8 @@ const INCOME_TODAY: TransactionEntry = {
   source: 'salary',
   sourceLabel: 'Salary',
   note: null,
+  accountId: null,
+  accountLabel: null,
 };
 
 const EXPENSE_YESTERDAY: TransactionEntry = {
@@ -66,6 +70,8 @@ const EXPENSE_YESTERDAY: TransactionEntry = {
   subcategoryId: null,
   subcategoryLabel: null,
   note: null,
+  accountId: null,
+  accountLabel: null,
 };
 
 const EXPENSE_OTHER_MONTH: TransactionEntry = {
@@ -78,6 +84,8 @@ const EXPENSE_OTHER_MONTH: TransactionEntry = {
   subcategoryId: null,
   subcategoryLabel: null,
   note: null,
+  accountId: null,
+  accountLabel: null,
 };
 
 beforeEach(() => {
@@ -232,5 +240,36 @@ describe('TransactionList', () => {
     fireEvent.press(row);
 
     expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('transfer rows render with a ⇄ icon and a from→to label', async () => {
+    const transfer: TransactionEntry = {
+      type: 'transfer',
+      id: 7,
+      amount: 3000,
+      date: TODAY,
+      fromAccountName: 'Cash',
+      toAccountName: 'MTN MoMo',
+    };
+    mockGetFeed.mockResolvedValue([transfer]);
+    render(<TransactionList />);
+
+    await waitFor(() => expect(screen.getByTestId('tx-row-transfer-7')).toBeTruthy());
+    expect(screen.getByText('Cash → MTN MoMo')).toBeTruthy();
+  });
+
+  it('expense rows with a non-null account_id render an account chip; legacy rows do not', async () => {
+    const withAccount: TransactionEntry = {
+      ...EXPENSE_TODAY,
+      id: 20,
+      accountId: 1,
+      accountLabel: 'Cash',
+    };
+    mockGetFeed.mockResolvedValue([withAccount, EXPENSE_YESTERDAY]);
+    render(<TransactionList />);
+
+    await waitFor(() => expect(screen.getByTestId('tx-account-chip-expense-20')).toBeTruthy());
+    // EXPENSE_YESTERDAY has a null account → no chip
+    expect(screen.queryByTestId('tx-account-chip-expense-2')).toBeNull();
   });
 });

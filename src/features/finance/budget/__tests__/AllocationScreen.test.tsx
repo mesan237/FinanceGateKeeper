@@ -192,10 +192,9 @@ describe('AllocationScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
 
-    // 400 000 × 15% = 60 000 to projects.
-    await waitFor(() =>
-      expect(mockedFundProjects).toHaveBeenCalledWith(60000, 'Allocation 2026-06'),
-    );
+    // 400 000 × 15% = 60 000 to projects. fundProjects dates each contribution
+    // itself (defaults to today) — no reason/date argument is passed.
+    await waitFor(() => expect(mockedFundProjects).toHaveBeenCalledWith(60000));
     await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
   });
 

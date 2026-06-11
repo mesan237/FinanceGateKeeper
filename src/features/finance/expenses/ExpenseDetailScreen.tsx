@@ -12,6 +12,7 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
@@ -90,6 +91,13 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
       />
 
       <DateField value={edit.date} onChange={edit.setDate} testID="expense-date" />
+
+      <AccountPicker
+        testID="expense-account"
+        label="Account"
+        value={edit.accountId}
+        onChange={edit.setAccountId}
+      />
 
       <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 

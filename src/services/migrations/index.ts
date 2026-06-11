@@ -16,6 +16,10 @@ import { migration as createDebtsTable } from '@/services/migrations/014_create_
 import { migration as dedupeCategories } from '@/services/migrations/015_dedupe_categories';
 import { migration as addActionBarStyle } from '@/services/migrations/016_add_action_bar_style';
 import { migration as addSyncMetadata } from '@/services/migrations/017_add_sync_metadata';
+import { migration as createAccountsTable } from '@/services/migrations/018_create_accounts_table';
+import { migration as addAccountIdColumns } from '@/services/migrations/019_add_account_id_columns';
+import { migration as createTransfersTable } from '@/services/migrations/020_create_transfers_table';
+import { migration as syncAccounts } from '@/services/migrations/021_sync_accounts';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -35,4 +39,8 @@ export const migrations: ReadonlyArray<Migration> = [
   dedupeCategories,
   addActionBarStyle,
   addSyncMetadata,
+  createAccountsTable,
+  addAccountIdColumns,
+  createTransfersTable,
+  syncAccounts,
 ];

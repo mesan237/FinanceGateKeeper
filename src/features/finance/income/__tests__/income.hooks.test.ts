@@ -71,6 +71,7 @@ describe('useIncomeLog', () => {
       source: 'salary',
       note: 'June pay',
       date: '2026-06-12',
+      accountId: null,
     });
   });
 

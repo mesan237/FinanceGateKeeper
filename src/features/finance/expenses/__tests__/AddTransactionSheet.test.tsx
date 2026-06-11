@@ -100,4 +100,11 @@ describe('AddTransactionSheet', () => {
     fireEvent.press(screen.getByTestId('add-segment-templates'));
     expect(await screen.findByTestId('quick-add-add-tile')).toBeTruthy();
   });
+
+  it('routes to the transfer log and closes when the transfer link is pressed (VS-18)', () => {
+    const props = renderSheet();
+    fireEvent.press(screen.getByTestId('add-transfer-link'));
+    expect(props.onClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith('/transfers/log');
+  });
 });

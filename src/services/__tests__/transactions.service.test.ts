@@ -56,6 +56,46 @@ function insertIncome(amount: number, source: string, date: string, note?: strin
   return result.lastInsertRowid as number;
 }
 
+function insertTransfer(fromId: number, toId: number, amount: number, date: string): number {
+  const stmt = sqlite.prepare(
+    `INSERT INTO transfers (from_account_id, to_account_id, amount, date, note, created_at)
+     VALUES (?, ?, ?, ?, NULL, ?)`,
+  );
+  const result = stmt.run(fromId, toId, amount, date, new Date().toISOString());
+  return result.lastInsertRowid as number;
+}
+
+function setExpenseAccount(expenseId: number, accountId: number): void {
+  sqlite.prepare('UPDATE expenses SET account_id = ? WHERE id = ?').run(accountId, expenseId);
+}
+
+describe('getTransactionFeed — accounts & transfers (VS-18)', () => {
+  it('includes transfers with a transfer type and both account names', async () => {
+    insertTransfer(1, 2, 3000, '2026-06-11'); // Cash -> MTN MoMo (seeded ids 1, 2)
+
+    const entries = await getTransactionFeed('2026-06');
+    const transfer = entries.find((e) => e.type === 'transfer');
+    expect(transfer).toBeTruthy();
+    if (transfer && transfer.type === 'transfer') {
+      expect(transfer.amount).toBe(3000);
+      expect(transfer.fromAccountName).toBe('Cash');
+      expect(transfer.toAccountName).toBe('MTN MoMo');
+    }
+  });
+
+  it('resolves the account label for rows with an account_id, null for legacy rows', async () => {
+    const withAccount = insertExpense(1000, 1, '2026-06-10');
+    setExpenseAccount(withAccount, 1); // Cash
+    insertExpense(500, 1, '2026-06-09'); // legacy, account_id stays null
+
+    const entries = await getTransactionFeed('2026-06');
+    const withChip = entries.find((e) => e.type === 'expense' && e.id === withAccount);
+    const legacy = entries.find((e) => e.type === 'expense' && e.id !== withAccount);
+    expect(withChip && withChip.type === 'expense' && withChip.accountLabel).toBe('Cash');
+    expect(legacy && legacy.type === 'expense' && legacy.accountLabel).toBeNull();
+  });
+});
+
 describe('getTransactionFeed', () => {
   it('returns income and expense rows merged, newest-first', async () => {
     insertExpense(1000, 1, '2026-06-10');

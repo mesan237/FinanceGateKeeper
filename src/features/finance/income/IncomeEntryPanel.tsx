@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -9,6 +9,8 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 
 import { IncomeSourcePicker } from './IncomeSourcePicker';
 import { useIncomeLog } from './income.hooks';
@@ -29,7 +31,12 @@ export interface IncomeEntryPanelProps {
  */
 export function IncomeEntryPanel({ onSaved }: IncomeEntryPanelProps) {
   const log = useIncomeLog();
+  const defaultAccountId = useDefaultAccountId();
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (log.accountId === null && defaultAccountId !== null) log.setAccountId(defaultAccountId);
+  }, [defaultAccountId, log.accountId]);
 
   const handleSave = async () => {
     // Capture before submit() — the hook resets the form on success.
@@ -59,6 +66,13 @@ export function IncomeEntryPanel({ onSaved }: IncomeEntryPanelProps) {
       />
 
       <DateField value={log.date} onChange={log.setDate} testID="income-date" />
+
+      <AccountPicker
+        testID="income-account"
+        label="Account"
+        value={log.accountId}
+        onChange={log.setAccountId}
+      />
 
       <Button label="Save" onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
 

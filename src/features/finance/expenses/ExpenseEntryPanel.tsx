@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -9,6 +9,8 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
@@ -30,10 +32,16 @@ export interface ExpenseEntryPanelProps {
 export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
   const log = useExpenseLog();
   const { check } = useOverBudgetCheck();
+  const defaultAccountId = useDefaultAccountId();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
   const [overage, setOverage] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Pre-select the default wallet once it resolves, unless the user already chose one.
+  useEffect(() => {
+    if (log.accountId === null && defaultAccountId !== null) log.setAccountId(defaultAccountId);
+  }, [defaultAccountId, log.accountId]);
 
   const persist = async () => {
     setSaving(true);
@@ -72,6 +80,13 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
       />
 
       <DateField value={log.date} onChange={log.setDate} testID="expense-date" />
+
+      <AccountPicker
+        testID="expense-account"
+        label="Account"
+        value={log.accountId}
+        onChange={log.setAccountId}
+      />
 
       <Button label="Save" onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
 

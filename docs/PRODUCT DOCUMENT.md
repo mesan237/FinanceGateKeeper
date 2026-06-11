@@ -27,6 +27,7 @@ The app is a **financial gatekeeper**, not a tracker. Income gets allocated befo
 - Every income entry tagged by source: **Salary, Freelance, E-commerce**.
 - Sources are reported independently even when funds share an account.
 - Irregular income triggers allocation immediately on entry.
+- Each income entry is optionally tagged with the physical account it lands in (e.g., Bank, MTN MoMo). Used for account balance tracking; does not affect the allocation system.
 
 ### 5.2 Allocation System
 Logging income opens an **allocation screen** that distributes funds by user-defined percentages in strict priority:
@@ -46,6 +47,7 @@ Rules:
 - **Recurring expenses:** rent, data, electricity auto-log on schedule; editable/skippable.
 - **Zero-day confirmation:** if nothing logged by end of day, app asks the user to confirm a no-spend day.
 - **Edit / Delete:** tapping an existing expense row opens a pre-filled edit form. Any field (amount, category, note, date) can be corrected and saved. The over-budget check re-runs when the amount changes. Expenses can be deleted with a one-step confirmation modal.
+- Each expense is optionally tagged with the account it is paid from (e.g., Cash, Orange Money). Pre-fills from the default account.
 
 ### 5.4 Categories & Subcategories
 Defaults (all user-editable: add, rename, delete):
@@ -110,6 +112,36 @@ Category is required on every expense; subcategory is optional but encouraged.
 
 ---
 
+### 5.14 Accounts & Payment Channels
+
+The app tracks the physical wallets money moves through — separate from the logical allocation buckets (Emergency Fund, Savings, etc.).
+
+**Default accounts (seeded on first run):** Cash · MTN MoMo · Orange Money. Users can add more (bank accounts, cards, other mobile money services), rename, hide, or change the default.
+
+**Account purpose labels:** Each account carries a purpose: `Spending | Saving | Emergency | General`. This is informational — it helps the user deliberately assign a role to each wallet (e.g., "MoMo is my savings wallet"). The allocation system remains bucket-based and does not auto-deposit into designated accounts; that is the user's intentional action via manual contributions or transfers.
+
+**Balance tracking:** Account balances are computed from transaction history (not stored), starting from an optional opening balance the user provides when creating the account:
+
+```
+balance = opening_balance
+        + income credited to this account
+        − expenses debited from this account
+        + transfers received
+        − transfers sent
+        − manual fund contributions sourced from this account
+        − manual project contributions sourced from this account
+```
+
+Automated allocation deposits carry no account tag and do not affect balances — they are logical intent, not physical movements.
+
+**Transfers:** Moving money between accounts (e.g., Cash → MTN MoMo, MoMo → Bank) is logged as a transfer. Transfers adjust both account balances and appear in the transaction feed with a `⇄` icon. Transfer entry point: Transactions tab FAB.
+
+**Manual fund and project contributions:** When the user manually deposits into the Emergency Fund, Savings, or a Project outside the automated allocation flow, they specify the source account. This decreases the source account balance and increases the fund/project balance.
+
+**Analytics:** The Accounts overview shows, per account: live balance, purpose badge, and what percentage of this month's total income and expenses flowed through that account. This surfaces behavioral patterns — e.g., "70% of my expenses are paid in cash" — enabling intentional decisions about which wallet to use for what.
+
+---
+
 ### 5.12 Notifications
 
 | Trigger                                    | Message                                                                                      |
@@ -128,7 +160,9 @@ Category is required on every expense; subcategory is optional but encouraged.
 
 **Transactions tab:** Shows income entries and expense entries together in a single unified feed, grouped by day with a date section header. Default scope is the current calendar month; prev/next arrows navigate between months. A category chip row filters within the selected month. Expense rows are tappable (opens the expense edit screen); income rows are read-only in this view. Type is distinguished by a colored left border (green = income, muted = expense). Each row shows a category or source icon (Ionicons) beside the label; user-created custom categories without a mapped icon fall back to a color-letter avatar.
 
-**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Expense Detail/Edit, Settings (app mode, reminder time, notifications, action bar style, backup).
+**Accounts:** Accessible via a compact Wallets section on the Dashboard. Shows live balance per account. Tap to open AccountsOverview, then tap an account card for its full transaction history and monthly analytics.
+
+**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Expense Detail/Edit, Accounts Overview, Account Detail, Transfer Log, Settings (app mode, reminder time, notifications, action bar style, backup).
 
 ---
 
@@ -154,15 +188,17 @@ Category is required on every expense; subcategory is optional but encouraged.
 
 ## 9. Data Model (High Level)
 
-- **User:** PIN, preferences, allocation %s, mode (learning/control).
-- **Income:** amount, source, date.
-- **Expense:** amount, category, subcategory, note, date, is_recurring, recurring_schedule.
+- **User:** PIN, preferences, allocation %s, mode (learning/control), action bar style.
+- **Account:** name, type (cash/mobile_money/bank/card), purpose (spending/saving/emergency/general), opening_balance, is_default. Balance derived from transaction history.
+- **Transfer:** from_account, to_account, amount, date, note.
+- **Income:** amount, source, account (optional), date.
+- **Expense:** amount, category, subcategory, account (optional), note, date, is_recurring.
 - **Category / Subcategory:** name, type (default/custom), parent.
 - **Allocation:** month, emergency_%, savings_%, projects_%, expenses_%.
 - **Emergency Fund / Savings:** target_amount, current_amount.
 - **Project:** name, target, funded, priority_rank, deadline?, status.
 - **Debt:** person, amount, direction (lent/owed), date, due_date?, status.
-- **Quick Add Template:** label, amount, category, subcategory.
+- **Quick Add Template:** label, amount, category, subcategory, default_account.
 - **Recurring Expense:** template, frequency, next_due_date.
 
 ---

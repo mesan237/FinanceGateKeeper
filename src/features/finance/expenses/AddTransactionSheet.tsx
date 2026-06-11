@@ -1,10 +1,12 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
+import { Icon } from '@/components/Icon';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Typography } from '@/components/Typography';
+import { PRIMARY_GREEN } from '@/constants/colors';
 import { IncomeEntryPanel } from '@/features/finance/income/IncomeEntryPanel';
 
 import { ExpenseEntryPanel } from './ExpenseEntryPanel';
@@ -77,6 +79,19 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
           </View>
         )}
       </View>
+
+      <Pressable
+        testID="add-transfer-link"
+        accessibilityRole="button"
+        style={styles.transferLink}
+        onPress={() => {
+          onClose();
+          router.push('/transfers/log');
+        }}
+      >
+        <Icon name="transfer" size={18} color={PRIMARY_GREEN} />
+        <Typography style={styles.transferText}>Log a transfer between accounts</Typography>
+      </Pressable>
     </BottomSheet>
   );
 }
@@ -91,5 +106,17 @@ const styles = StyleSheet.create({
   },
   templates: {
     height: 360,
+  },
+  transferLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 10,
+  },
+  transferText: {
+    color: PRIMARY_GREEN,
+    fontWeight: '600',
   },
 });

@@ -108,7 +108,8 @@ describe('useProjectDetail', () => {
     await act(async () => {
       await result.current.contribute(30000);
     });
-    expect(mockedContribute).toHaveBeenCalledWith(1, 30000);
+    // dateISO defaults (undefined) and accountId defaults to null when omitted.
+    expect(mockedContribute).toHaveBeenCalledWith(1, 30000, undefined, null);
     expect(mockedGetById).toHaveBeenCalledTimes(2);
   });
 });

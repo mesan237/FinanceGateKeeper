@@ -17,6 +17,7 @@ export function useIncomeLog() {
   const [source, setSource] = useState<IncomeSource | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState(() => toISODate(new Date()));
+  const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const numericAmount = Number(amount);
@@ -27,6 +28,7 @@ export function useIncomeLog() {
     setSource(null);
     setNote('');
     setDate(toISODate(new Date()));
+    // account is intentionally NOT reset — the user usually logs into the same wallet.
   }, []);
 
   /** Persists the income. Returns the new id, or null if invalid / failed. */
@@ -41,6 +43,7 @@ export function useIncomeLog() {
         source,
         note: note.trim() ? note.trim() : null,
         date,
+        accountId,
       });
       setError(null);
       reset();
@@ -49,7 +52,7 @@ export function useIncomeLog() {
       setError(e instanceof Error ? e.message : 'Failed to save income.');
       return null;
     }
-  }, [canSubmit, source, numericAmount, note, date, reset]);
+  }, [canSubmit, source, numericAmount, note, date, accountId, reset]);
 
   return {
     amount,
@@ -60,6 +63,8 @@ export function useIncomeLog() {
     setNote,
     date,
     setDate,
+    accountId,
+    setAccountId,
     submit,
     canSubmit,
     error,

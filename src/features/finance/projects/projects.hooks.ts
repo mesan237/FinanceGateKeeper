@@ -102,9 +102,9 @@ export function useProjectDetail(id: number) {
   );
 
   const contribute = useCallback(
-    async (amount: number): Promise<void> => {
+    async (amount: number, accountId: number | null = null): Promise<void> => {
       try {
-        await projectsService.contributeManually(id, amount);
+        await projectsService.contributeManually(id, amount, undefined, accountId);
         await refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to contribute.');

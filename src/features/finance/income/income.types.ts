@@ -12,11 +12,19 @@ export interface Income {
   source: IncomeSource;
   note: string | null;
   date: string;
+  /** Destination wallet, or null for legacy/unattributed income (VS-18). */
+  accountId: number | null;
   createdAt: string;
 }
 
-/** The shape accepted by `createIncome` — id and createdAt are assigned on insert. */
-export type NewIncome = Omit<Income, 'id' | 'createdAt'>;
+/**
+ * The shape accepted by `createIncome` — id and createdAt are assigned on
+ * insert. `accountId` is optional so the allocation trigger and other
+ * non-UI callers need not supply a wallet.
+ */
+export type NewIncome = Omit<Income, 'id' | 'createdAt' | 'accountId'> & {
+  accountId?: number | null;
+};
 
 /** Filter applied to the income history. All fields are optional. */
 export interface IncomeFilter {
