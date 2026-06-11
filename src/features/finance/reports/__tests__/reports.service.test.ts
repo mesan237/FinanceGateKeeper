@@ -71,6 +71,7 @@ function expense(partial: Partial<Expense> & Pick<Expense, 'amount' | 'categoryI
     subcategoryId: null,
     note: null,
     isRecurring: false,
+    accountId: null,
     createdAt: '2026-06-01T00:00:00.000Z',
     ...partial,
   };
@@ -83,6 +84,7 @@ function income(amount: number, date: string): Income {
     source: 'salary',
     note: null,
     date,
+    accountId: null,
     createdAt: '2026-06-01T00:00:00.000Z',
   };
 }
