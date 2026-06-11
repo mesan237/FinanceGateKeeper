@@ -6,6 +6,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { useCloudSync } from '@/hooks/useCloudSync';
+import { formatDateLong } from '@/utils/formatDate';
 
 import { useAppModeContext } from './AppModeProvider';
 import { useActionBarStyle, useAppSettings } from './auth.hooks';
@@ -28,8 +30,11 @@ export function SettingsScreen() {
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
   const { style: actionBarStyle, setStyle: setActionBarStyle } = useActionBarStyle();
+  const cloud = useCloudSync();
 
   const [reminderInput, setReminderInput] = useState('');
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Seed the editable reminder field once settings load.
@@ -137,6 +142,68 @@ export function SettingsScreen() {
             ) : null}
           </Pressable>
         ))}
+      </View>
+
+      <View style={styles.section}>
+        <Typography variant="subheading">Cloud backup</Typography>
+        {cloud.signedIn ? (
+          <>
+            <Typography variant="muted">Signed in as</Typography>
+            <Typography>{cloud.userEmail ?? 'your account'}</Typography>
+            {cloud.lastSyncedAt ? (
+              <Typography testID="settings-last-synced" variant="muted">
+                Last synced {formatDateLong(cloud.lastSyncedAt)}
+              </Typography>
+            ) : (
+              <Typography variant="muted">Not synced yet.</Typography>
+            )}
+            {cloud.status === 'error' && cloud.error ? (
+              <Typography style={styles.error}>{cloud.error}</Typography>
+            ) : null}
+            <Button
+              testID="settings-sync-now"
+              label={cloud.status === 'syncing' ? 'Syncing…' : 'Sync now'}
+              onPress={() => void cloud.syncNow()}
+              disabled={cloud.status === 'syncing'}
+            />
+            <Button testID="settings-sign-out" label="Sign out" compact onPress={() => void cloud.signOut()} />
+          </>
+        ) : (
+          <>
+            <Typography variant="muted">
+              Back up your data to the cloud and restore it on a new device.
+            </Typography>
+            <TextInput
+              testID="settings-cloud-email"
+              value={cloudEmail}
+              onChangeText={setCloudEmail}
+              placeholder="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              accessibilityLabel="Cloud account email"
+            />
+            <TextInput
+              testID="settings-cloud-password"
+              value={cloudPassword}
+              onChangeText={setCloudPassword}
+              placeholder="Password"
+              secureTextEntry
+              accessibilityLabel="Cloud account password"
+            />
+            {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
+            <Button
+              testID="settings-sign-in"
+              label="Sign in"
+              onPress={() => void cloud.signIn(cloudEmail, cloudPassword)}
+            />
+            <Button
+              testID="settings-sign-up"
+              label="Create account"
+              compact
+              onPress={() => void cloud.signUp(cloudEmail, cloudPassword)}
+            />
+          </>
+        )}
       </View>
     </ScrollView>
   );

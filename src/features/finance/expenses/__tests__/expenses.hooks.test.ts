@@ -7,6 +7,9 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   getAllExpenses: jest.fn().mockResolvedValue([]),
   getExpensesByCategory: jest.fn().mockResolvedValue([]),
   getExpensesByDateRange: jest.fn().mockResolvedValue([]),
+  getExpenseById: jest.fn().mockResolvedValue(null),
+  updateExpense: jest.fn().mockResolvedValue(undefined),
+  deleteExpense: jest.fn().mockResolvedValue(undefined),
   createCategory: jest.fn().mockResolvedValue(99),
   getAllCategories: jest.fn().mockResolvedValue([
     { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
@@ -21,6 +24,7 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 
 import {
   useCategories,
+  useExpenseEdit,
   useExpenseLog,
   useTransactions,
   useZeroDay,
@@ -166,6 +170,83 @@ describe('useCategories', () => {
 
     expect(mocked.createCategory).toHaveBeenCalledWith({ name: 'Freelance', parentId: null });
     expect(result.current.categories.map((c) => c.name)).toEqual(['Food', 'Freelance']);
+  });
+});
+
+const STORED_EXPENSE = {
+  id: 42,
+  amount: 2000,
+  categoryId: 1,
+  subcategoryId: 2,
+  note: 'lunch',
+  date: '2026-06-10',
+  isRecurring: false,
+  createdAt: '2026-06-10T10:00:00.000Z',
+};
+
+describe('useExpenseEdit', () => {
+  beforeEach(() => {
+    mocked.getExpenseById.mockResolvedValue(STORED_EXPENSE);
+  });
+
+  it('loads expense data on mount; field values match the stored row', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.amount).toBe('2000');
+    expect(result.current.categoryId).toBe(1);
+    expect(result.current.subcategoryId).toBe(2);
+    expect(result.current.note).toBe('lunch');
+    expect(result.current.date).toBe('2026-06-10');
+    expect(result.current.originalAmount).toBe(2000);
+  });
+
+  it('update() calls updateExpense with changed fields and returns true', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setAmount('3000'));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.update();
+    });
+
+    expect(ok).toBe(true);
+    expect(mocked.updateExpense).toHaveBeenCalledWith(42, expect.objectContaining({ amount: 3000 }));
+  });
+
+  it('remove() calls deleteExpense and returns true', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.remove();
+    });
+
+    expect(ok).toBe(true);
+    expect(mocked.deleteExpense).toHaveBeenCalledWith(42);
+  });
+
+  it('error is set when the expense id does not exist', async () => {
+    mocked.getExpenseById.mockResolvedValue(null);
+    const { result } = renderHook(() => useExpenseEdit(99999));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it('canSubmit is false when amount is empty or categoryId is null', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setAmount(''));
+    expect(result.current.canSubmit).toBe(false);
+
+    act(() => {
+      result.current.setAmount('1000');
+      result.current.setCategoryId(null);
+    });
+    expect(result.current.canSubmit).toBe(false);
   });
 });
 

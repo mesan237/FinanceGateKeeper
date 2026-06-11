@@ -15,6 +15,7 @@ import { migration as createProjectTransactionsTable } from '@/services/migratio
 import { migration as createDebtsTable } from '@/services/migrations/014_create_debts_table';
 import { migration as dedupeCategories } from '@/services/migrations/015_dedupe_categories';
 import { migration as addActionBarStyle } from '@/services/migrations/016_add_action_bar_style';
+import { migration as addSyncMetadata } from '@/services/migrations/017_add_sync_metadata';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -33,4 +34,5 @@ export const migrations: ReadonlyArray<Migration> = [
   createDebtsTable,
   dedupeCategories,
   addActionBarStyle,
+  addSyncMetadata,
 ];

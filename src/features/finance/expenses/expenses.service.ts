@@ -677,6 +677,71 @@ export async function runRecurringAutoLog(
   return { loggedCount };
 }
 
+// ---- VS-17: expense edit & delete ------------------------------------------
+
+/**
+ * Returns a single expense by id, or null if not found.
+ */
+export async function getExpenseById(id: number): Promise<Expense | null> {
+  const rows = await query<ExpenseRow>(
+    `SELECT ${EXPENSE_COLUMNS} FROM expenses WHERE id = ? LIMIT 1`,
+    [id],
+  );
+  return rows.length > 0 ? mapExpense(rows[0]) : null;
+}
+
+/**
+ * Updates mutable fields on an expense. Throws if no row exists for `id`.
+ * Fields not included in `fields` are left unchanged (partial UPDATE).
+ */
+export async function updateExpense(
+  id: number,
+  fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date'>>,
+): Promise<void> {
+  const sets: string[] = [];
+  const params: (string | number | null)[] = [];
+
+  if (fields.amount !== undefined) {
+    if (!Number.isInteger(fields.amount) || fields.amount <= 0) {
+      throw new Error('Expense amount must be a positive integer (FCFA).');
+    }
+    sets.push('amount = ?');
+    params.push(fields.amount);
+  }
+  if (fields.categoryId !== undefined) {
+    sets.push('category_id = ?');
+    params.push(fields.categoryId);
+  }
+  if (fields.subcategoryId !== undefined) {
+    sets.push('subcategory_id = ?');
+    params.push(fields.subcategoryId);
+  }
+  if ('note' in fields) {
+    sets.push('note = ?');
+    params.push(fields.note ?? null);
+  }
+  if (fields.date !== undefined) {
+    sets.push('date = ?');
+    params.push(fields.date);
+  }
+  if (sets.length === 0) return;
+
+  const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
+  if (!existing) throw new Error('Expense not found.');
+
+  params.push(id);
+  await execute(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`, params);
+}
+
+/**
+ * Deletes an expense by id. Throws if no row exists for `id`.
+ */
+export async function deleteExpense(id: number): Promise<void> {
+  const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
+  if (!existing) throw new Error('Expense not found.');
+  await execute('DELETE FROM expenses WHERE id = ?', [id]);
+}
+
 // ---- VS-08: zero-day confirmation ------------------------------------------
 
 /**

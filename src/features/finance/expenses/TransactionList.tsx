@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 
@@ -89,6 +90,7 @@ function RowIcon({ entry }: RowIconProps) {
  * The category chip row filters only expense rows; income rows always appear.
  */
 export function TransactionList() {
+  const router = useRouter();
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const { entries, loading } = useTransactions(monthISO, selectedCategoryId);
@@ -189,17 +191,35 @@ export function TransactionList() {
                 : item.sourceLabel;
             const isIncome = item.type === 'income';
 
-            return (
-              <View
-                testID={`tx-row-${item.type}-${item.id}`}
-                style={[styles.row, isIncome ? styles.rowIncomeBorder : styles.rowExpenseBorder]}
-              >
+            const rowContent = (
+              <>
                 <RowIcon entry={item} />
                 <Typography style={styles.rowLabel}>{label}</Typography>
                 <Typography style={isIncome ? styles.rowAmountIncome : styles.rowAmountExpense}>
                   {isIncome ? formatCurrency(item.amount) : `−${formatCurrency(item.amount)}`}
                 </Typography>
-              </View>
+              </>
+            );
+
+            if (isIncome) {
+              return (
+                <View
+                  testID={`tx-row-income-${item.id}`}
+                  style={[styles.row, styles.rowIncomeBorder]}
+                >
+                  {rowContent}
+                </View>
+              );
+            }
+
+            return (
+              <Pressable
+                testID={`tx-row-expense-${item.id}`}
+                onPress={() => router.push(`/expenses/${item.id}`)}
+                style={[styles.row, styles.rowExpenseBorder]}
+              >
+                {rowContent}
+              </Pressable>
             );
           }}
         />

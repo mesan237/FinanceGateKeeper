@@ -13,6 +13,7 @@ import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { BACKGROUND } from '@/constants/colors';
+import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
@@ -29,6 +30,10 @@ export default function RootLayout() {
   // expenses component: it injects the reminder prefs into ZeroDayGate so the
   // expenses feature never imports the auth feature (see ISSUE-008 decision #2).
   const { settings } = useAppSettings();
+
+  // Best-effort cloud backup: pull/push on app open and foreground when signed
+  // in. No-op when signed out or offline; never blocks render.
+  useBackgroundSync();
 
   // Poppins powers headings/display; Work Sans powers body copy and numbers.
   // Each weight is loaded as its own family — see @/constants/fonts.
