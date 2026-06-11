@@ -14,6 +14,29 @@ jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),
 }));
 
+const mockCloud: {
+  userEmail: string | null;
+  signedIn: boolean;
+  status: 'idle' | 'syncing' | 'error';
+  lastSyncedAt: string | null;
+  error: string | null;
+  signIn: jest.Mock;
+  signUp: jest.Mock;
+  signOut: jest.Mock;
+  syncNow: jest.Mock;
+} = {
+  userEmail: null,
+  signedIn: false,
+  status: 'idle',
+  lastSyncedAt: null,
+  error: null,
+  signIn: jest.fn().mockResolvedValue(true),
+  signUp: jest.fn().mockResolvedValue(true),
+  signOut: jest.fn().mockResolvedValue(undefined),
+  syncNow: jest.fn().mockResolvedValue(undefined),
+};
+jest.mock('@/hooks/useCloudSync', () => ({ useCloudSync: () => mockCloud }));
+
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
@@ -47,6 +70,11 @@ beforeEach(() => {
     createdAt: '2026-01-01T00:00:00.000Z',
   });
   mockedMonth1.mockResolvedValue(false);
+  mockCloud.userEmail = null;
+  mockCloud.signedIn = false;
+  mockCloud.status = 'idle';
+  mockCloud.lastSyncedAt = null;
+  mockCloud.error = null;
 });
 
 describe('SettingsScreen', () => {
@@ -85,5 +113,60 @@ describe('SettingsScreen', () => {
     renderSettings();
     await screen.findByTestId('settings-mode-toggle');
     expect(screen.queryByTestId('settings-control-suggestion')).toBeNull();
+  });
+});
+
+describe('SettingsScreen — Cloud Backup', () => {
+  it('shows email/password inputs and sign-in when signed out', async () => {
+    renderSettings();
+    expect(await screen.findByTestId('settings-cloud-email')).toBeTruthy();
+    expect(screen.getByTestId('settings-cloud-password')).toBeTruthy();
+    expect(screen.getByTestId('settings-sign-in')).toBeTruthy();
+    expect(screen.queryByTestId('settings-sync-now')).toBeNull();
+  });
+
+  it('shows the account email, Sync Now, and Sign Out when signed in', async () => {
+    mockCloud.signedIn = true;
+    mockCloud.userEmail = 'me@example.com';
+    renderSettings();
+    expect(await screen.findByText('me@example.com')).toBeTruthy();
+    expect(screen.getByTestId('settings-sync-now')).toBeTruthy();
+    expect(screen.getByTestId('settings-sign-out')).toBeTruthy();
+    expect(screen.queryByTestId('settings-sign-in')).toBeNull();
+  });
+
+  it('runs sync when Sync Now is pressed', async () => {
+    mockCloud.signedIn = true;
+    mockCloud.userEmail = 'me@example.com';
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-sync-now'));
+    await waitFor(() => expect(mockCloud.syncNow).toHaveBeenCalled());
+  });
+
+  it('signs in with the entered credentials', async () => {
+    renderSettings();
+    fireEvent.changeText(await screen.findByTestId('settings-cloud-email'), 'me@example.com');
+    fireEvent.changeText(screen.getByTestId('settings-cloud-password'), 'pw123456');
+    fireEvent.press(screen.getByTestId('settings-sign-in'));
+    await waitFor(() =>
+      expect(mockCloud.signIn).toHaveBeenCalledWith('me@example.com', 'pw123456'),
+    );
+  });
+
+  it('shows the last-synced timestamp when present', async () => {
+    mockCloud.signedIn = true;
+    mockCloud.userEmail = 'me@example.com';
+    mockCloud.lastSyncedAt = '2026-06-10T08:30:00.000Z';
+    renderSettings();
+    expect(await screen.findByTestId('settings-last-synced')).toBeTruthy();
+  });
+
+  it('shows the error message when sync fails', async () => {
+    mockCloud.signedIn = true;
+    mockCloud.userEmail = 'me@example.com';
+    mockCloud.status = 'error';
+    mockCloud.error = 'network down';
+    renderSettings();
+    expect(await screen.findByText('network down')).toBeTruthy();
   });
 });
