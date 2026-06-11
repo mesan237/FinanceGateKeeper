@@ -87,3 +87,50 @@ Apply the top inset once at the root in
 rather than per screen. Screens use a plain `View` for their root container —
 they must **not** import `SafeAreaView` from `react-native` (it both fails on
 Android and would double-inset on iOS).
+
+---
+
+## Supabase schema: `ERROR: 42703: column "user_id" does not exist` (creating RLS policy)
+
+### Symptom
+
+Running [`supabase/schema.sql`](../supabase/schema.sql) in the Supabase SQL editor
+fails inside the policy block:
+
+```
+ERROR:  42703: column "user_id" does not exist
+CONTEXT: SQL statement "create policy categories_owner on categories
+         for all using (user_id = auth.uid()) ..."
+```
+
+### Root cause
+
+The cloud `categories` table already existed **without** a `user_id` column — left
+over from the earlier integer-id schema. The current schema starts with
+`DROP TABLE … CASCADE` and recreates every table *with* `user_id`, so this error
+can only happen if that DROP+CREATE did **not** run. Two ways that happens:
+
+- the SQL editor still had the **old** script pasted and you re-ran that buffer, or
+- you had text **selected**, so the editor executed only the highlighted region
+  (e.g. just the RLS block), skipping the DROP+CREATE above it.
+
+### Fix
+
+Run the **entire** current [`supabase/schema.sql`](../supabase/schema.sql) in a
+fresh query with nothing selected: open a new query tab, paste the whole file,
+Select-All is not needed (an empty selection runs everything), and execute. The
+`DROP TABLE … CASCADE` at the top clears the stale tables; the recreated ones have
+`uuid` + `user_id`.
+
+Confirm which schema is live with:
+
+```sql
+select column_name from information_schema.columns
+where table_name = 'categories' order by ordinal_position;
+```
+
+An `id` column with no `uuid`/`user_id` means the old integer-id table is still
+there. The RLS loop also now runs `add column if not exists user_id …`
+defensively, but that alone is not enough — the sync engine needs the `uuid`
+columns and uuid foreign keys, so the full DROP+CREATE must run. See
+[CLOUD-SYNC.md](./CLOUD-SYNC.md) for the data model.

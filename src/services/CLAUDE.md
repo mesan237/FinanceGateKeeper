@@ -30,12 +30,17 @@ services/
 - `db.getConnection()` — Return the raw connection (only for in-memory test instances).
 
 ## Sync Rules (Supabase)
+Implemented in VS-15 — full detail in [docs/CLOUD-SYNC.md](../../docs/CLOUD-SYNC.md).
 - Local-first: all writes hit SQLite immediately. Supabase sync is background and non-blocking.
-- Every synced table has `updated_at` and `sync_status` (synced | pending) columns.
-- On push: send all records where `sync_status = pending` to Supabase, then mark synced.
-- On pull: fetch records from Supabase where `updated_at > last_sync_timestamp`, upsert locally.
-- Conflict resolution: local always wins (last-write-wins).
-- Sync triggers: on app open (pull), after any write (push with debounce), manual "Sync Now".
+- Every synced table has `uuid` (the cloud key), `updated_at`, and `sync_status` (synced | pending)
+  columns. `sync_status` is set to pending by SQLite triggers (`017_add_sync_metadata`), not by edits
+  to feature services. The integer `id` stays local-only; foreign keys travel as uuids.
+- On push: send all records where `sync_status = pending` to Supabase (FK ids → uuids), then mark synced.
+- On pull: fetch records where `updated_at > lastPulledAt` (cursor in `sync_meta`), upsert locally
+  (uuids → FK ids) when the incoming row is strictly newer.
+- Conflict resolution: local always wins (last-write-wins; local breaks ties).
+- Sync triggers: on app open and foreground (`useBackgroundSync`) and manual "Sync Now". `users` is
+  excluded from sync.
 
 ## Import Rules
 - This folder can import from `utils/`, `constants/`, `types/` only.

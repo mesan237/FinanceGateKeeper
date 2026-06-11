@@ -202,6 +202,8 @@ begin
     'recurring_expenses','zero_days','debts'
   ]
   loop
+    -- Defensive: ensure user_id exists even if an older table predates this run.
+    execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists %1$I_owner on %1$I;', t);
     execute format($f$
