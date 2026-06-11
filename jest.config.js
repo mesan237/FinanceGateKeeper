@@ -4,6 +4,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    'react-native-chart-kit': '<rootDir>/__mocks__/react-native-chart-kit.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/\\.expo/', '/dist/'],
   transformIgnorePatterns: [
