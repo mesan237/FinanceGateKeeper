@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
@@ -44,7 +45,7 @@ export function ExpenseLogScreen() {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Log Expense</Typography>
+      <ScreenHeader title="Log Expense" cancelLabel="Cancel" />
 
       <TextInput
         value={log.amount}

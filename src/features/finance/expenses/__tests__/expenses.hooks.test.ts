@@ -1,10 +1,15 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
+jest.mock('@/services/transactions', () => ({ getTransactionFeed: jest.fn() }));
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(7),
   getAllExpenses: jest.fn().mockResolvedValue([]),
   getExpensesByCategory: jest.fn().mockResolvedValue([]),
   getExpensesByDateRange: jest.fn().mockResolvedValue([]),
+  getExpenseById: jest.fn().mockResolvedValue(null),
+  updateExpense: jest.fn().mockResolvedValue(undefined),
+  deleteExpense: jest.fn().mockResolvedValue(undefined),
   createCategory: jest.fn().mockResolvedValue(99),
   getAllCategories: jest.fn().mockResolvedValue([
     { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
@@ -19,16 +24,20 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 
 import {
   useCategories,
+  useExpenseEdit,
   useExpenseLog,
   useTransactions,
   useZeroDay,
 } from '@/features/finance/expenses/expenses.hooks';
 import * as service from '@/features/finance/expenses/expenses.service';
+import { getTransactionFeed } from '@/services/transactions';
 
 const mocked = service as jest.Mocked<typeof service>;
+const mockedGetFeed = getTransactionFeed as jest.MockedFunction<typeof getTransactionFeed>;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockedGetFeed.mockResolvedValue([]);
 });
 
 describe('useExpenseLog', () => {
@@ -83,22 +92,41 @@ describe('useExpenseLog', () => {
 });
 
 describe('useTransactions', () => {
-  it('loads all expenses when no filter is given', async () => {
-    renderHook(() => useTransactions());
-    await waitFor(() => expect(mocked.getAllExpenses).toHaveBeenCalledTimes(1));
-    expect(mocked.getExpensesByCategory).not.toHaveBeenCalled();
+  const EXPENSE_ENTRY = {
+    type: 'expense' as const,
+    id: 1, amount: 1000, date: '2026-06-01',
+    categoryId: 3, categoryLabel: 'Food',
+    subcategoryId: null, subcategoryLabel: null, note: null,
+  };
+  const TRANSPORT_ENTRY = {
+    type: 'expense' as const,
+    id: 2, amount: 2000, date: '2026-06-01',
+    categoryId: 5, categoryLabel: 'Transport',
+    subcategoryId: null, subcategoryLabel: null, note: null,
+  };
+  const INCOME_ENTRY = {
+    type: 'income' as const,
+    id: 3, amount: 50000, date: '2026-06-01',
+    source: 'salary', sourceLabel: 'Salary', note: null,
+  };
+
+  it('calls getTransactionFeed with the given monthISO on mount', async () => {
+    renderHook(() => useTransactions('2026-06'));
+    await waitFor(() => expect(mockedGetFeed).toHaveBeenCalledWith('2026-06'));
   });
 
-  it('filters by category when a categoryId is given', async () => {
-    renderHook(() => useTransactions({ categoryId: 3 }));
-    await waitFor(() => expect(mocked.getExpensesByCategory).toHaveBeenCalledWith(3));
+  it('returns all entries when no categoryId filter is provided', async () => {
+    mockedGetFeed.mockResolvedValue([EXPENSE_ENTRY, INCOME_ENTRY]);
+    const { result } = renderHook(() => useTransactions('2026-06'));
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(result.current.entries).toEqual([EXPENSE_ENTRY, INCOME_ENTRY]);
   });
 
-  it('filters by date range when from/to are given', async () => {
-    renderHook(() => useTransactions({ from: '2026-06-01', to: '2026-06-30' }));
-    await waitFor(() =>
-      expect(mocked.getExpensesByDateRange).toHaveBeenCalledWith('2026-06-01', '2026-06-30'),
-    );
+  it('filters expense entries by categoryId but keeps all income entries', async () => {
+    mockedGetFeed.mockResolvedValue([EXPENSE_ENTRY, TRANSPORT_ENTRY, INCOME_ENTRY]);
+    const { result } = renderHook(() => useTransactions('2026-06', 3));
+    await waitFor(() => expect(result.current.entries).toHaveLength(2));
+    expect(result.current.entries.map((e) => e.id)).toEqual([1, 3]);
   });
 });
 
@@ -142,6 +170,83 @@ describe('useCategories', () => {
 
     expect(mocked.createCategory).toHaveBeenCalledWith({ name: 'Freelance', parentId: null });
     expect(result.current.categories.map((c) => c.name)).toEqual(['Food', 'Freelance']);
+  });
+});
+
+const STORED_EXPENSE = {
+  id: 42,
+  amount: 2000,
+  categoryId: 1,
+  subcategoryId: 2,
+  note: 'lunch',
+  date: '2026-06-10',
+  isRecurring: false,
+  createdAt: '2026-06-10T10:00:00.000Z',
+};
+
+describe('useExpenseEdit', () => {
+  beforeEach(() => {
+    mocked.getExpenseById.mockResolvedValue(STORED_EXPENSE);
+  });
+
+  it('loads expense data on mount; field values match the stored row', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.amount).toBe('2000');
+    expect(result.current.categoryId).toBe(1);
+    expect(result.current.subcategoryId).toBe(2);
+    expect(result.current.note).toBe('lunch');
+    expect(result.current.date).toBe('2026-06-10');
+    expect(result.current.originalAmount).toBe(2000);
+  });
+
+  it('update() calls updateExpense with changed fields and returns true', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setAmount('3000'));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.update();
+    });
+
+    expect(ok).toBe(true);
+    expect(mocked.updateExpense).toHaveBeenCalledWith(42, expect.objectContaining({ amount: 3000 }));
+  });
+
+  it('remove() calls deleteExpense and returns true', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.remove();
+    });
+
+    expect(ok).toBe(true);
+    expect(mocked.deleteExpense).toHaveBeenCalledWith(42);
+  });
+
+  it('error is set when the expense id does not exist', async () => {
+    mocked.getExpenseById.mockResolvedValue(null);
+    const { result } = renderHook(() => useExpenseEdit(99999));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it('canSubmit is false when amount is empty or categoryId is null', async () => {
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setAmount(''));
+    expect(result.current.canSubmit).toBe(false);
+
+    act(() => {
+      result.current.setAmount('1000');
+      result.current.setCategoryId(null);
+    });
+    expect(result.current.canSubmit).toBe(false);
   });
 });
 

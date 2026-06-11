@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
+import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
@@ -85,6 +87,8 @@ export function QuickAddScreen() {
         </Pressable>
       );
     }
+    const emoji = getTransactionIcon('expense', item.categoryId);
+    const avatar = emoji ? null : getCategoryAvatar(item.label);
     return (
       <Pressable
         accessibilityRole="button"
@@ -93,6 +97,21 @@ export function QuickAddScreen() {
         onPress={() => handleLog(item)}
         onLongPress={() => setModal({ mode: 'edit', template: item })}
       >
+        {emoji ? (
+          <Typography
+            testID={`tile-icon-${item.id}`}
+            style={styles.tileEmoji}
+          >
+            {emoji}
+          </Typography>
+        ) : avatar ? (
+          <View
+            testID={`tile-avatar-${item.id}`}
+            style={[styles.tileAvatarCircle, { backgroundColor: avatar.color }]}
+          >
+            <Typography style={styles.tileAvatarLetter}>{avatar.letter}</Typography>
+          </View>
+        ) : null}
         <Typography style={styles.tileLabel}>{item.label}</Typography>
         <Typography style={styles.tileAmount}>{formatCurrency(item.amount)}</Typography>
       </Pressable>
@@ -101,7 +120,7 @@ export function QuickAddScreen() {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Quick Add</Typography>
+      <ScreenHeader title="Quick Add" />
       <Typography variant="muted">Tap to log instantly · long-press a tile to edit</Typography>
 
       <FlatList
@@ -180,6 +199,16 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: '700',
   },
+  tileEmoji: { fontSize: 28, lineHeight: 32, marginBottom: 4 },
+  tileAvatarCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  tileAvatarLetter: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
   tileLabel: {
     fontWeight: '600',
   },

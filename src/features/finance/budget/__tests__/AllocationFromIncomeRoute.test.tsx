@@ -46,7 +46,7 @@ describe('AllocationFromIncomeRoute', () => {
     mockParams.value = { amount: '400000', month: '2026-06' };
     render(<AllocationFromIncomeRoute />);
 
-    expect(await screen.findByText('Allocate income')).toBeTruthy();
+    expect(await screen.findByText('Allocation')).toBeTruthy();
     // 400 000 × 65% expenses = 260 000 — proves the params reached the screen.
     expect(await screen.findByText('260 000 FCFA')).toBeTruthy();
   });
@@ -55,7 +55,7 @@ describe('AllocationFromIncomeRoute', () => {
     mockParams.value = { month: '2026-06' };
     render(<AllocationFromIncomeRoute />);
     expect(screen.getByText('Invalid allocation parameters.')).toBeTruthy();
-    expect(screen.queryByText('Allocate income')).toBeNull();
+    expect(screen.queryByText('Allocation')).toBeNull();
   });
 
   it('renders a muted error when amount is not a positive integer', () => {

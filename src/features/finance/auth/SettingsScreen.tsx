@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
+import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { useCloudSync } from '@/hooks/useCloudSync';
+import { formatDateLong } from '@/utils/formatDate';
 
 import { useAppModeContext } from './AppModeProvider';
-import { useAppSettings } from './auth.hooks';
+import { useActionBarStyle, useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
 /**
@@ -26,8 +29,12 @@ export function SettingsScreen() {
     setNotificationsEnabled,
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
+  const { style: actionBarStyle, setStyle: setActionBarStyle } = useActionBarStyle();
+  const cloud = useCloudSync();
 
   const [reminderInput, setReminderInput] = useState('');
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudPassword, setCloudPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Seed the editable reminder field once settings load.
@@ -67,8 +74,8 @@ export function SettingsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Typography variant="heading">Settings</Typography>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <ScreenHeader title="Settings" />
 
       <View style={styles.section}>
         <Typography variant="subheading">App mode</Typography>
@@ -112,15 +119,104 @@ export function SettingsScreen() {
           />
         </View>
       </View>
-    </View>
+
+      <View style={styles.section}>
+        <Typography variant="subheading">Action bar style</Typography>
+        <Typography variant="muted">
+          Controls how the Transactions tab action bar appears.
+        </Typography>
+        {(['explicit', 'speed_dial'] as const).map((option) => (
+          <Pressable
+            key={option}
+            testID={`settings-action-bar-${option}`}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: actionBarStyle === option }}
+            style={[styles.optionRow, actionBarStyle === option && styles.optionRowActive]}
+            onPress={() => void setActionBarStyle(option)}
+          >
+            <Typography style={actionBarStyle === option ? styles.optionTextActive : undefined}>
+              {option === 'explicit' ? 'Explicit buttons' : 'Speed dial'}
+            </Typography>
+            {actionBarStyle === option ? (
+              <Typography style={styles.checkmark}>✓</Typography>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <Typography variant="subheading">Cloud backup</Typography>
+        {cloud.signedIn ? (
+          <>
+            <Typography variant="muted">Signed in as</Typography>
+            <Typography>{cloud.userEmail ?? 'your account'}</Typography>
+            {cloud.lastSyncedAt ? (
+              <Typography testID="settings-last-synced" variant="muted">
+                Last synced {formatDateLong(cloud.lastSyncedAt)}
+              </Typography>
+            ) : (
+              <Typography variant="muted">Not synced yet.</Typography>
+            )}
+            {cloud.status === 'error' && cloud.error ? (
+              <Typography style={styles.error}>{cloud.error}</Typography>
+            ) : null}
+            <Button
+              testID="settings-sync-now"
+              label={cloud.status === 'syncing' ? 'Syncing…' : 'Sync now'}
+              onPress={() => void cloud.syncNow()}
+              disabled={cloud.status === 'syncing'}
+            />
+            <Button testID="settings-sign-out" label="Sign out" compact onPress={() => void cloud.signOut()} />
+          </>
+        ) : (
+          <>
+            <Typography variant="muted">
+              Back up your data to the cloud and restore it on a new device.
+            </Typography>
+            <TextInput
+              testID="settings-cloud-email"
+              value={cloudEmail}
+              onChangeText={setCloudEmail}
+              placeholder="Email"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              accessibilityLabel="Cloud account email"
+            />
+            <TextInput
+              testID="settings-cloud-password"
+              value={cloudPassword}
+              onChangeText={setCloudPassword}
+              placeholder="Password"
+              secureTextEntry
+              accessibilityLabel="Cloud account password"
+            />
+            {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
+            <Button
+              testID="settings-sign-in"
+              label="Sign in"
+              onPress={() => void cloud.signIn(cloudEmail, cloudPassword)}
+            />
+            <Button
+              testID="settings-sign-up"
+              label="Create account"
+              compact
+              onPress={() => void cloud.signUp(cloudEmail, cloudPassword)}
+            />
+          </>
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
+  },
+  container: {
     padding: 16,
     gap: 20,
+    paddingBottom: 40,
   },
   section: {
     gap: 8,
@@ -136,5 +232,27 @@ const styles = StyleSheet.create({
   },
   error: {
     color: DANGER,
+  },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: BORDER,
+  },
+  optionRowActive: {
+    borderColor: PRIMARY_GREEN,
+    backgroundColor: '#E8F5E9',
+  },
+  optionTextActive: {
+    color: PRIMARY_GREEN,
+    fontWeight: '600',
+  },
+  checkmark: {
+    color: PRIMARY_GREEN,
+    fontWeight: '700',
   },
 });

@@ -1,16 +1,18 @@
 import { execute, query } from '@/services/database';
 
-import type { AppMode, AppSettings } from './auth.types';
+import type { ActionBarStyle, AppMode, AppSettings } from './auth.types';
 
 interface UserRow {
   id: number;
   app_mode: AppMode;
   reminder_time: string;
   notifications_enabled: number;
+  action_bar_style: ActionBarStyle;
   created_at: string;
 }
 
-const USER_COLUMNS = 'id, app_mode, reminder_time, notifications_enabled, created_at';
+const USER_COLUMNS = 'id, app_mode, reminder_time, notifications_enabled, action_bar_style, created_at';
+const VALID_ACTION_BAR_STYLES: ReadonlySet<string> = new Set(['explicit', 'speed_dial']);
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const MONTH_1_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -81,4 +83,23 @@ export async function isMonth1Complete(nowISO: string = new Date().toISOString()
   const row = await getOrCreateUserRow();
   const elapsed = new Date(nowISO).getTime() - new Date(row.created_at).getTime();
   return elapsed >= MONTH_1_MS;
+}
+
+/** Returns the current action bar style, defaulting to `'explicit'` before first set. */
+export async function getActionBarStyle(): Promise<ActionBarStyle> {
+  const row = await getOrCreateUserRow();
+  return row.action_bar_style ?? 'explicit';
+}
+
+/**
+ * Persists the action bar style preference.
+ *
+ * @throws if `style` is not a valid ActionBarStyle value.
+ */
+export async function setActionBarStyle(style: ActionBarStyle): Promise<void> {
+  if (!VALID_ACTION_BAR_STYLES.has(style)) {
+    throw new Error(`Invalid action bar style: "${style}". Expected 'explicit' or 'speed_dial'.`);
+  }
+  const row = await getOrCreateUserRow();
+  await execute('UPDATE users SET action_bar_style = ? WHERE id = ?', [style, row.id]);
 }

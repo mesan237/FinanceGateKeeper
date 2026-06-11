@@ -123,6 +123,13 @@ describe('QuickAddScreen', () => {
     );
   });
 
+  it('renders a category icon above the label in each tile', async () => {
+    render(<QuickAddScreen />);
+    // TAXI has categoryId=5 (Transport → icon), LUNCH has categoryId=1 (Food → icon)
+    await waitFor(() => expect(screen.getByTestId('tile-icon-1')).toBeTruthy());
+    expect(screen.getByTestId('tile-icon-2')).toBeTruthy();
+  });
+
   it('opens the edit modal pre-filled when a tile is long-pressed', async () => {
     render(<QuickAddScreen />);
     fireEvent(await screen.findByTestId('quick-add-tile-1'), 'longPress');

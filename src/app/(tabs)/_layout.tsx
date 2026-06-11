@@ -1,14 +1,29 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
+import { Pressable } from 'react-native';
 
-import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_MUTED } from '@/constants/colors';
+import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
 import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 function tabIcon(name: IoniconName, focused: boolean, color: string) {
   return <Ionicons name={focused ? name : (`${name}-outline` as IoniconName)} size={22} color={color} />;
+}
+
+function GearIcon() {
+  const router = useRouter();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Settings"
+      onPress={() => router.push('/settings')}
+      style={{ marginRight: 16 }}
+    >
+      <Ionicons name="settings-outline" size={22} color={TEXT_PRIMARY} />
+    </Pressable>
+  );
 }
 
 export default function TabsLayout() {
@@ -18,7 +33,10 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
+        headerRight: () => <GearIcon />,
+        headerStyle: { backgroundColor: SURFACE },
+        headerShadowVisible: false,
         tabBarActiveTintColor: PRIMARY_GREEN,
         tabBarInactiveTintColor: TEXT_MUTED,
         tabBarStyle: {

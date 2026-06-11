@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
+import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { PRIMARY_GREEN } from '@/constants/colors';
 
 import { useCategories } from './expenses.hooks';
@@ -20,6 +21,19 @@ export interface CategoryPickerProps {
   visible: boolean;
   onClose: () => void;
   onSelect: (selection: CategorySelection) => void;
+}
+
+function PickerIcon({ id, name }: { id: number; name: string }) {
+  const emoji = getTransactionIcon('expense', id);
+  if (emoji) {
+    return <Typography style={styles.rowEmojiIcon}>{emoji}</Typography>;
+  }
+  const { color, letter } = getCategoryAvatar(name);
+  return (
+    <View style={[styles.rowAvatar, { backgroundColor: color }]}>
+      <Typography style={styles.rowAvatarLetter}>{letter}</Typography>
+    </View>
+  );
 }
 
 /**
@@ -72,6 +86,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 style={styles.row}
                 onPress={() => setParent(category)}
               >
+                <PickerIcon id={category.id} name={category.name} />
                 <Typography>{category.name}</Typography>
               </Pressable>
             ))
@@ -84,6 +99,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                   commit({ categoryId: parent.id, subcategoryId: null, label: parent.name })
                 }
               >
+                <PickerIcon id={parent.id} name={parent.name} />
                 <Typography style={styles.action}>{`Use ${parent.name}`}</Typography>
               </Pressable>,
               ...subcategories.map((sub) => (
@@ -95,6 +111,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                     commit({ categoryId: parent.id, subcategoryId: sub.id, label: sub.name })
                   }
                 >
+                  <PickerIcon id={sub.id} name={sub.name} />
                   <Typography>{sub.name}</Typography>
                 </Pressable>
               )),
@@ -131,10 +148,22 @@ const styles = StyleSheet.create({
     maxHeight: 320,
   },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E0E0E0',
   },
+  rowEmojiIcon: { fontSize: 20, lineHeight: 24, width: 20, textAlign: 'center' },
+  rowAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowAvatarLetter: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   manage: {
     paddingTop: 14,
     alignItems: 'center',

@@ -66,14 +66,14 @@ describe('FundDetail', () => {
   it('renders the fund progress and transaction history', async () => {
     render(<FundDetail fundId={1} />);
 
-    await screen.findByText('Emergency Fund');
+    await screen.findByText('Fund');
     expect(screen.getByText('Car repair')).toBeTruthy();
     expect(screen.getByText('Allocation 2026-06')).toBeTruthy();
   });
 
   it('logs a withdrawal with the entered amount and reason', async () => {
     render(<FundDetail fundId={1} />);
-    await screen.findByText('Emergency Fund');
+    await screen.findByText('Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Log withdrawal' }));
     fireEvent.changeText(screen.getByTestId('withdraw-amount'), '15000');
@@ -85,7 +85,7 @@ describe('FundDetail', () => {
 
   it('edits the target with the entered amount', async () => {
     render(<FundDetail fundId={1} />);
-    await screen.findByText('Emergency Fund');
+    await screen.findByText('Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Edit target' }));
     fireEvent.changeText(screen.getByTestId('target-amount'), '600000');

@@ -412,6 +412,103 @@ Dependencies are explicit. A task cannot start until its blockers are complete. 
 
 ---
 
+### VS-16: Transaction UX Enhancement
+
+**Priority:** High
+**Blocked by:** VS-03, VS-05, VS-08
+
+**Scope:**
+
+Shared infrastructure (root folders):
+
+- `components/ScreenHeader.tsx`: reusable header row with a back/cancel chevron (`router.back()`), a title slot, and an optional right-action slot. Form screens receive a `cancelLabel` prop (renders "Cancel" instead of "‹") to signal that navigating back discards unsaved data.
+- `services/transactions.ts`: `getTransactionFeed(monthISO: string): TransactionEntry[]` — unified query that JOINs the `expenses` and `income` tables, returns rows sorted newest-first within the month. Each row carries a `type: 'expense' | 'income'` discriminator plus the relevant fields (amount, category/source label, date).
+- `types/transactions.ts`: `TransactionEntry` union type (`ExpenseEntry | IncomeEntry`) consumed by the feed service and `TransactionList`.
+
+Navigation — back buttons:
+
+- Apply `ScreenHeader` to every pushed (non-tab) screen. Form screens use `cancelLabel`: `/expenses/log`, `/income/log`, `/debt/create`, `/projects/create`. Detail and list screens use the default back chevron: `/expenses/quick-add`, `/expenses/recurring`, `/expenses/categories`, `/income/allocate`, `/budget/settings`, `/settings`, `/debt/[id]`, `/projects/[id]`, `/funds/index`, `/funds/[id]`.
+
+Settings relocation:
+
+- `app/(tabs)/_layout.tsx`: enable tab headers (`headerShown: true`). Add a `headerRight` gear icon to all five tabs that navigates to `/settings`.
+- Remove the "Settings" compact button from `TransactionsScreen` FAB.
+
+Transaction list redesign — `TransactionList.tsx`:
+
+- Replace `FlatList` with `SectionList`. Sections keyed by ISO date string (YYYY-MM-DD). Section header: formatted date label (e.g., "Today", "Yesterday", or "Mon 9 Jun") on the left + day net total (expenses − income) on the right.
+- Each row: colored left border (green = income, `TEXT_MUTED`-tinted = expense) + label (category name for expenses, income source for income) + amount right-aligned (green for income, default for expense).
+- Date removed from per-row display (it now lives in the section header).
+
+Month-scoped feed:
+
+- Default scope: current calendar month (`monthISO = YYYY-MM`). A prev/next arrow pair in the list header navigates months. `useTransactions` hook updated to accept `monthISO` param and call `services/transactions.getTransactionFeed(monthISO)`. Existing category chip filter retained; it filters within the selected month.
+
+Transactions FAB rationalization:
+
+- Remove compact buttons: Recurring, Debts, Settings. Log Income is removed from this bar entirely — income logging remains on the Dashboard `QuickActionBar`, where the effect (budget pace update, fund deposits) is immediately visible.
+- Retain compact button: Quick Add.
+- Retain primary button: + Log Expense.
+- In `explicit` style: Quick Add (compact) + Log Expense (primary) — both always visible.
+- In `speed_dial` style: a single "+" FAB expands to two labelled options: Log Expense, Quick Add.
+
+Category icons:
+
+- `constants/categoryIcons.ts`: maps each default category id to an `Ionicons` icon name (from `@expo/vector-icons`, already bundled with Expo). Also maps the three income sources (`salary`, `freelance`, `ecommerce`) to icons. Exports a `getTransactionIcon(type, categoryId?, source?)` helper that returns the icon name, and a `getCategoryAvatar(name)` helper that returns a background color + first-letter string for custom categories without a mapped icon.
+- Default icon mapping (illustrative): Food → `restaurant-outline`, Transport → `car-outline`, Bills → `receipt-outline`, Health → `medkit-outline`, Entertainment → `film-outline`, Education → `book-outline`, Shopping → `bag-outline`, Other → `ellipsis-horizontal-outline`. Income sources: Salary → `briefcase-outline`, Freelance → `laptop-outline`, E-commerce → `storefront-outline`.
+- `TransactionList.tsx`: each row renders a small icon (22px) left of the label, using the mapped `Ionicons` icon or the color-letter avatar for unmapped custom categories.
+- `QuickAddScreen.tsx`: each template tile renders the icon for its mapped category above the label.
+- `CategoryPicker.tsx`: each category row in the picker modal shows its icon beside the name.
+
+Action bar style preference (migration + settings):
+
+- Migration 015: `ALTER TABLE users ADD COLUMN action_bar_style TEXT NOT NULL DEFAULT 'explicit'`. Valid values: `'explicit'` | `'speed_dial'`.
+- `auth.service.ts`: add `getActionBarStyle()` and `setActionBarStyle(style: 'explicit' | 'speed_dial')`.
+- `auth.hooks.ts`: add `useActionBarStyle()` hook.
+- `auth.types.ts`: add `ActionBarStyle` type.
+- `SettingsScreen.tsx`: new "Action bar style" section with two selectable options — "Explicit buttons" (default) and "Speed dial". Selection persists via `setActionBarStyle`.
+- `TransactionsScreen.tsx`: reads `useActionBarStyle()` and renders the corresponding bar variant.
+
+**TDD Anchor:**
+
+- Test: `transactions.service.ts` — feed returns merged income + expense rows sorted newest-first for a given month; expense rows carry `type: 'expense'`; income rows carry `type: 'income'`; returns empty array for a month with no data.
+- Test: `TransactionList` — renders section headers with correct date labels; income row has green left-border indicator; expense row has muted indicator; month navigation rerenders with entries for the navigated month; category chip filter applies within the selected month.
+- Test: `ScreenHeader` — renders back chevron and title; pressing chevron calls `router.back()`; renders `cancelLabel` when provided; renders optional right action when provided.
+- Test: `auth.service.ts` — `getActionBarStyle` returns `'explicit'` before first set; returns the updated value after `setActionBarStyle`; rejects unknown style values.
+- Test: `TransactionsScreen` — renders Quick Add compact button and Log Expense primary button when style is `'explicit'`; renders single "+" FAB when style is `'speed_dial'`; does not render a Log Income button in either style.
+- Test: `getTransactionIcon` — returns the correct `Ionicons` name for each default category id and each income source; returns `null` for an unknown id (signals fallback to avatar).
+- Test: `TransactionList` — expense rows render the mapped category icon; income rows render the mapped source icon; a custom-category expense row renders the letter-avatar fallback.
+- Test: `QuickAddScreen` — template tiles render the icon for their mapped category.
+
+**Done when:** The Transactions tab shows income and expenses together, grouped by date with section headers, scoped to the current month by default with prev/next navigation. Each row has a colored left border distinguishing income from expense, plus a category/source icon. Quick Add tiles show category icons. The category picker shows icons beside names. The FAB shows Quick Add (compact) + Log Expense (primary) in explicit mode, or a speed-dial "+" expanding to Log Expense and Quick Add in speed-dial mode. Log Income is accessible from the Dashboard only. A gear icon in every tab header opens Settings. Settings has an "Action bar style" option. Every pushed screen has a back or cancel button. All tests pass.
+
+---
+
+### VS-17: Expense Edit & Delete
+
+**Priority:** High
+**Blocked by:** VS-16
+
+**Scope:**
+
+- `expenses.service.ts`: add `updateExpense(id: number, fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date'>>): Promise<void>` and `deleteExpense(id: number): Promise<void>`. Both throw if the id does not exist.
+- `expenses.hooks.ts`: add `useExpenseEdit(id: number)` hook — loads the expense by id on mount, exposes `update(fields)` and `remove()` handlers, returns loading/error state.
+- `ExpenseDetailScreen.tsx`: pre-filled edit form. Identical layout to `ExpenseLogScreen` but initialised with the existing expense's values. Includes a "Delete" danger button below the form. Save calls `updateExpense`; after success, navigates back. Delete opens a confirmation `Modal`; on confirm, calls `deleteExpense` and navigates back. The over-budget check (`useOverBudgetCheck`) runs on save if the amount changed.
+- `ExpenseDetailRoute.tsx`: reads `id` from `useLocalSearchParams`, validates it (positive integer), renders `ExpenseDetailScreen(expenseId)` or an error state for invalid id. Follows the same `*DetailRoute` pattern used by `DebtDetailRoute`, `ProjectDetailRoute`, and `FundDetailRoute`.
+- `app/expenses/[id].tsx`: thin route rendering `ExpenseDetailRoute`.
+- `TransactionList.tsx` (update): expense rows gain `onPress={() => router.push(`/expenses/${item.id}`)}`. Income rows remain non-tappable (income edit is deferred — reversing an allocation requires dedicated scope).
+
+**TDD Anchor:**
+
+- Test: `expenses.service.ts` — `updateExpense` persists changed fields and the updated row is returned on the next fetch; `deleteExpense` removes the record so it no longer appears in any query; both throw for a non-existent id.
+- Test: `useExpenseEdit` — loads expense data on mount; `update` triggers re-fetch with new values; `remove` triggers re-fetch and the id is no longer present.
+- Test: `ExpenseDetailScreen` — renders with pre-filled amount, category, note, date; save button is disabled until amount and category are present; save calls `updateExpense` with changed fields; delete button opens a confirmation modal; confirming deletion calls `deleteExpense` and navigates back; cancelling deletion closes the modal without calling `deleteExpense`.
+- Test: `ExpenseDetailRoute` — renders error state for id = 0 or NaN; renders `ExpenseDetailScreen` for a valid positive integer id.
+
+**Done when:** Tapping an expense row in the Transactions tab opens a pre-filled edit form with a back button. You can correct any field and save. Saving re-runs the over-budget check if the amount changed. You can delete the expense with a one-step confirmation. Income rows in the feed are not tappable. All tests pass.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -420,17 +517,19 @@ VS-01 (Scaffold)
 ├── VS-03 (Expense Logging) ─────────────┐
 │   ├── VS-04 (Category Management)      │
 │   ├── VS-07 (Quick-Add & Recurring)    │
-│   ├── VS-08 (Daily Reminder & Modes)   │
+│   ├── VS-08 (Daily Reminder & Modes) ──┼──┐
 │   └── VS-12 (Over-Budget Alerts) ◄─────┼── VS-06
-├── VS-05 (Income Logging) ──────────────┤
-│   └── VS-06 (Budget Allocation) ◄──────┘
-│       ├── VS-09 (Funds)
-│       ├── VS-10 (Projects)
-│       └── VS-12 (Over-Budget Alerts)
-├── VS-11 (Debt Tracking)
+├── VS-05 (Income Logging) ──────────────┤  │
+│   └── VS-06 (Budget Allocation) ◄──────┘  │
+│       ├── VS-09 (Funds)                   │
+│       ├── VS-10 (Projects)                │
+│       └── VS-12 (Over-Budget Alerts)      │
+├── VS-11 (Debt Tracking)                   │
 ├── VS-13 (Dashboard) ◄── VS-03, VS-05, VS-06, VS-09, VS-10
 ├── VS-14 (Reports) ◄── VS-03, VS-05, VS-06, VS-09, VS-10, VS-11
-└── VS-15 (Supabase Sync) ◄── VS-02, VS-03, VS-05, VS-06
+├── VS-15 (Supabase Sync) ◄── VS-02, VS-03, VS-05, VS-06
+├── VS-16 (Transaction UX) ◄── VS-03, VS-05, VS-08
+└── VS-17 (Expense Edit & Delete) ◄── VS-16
 ```
 
 ## PARALLEL LANES
@@ -446,6 +545,8 @@ These tasks can run simultaneously if using multiple agents:
 | VS-09  | VS-08  | —      |
 | VS-10  | VS-12  | —      |
 | VS-13  | VS-14  | VS-15  |
+| VS-16  | VS-14  | VS-15  |
+| VS-17  | —      | —      |
 
 ---
 
@@ -467,4 +568,6 @@ These tasks can run simultaneously if using multiple agents:
 | VS-12: Over-Budget Alerts     | ✅ Done    | Overall expense-budget guard (no per-category table): `checkOverBudget(monthISO, amount)` on top of `getMonthlyBudget`, gated on `allocation.isLocked` (inert in learning mode / before a month is confirmed) → `useOverBudgetCheck` → `OverBudgetAlert` modal + pure `overBudget` trigger (in-app, no push) → pre-save guard wired into ExpenseLogScreen & QuickAddScreen. Added approved cross-feature edge `expenses → budget` (ARCHITECTURE.md + CLAUDE.md). No migration. Approved by code-reviewer (no BLOCK). 16 slice tests; 368/368 total. |
 | VS-13: Dashboard              | ✅ Done    | Aggregated overview: today spending, budget pace (green/yellow/red), fund bars, top project, quick-action bar. Learning-mode gate at routing layer. 51/51 slice tests; 419/419 total. |
 | VS-14: Reports & Charts       | 🔲 Backlog |       |
-| VS-15: Supabase Sync          | 🔲 Backlog |       |
+| VS-15: Supabase Sync          | ✅ Done | Decoupled email/password cloud identity (SecureStore session, not PIN-linked) → migration 017 adds uuid/updated_at/sync_status + dirty-marking triggers (with `_sync_guard` + `NEW.uuid IS NULL` loop-suppression) + `sync_meta` cursor to 12 financial tables (users excluded; default categories get deterministic uuids) → services/sync.ts local-first push/pull, last-write-wins (local breaks ties), FK uuid↔local-id round-trip via sync.mapping.ts → useCloudSync + useBackgroundSync (on-open/on-foreground, signed-in-guarded, mounted in _layout) → Settings "Cloud backup" section. Supabase fully mocked in tests; supabase/schema.sql (uuid-keyed, owner-scoped RLS; supersedes the old integer-id schema) for manual server setup. code-reviewer APPROVE (no BLOCK). 523/523 tests (1 pre-existing flaky auth CHECK test unrelated to VS-15). |
+| VS-16: Transaction UX Enhancement | ✅ Done | ScreenHeader shared component, Settings gear in tab headers, SectionList date grouping, unified income+expense feed (services/transactions.ts), month-scoped filter with prev/next nav, FAB = Quick Add + Log Expense only (Log Income stays on Dashboard), action bar style preference (explicit/speed-dial) with migration 016 + settings toggle, category icons via Ionicons (constants/categoryIcons.ts) in TransactionList + QuickAddScreen + CategoryPicker. ActionBarStyle lifted to src/types/settings.ts (no cross-feature edge). Blocked by VS-03, VS-05, VS-08. 460/460 tests passing. |
+| VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |

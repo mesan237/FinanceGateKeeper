@@ -19,6 +19,8 @@ export interface AppSettings {
   createdAt: string;
 }
 
+export type { ActionBarStyle } from '@/types/settings';
+
 /** The mutable subset of `AppSettings`, used by the settings update helpers. */
 export type AppSettingsPatch = Partial<
   Pick<AppSettings, 'appMode' | 'reminderTime' | 'notificationsEnabled'>

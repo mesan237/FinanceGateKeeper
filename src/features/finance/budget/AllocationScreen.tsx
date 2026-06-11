@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
 import { DANGER } from '@/constants/colors';
@@ -34,7 +35,7 @@ export function AllocationScreen({ amountFCFA, monthISO }: AllocationScreenProps
   if (!allocation) {
     return (
       <View style={styles.container}>
-        <Typography variant="heading">Allocate income</Typography>
+        <ScreenHeader title="Allocation" />
         <Typography variant="muted">{loading ? 'Loading…' : 'No allocation yet.'}</Typography>
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </View>
@@ -105,7 +106,7 @@ function AllocationScreenBody({
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Allocate income</Typography>
+      <ScreenHeader title="Allocation" />
       <Typography variant="muted">{`${formatCurrency(amountFCFA)} · ${allocation.month}`}</Typography>
 
       {allocation.priorityOrder.map((bucket) => (

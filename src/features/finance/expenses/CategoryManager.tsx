@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
@@ -123,7 +124,7 @@ export function CategoryManager() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Typography variant="heading">Manage Categories</Typography>
+      <ScreenHeader title="Categories" />
 
       <View style={styles.line}>
         <TextInput

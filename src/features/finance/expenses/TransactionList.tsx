@@ -1,13 +1,40 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, PRIMARY_GREEN } from '@/constants/colors';
+import { BACKGROUND, DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
+import type { TransactionEntry } from '@/types/transactions';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { formatDateShort } from '@/utils/formatDate';
+import { currentMonthISO, formatSectionDate } from '@/utils/formatDate';
 
 import { useCategories, useTransactions } from './expenses.hooks';
-import type { TransactionFilter } from './expenses.types';
+
+interface Section {
+  title: string;
+  date: string;
+  netTotal: number;
+  data: TransactionEntry[];
+}
+
+function buildSections(entries: TransactionEntry[]): Section[] {
+  const byDate = new Map<string, TransactionEntry[]>();
+  for (const entry of entries) {
+    const list = byDate.get(entry.date) ?? [];
+    list.push(entry);
+    byDate.set(entry.date, list);
+  }
+  const sortedDates = Array.from(byDate.keys()).sort((a, b) => (a > b ? -1 : 1));
+  return sortedDates.map((date) => {
+    const rows = byDate.get(date)!;
+    const netTotal = rows.reduce((acc, e) => {
+      return e.type === 'expense' ? acc + e.amount : acc - e.amount;
+    }, 0);
+    return { title: formatSectionDate(date), date, netTotal, data: rows };
+  });
+}
 
 interface ChipProps {
   label: string;
@@ -28,57 +55,173 @@ function Chip({ label, active, onPress }: ChipProps) {
   );
 }
 
+interface RowIconProps {
+  entry: TransactionEntry;
+}
+
+function RowIcon({ entry }: RowIconProps) {
+  const emoji =
+    entry.type === 'income'
+      ? getTransactionIcon('income', undefined, entry.source)
+      : getTransactionIcon('expense', entry.categoryId);
+
+  if (emoji) {
+    return (
+      <Typography testID={`tx-icon-${entry.type}-${entry.id}`} style={styles.rowEmoji}>
+        {emoji}
+      </Typography>
+    );
+  }
+
+  const label = entry.type === 'expense' ? entry.categoryLabel : entry.sourceLabel;
+  const avatar = getCategoryAvatar(label);
+  return (
+    <View
+      testID={`tx-avatar-${entry.type}-${entry.id}`}
+      style={[styles.avatar, { backgroundColor: avatar.color }]}
+    >
+      <Typography style={styles.avatarLetter}>{avatar.letter}</Typography>
+    </View>
+  );
+}
+
 /**
- * Filterable, newest-first list of logged expenses. A category chip row drives
- * SQL-side filtering via `useTransactions`; each row's label is the
- * subcategory name when present, otherwise the parent category name. Shows an
- * empty state when nothing matches.
+ * Unified income+expense feed grouped by calendar day, with month navigation.
+ * The category chip row filters only expense rows; income rows always appear.
  */
 export function TransactionList() {
-  const [categoryId, setCategoryId] = useState<number | null>(null);
-  const filter = useMemo<TransactionFilter | undefined>(
-    () => (categoryId != null ? { categoryId } : undefined),
-    [categoryId],
-  );
-  const { expenses } = useTransactions(filter);
-  const { categories, labelFor } = useCategories();
+  const router = useRouter();
+  const [monthISO, setMonthISO] = useState(() => currentMonthISO());
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const { entries, loading } = useTransactions(monthISO, selectedCategoryId);
+  const { categories } = useCategories();
+
+  const sections = useMemo(() => buildSections(entries), [entries]);
+  const isCurrentMonth = monthISO === currentMonthISO();
+
+  const prevMonth = () => {
+    const [year, month] = monthISO.split('-').map(Number);
+    const d = new Date(Date.UTC(year, month - 2, 1));
+    setMonthISO(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const nextMonth = () => {
+    const [year, month] = monthISO.split('-').map(Number);
+    const d = new Date(Date.UTC(year, month, 1));
+    setMonthISO(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  };
+
+  const monthLabel = (() => {
+    const [year, month] = monthISO.split('-').map(Number);
+    const names = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return `${names[month - 1]} ${year}`;
+  })();
 
   return (
     <View style={styles.container}>
+      {/* Month navigation */}
+      <View style={styles.monthNav}>
+        <Pressable
+          testID="month-nav-prev"
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
+          onPress={prevMonth}
+        >
+          <Ionicons name="chevron-back" size={22} color={TEXT_MUTED} />
+        </Pressable>
+        <Typography variant="subheading">{monthLabel}</Typography>
+        <Pressable
+          testID="month-nav-next"
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
+          accessibilityState={{ disabled: isCurrentMonth }}
+          onPress={isCurrentMonth ? undefined : nextMonth}
+          style={isCurrentMonth ? styles.disabled : undefined}
+        >
+          <Ionicons name="chevron-forward" size={22} color={isCurrentMonth ? '#C0C0C0' : TEXT_MUTED} />
+        </Pressable>
+      </View>
+
+      {/* Category chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.chipsScroll}
         contentContainerStyle={styles.chips}
       >
-        <Chip label="All" active={categoryId === null} onPress={() => setCategoryId(null)} />
-        {categories.map((category) => (
+        <Chip label="All" active={selectedCategoryId === null} onPress={() => setSelectedCategoryId(null)} />
+        {categories.map((cat) => (
           <Chip
-            key={category.id}
-            label={category.name}
-            active={categoryId === category.id}
-            onPress={() => setCategoryId(category.id)}
+            key={cat.id}
+            label={cat.name}
+            active={selectedCategoryId === cat.id}
+            onPress={() => setSelectedCategoryId(cat.id)}
           />
         ))}
       </ScrollView>
 
-      {expenses.length === 0 ? (
+      {loading ? null : sections.length === 0 ? (
         <Typography variant="muted" style={styles.empty}>
-          No transactions yet.
+          No transactions in {monthLabel}.
         </Typography>
       ) : (
-        <FlatList
-          data={expenses}
-          keyExtractor={(item) => String(item.id)}
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => `${item.type}-${item.id}`}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Typography>{formatCurrency(item.amount)}</Typography>
-              <Typography variant="muted">
-                {`${labelFor(item.categoryId, item.subcategoryId)} · ${formatDateShort(item.date)}`}
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Typography variant="muted" style={styles.sectionDate}>{section.title}</Typography>
+              <Typography
+                testID={`section-net-${section.date}`}
+                variant="muted"
+                style={styles.sectionNet}
+              >
+                {formatCurrency(Math.abs(section.netTotal))}
               </Typography>
             </View>
           )}
+          renderItem={({ item }) => {
+            const label =
+              item.type === 'expense'
+                ? (item.subcategoryLabel ?? item.categoryLabel)
+                : item.sourceLabel;
+            const isIncome = item.type === 'income';
+
+            const rowContent = (
+              <>
+                <RowIcon entry={item} />
+                <Typography style={styles.rowLabel}>{label}</Typography>
+                <Typography style={isIncome ? styles.rowAmountIncome : styles.rowAmountExpense}>
+                  {isIncome ? formatCurrency(item.amount) : `−${formatCurrency(item.amount)}`}
+                </Typography>
+              </>
+            );
+
+            if (isIncome) {
+              return (
+                <View
+                  testID={`tx-row-income-${item.id}`}
+                  style={[styles.row, styles.rowIncomeBorder]}
+                >
+                  {rowContent}
+                </View>
+              );
+            }
+
+            return (
+              <Pressable
+                testID={`tx-row-expense-${item.id}`}
+                onPress={() => router.push(`/expenses/${item.id}`)}
+                style={[styles.row, styles.rowExpenseBorder]}
+              >
+                {rowContent}
+              </Pressable>
+            );
+          }}
         />
       )}
     </View>
@@ -88,21 +231,26 @@ export function TransactionList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  monthNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  disabled: {
+    opacity: 0.4,
   },
   chipsScroll: {
     flexGrow: 0,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   chips: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  listContent: {
-    // Clear the floating action bar (Quick Add / … / Log Expense) in
-    // TransactionsScreen so the last rows aren't hidden behind it.
-    paddingBottom: 140,
   },
   chip: {
     paddingVertical: 6,
@@ -119,13 +267,71 @@ const styles = StyleSheet.create({
   chipTextActive: {
     color: '#FFFFFF',
   },
+  listContent: {
+    paddingBottom: 170,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    backgroundColor: BACKGROUND,
+  },
+  sectionDate: {
+    fontWeight: '600',
+    fontSize: 12,
+    textTransform: 'uppercase',
+  },
+  sectionNet: {
+    fontSize: 12,
+  },
   row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E0E0E0',
-    gap: 2,
+    borderLeftWidth: 3,
+    paddingLeft: 10,
+  },
+  rowIncomeBorder: {
+    borderLeftColor: SUCCESS,
+  },
+  rowExpenseBorder: {
+    borderLeftColor: TEXT_MUTED,
+  },
+  rowLabel: {
+    flex: 1,
+  },
+  rowAmountIncome: {
+    color: SUCCESS,
+    fontWeight: '600',
+  },
+  rowAmountExpense: {
+    color: DANGER,
+    fontWeight: '600',
+  },
+  rowEmoji: {
+    fontSize: 22,
+    lineHeight: 28,
+    width: 26,
+    textAlign: 'center',
+  },
+  avatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarLetter: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   empty: {
     marginTop: 24,
+    textAlign: 'center',
   },
 });

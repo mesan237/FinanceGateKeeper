@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -81,7 +82,7 @@ export function RecurringExpensesScreen() {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Recurring Expenses</Typography>
+      <ScreenHeader title="Recurring" />
       <Button
         label="+ Add recurring"
         onPress={() => setModal({ mode: 'create' })}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import * as authService from './auth.service';
-import type { AppMode, AppSettings } from './auth.types';
+import type { ActionBarStyle, AppMode, AppSettings } from './auth.types';
 
 /**
  * Loads the app/user settings and exposes setters for app mode, reminder time,
@@ -58,4 +58,38 @@ export function useAppSettings() {
     setReminderTime,
     setNotificationsEnabled,
   };
+}
+
+/**
+ * Reads and persists the action bar style preference. Defaults to `'explicit'`
+ * on first launch.
+ */
+export function useActionBarStyle(): {
+  style: ActionBarStyle;
+  setStyle: (s: ActionBarStyle) => Promise<void>;
+  loading: boolean;
+  refresh: () => Promise<void>;
+} {
+  const [style, setStyleState] = useState<ActionBarStyle>('explicit');
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    const next = await authService.getActionBarStyle();
+    setStyleState(next);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const setStyle = useCallback(
+    async (s: ActionBarStyle) => {
+      await authService.setActionBarStyle(s);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { style, setStyle, loading, refresh };
 }

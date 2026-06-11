@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, BUCKET_VALUES, type Bucket } from '@/constants/allocation';
@@ -35,7 +36,7 @@ export function AllocationSettings({
   if (!allocation) {
     return (
       <View style={styles.container}>
-        <Typography variant="heading">Allocation Settings</Typography>
+        <ScreenHeader title="Budget Settings" />
         <Typography variant="muted">{loading ? 'Loading…' : 'No allocation yet.'}</Typography>
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </View>
@@ -129,7 +130,7 @@ function AllocationSettingsForm({
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Allocation Settings</Typography>
+      <ScreenHeader title="Budget Settings" />
 
       {isLocked ? (
         <Typography style={styles.lockedBanner}>

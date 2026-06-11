@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { getTransactionFeed } from '@/services/transactions';
+import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
 
 import * as expenseService from './expenses.service';
@@ -12,7 +14,6 @@ import type {
   NewRecurringExpense,
   QuickAddTemplate,
   RecurringExpense,
-  TransactionFilter,
 } from './expenses.types';
 
 /**
@@ -74,44 +75,46 @@ export function useExpenseLog() {
 }
 
 /**
- * Loads transactions, re-querying whenever the filter changes. Filtering is
- * done in SQL (not in memory): a category filter takes precedence, then a
- * date range, otherwise all expenses are returned.
+ * Loads the unified income+expense feed for a calendar month, re-querying
+ * whenever `monthISO` or `categoryId` changes. An optional `categoryId` filter
+ * is applied client-side: expense rows matching the category are kept; income
+ * rows are always included regardless of the active category chip.
+ *
+ * @param monthISO YYYY-MM string, e.g. "2026-06".
+ * @param categoryId If set, hides expense rows that don't match this category.
  */
-export function useTransactions(filter?: TransactionFilter) {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+export function useTransactions(
+  monthISO: string,
+  categoryId?: number | null,
+): { entries: TransactionEntry[]; loading: boolean; error: string | null; refresh: () => void } {
+  const [allEntries, setAllEntries] = useState<TransactionEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const categoryId = filter?.categoryId;
-  const from = filter?.from;
-  const to = filter?.to;
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      let result: Expense[];
-      if (categoryId != null) {
-        result = await expenseService.getExpensesByCategory(categoryId);
-      } else if (from != null && to != null) {
-        result = await expenseService.getExpensesByDateRange(from, to);
-      } else {
-        result = await expenseService.getAllExpenses();
-      }
-      setExpenses(result);
+      setAllEntries(await getTransactionFeed(monthISO));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load transactions.');
     } finally {
       setLoading(false);
     }
-  }, [categoryId, from, to]);
+  }, [monthISO]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  return { expenses, loading, error, refresh };
+  const entries = useMemo(() => {
+    if (categoryId == null) return allEntries;
+    return allEntries.filter(
+      (e) => e.type === 'income' || e.categoryId === categoryId,
+    );
+  }, [allEntries, categoryId]);
+
+  return { entries, loading, error, refresh };
 }
 
 /**
@@ -358,6 +361,128 @@ export function useRecurring() {
   );
 
   return { recurring, loading, error, refresh, add, update, setActive, skip, remove };
+}
+
+/**
+ * Loads an expense by id on mount, exposes field setters pre-filled with the
+ * loaded values, and provides `update` (persist changed fields) and `remove`
+ * (delete with navigation handled by the caller). Re-fetches after a successful
+ * update so callers that stay mounted see fresh data.
+ */
+export function useExpenseEdit(id: number): {
+  amount: string;
+  setAmount: (v: string) => void;
+  categoryId: number | null;
+  setCategoryId: (v: number | null) => void;
+  subcategoryId: number | null;
+  setSubcategoryId: (v: number | null) => void;
+  note: string;
+  setNote: (v: string) => void;
+  date: string;
+  setDate: (v: string) => void;
+  originalAmount: number | null;
+  canSubmit: boolean;
+  loading: boolean;
+  error: string | null;
+  update: () => Promise<boolean>;
+  remove: () => Promise<boolean>;
+} {
+  const [amount, setAmount] = useState('');
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState('');
+  const [originalAmount, setOriginalAmount] = useState<number | null>(null);
+  const [originalCategoryId, setOriginalCategoryId] = useState<number | null>(null);
+  const [originalSubcategoryId, setOriginalSubcategoryId] = useState<number | null>(null);
+  const [originalNote, setOriginalNote] = useState<string | null>(null);
+  const [originalDate, setOriginalDate] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const expense = await expenseService.getExpenseById(id);
+      if (!expense) {
+        setError('Expense not found.');
+        return;
+      }
+      setAmount(String(expense.amount));
+      setCategoryId(expense.categoryId);
+      setSubcategoryId(expense.subcategoryId);
+      setNote(expense.note ?? '');
+      setDate(expense.date);
+      setOriginalAmount(expense.amount);
+      setOriginalCategoryId(expense.categoryId);
+      setOriginalSubcategoryId(expense.subcategoryId);
+      setOriginalNote(expense.note ?? null);
+      setOriginalDate(expense.date);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load expense.');
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const numericAmount = Number(amount);
+  const canSubmit =
+    Number.isFinite(numericAmount) && numericAmount > 0 && categoryId !== null;
+
+  const update = useCallback(async (): Promise<boolean> => {
+    try {
+      const fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date'>> = {};
+      const newAmount = Math.trunc(numericAmount);
+      if (newAmount !== originalAmount) fields.amount = newAmount;
+      if (categoryId !== originalCategoryId) fields.categoryId = categoryId ?? undefined;
+      if (subcategoryId !== originalSubcategoryId) fields.subcategoryId = subcategoryId;
+      const trimmedNote = note.trim() || null;
+      if (trimmedNote !== originalNote) fields.note = trimmedNote;
+      if (date !== originalDate) fields.date = date;
+
+      await expenseService.updateExpense(id, fields);
+      await load();
+      setError(null);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update expense.');
+      return false;
+    }
+  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, load]);
+
+  const remove = useCallback(async (): Promise<boolean> => {
+    try {
+      await expenseService.deleteExpense(id);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete expense.');
+      return false;
+    }
+  }, [id]);
+
+  return {
+    amount,
+    setAmount,
+    categoryId,
+    setCategoryId,
+    subcategoryId,
+    setSubcategoryId,
+    note,
+    setNote,
+    date,
+    setDate,
+    originalAmount,
+    canSubmit,
+    loading,
+    error,
+    update,
+    remove,
+  };
 }
 
 /**
