@@ -32,7 +32,7 @@ Three layers — never violate these:
 - `income` → calls `budget` (triggers allocation after income log)
 - `funds` → reads `budget` (allocation percentages)
 - `projects` → reads `budget` (allocation percentages)
-- `expenses` → reads `budget` (pre-save over-budget check on the log/quick-add screens)
+- `expenses` → reads `budget` (pre-save over-budget check on the log/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry)
 All other cross-feature imports are forbidden.
 
 ## Naming Conventions

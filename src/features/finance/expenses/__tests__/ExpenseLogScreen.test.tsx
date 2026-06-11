@@ -42,7 +42,7 @@ async function selectFoodRestaurant() {
 describe('ExpenseLogScreen', () => {
   it('renders the amount field, category trigger, note field, and save button', async () => {
     render(<ExpenseLogScreen />);
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByLabelText('Amount in FCFA')).toBeTruthy();
     expect(screen.getByText('Select category')).toBeTruthy();
     expect(screen.getByLabelText('Note')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
@@ -56,7 +56,7 @@ describe('ExpenseLogScreen', () => {
 
     expect(save).toBeDisabled();
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '1500');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
     expect(save).toBeDisabled(); // amount set, but no category yet
 
     await selectFoodRestaurant();
@@ -66,7 +66,7 @@ describe('ExpenseLogScreen', () => {
   it('calls createExpense once with the entered values on save', async () => {
     render(<ExpenseLogScreen />);
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '1500');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
     await selectFoodRestaurant();
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
@@ -85,7 +85,7 @@ describe('ExpenseLogScreen', () => {
 
   it('runs the over-budget check against the entered amount and skips the modal when within budget', async () => {
     render(<ExpenseLogScreen />);
-    fireEvent.changeText(screen.getByLabelText('Amount'), '1500');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
     await selectFoodRestaurant();
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
@@ -98,7 +98,7 @@ describe('ExpenseLogScreen', () => {
   it('shows the over-budget modal and does not save until Proceed', async () => {
     mockCheck.mockResolvedValue(over(3000));
     render(<ExpenseLogScreen />);
-    fireEvent.changeText(screen.getByLabelText('Amount'), '8000');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '8000');
     await selectFoodRestaurant();
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
@@ -117,7 +117,7 @@ describe('ExpenseLogScreen', () => {
   it('Cancel on the over-budget modal saves nothing', async () => {
     mockCheck.mockResolvedValue(over(3000));
     render(<ExpenseLogScreen />);
-    fireEvent.changeText(screen.getByLabelText('Amount'), '8000');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '8000');
     await selectFoodRestaurant();
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));

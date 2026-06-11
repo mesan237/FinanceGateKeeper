@@ -1,10 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { BACKGROUND, DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { ICON_SIZE } from '@/constants/icons';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import type { TransactionEntry } from '@/types/transactions';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -85,16 +86,30 @@ function RowIcon({ entry }: RowIconProps) {
   );
 }
 
+export interface TransactionListProps {
+  /**
+   * Bump this to force a re-fetch without navigating — e.g. after an expense is
+   * logged from the in-page `AddTransactionSheet`, which never leaves the tab.
+   */
+  reloadToken?: number;
+}
+
 /**
  * Unified income+expense feed grouped by calendar day, with month navigation.
  * The category chip row filters only expense rows; income rows always appear.
  */
-export function TransactionList() {
+export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   const router = useRouter();
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const { entries, loading } = useTransactions(monthISO, selectedCategoryId);
+  const { entries, loading, refresh } = useTransactions(monthISO, selectedCategoryId);
   const { categories } = useCategories();
+
+  // Re-fetch when the parent bumps the token (skip the initial 0 — the hook
+  // already loads on mount).
+  useEffect(() => {
+    if (reloadToken) void refresh();
+  }, [reloadToken, refresh]);
 
   const sections = useMemo(() => buildSections(entries), [entries]);
   const isCurrentMonth = monthISO === currentMonthISO();
@@ -130,7 +145,7 @@ export function TransactionList() {
           accessibilityLabel="Previous month"
           onPress={prevMonth}
         >
-          <Ionicons name="chevron-back" size={22} color={TEXT_MUTED} />
+          <Icon name="back" size={ICON_SIZE.md} color={TEXT_MUTED} />
         </Pressable>
         <Typography variant="subheading">{monthLabel}</Typography>
         <Pressable
@@ -141,7 +156,7 @@ export function TransactionList() {
           onPress={isCurrentMonth ? undefined : nextMonth}
           style={isCurrentMonth ? styles.disabled : undefined}
         >
-          <Ionicons name="chevron-forward" size={22} color={isCurrentMonth ? '#C0C0C0' : TEXT_MUTED} />
+          <Icon name="forward" size={ICON_SIZE.md} color={isCurrentMonth ? '#C0C0C0' : TEXT_MUTED} />
         </Pressable>
       </View>
 
@@ -268,7 +283,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   listContent: {
-    paddingBottom: 170,
+    paddingBottom: 96,
   },
   sectionHeader: {
     flexDirection: 'row',

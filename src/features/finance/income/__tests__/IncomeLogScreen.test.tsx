@@ -26,12 +26,12 @@ describe('IncomeLogScreen', () => {
   it('renders the amount field, three source pills, note, date, and save button', () => {
     render(<IncomeLogScreen />);
 
-    expect(screen.getByLabelText('Amount')).toBeTruthy();
+    expect(screen.getByLabelText('Amount in FCFA')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salary' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Freelance' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'E-commerce' })).toBeTruthy();
     expect(screen.getByLabelText('Note')).toBeTruthy();
-    expect(screen.getByLabelText('Date')).toBeTruthy();
+    expect(screen.getByTestId('income-date')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   });
 
@@ -40,7 +40,7 @@ describe('IncomeLogScreen', () => {
     const save = screen.getByRole('button', { name: 'Save' });
     expect(save).toBeDisabled();
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
     expect(save).toBeDisabled(); // amount set, no source yet
 
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
@@ -50,7 +50,7 @@ describe('IncomeLogScreen', () => {
   it('calls createIncome once with the entered values on save', async () => {
     render(<IncomeLogScreen />);
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -63,8 +63,11 @@ describe('IncomeLogScreen', () => {
   it('navigates to /income/allocate with amount and month after a successful save', async () => {
     render(<IncomeLogScreen />);
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
-    fireEvent.changeText(screen.getByLabelText('Date'), '2026-06-12');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
+    // Pick a fixed date through the DateField's picker so the derived month is
+    // deterministic regardless of when the suite runs.
+    fireEvent.press(screen.getByTestId('income-date'));
+    fireEvent(screen.getByTestId('date-picker'), 'change', { type: 'set' }, new Date(2026, 5, 12));
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -80,7 +83,7 @@ describe('IncomeLogScreen', () => {
     mockedCreate.mockRejectedValueOnce(new Error('boom'));
     render(<IncomeLogScreen />);
 
-    fireEvent.changeText(screen.getByLabelText('Amount'), '350000');
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
