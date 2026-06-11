@@ -58,18 +58,18 @@ describe('ExpenseDetailScreen', () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue('2000')).toBeTruthy();
+      expect(screen.getByDisplayValue('2 000')).toBeTruthy();
     });
     expect(screen.getByDisplayValue('lunch')).toBeTruthy();
-    expect(screen.getByDisplayValue('2026-06-10')).toBeTruthy();
+    expect(screen.getByTestId('expense-date')).toBeTruthy();
     expect(screen.getByText('Food')).toBeTruthy();
   });
 
   it('Save button is disabled when amount is cleared', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
-    fireEvent.changeText(screen.getByLabelText('Amount'), '');
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '');
 
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
@@ -77,8 +77,8 @@ describe('ExpenseDetailScreen', () => {
   it('Save button calls updateExpense with changed fields; navigates back on success', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
-    fireEvent.changeText(screen.getByLabelText('Amount'), '2500');
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '2500');
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -90,7 +90,7 @@ describe('ExpenseDetailScreen', () => {
   it('Delete button opens a confirmation modal showing the confirmation message', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Delete expense' }));
 
     expect(screen.getByText(/Delete this expense\? This cannot be undone\./)).toBeTruthy();
@@ -99,7 +99,7 @@ describe('ExpenseDetailScreen', () => {
   it('Confirming deletion calls deleteExpense and navigates back', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Delete expense' }));
     fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
 
@@ -110,7 +110,7 @@ describe('ExpenseDetailScreen', () => {
   it('Cancelling the deletion modal closes it without calling deleteExpense', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Delete expense' }));
     fireEvent.press(screen.getByTestId('delete-modal-cancel'));
 
@@ -124,8 +124,8 @@ describe('ExpenseDetailScreen', () => {
     mockCheck.mockResolvedValue(over(3000));
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
-    fireEvent.changeText(screen.getByLabelText('Amount'), '5000');
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '5000');
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
@@ -136,7 +136,7 @@ describe('ExpenseDetailScreen', () => {
   it('over-budget alert is not shown when the amount is unchanged', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 
-    await waitFor(() => expect(screen.getByDisplayValue('2000')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 

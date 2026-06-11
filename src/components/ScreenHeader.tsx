@@ -1,10 +1,11 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
+import { ICON_SIZE } from '@/constants/icons';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -33,7 +34,7 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
         {cancelLabel ? (
           <Typography style={styles.cancelLabel}>{cancelLabel}</Typography>
         ) : (
-          <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
+          <Icon name="back" size={ICON_SIZE.lg} color={TEXT_PRIMARY} />
         )}
       </Pressable>
 

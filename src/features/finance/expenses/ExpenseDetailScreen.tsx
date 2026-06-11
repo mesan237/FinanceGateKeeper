@@ -2,12 +2,16 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
+import { DateField } from '@/components/DateField';
+import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
+import { ICON_SIZE } from '@/constants/icons';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
@@ -31,6 +35,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [overage, setOverage] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
 
@@ -50,8 +55,13 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
         return;
       }
     }
-    const ok = await edit.update();
-    if (ok) router.back();
+    setSaving(true);
+    try {
+      const ok = await edit.update();
+      if (ok) router.back();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -64,16 +74,11 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
     <View style={styles.container}>
       <ScreenHeader title="Edit Expense" cancelLabel="Cancel" />
 
-      <TextInput
-        value={edit.amount}
-        onChangeText={edit.setAmount}
-        placeholder="Amount (FCFA)"
-        keyboardType="numeric"
-        accessibilityLabel="Amount"
-      />
+      <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 
       <Button
         label={categoryLabel ?? 'Select category'}
+        variant="secondary"
         onPress={() => setPickerVisible(true)}
       />
 
@@ -84,23 +89,22 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
         accessibilityLabel="Note"
       />
 
-      <TextInput
-        value={edit.date}
-        onChangeText={edit.setDate}
-        placeholder="YYYY-MM-DD"
-        accessibilityLabel="Date"
-      />
+      <DateField value={edit.date} onChange={edit.setDate} testID="expense-date" />
 
-      <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} />
+      <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 
       {edit.error ? (
-        <Typography style={styles.error}>{edit.error}</Typography>
+        <View style={styles.errorRow}>
+          <Icon name="alert" size={ICON_SIZE.sm} color={DANGER} />
+          <Typography style={styles.error}>{edit.error}</Typography>
+        </View>
       ) : null}
 
       <Button
         label="Delete expense"
+        variant="danger"
         onPress={() => setDeleteModalVisible(true)}
-              />
+      />
 
       <CategoryPicker
         visible={pickerVisible}
@@ -146,6 +150,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 12,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   error: {
     color: DANGER,

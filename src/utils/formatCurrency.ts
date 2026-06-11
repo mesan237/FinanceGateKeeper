@@ -1,3 +1,5 @@
+import { groupDigits } from './groupDigits';
+
 /**
  * Formats a whole-number FCFA amount for display, using space-separated
  * thousands (the West/Central African, FR-style convention). FCFA has no
@@ -9,8 +11,6 @@
 export function formatCurrency(value: number): string {
   const whole = Math.trunc(value);
   const negative = whole < 0;
-  const grouped = Math.abs(whole)
-    .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const grouped = groupDigits(Math.abs(whole).toString());
   return `${negative ? '-' : ''}${grouped} FCFA`;
 }

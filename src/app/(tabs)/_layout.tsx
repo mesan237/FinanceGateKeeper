@@ -1,15 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
+import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 
-type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
-
-function tabIcon(name: IoniconName, focused: boolean, color: string) {
-  return <Ionicons name={focused ? name : (`${name}-outline` as IoniconName)} size={22} color={color} />;
+// Lucide ships no outline/filled pair, so the focused tab reads as a heavier
+// stroke plus the active tint rather than a different glyph.
+function tabIcon(name: IconName, focused: boolean, color: string) {
+  return <Icon name={name} size={ICON_SIZE.md} color={color} strokeWidth={focused ? 2.5 : 2} />;
 }
 
 function GearIcon() {
@@ -21,7 +22,7 @@ function GearIcon() {
       onPress={() => router.push('/settings')}
       style={{ marginRight: 16 }}
     >
-      <Ionicons name="settings-outline" size={22} color={TEXT_PRIMARY} />
+      <Icon name="settings" size={ICON_SIZE.md} color={TEXT_PRIMARY} />
     </Pressable>
   );
 }
@@ -63,7 +64,7 @@ export default function TabsLayout() {
         name="transactions"
         options={{
           title: 'Transactions',
-          tabBarIcon: ({ color, focused }) => tabIcon('swap-horizontal', focused, color),
+          tabBarIcon: ({ color, focused }) => tabIcon('transactions', focused, color),
         }}
       />
       <Tabs.Screen
@@ -71,21 +72,21 @@ export default function TabsLayout() {
         options={{
           title: 'Budget',
           href: showBudget ? undefined : null,
-          tabBarIcon: ({ color, focused }) => tabIcon('wallet', focused, color),
+          tabBarIcon: ({ color, focused }) => tabIcon('budget', focused, color),
         }}
       />
       <Tabs.Screen
         name="projects"
         options={{
           title: 'Projects',
-          tabBarIcon: ({ color, focused }) => tabIcon('briefcase', focused, color),
+          tabBarIcon: ({ color, focused }) => tabIcon('projects', focused, color),
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
           title: 'Reports',
-          tabBarIcon: ({ color, focused }) => tabIcon('bar-chart', focused, color),
+          tabBarIcon: ({ color, focused }) => tabIcon('reports', focused, color),
         }}
       />
     </Tabs>

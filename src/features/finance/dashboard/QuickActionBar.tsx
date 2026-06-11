@@ -1,8 +1,8 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import {
   DANGER,
@@ -11,10 +11,11 @@ import {
   PRIMARY_LIGHT,
   TEXT_MUTED,
 } from '@/constants/colors';
+import { ICON_SIZE, type IconName } from '@/constants/icons';
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
 
 interface ActionButtonProps {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
+  icon: IconName;
   label: string;
   onPress: () => void;
   tint: string;
@@ -30,7 +31,7 @@ function ActionButton({ icon, label, onPress, tint, iconColor, testID }: ActionB
       onPress={onPress}
       style={({ pressed }) => [styles.button, { backgroundColor: tint }, pressed && styles.pressed]}
     >
-      <Ionicons name={icon} size={20} color={iconColor} />
+      <Icon name={icon} size={ICON_SIZE.md} color={iconColor} />
       <Typography style={[styles.buttonLabel, { color: iconColor }]}>{label}</Typography>
     </Pressable>
   );
@@ -53,7 +54,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
     <View style={styles.bar}>
       <ActionButton
         testID="quick-log-expense"
-        icon="arrow-up-circle"
+        icon="expense"
         label="Log Expense"
         onPress={() => router.push('/expenses/log')}
         tint={DANGER_LIGHT}
@@ -61,7 +62,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
       />
       <ActionButton
         testID="quick-log-income"
-        icon="arrow-down-circle"
+        icon="income"
         label="Log Income"
         onPress={() => router.push('/income/log')}
         tint={PRIMARY_LIGHT}
@@ -70,7 +71,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
       {showZeroDay && (
         <ActionButton
           testID="quick-confirm-zero-day"
-          icon="checkmark-circle"
+          icon="zeroDay"
           label="Zero Day"
           onPress={onConfirmZeroDay}
           tint="#F3F4F6"
