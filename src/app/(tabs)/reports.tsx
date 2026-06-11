@@ -1,6 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import { MonthlyReport } from '@/features/finance/reports/MonthlyReport';
 
 export default function ReportsRoute() {
-  return <View />;
+  return <MonthlyReport />;
 }
