@@ -10,10 +10,12 @@ interface IncomeRow {
   note: string | null;
   date: string;
   account_id: number | null;
+  allocation_status: Income['allocationStatus'];
   created_at: string;
 }
 
-const INCOME_COLUMNS = 'id, amount, source, note, date, account_id, created_at';
+const INCOME_COLUMNS =
+  'id, amount, source, note, date, account_id, allocation_status, created_at';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
 function mapIncome(row: IncomeRow): Income {
@@ -24,6 +26,7 @@ function mapIncome(row: IncomeRow): Income {
     note: row.note,
     date: row.date,
     accountId: row.account_id,
+    allocationStatus: row.allocation_status,
     createdAt: row.created_at,
   };
 }
@@ -46,20 +49,42 @@ export async function createIncome(input: NewIncome): Promise<number> {
   }
 
   await execute(
-    `INSERT INTO income (amount, source, note, date, account_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO income (amount, source, note, date, account_id, allocation_status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       input.amount,
       input.source,
       input.note ?? null,
       input.date,
       input.accountId ?? null,
+      input.allocationStatus ?? 'pending',
       new Date().toISOString(),
     ],
   );
 
   const [row] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');
   return row.id;
+}
+
+/**
+ * Returns every income row still held in the unallocated pool (status
+ * `pending`), newest first. The budget feature reads this to show and clear the
+ * pool; each row stays here until the user allocates it to a destination.
+ */
+export async function getPendingIncome(): Promise<Income[]> {
+  const rows = await query<IncomeRow>(
+    `SELECT ${INCOME_COLUMNS} FROM income WHERE allocation_status = 'pending' ${ORDER_BY_NEWEST}`,
+  );
+  return rows.map(mapIncome);
+}
+
+/**
+ * Marks the income row `id` as `allocated`, so it starts counting toward the
+ * month's expense budget. Idempotent — calling it on an already-allocated row
+ * is a no-op. No-op as well for an unknown id (no row matches).
+ */
+export async function markIncomeAllocated(id: number): Promise<void> {
+  await execute(`UPDATE income SET allocation_status = 'allocated' WHERE id = ?`, [id]);
 }
 
 /** Returns every income row, newest first (by date, then insertion time). */

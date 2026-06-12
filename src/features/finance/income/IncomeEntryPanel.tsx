@@ -17,11 +17,12 @@ import { useIncomeLog } from './income.hooks';
 
 export interface IncomeEntryPanelProps {
   /**
-   * Called after the income is saved, with the persisted amount and its month
-   * (`YYYY-MM`) — captured before the hook resets the form. The caller routes to
-   * the allocation flow or closes a sheet.
+   * Called after the income is saved, with the persisted amount, its month
+   * (`YYYY-MM`), and the new row id — captured before the hook resets the form.
+   * The caller routes to the allocation flow (passing the id so Confirm can mark
+   * the row allocated) or closes a sheet.
    */
-  onSaved: (amount: number, month: string) => void;
+  onSaved: (amount: number, month: string, id: number) => void;
 }
 
 /**
@@ -46,7 +47,7 @@ export function IncomeEntryPanel({ onSaved }: IncomeEntryPanelProps) {
     setSaving(true);
     try {
       const id = await log.submit();
-      if (id !== null) onSaved(persistedAmount, persistedMonth);
+      if (id !== null) onSaved(persistedAmount, persistedMonth, id);
     } finally {
       setSaving(false);
     }

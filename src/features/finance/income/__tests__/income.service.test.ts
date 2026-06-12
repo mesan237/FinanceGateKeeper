@@ -25,6 +25,8 @@ import {
   getIncomeByDateRange,
   getIncomeBySource,
   getMonthlyTotal,
+  getPendingIncome,
+  markIncomeAllocated,
 } from '@/features/finance/income/income.service';
 import type { NewIncome } from '@/features/finance/income/income.types';
 
@@ -167,5 +169,47 @@ describe('getMonthlyTotal', () => {
   it('returns 0 when no rows match the month', async () => {
     await createIncome(newIncome({ date: '2026-06-12' }));
     expect(await getMonthlyTotal('2026-01')).toBe(0);
+  });
+
+  it('counts both pending and allocated income (status-agnostic)', async () => {
+    await createIncome(newIncome({ amount: 100000, date: '2026-06-01' })); // pending
+    const allocated = await createIncome(newIncome({ amount: 50000, date: '2026-06-02' }));
+    await markIncomeAllocated(allocated);
+
+    expect(await getMonthlyTotal('2026-06')).toBe(150000);
+  });
+});
+
+describe('allocation status (VS-19)', () => {
+  it('creates new income as pending by default', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('pending');
+  });
+
+  it('honours an explicit allocated status on create', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, allocationStatus: 'allocated' }));
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
+  });
+
+  it('getPendingIncome returns only pending rows, newest-first', async () => {
+    const a = await createIncome(newIncome({ amount: 1000, date: '2026-06-01' }));
+    await createIncome(newIncome({ amount: 2000, date: '2026-06-20' }));
+    await markIncomeAllocated(a);
+
+    const pending = await getPendingIncome();
+    expect(pending).toHaveLength(1);
+    expect(pending[0].amount).toBe(2000);
+    expect(pending.every((i) => i.allocationStatus === 'pending')).toBe(true);
+  });
+
+  it('markIncomeAllocated flips a pending row to allocated', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+    await markIncomeAllocated(id);
+
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
+    expect(await getPendingIncome()).toEqual([]);
   });
 });

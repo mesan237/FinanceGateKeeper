@@ -60,7 +60,7 @@ describe('IncomeLogScreen', () => {
     );
   });
 
-  it('navigates to /income/allocate with amount and month after a successful save', async () => {
+  it('navigates to /income/allocate with amount, month and incomeId after a successful save', async () => {
     render(<IncomeLogScreen />);
 
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
@@ -74,7 +74,8 @@ describe('IncomeLogScreen', () => {
     await waitFor(() =>
       expect(mockPush).toHaveBeenCalledWith({
         pathname: '/income/allocate',
-        params: { amount: '350000', month: '2026-06' },
+        // createIncome mock resolves to id 1.
+        params: { amount: '350000', month: '2026-06', incomeId: '1' },
       }),
     );
   });

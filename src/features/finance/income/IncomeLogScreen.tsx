@@ -20,10 +20,10 @@ export function IncomeLogScreen() {
     <View style={styles.container}>
       <ScreenHeader title="Log Income" cancelLabel="Cancel" />
       <IncomeEntryPanel
-        onSaved={(amount, month) =>
+        onSaved={(amount, month, id) =>
           router.push({
             pathname: '/income/allocate',
-            params: { amount: String(amount), month },
+            params: { amount: String(amount), month, incomeId: String(id) },
           })
         }
       />
