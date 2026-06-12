@@ -5,12 +5,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import {
-  DANGER,
   DANGER_LIGHT,
+  DANGER_TEXT,
   PRIMARY_GREEN,
   PRIMARY_LIGHT,
+  SURFACE_MUTED,
   TEXT_MUTED,
 } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
 
@@ -58,7 +61,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         label="Log Expense"
         onPress={() => router.push('/expenses/log')}
         tint={DANGER_LIGHT}
-        iconColor={DANGER}
+        iconColor={DANGER_TEXT}
       />
       <ActionButton
         testID="quick-log-income"
@@ -74,7 +77,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
           icon="zeroDay"
           label="Zero Day"
           onPress={onConfirmZeroDay}
-          tint="#F3F4F6"
+          tint={SURFACE_MUTED}
           iconColor={TEXT_MUTED}
         />
       )}
@@ -95,13 +98,13 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 11,
     paddingHorizontal: 8,
-    borderRadius: 10,
+    borderRadius: RADIUS.md,
   },
   pressed: {
     opacity: 0.75,
   },
   buttonLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

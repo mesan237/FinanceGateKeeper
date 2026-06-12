@@ -22,6 +22,9 @@ export interface TopProject {
 
 export interface DashboardState {
   todaySpending: number;
+  /** Per-day spending totals for the last 7 calendar days, oldest first
+   * (the final entry is today). Present in both modes. */
+  spendingTrend: number[];
   zeroDay: DayActivityStatus;
   /** null in learning mode or before budget data is available */
   budget: BudgetSummary | null;

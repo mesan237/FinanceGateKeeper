@@ -5,6 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
+import { BORDER, PRIMARY_GREEN } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { ACCOUNT_TYPE_ICON } from '@/features/finance/accounts/accountIcons';
 import { useAccounts } from '@/features/finance/accounts/accounts.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -12,13 +14,33 @@ import { formatCurrency } from '@/utils/formatCurrency';
 /**
  * Compact Wallets summary on the dashboard: one row per active account with its
  * live computed balance. Tapping anywhere on the card opens the Accounts tab.
+ * With no accounts yet it renders a set-up CTA instead of disappearing —
+ * otherwise the accounts feature has no visible entry point on the dashboard.
  * Read-only — the approved `dashboard → accounts` cross-feature edge (VS-18).
  */
 export function WalletsCard() {
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
 
-  if (loading || accounts.length === 0) return null;
+  if (loading) return null;
+
+  if (accounts.length === 0) {
+    return (
+      <Pressable
+        testID="wallets-card-empty"
+        accessibilityRole="button"
+        onPress={() => router.push('/accounts/create')}
+      >
+        <Card style={styles.emptyCard}>
+          <Typography variant="label">Wallets</Typography>
+          <Typography variant="muted">
+            Track cash and Mobile Money separately by setting up your wallets.
+          </Typography>
+          <Typography style={styles.emptyCta}>Set up your wallets →</Typography>
+        </Card>
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
@@ -48,5 +70,18 @@ const styles = StyleSheet.create({
   list: { marginTop: 8, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   name: { flex: 1 },
-  balance: { fontWeight: '600' },
+  balance: { fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  emptyCard: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderStyle: 'dashed',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    elevation: 0,
+    gap: 6,
+  },
+  emptyCta: {
+    color: PRIMARY_GREEN,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
+  },
 });

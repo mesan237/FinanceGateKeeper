@@ -12,11 +12,14 @@ import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
 import {
   BACKGROUND,
+  BORDER,
   DANGER,
   DANGER_LIGHT,
   PRIMARY_GREEN,
   SURFACE,
 } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong } from '@/utils/formatDate';
@@ -24,6 +27,7 @@ import { formatDateLong } from '@/utils/formatDate';
 import { BudgetSummaryCard } from './BudgetSummaryCard';
 import { FundStatusCard } from './FundStatusCard';
 import { QuickActionBar } from './QuickActionBar';
+import { SpendingSparkline } from './SpendingSparkline';
 import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
@@ -67,12 +71,10 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* The native tab header already titles the screen — only the date
+            lives in the content. */}
         <View style={styles.header}>
-          <View>
-            <Typography variant="heading">Dashboard</Typography>
-            <Typography variant="muted">{today}</Typography>
-          </View>
+          <Typography variant="muted">{today}</Typography>
         </View>
 
         {/* Error card */}
@@ -85,8 +87,10 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
           </Card>
         ) : null}
 
-        {/* Budget / funds / project (control mode only) */}
-        {state?.budget ? <BudgetSummaryCard summary={state.budget} /> : null}
+        {/* Budget hero with the 7-day spending trend (control mode only) */}
+        {state?.budget ? (
+          <BudgetSummaryCard summary={state.budget} trend={state.spendingTrend} />
+        ) : null}
 
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />
@@ -103,19 +107,37 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
           </Card>
         ) : null}
 
-        {/* Today's spending */}
+        {/* Today's spending — the hero in learning mode (with the trend),
+            a compact supporting row in control mode (the budget hero leads). */}
         <Card testID="today-spending">
-          <View style={styles.todayRow}>
-            <View>
-              <Typography variant="label">Today's Spending</Typography>
-              <Typography variant="muted" style={styles.todayDate}>
-                {today}
+          {includeBudgetData ? (
+            <View style={styles.todayRow}>
+              <View>
+                <Typography variant="label">Today's Spending</Typography>
+                <Typography variant="muted" style={styles.todayDate}>
+                  {today}
+                </Typography>
+              </View>
+              <Typography variant="subheading">
+                {formatCurrency(state?.todaySpending ?? 0)}
               </Typography>
             </View>
-            <Typography variant="display">
-              {formatCurrency(state?.todaySpending ?? 0)}
-            </Typography>
-          </View>
+          ) : (
+            <>
+              <Typography variant="label">Spent today</Typography>
+              <Typography style={styles.heroAmount}>
+                {formatCurrency(state?.todaySpending ?? 0)}
+              </Typography>
+              {state?.spendingTrend.some((v) => v > 0) ? (
+                <View style={styles.trend}>
+                  <SpendingSparkline values={state.spendingTrend} testID="spending-sparkline" />
+                  <Typography variant="muted" style={styles.trendCaption}>
+                    Spending · last 7 days
+                  </Typography>
+                </View>
+              ) : null}
+            </>
+          )}
         </Card>
 
         {/* Learning-mode empty state */}
@@ -184,13 +206,13 @@ const styles = StyleSheet.create({
   retryButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: RADIUS.sm,
     backgroundColor: DANGER,
     marginLeft: 12,
   },
   retryText: {
     color: SURFACE,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 13,
   },
   todayRow: {
@@ -201,13 +223,26 @@ const styles = StyleSheet.create({
   todayDate: {
     marginTop: 2,
   },
+  heroAmount: {
+    fontSize: 34,
+    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    letterSpacing: -0.5,
+    marginTop: 4,
+  },
+  trend: {
+    marginTop: 16,
+    gap: 6,
+  },
+  trendCaption: {
+    fontSize: 11,
+  },
   projectName: {
     marginTop: 4,
     marginBottom: 2,
   },
   emptyCard: {
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: BORDER,
     borderStyle: 'dashed',
     backgroundColor: 'transparent',
     shadowOpacity: 0,
@@ -220,7 +255,7 @@ const styles = StyleSheet.create({
   actionBarWrapper: {
     backgroundColor: SURFACE,
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: BORDER,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,

@@ -27,6 +27,36 @@ export function paceIndicator(spent: number, budget: number, daysRemaining: numb
   return 'green';
 }
 
+/** Number of calendar days covered by the dashboard's spending sparkline. */
+const TREND_DAYS = 7;
+
+/** Returns the ISO date `days` calendar days before `iso` (UTC math — no DST drift). */
+function isoDaysBefore(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${month}-${day}`;
+}
+
+/**
+ * Buckets expenses into per-day totals for the `days` calendar days ending at
+ * `todayISO`, oldest first — feeds the dashboard's spending sparkline. Days
+ * with no expenses are zero; expenses outside the window are ignored. Pure.
+ */
+export function buildSpendingTrend(
+  expenses: ReadonlyArray<{ date: string; amount: number }>,
+  todayISO: string,
+  days: number = TREND_DAYS,
+): number[] {
+  const totals = new Map<string, number>();
+  for (const e of expenses) totals.set(e.date, (totals.get(e.date) ?? 0) + e.amount);
+  return Array.from(
+    { length: days },
+    (_, i) => totals.get(isoDaysBefore(todayISO, days - 1 - i)) ?? 0,
+  );
+}
+
 /**
  * Returns the number of whole days remaining in `monthISO` after `todayISO`,
  * inclusive of `todayISO` being the current day (so the last day of the month
@@ -57,15 +87,17 @@ export async function getDashboardSnapshot(
   opts: { includeBudgetData: boolean },
   todayISO: string = toISODate(new Date()),
 ): Promise<DashboardState> {
-  const [todayExpenses, zeroDay] = await Promise.all([
-    expensesService.getExpensesByDateRange(todayISO, todayISO),
+  // One range query covers both the 7-day trend and today's total (its last bucket).
+  const [recentExpenses, zeroDay] = await Promise.all([
+    expensesService.getExpensesByDateRange(isoDaysBefore(todayISO, TREND_DAYS - 1), todayISO),
     expensesService.getDayActivityStatus(todayISO),
   ]);
 
-  const todaySpending = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
+  const todaySpending = spendingTrend[spendingTrend.length - 1];
 
   if (!opts.includeBudgetData) {
-    return { todaySpending, zeroDay, budget: null, funds: null, topProject: null };
+    return { todaySpending, spendingTrend, zeroDay, budget: null, funds: null, topProject: null };
   }
 
   const [monthlyBudget, allFunds, projects] = await Promise.all([
@@ -102,5 +134,5 @@ export async function getDashboardSnapshot(
       }
     : null;
 
-  return { todaySpending, zeroDay, budget, funds, topProject };
+  return { todaySpending, spendingTrend, zeroDay, budget, funds, topProject };
 }

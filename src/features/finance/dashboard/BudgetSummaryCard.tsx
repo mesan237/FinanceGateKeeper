@@ -4,80 +4,91 @@ import { StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
 import {
-  DANGER,
   DANGER_LIGHT,
-  SUCCESS,
+  DANGER_TEXT,
   SUCCESS_LIGHT,
-  WARNING,
+  SUCCESS_TEXT,
+  TEXT_PRIMARY,
   WARNING_LIGHT,
+  WARNING_TEXT,
 } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { SpendingSparkline } from './SpendingSparkline';
 import type { BudgetSummary, PaceLevel } from './dashboard.types';
 
 const PACE_CONFIG: Record<PaceLevel, { bg: string; text: string; label: string }> = {
-  green:  { bg: SUCCESS_LIGHT,  text: SUCCESS,  label: 'On Track'    },
-  yellow: { bg: WARNING_LIGHT,  text: WARNING,  label: 'Watch Out'   },
-  red:    { bg: DANGER_LIGHT,   text: DANGER,   label: 'Over Budget' },
+  green:  { bg: SUCCESS_LIGHT,  text: SUCCESS_TEXT,  label: 'On Track'    },
+  yellow: { bg: WARNING_LIGHT,  text: WARNING_TEXT,  label: 'Watch Out'   },
+  red:    { bg: DANGER_LIGHT,   text: DANGER_TEXT,   label: 'Over Budget' },
 };
 
 interface BudgetSummaryCardProps {
   summary: BudgetSummary;
+  /** Per-day spending for the trend sparkline (oldest first), if available. */
+  trend?: number[];
 }
 
 /**
- * Monthly expense budget card: remaining amount as the hero figure, plus a
- * labelled status chip (On Track / Watch Out / Over Budget).
+ * The dashboard hero: remaining monthly budget as the single dominant figure,
+ * the pace chip (On Track / Watch Out / Over Budget) directly beneath it, and
+ * a 7-day spending sparkline grounding the number in its recent trend.
  */
-export function BudgetSummaryCard({ summary }: BudgetSummaryCardProps) {
+export function BudgetSummaryCard({ summary, trend }: BudgetSummaryCardProps) {
   const pace = PACE_CONFIG[summary.pace];
+  const hasTrend = trend !== undefined && trend.some((v) => v > 0);
 
   return (
     <Card testID="budget-summary-card">
-      <View style={styles.row}>
-        <View style={styles.text}>
-          <Typography variant="label">Monthly Budget</Typography>
-          <Typography variant="display" style={styles.amount}>
-            {formatCurrency(summary.expensesRemaining)}
-          </Typography>
-          <Typography variant="muted">remaining this month</Typography>
-        </View>
-        <View
-          testID="budget-pace-chip"
-          style={[styles.chip, { backgroundColor: pace.bg }]}
-        >
-          <Typography style={[styles.chipText, { color: pace.text }]}>
-            {pace.label}
-          </Typography>
-        </View>
+      <Typography variant="label">Remaining this month</Typography>
+      <Typography style={styles.amount}>{formatCurrency(summary.expensesRemaining)}</Typography>
+      <View
+        testID="budget-pace-chip"
+        style={[styles.chip, { backgroundColor: pace.bg }]}
+      >
+        <Typography style={[styles.chipText, { color: pace.text }]}>
+          {pace.label}
+        </Typography>
       </View>
+
+      {hasTrend ? (
+        <View style={styles.trend}>
+          <SpendingSparkline values={trend} testID="spending-sparkline" />
+          <Typography variant="muted" style={styles.trendCaption}>
+            Spending · last 7 days
+          </Typography>
+        </View>
+      ) : null}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  text: {
-    flex: 1,
-    gap: 2,
-  },
   amount: {
+    color: TEXT_PRIMARY,
+    fontSize: 34,
+    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    letterSpacing: -0.5,
     marginTop: 4,
-    marginBottom: 2,
+    marginBottom: 10,
   },
   chip: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 20,
+    borderRadius: RADIUS.full,
     alignSelf: 'flex-start',
   },
   chipText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
+  },
+  trend: {
+    marginTop: 16,
+    gap: 6,
+  },
+  trendCaption: {
+    fontSize: 11,
   },
 });

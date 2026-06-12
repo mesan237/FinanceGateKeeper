@@ -48,4 +48,15 @@ describe('WalletsCard', () => {
     fireEvent.press(screen.getByTestId('wallets-card'));
     expect(mockPush).toHaveBeenCalledWith('/accounts');
   });
+
+  it('with no accounts, renders a set-up CTA that opens the create form', async () => {
+    mocked.getAccounts.mockResolvedValue([]);
+    render(<WalletsCard />);
+
+    await waitFor(() => expect(screen.getByTestId('wallets-card-empty')).toBeTruthy());
+    expect(screen.getByText('Set up your wallets →')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('wallets-card-empty'));
+    expect(mockPush).toHaveBeenCalledWith('/accounts/create');
+  });
 });
