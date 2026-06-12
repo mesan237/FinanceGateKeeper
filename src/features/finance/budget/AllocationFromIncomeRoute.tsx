@@ -16,13 +16,15 @@ import { AllocationScreen } from './AllocationScreen';
  * error line instead of crashing.
  */
 export function AllocationFromIncomeRoute() {
-  const params = useLocalSearchParams<{ amount?: string; month?: string }>();
+  const params = useLocalSearchParams<{ amount?: string; month?: string; incomeId?: string }>();
   const amount = Number(params.amount);
   const month = typeof params.month === 'string' ? params.month : '';
+  const incomeId = Number(params.incomeId);
   const validAmount = Number.isFinite(amount) && Number.isInteger(amount) && amount > 0;
   const validMonth = /^\d{4}-\d{2}$/.test(month);
+  const validIncomeId = Number.isInteger(incomeId) && incomeId > 0;
 
-  if (!validAmount || !validMonth) {
+  if (!validAmount || !validMonth || !validIncomeId) {
     return (
       <View style={styles.container}>
         <Typography variant="muted">Invalid allocation parameters.</Typography>
@@ -30,7 +32,7 @@ export function AllocationFromIncomeRoute() {
     );
   }
 
-  return <AllocationScreen amountFCFA={amount} monthISO={month} />;
+  return <AllocationScreen amountFCFA={amount} monthISO={month} incomeId={incomeId} />;
 }
 
 const styles = StyleSheet.create({

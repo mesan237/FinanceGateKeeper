@@ -15,14 +15,35 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   lockAllocation: jest.fn(),
   getMonthlyBudget: jest.fn(),
   checkOverBudget: jest.fn(),
+  redistributeEmergencyPct: jest.fn(),
+}));
+
+jest.mock('@/features/finance/funds/funds.service', () => ({
+  depositToFund: jest.fn(),
+  getOrCreateFunds: jest.fn(),
+}));
+
+jest.mock('@/features/finance/projects/projects.service', () => ({
+  contributeManually: jest.fn(),
+  getProjects: jest.fn(),
+}));
+
+jest.mock('@/features/finance/income/income.service', () => ({
+  getPendingIncome: jest.fn(),
+  markIncomeAllocated: jest.fn(),
 }));
 
 import {
   useAllocation,
   useBudgetStatus,
   useOverBudgetCheck,
+  useUnallocatedPool,
 } from '@/features/finance/budget/budget.hooks';
 import * as budgetService from '@/features/finance/budget/budget.service';
+import { depositToFund, getOrCreateFunds } from '@/features/finance/funds/funds.service';
+import * as incomeService from '@/features/finance/income/income.service';
+import type { Income } from '@/features/finance/income/income.types';
+import { contributeManually, getProjects } from '@/features/finance/projects/projects.service';
 
 const mockedGetOrCreate = budgetService.getOrCreateCurrentAllocation as jest.MockedFunction<
   typeof budgetService.getOrCreateCurrentAllocation
@@ -42,6 +63,31 @@ const mockedGetBudget = budgetService.getMonthlyBudget as jest.MockedFunction<
 const mockedCheckOverBudget = budgetService.checkOverBudget as jest.MockedFunction<
   typeof budgetService.checkOverBudget
 >;
+const mockedRedistribute = budgetService.redistributeEmergencyPct as jest.MockedFunction<
+  typeof budgetService.redistributeEmergencyPct
+>;
+const mockedDeposit = depositToFund as jest.MockedFunction<typeof depositToFund>;
+const mockedContribute = contributeManually as jest.MockedFunction<typeof contributeManually>;
+const mockedGetPending = incomeService.getPendingIncome as jest.MockedFunction<
+  typeof incomeService.getPendingIncome
+>;
+const mockedMarkAllocated = incomeService.markIncomeAllocated as jest.MockedFunction<
+  typeof incomeService.markIncomeAllocated
+>;
+
+function pendingIncome(overrides: Partial<Income> = {}): Income {
+  return {
+    id: 1,
+    amount: 50000,
+    source: 'freelance',
+    note: null,
+    date: '2026-06-12',
+    accountId: null,
+    allocationStatus: 'pending',
+    createdAt: '2026-06-12T00:00:00.000Z',
+    ...overrides,
+  };
+}
 
 const DEFAULT_ROW: Allocation = {
   id: 1,
@@ -219,5 +265,96 @@ describe('useOverBudgetCheck', () => {
     });
 
     expect(mockedCheckOverBudget).toHaveBeenCalledWith(currentMonthISO(), 100);
+  });
+});
+
+describe('useUnallocatedPool', () => {
+  const mockedGetFunds = getOrCreateFunds as jest.MockedFunction<typeof getOrCreateFunds>;
+  const mockedGetProjects = getProjects as jest.MockedFunction<typeof getProjects>;
+
+  beforeEach(() => {
+    mockedGetPending.mockResolvedValue([]);
+    mockedMarkAllocated.mockResolvedValue(undefined);
+    mockedContribute.mockResolvedValue(undefined);
+    mockedGetFunds.mockResolvedValue([]);
+    mockedGetProjects.mockResolvedValue([]);
+    mockedDeposit.mockResolvedValue({ targetNewlyMet: false } as Awaited<
+      ReturnType<typeof depositToFund>
+    >);
+  });
+
+  it('loads the pending pool and totals it', async () => {
+    mockedGetPending.mockResolvedValue([
+      pendingIncome({ id: 1, amount: 50000 }),
+      pendingIncome({ id: 2, amount: 30000 }),
+    ]);
+
+    const { result } = renderHook(() => useUnallocatedPool());
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.pending).toHaveLength(2);
+    expect(result.current.total).toBe(80000);
+  });
+
+  it('allocate() to a fund deposits then marks the income allocated', async () => {
+    const income = pendingIncome({ id: 7, amount: 50000 });
+    mockedGetPending.mockResolvedValue([income]);
+    const { result } = renderHook(() => useUnallocatedPool());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.allocate(income, { kind: 'fund', fundType: 'savings' });
+    });
+
+    expect(mockedDeposit).toHaveBeenCalledWith('savings', 50000, expect.any(String));
+    expect(mockedMarkAllocated).toHaveBeenCalledWith(7);
+    expect(mockedRedistribute).not.toHaveBeenCalled();
+  });
+
+  it('allocate() to the emergency fund redistributes when the target is first met', async () => {
+    const income = pendingIncome({ id: 8, amount: 50000 });
+    mockedGetPending.mockResolvedValue([income]);
+    mockedDeposit.mockResolvedValue({ targetNewlyMet: true } as Awaited<
+      ReturnType<typeof depositToFund>
+    >);
+    const { result } = renderHook(() => useUnallocatedPool());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.allocate(income, { kind: 'fund', fundType: 'emergency' });
+    });
+
+    expect(mockedRedistribute).toHaveBeenCalledTimes(1);
+    expect(mockedMarkAllocated).toHaveBeenCalledWith(8);
+  });
+
+  it('allocate() to a project records a manual contribution then marks allocated', async () => {
+    const income = pendingIncome({ id: 9, amount: 40000 });
+    mockedGetPending.mockResolvedValue([income]);
+    const { result } = renderHook(() => useUnallocatedPool());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.allocate(income, { kind: 'project', projectId: 3 });
+    });
+
+    expect(mockedContribute).toHaveBeenCalledWith(3, 40000);
+    expect(mockedDeposit).not.toHaveBeenCalled();
+    expect(mockedMarkAllocated).toHaveBeenCalledWith(9);
+  });
+
+  it('allocate() to the expense budget deposits nothing but marks allocated', async () => {
+    const income = pendingIncome({ id: 10, amount: 20000 });
+    mockedGetPending.mockResolvedValue([income]);
+    const { result } = renderHook(() => useUnallocatedPool());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.allocate(income, { kind: 'expense' });
+    });
+
+    expect(mockedDeposit).not.toHaveBeenCalled();
+    expect(mockedContribute).not.toHaveBeenCalled();
+    expect(mockedMarkAllocated).toHaveBeenCalledWith(10);
   });
 });

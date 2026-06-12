@@ -228,14 +228,17 @@ export async function getExpensesMonthlyTotal(monthISO: string): Promise<number>
 }
 
 /**
- * Sums `amount` across every income row whose `date` falls in `monthISO`.
- * The query is duplicated from `income.service.getMonthlyTotal` (rather than
- * imported) to keep `budget` from cross-importing `income` as a module —
+ * Sums `amount` across every **allocated** income row whose `date` falls in
+ * `monthISO`. Pending income (held in the unallocated pool, VS-19) is excluded
+ * so it does not inflate the derived expense budget until the user deliberately
+ * allocates it. The query reads the income table directly (rather than importing
+ * `income.service`) to keep `budget` from cross-importing `income` as a module —
  * mirrors how `getExpensesMonthlyTotal` reads the expenses table directly.
  */
 async function getIncomeMonthlyTotal(monthISO: string): Promise<number> {
   const [row] = await query<{ total: number }>(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE date LIKE ?`,
+    `SELECT COALESCE(SUM(amount), 0) AS total FROM income
+      WHERE date LIKE ? AND allocation_status = 'allocated'`,
     [`${monthISO}-%`],
   );
   return row.total;

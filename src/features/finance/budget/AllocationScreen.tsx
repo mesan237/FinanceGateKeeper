@@ -10,6 +10,7 @@ import { DANGER } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { depositToFund } from '@/features/finance/funds/funds.service';
+import { markIncomeAllocated } from '@/features/finance/income/income.service';
 import { fundProjects } from '@/features/finance/projects/projects.service';
 
 import { useAllocation } from './budget.hooks';
@@ -21,15 +22,19 @@ export interface AllocationScreenProps {
   amountFCFA: number;
   /** The month the income belongs to, as `YYYY-MM`. */
   monthISO: string;
+  /** The id of the just-logged income row this allocation confirms (VS-19). */
+  incomeId: number;
 }
 
 /**
  * Post-income breakdown screen. Computes how `amountFCFA` splits across the
- * four buckets according to the current month's allocation, then offers a
- * Confirm button that locks the month and routes to the dashboard. Editing
- * the percentages lives in `AllocationSettings`, not here.
+ * four buckets according to the current month's allocation. **Confirm** deposits
+ * the fund/project portions, marks the income `allocated` (so it counts toward
+ * the expense budget), locks the month, and routes to the dashboard.
+ * **Hold for later** leaves the income `pending` in the unallocated pool.
+ * Editing the percentages lives in `AllocationSettings`, not here.
  */
-export function AllocationScreen({ amountFCFA, monthISO }: AllocationScreenProps) {
+export function AllocationScreen({ amountFCFA, monthISO, incomeId }: AllocationScreenProps) {
   const { allocation, loading, error, lock } = useAllocation(monthISO);
 
   if (!allocation) {
@@ -46,6 +51,7 @@ export function AllocationScreen({ amountFCFA, monthISO }: AllocationScreenProps
     <AllocationScreenBody
       amountFCFA={amountFCFA}
       monthISO={monthISO}
+      incomeId={incomeId}
       allocation={allocation}
       onLock={lock}
       error={error}
@@ -56,6 +62,7 @@ export function AllocationScreen({ amountFCFA, monthISO }: AllocationScreenProps
 interface AllocationScreenBodyProps {
   amountFCFA: number;
   monthISO: string;
+  incomeId: number;
   allocation: Allocation;
   onLock: () => Promise<void>;
   error: string | null;
@@ -64,6 +71,7 @@ interface AllocationScreenBodyProps {
 function AllocationScreenBody({
   amountFCFA,
   monthISO,
+  incomeId,
   allocation,
   onLock,
   error,
@@ -71,6 +79,11 @@ function AllocationScreenBody({
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
   const breakdown = calculateBreakdown(amountFCFA, allocation);
+
+  const handleHold = () => {
+    // The income was created `pending`; holding just leaves it in the pool.
+    router.replace('/(tabs)/dashboard');
+  };
 
   const handleConfirm = async () => {
     if (isConfirming) return;
@@ -98,6 +111,9 @@ function AllocationScreenBody({
       if (breakdown.projects > 0) {
         await fundProjects(breakdown.projects);
       }
+      // Mark the income allocated so it starts counting toward the expense
+      // budget (VS-19 — pending income is excluded until confirmed).
+      await markIncomeAllocated(incomeId);
       await onLock();
       router.replace('/(tabs)/dashboard');
     } finally {
@@ -119,6 +135,18 @@ function AllocationScreenBody({
         onPress={handleConfirm}
         disabled={isConfirming}
       />
+
+      <Button
+        label="Hold for later"
+        variant="secondary"
+        onPress={handleHold}
+        disabled={isConfirming}
+      />
+
+      <Typography variant="muted" style={styles.holdHint}>
+        Holding keeps this income out of your expense budget until you allocate
+        it from the unallocated pool.
+      </Typography>
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>
@@ -164,6 +192,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#E0E0E0',
+  },
+  holdHint: {
+    textAlign: 'center',
   },
   error: {
     color: DANGER,

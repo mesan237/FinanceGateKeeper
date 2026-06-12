@@ -283,8 +283,20 @@ describe('getExpensesMonthlyTotal', () => {
 
 describe('getMonthlyBudget', () => {
   it('composes income total, allocation, breakdown, and remaining expense budget', async () => {
-    await createIncome({ amount: 350000, source: 'salary', note: null, date: '2026-06-12' });
-    await createIncome({ amount: 75000, source: 'freelance', note: null, date: '2026-06-20' });
+    await createIncome({
+      amount: 350000,
+      source: 'salary',
+      note: null,
+      date: '2026-06-12',
+      allocationStatus: 'allocated',
+    });
+    await createIncome({
+      amount: 75000,
+      source: 'freelance',
+      note: null,
+      date: '2026-06-20',
+      allocationStatus: 'allocated',
+    });
     await createExpense({
       amount: 5000,
       categoryId: 1,
@@ -311,6 +323,29 @@ describe('getMonthlyBudget', () => {
     expect(budget.allocation.month).toBe('2026-06');
   });
 
+  it('excludes pending (held) income from the budget, counting only allocated income', async () => {
+    // 100000 allocated counts; 300000 held in the pool does not (VS-19).
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: '2026-06-12',
+      allocationStatus: 'allocated',
+    });
+    await createIncome({
+      amount: 300000,
+      source: 'freelance',
+      note: null,
+      date: '2026-06-20',
+      allocationStatus: 'pending',
+    });
+
+    const budget = await getMonthlyBudget('2026-06');
+    expect(budget.incomeTotal).toBe(100000);
+    // 100000 × 65% = 65000 expense budget — the held 300000 is ignored.
+    expect(budget.breakdown.expenses).toBe(65000);
+  });
+
   it('returns a coherent zero-income view when no income is logged yet', async () => {
     const budget = await getMonthlyBudget('2026-06');
     expect(budget.incomeTotal).toBe(0);
@@ -328,7 +363,13 @@ describe('getMonthlyBudget', () => {
 describe('checkOverBudget', () => {
   // 400000 income under the defaults (65% expenses) → expense budget = 260000.
   async function seedLockedJune(): Promise<void> {
-    await createIncome({ amount: 400000, source: 'salary', note: null, date: '2026-06-12' });
+    await createIncome({
+      amount: 400000,
+      source: 'salary',
+      note: null,
+      date: '2026-06-12',
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation('2026-06');
     await lockAllocation('2026-06');
   }
@@ -386,7 +427,13 @@ describe('checkOverBudget', () => {
   it('never reports over while the allocation is unlocked (learning / unconfirmed month)', async () => {
     // Income exists and the auto-created allocation has a non-zero expense
     // budget, but the month is not locked, so the guard stays inert.
-    await createIncome({ amount: 400000, source: 'salary', note: null, date: '2026-07-12' });
+    await createIncome({
+      amount: 400000,
+      source: 'salary',
+      note: null,
+      date: '2026-07-12',
+      allocationStatus: 'allocated',
+    });
 
     const result = await checkOverBudget('2026-07', 999999);
     expect(result.isOver).toBe(false);

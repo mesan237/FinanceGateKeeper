@@ -4,7 +4,9 @@ import React from 'react';
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
 import type { Allocation } from '@/features/finance/budget/budget.types';
 
-const mockParams: { value: { amount?: string; month?: string } } = { value: {} };
+const mockParams: { value: { amount?: string; month?: string; incomeId?: string } } = {
+  value: {},
+};
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams.value,
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
@@ -42,13 +44,23 @@ beforeEach(() => {
 });
 
 describe('AllocationFromIncomeRoute', () => {
-  it('renders AllocationScreen when amount and month are valid', async () => {
-    mockParams.value = { amount: '400000', month: '2026-06' };
+  it('renders AllocationScreen when amount, month and incomeId are valid', async () => {
+    mockParams.value = { amount: '400000', month: '2026-06', incomeId: '42' };
     render(<AllocationFromIncomeRoute />);
 
     expect(await screen.findByText('Allocation')).toBeTruthy();
     // 400 000 × 65% expenses = 260 000 — proves the params reached the screen.
     expect(await screen.findByText('260 000 FCFA')).toBeTruthy();
+  });
+
+  it('renders a muted error when incomeId is missing or not a positive integer', () => {
+    mockParams.value = { amount: '400000', month: '2026-06' };
+    render(<AllocationFromIncomeRoute />);
+    expect(screen.getByText('Invalid allocation parameters.')).toBeTruthy();
+
+    mockParams.value = { amount: '400000', month: '2026-06', incomeId: '0' };
+    render(<AllocationFromIncomeRoute />);
+    expect(screen.getAllByText('Invalid allocation parameters.').length).toBeGreaterThan(0);
   });
 
   it('renders a muted error when amount is missing', () => {
