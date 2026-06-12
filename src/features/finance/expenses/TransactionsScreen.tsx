@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
-import { PRIMARY_GREEN } from '@/constants/colors';
+import { PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
+import { RADIUS, SHADOW } from '@/constants/layout';
+import { hapticTap } from '@/utils/haptics';
 
 import { AddTransactionSheet } from './AddTransactionSheet';
 import { TransactionList } from './TransactionList';
@@ -27,9 +29,12 @@ export function TransactionsScreen() {
         accessibilityRole="button"
         accessibilityLabel="Add transaction"
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => setSheetOpen(true)}
+        onPress={() => {
+          hapticTap();
+          setSheetOpen(true);
+        }}
       >
-        <Icon name="add" size={ICON_SIZE.lg} color="#FFFFFF" />
+        <Icon name="add" size={ICON_SIZE.lg} color={TEXT_INVERSE} />
       </Pressable>
 
       <AddTransactionSheet
@@ -51,15 +56,11 @@ const styles = StyleSheet.create({
     bottom: 24,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: RADIUS.full,
     backgroundColor: PRIMARY_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
+    ...SHADOW.floating,
   },
   fabPressed: {
     opacity: 0.85,

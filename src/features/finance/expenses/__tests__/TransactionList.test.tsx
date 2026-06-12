@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import type { TransactionEntry } from '@/types/transactions';
@@ -107,18 +107,28 @@ describe('TransactionList', () => {
     expect(screen.getByText('Yesterday')).toBeTruthy();
   });
 
-  it('section header right side shows the day net total', async () => {
+  it('section header shows the signed day net (income surplus as +)', async () => {
     mockGetFeed.mockResolvedValue([EXPENSE_TODAY, INCOME_TODAY]);
     render(<TransactionList />);
 
-    // Net = expenses - income. Income 50000 - Expense 2000 = net income 48000
-    // Negative net (income surplus) displays as −48 000 FCFA
+    // Income 50 000 − expense 2 000 = 48 000 net in, shown with a + sign.
     await waitFor(() => {
       expect(screen.getByTestId('section-net-2026-06-10')).toBeTruthy();
     });
+    expect(screen.getByTestId('section-net-2026-06-10').props.children).toBe('+48 000 FCFA');
   });
 
-  it('income rows have green left-border testID', async () => {
+  it('section header shows a net-spend day with a − sign', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('section-net-2026-06-10')).toBeTruthy();
+    });
+    expect(screen.getByTestId('section-net-2026-06-10').props.children).toBe('−2 000 FCFA');
+  });
+
+  it('renders income rows by testID', async () => {
     mockGetFeed.mockResolvedValue([INCOME_TODAY]);
     render(<TransactionList />);
 
@@ -127,7 +137,7 @@ describe('TransactionList', () => {
     });
   });
 
-  it('expense rows have muted left-border testID', async () => {
+  it('renders expense rows by testID', async () => {
     mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
     render(<TransactionList />);
 
@@ -150,6 +160,49 @@ describe('TransactionList', () => {
     render(<TransactionList />);
 
     expect(await screen.findByText(/No transactions in/)).toBeTruthy();
+  });
+
+  it('shows a spinner on first load and keeps rows visible while a refetch is in flight', async () => {
+    mockGetFeed.mockResolvedValueOnce([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    // Cold load: spinner, never a premature "No transactions" flash.
+    expect(screen.getByTestId('feed-loading')).toBeTruthy();
+    expect(screen.queryByText(/No transactions in/)).toBeNull();
+
+    await screen.findByTestId('tx-row-expense-1');
+
+    // Navigate to a month whose query stays in flight — the previous rows
+    // must stay rendered instead of blanking out.
+    let resolveNext!: (entries: TransactionEntry[]) => void;
+    mockGetFeed.mockImplementationOnce(
+      () =>
+        new Promise<TransactionEntry[]>((resolve) => {
+          resolveNext = resolve;
+        }),
+    );
+    fireEvent.press(screen.getByTestId('month-nav-prev'));
+
+    expect(screen.getByTestId('tx-row-expense-1')).toBeTruthy();
+
+    await act(async () => {
+      resolveNext([]);
+    });
+    expect(await screen.findByText(/No transactions in/)).toBeTruthy();
+  });
+
+  it('shows the load error with a Retry action that re-fetches', async () => {
+    mockGetFeed.mockRejectedValueOnce(new Error('Feed failed'));
+    mockGetFeed.mockResolvedValueOnce([EXPENSE_TODAY]);
+    render(<TransactionList />);
+
+    expect(await screen.findByText('Feed failed')).toBeTruthy();
+    expect(screen.queryByText(/No transactions in/)).toBeNull();
+
+    fireEvent.press(screen.getByTestId('feed-retry'));
+
+    expect(await screen.findByTestId('tx-row-expense-1')).toBeTruthy();
+    expect(screen.queryByText('Feed failed')).toBeNull();
   });
 
   it('category chip filter shows income rows always; hides non-matching expenses', async () => {
@@ -242,7 +295,7 @@ describe('TransactionList', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('transfer rows render with a ⇄ icon and a from→to label', async () => {
+  it('transfer rows render with a from→to label', async () => {
     const transfer: TransactionEntry = {
       type: 'transfer',
       id: 7,
