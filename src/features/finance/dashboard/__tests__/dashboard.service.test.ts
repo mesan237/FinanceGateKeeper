@@ -141,7 +141,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('populates budget, funds, and topProject when includeBudgetData is true', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     await createExpense({
@@ -174,7 +180,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns yellow pace when >= 75% of expense budget spent with days remaining', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     // 50 000 / 65 000 ≈ 76.9% — above the 75% threshold
@@ -192,7 +204,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns red pace when over budget', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     // 70 000 > 65 000
@@ -210,7 +228,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns topProject null when no active projects exist', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
 
@@ -219,7 +243,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('selects the lowest priority_rank active project as top project', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     await createProject({ name: 'Priority One', targetAmount: 100000 });
