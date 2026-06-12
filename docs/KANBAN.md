@@ -613,6 +613,34 @@ Approved cross-feature edge added (ARCHITECTURE.md + CLAUDE.md): `budget → inc
 
 ---
 
+### VS-20: Income Detail & Edit
+
+**Priority:** Medium
+**Blocked by:** VS-05, VS-16, VS-19
+
+**Scope:**
+
+Close the feed's last dead end: income rows become tappable and open a detail screen where held income can be corrected or removed before it is allocated. Editing money that has already been dispatched (deposits made, budget counted) stays restricted — reversing fund/project deposits remains out of scope (the VS-17 deferral stands; VS-19's `allocation_status` is what makes this slice tractable).
+
+- `income.service.ts`: `getIncomeById(id)`; `updateIncome(id, patch)` — full edit (amount, source, date, note, accountId) while `allocation_status = 'pending'`; once `allocated`, only metadata (source, note, accountId) may change — amount/date changes are rejected at the service layer; `deleteIncome(id)` — pending rows only, allocated rows are rejected.
+- `income.hooks.ts`: `useIncomeEdit(id)` — loads the row, exposes form state + `canSubmit`/`submit`/`remove`, and surfaces the allocated lock so the UI can disable fields.
+- `IncomeDetailScreen.tsx` + `IncomeDetailRoute.tsx` (VS-17 `ExpenseDetailRoute` param pattern) + thin `app/income/[id].tsx` route.
+- Pending rows: pre-filled form + Delete (confirmation modal) + an "Allocate now" button into the existing `/income/allocate` flow with the row's id and amount.
+- Allocated rows: amount and date render read-only with an explanatory line; source/note/account stay editable.
+- `TransactionRow.tsx`: income rows gain `onPress` → `/income/{id}` (mirrors expense rows).
+- No migration. No new cross-feature edges (routing by path string, not imports).
+
+**TDD Anchor:**
+
+- Test: `income.service` — `getIncomeById` returns the row or null; `updateIncome` edits all fields while pending; rejects amount/date changes once allocated but accepts metadata; `deleteIncome` removes a pending row and rejects an allocated one.
+- Test: `useIncomeEdit` — loads the row, submits a patch, `remove` deletes, exposes the allocated lock.
+- Test: `IncomeDetailScreen` — pending: pre-filled form saves and deletes with confirmation; allocated: amount disabled and Delete hidden; Allocate-now navigates with id + amount.
+- Test: `TransactionList` — tapping an income row pushes `/income/{id}`.
+
+**Done when:** Tapping an income row opens its detail. Held income can be fixed or deleted before allocation, or sent straight into the allocation flow. Allocated income can only have its metadata corrected — its money trail is immutable. All tests pass.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -679,3 +707,4 @@ These tasks can run simultaneously if using multiple agents:
 | VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |
 | VS-18: Accounts & Payment Channels | ✅ Done | accounts feature slice (AccountsOverview, AccountDetail+Route, AccountForm, AccountPicker, TransferLogScreen) + accounts.service/balance/hooks/types/accountIcons; migrations 018 (accounts table + seed Cash/MTN MoMo/Orange Money), 019 (account_id nullable on expenses/income/fund_transactions/project_transactions), 020 (transfers table), 021 (sync wiring: accounts/transfers join SYNCED_TABLES + account_id FK mapping in sync.mapping + recreated child update triggers; 017 refactored to export addSyncColumns/createUpdateTrigger/DATA_COLUMNS and skip not-yet-existing tables); getAccountBalance computed from history (opening + income + transfers_in − expenses − transfers_out − manual fund/project deposits; null account_id = automated allocation, excluded); getAccountStats income/expense %; Wallets section on Dashboard (WalletsCard); "Log a transfer" link in the Add-Transaction sheet → /transfers/log; AccountPicker (defaults to is_default) on ExpenseEntryPanel, ExpenseDetailScreen, IncomeEntryPanel, ProjectDetail; transfer (⇄) entries + account chips in unified feed (services/transactions.ts + TransferEntry); cross-feature edges expenses/income/projects/dashboard → accounts (funds → accounts reserved: service-level accountId, manual-deposit UI deferred since fund deposits are allocation-driven). Blocked by VS-16, VS-17. code-reviewer APPROVE WITH NITS (nits addressed: default-set wrapped in txns, redundant ORDER BY dropped, funds edge annotated). 591/592 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
 | VS-19: Deferred Income Allocation | ✅ Done | Income no longer auto-dispatches: migration 022 adds income.allocation_status (DEFAULT 'allocated' backfills legacy; service creates new income 'pending') → income.service getPendingIncome/markIncomeAllocated (getMonthlyTotal stays status-agnostic) → budget.service expense budget counts only allocated income → budget.types AllocationDestination → budget.hooks useUnallocatedPool (loads pool + funds + active projects, allocate() deposits to fund/project then marks allocated, emergency target-met redistributes once) → AllocationScreen takes incomeId, Confirm marks allocated, new "Hold for later" button leaves it pending (incomeId threaded through IncomeEntryPanel/IncomeLogScreen/AllocationFromIncomeRoute) → UnallocatedPoolScreen + Route + app/budget/unallocated.tsx + BudgetOverview "Unallocated income" link. Sync hardened: applyCloudRow omits cloud-absent columns (DEFAULT fills on insert, no null-overwrite on update) so pre-migration cloud rows restore cleanly. Added approved edge budget → income (read held income, mark allocated). Blocked by VS-06, VS-09, VS-10. 663/664 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
+| VS-20: Income Detail & Edit   | 🔲 Backlog |       |
