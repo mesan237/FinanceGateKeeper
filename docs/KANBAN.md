@@ -579,6 +579,40 @@ Approved cross-feature edges to add (ARCHITECTURE.md + CLAUDE.md):
 
 ---
 
+### VS-19: Deferred Income Allocation (Hold & Unallocated Pool)
+
+**Priority:** High
+**Blocked by:** VS-06, VS-09, VS-10
+
+**Scope:**
+
+Make income opt-in to allocation instead of auto-dispatching. Income is logged as **held** until the user deliberately allocates it, so logging income several times a day no longer inflates the spendable expense budget. Supports manually capping expenses at a share of salary (allocate the salary, hold the extra).
+
+- Migration 022: `ALTER TABLE income ADD COLUMN allocation_status TEXT NOT NULL DEFAULT 'allocated'` (+ index). Legacy rows backfill to `allocated`; the service creates new income as `pending`.
+- `income.types.ts`: `IncomeAllocationStatus = 'allocated' | 'pending'`; `Income.allocationStatus`; optional on `NewIncome` (defaults `pending`).
+- `income.service.ts`: persist/read `allocation_status`; `getPendingIncome()`; `markIncomeAllocated(id)`. `getMonthlyTotal` stays status-agnostic (income history/reports unchanged).
+- `budget.service.ts`: the derived expense budget counts only **allocated** income (`getIncomeMonthlyTotal` filters `allocation_status = 'allocated'`).
+- `budget.types.ts`: `AllocationDestination` (`expense | fund | project`).
+- `budget.hooks.ts`: `useUnallocatedPool()` — loads the pending pool + funds + active projects and exposes `allocate(income, destination)` (deposits to fund/project where applicable, then marks the income allocated; emergency deposit that meets target triggers redistribution once).
+- `AllocationScreen.tsx`: takes `incomeId`; **Confirm** marks the income allocated (alongside the existing deposits + lock); new **Hold for later** button leaves it pending and returns to the dashboard. `IncomeEntryPanel`/`IncomeLogScreen`/`AllocationFromIncomeRoute` thread the new income id through the route.
+- `UnallocatedPoolScreen.tsx` + `UnallocatedPoolRoute.tsx` + `app/budget/unallocated.tsx`: pool total, list of held income, per-entry destination picker (Expense budget / Emergency / Savings / each active project). `BudgetOverview` surfaces an "Unallocated income" row (with amount) linking to it when the pool is non-empty.
+- Sync hardening: `applyCloudRow` omits columns absent from a cloud row, so a row written before this migration restores cleanly (DEFAULT fills `allocation_status`; never null-overwrites on update).
+
+Approved cross-feature edge added (ARCHITECTURE.md + CLAUDE.md): `budget → income` (read held income, mark allocated).
+
+**TDD Anchor:**
+
+- Test: `income.service` — new income defaults `pending`; `getPendingIncome` returns only pending newest-first; `markIncomeAllocated` flips status; `getMonthlyTotal` counts both.
+- Test: `budget.service` — `getMonthlyBudget` excludes pending income; counts only allocated.
+- Test: `useUnallocatedPool` — totals the pool; allocate→fund deposits then marks allocated (emergency target-met redistributes once); allocate→project contributes; allocate→expense marks allocated with no deposit.
+- Test: `AllocationScreen` — Confirm marks the income allocated; Hold leaves it pending and navigates without depositing/locking.
+- Test: `UnallocatedPoolScreen` — pool total + entries; empty state; picking a destination calls `allocate`.
+- Test: migration 022 backfills existing income to `allocated`.
+
+**Done when:** Logging income lands it in the pool unless you Confirm the split. The Budget tab shows held income and a tap-through pool screen where you send each held amount to the expense budget, a fund, or a project. Logging income several times a day no longer raises the spendable budget. All tests pass.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -644,3 +678,4 @@ These tasks can run simultaneously if using multiple agents:
 | VS-16: Transaction UX Enhancement | ✅ Done | ScreenHeader shared component, Settings gear in tab headers, SectionList date grouping, unified income+expense feed (services/transactions.ts), month-scoped filter with prev/next nav, FAB = Quick Add + Log Expense only (Log Income stays on Dashboard), action bar style preference (explicit/speed-dial) with migration 016 + settings toggle, category icons via Ionicons (constants/categoryIcons.ts) in TransactionList + QuickAddScreen + CategoryPicker. ActionBarStyle lifted to src/types/settings.ts (no cross-feature edge). Blocked by VS-03, VS-05, VS-08. 460/460 tests passing. |
 | VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |
 | VS-18: Accounts & Payment Channels | ✅ Done | accounts feature slice (AccountsOverview, AccountDetail+Route, AccountForm, AccountPicker, TransferLogScreen) + accounts.service/balance/hooks/types/accountIcons; migrations 018 (accounts table + seed Cash/MTN MoMo/Orange Money), 019 (account_id nullable on expenses/income/fund_transactions/project_transactions), 020 (transfers table), 021 (sync wiring: accounts/transfers join SYNCED_TABLES + account_id FK mapping in sync.mapping + recreated child update triggers; 017 refactored to export addSyncColumns/createUpdateTrigger/DATA_COLUMNS and skip not-yet-existing tables); getAccountBalance computed from history (opening + income + transfers_in − expenses − transfers_out − manual fund/project deposits; null account_id = automated allocation, excluded); getAccountStats income/expense %; Wallets section on Dashboard (WalletsCard); "Log a transfer" link in the Add-Transaction sheet → /transfers/log; AccountPicker (defaults to is_default) on ExpenseEntryPanel, ExpenseDetailScreen, IncomeEntryPanel, ProjectDetail; transfer (⇄) entries + account chips in unified feed (services/transactions.ts + TransferEntry); cross-feature edges expenses/income/projects/dashboard → accounts (funds → accounts reserved: service-level accountId, manual-deposit UI deferred since fund deposits are allocation-driven). Blocked by VS-16, VS-17. code-reviewer APPROVE WITH NITS (nits addressed: default-set wrapped in txns, redundant ORDER BY dropped, funds edge annotated). 591/592 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
+| VS-19: Deferred Income Allocation | ✅ Done | Income no longer auto-dispatches: migration 022 adds income.allocation_status (DEFAULT 'allocated' backfills legacy; service creates new income 'pending') → income.service getPendingIncome/markIncomeAllocated (getMonthlyTotal stays status-agnostic) → budget.service expense budget counts only allocated income → budget.types AllocationDestination → budget.hooks useUnallocatedPool (loads pool + funds + active projects, allocate() deposits to fund/project then marks allocated, emergency target-met redistributes once) → AllocationScreen takes incomeId, Confirm marks allocated, new "Hold for later" button leaves it pending (incomeId threaded through IncomeEntryPanel/IncomeLogScreen/AllocationFromIncomeRoute) → UnallocatedPoolScreen + Route + app/budget/unallocated.tsx + BudgetOverview "Unallocated income" link. Sync hardened: applyCloudRow omits cloud-absent columns (DEFAULT fills on insert, no null-overwrite on update) so pre-migration cloud rows restore cleanly. Added approved edge budget → income (read held income, mark allocated). Blocked by VS-06, VS-09, VS-10. 663/664 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |

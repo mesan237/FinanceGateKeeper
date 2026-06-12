@@ -27,7 +27,7 @@ Three layers — never violate these:
 
 ## Approved Cross-Feature Dependencies
 - `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`, `accounts` (Wallets summary)
-- `budget` → reads from `expenses` (categories), `funds` (redistribution), `projects` (funds on allocation confirm)
+- `budget` → reads from `expenses` (categories), `funds` (redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated for the unallocated-pool screen, VS-19)
 - `reports` → reads from `expenses`, `income`, `budget`, `funds`, `projects`, `debt`
 - `income` → calls `budget` (triggers allocation after income log); reads `accounts` (AccountPicker on income log)
 - `funds` → reads `budget` (allocation percentages); reads `accounts` (reserved — service-level `accountId` on deposits; manual-deposit picker UI deferred)

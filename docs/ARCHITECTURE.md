@@ -213,7 +213,7 @@ Some features legitimately need each other. These are the **approved cross-featu
 | Feature     | Can import from                                                                               |
 | ----------- | --------------------------------------------------------------------------------------------- |
 | `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation); `accounts` (Wallets summary section) |
-| `budget`    | `expenses` (reads categories), `funds` (triggers redistribution), `projects` (funds on allocation confirm) |
+| `budget`    | `expenses` (reads categories), `funds` (triggers redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated — unallocated-pool screen, VS-19) |
 | `expenses`  | `budget` (pre-save over-budget check on the expense log and quick-add screens); `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); `accounts` (AccountPicker on the expense log and detail screens) |
 | `reports`   | `expenses`, `income`, `budget`, `funds`, `projects`, `debt` (read-only for report generation) |
 | `income`    | `budget` (triggers allocation screen after income log); `accounts` (AccountPicker on the income log screen) |
