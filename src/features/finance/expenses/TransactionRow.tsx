@@ -54,14 +54,16 @@ export interface TransactionRowProps {
   item: TransactionEntry;
   /** Called with the expense id when an expense row is tapped (opens detail). */
   onPressExpense: (id: number) => void;
+  /** Called with the income id when an income row is tapped (opens detail, VS-20). */
+  onPressIncome: (id: number) => void;
 }
 
 /**
- * One feed row. Expenses are tappable (detail screen); income and transfers
- * are display-only. Direction is carried by the signed, coloured amount —
- * +green income, −red expense, muted transfers.
+ * One feed row. Expense and income rows are tappable (their detail screens);
+ * transfers are display-only. Direction is carried by the signed, coloured
+ * amount — +green income, −red expense, muted transfers.
  */
-export function TransactionRow({ item, onPressExpense }: TransactionRowProps) {
+export function TransactionRow({ item, onPressExpense, onPressIncome }: TransactionRowProps) {
   if (item.type === 'transfer') {
     return (
       <View testID={`tx-row-transfer-${item.id}`} style={styles.row}>
@@ -103,9 +105,13 @@ export function TransactionRow({ item, onPressExpense }: TransactionRowProps) {
 
   if (isIncome) {
     return (
-      <View testID={`tx-row-income-${item.id}`} style={styles.row}>
+      <Pressable
+        testID={`tx-row-income-${item.id}`}
+        onPress={() => onPressIncome(item.id)}
+        style={styles.row}
+      >
         {content}
-      </View>
+      </Pressable>
     );
   }
 

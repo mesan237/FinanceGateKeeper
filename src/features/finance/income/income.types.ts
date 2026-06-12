@@ -39,6 +39,13 @@ export type NewIncome = Omit<Income, 'id' | 'createdAt' | 'accountId' | 'allocat
   allocationStatus?: IncomeAllocationStatus;
 };
 
+/**
+ * The full-row patch accepted by `updateIncome` (VS-20). Always carries every
+ * editable field — the allocated-row lock compares `amount`/`date` against the
+ * stored row, which is only meaningful when the caller states both explicitly.
+ */
+export type UpdateIncome = Pick<Income, 'amount' | 'source' | 'date' | 'note' | 'accountId'>;
+
 /** Filter applied to the income history. All fields are optional. */
 export interface IncomeFilter {
   source?: IncomeSource;

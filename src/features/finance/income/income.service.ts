@@ -1,7 +1,7 @@
 import { INCOME_SOURCE_VALUES } from '@/constants/incomeSources';
 import { execute, query } from '@/services/database';
 
-import type { Income, NewIncome } from './income.types';
+import type { Income, NewIncome, UpdateIncome } from './income.types';
 
 interface IncomeRow {
   id: number;
@@ -85,6 +85,65 @@ export async function getPendingIncome(): Promise<Income[]> {
  */
 export async function markIncomeAllocated(id: number): Promise<void> {
   await execute(`UPDATE income SET allocation_status = 'allocated' WHERE id = ?`, [id]);
+}
+
+/** Returns the income row with the given id, or null when it does not exist. */
+export async function getIncomeById(id: number): Promise<Income | null> {
+  const [row] = await query<IncomeRow>(
+    `SELECT ${INCOME_COLUMNS} FROM income WHERE id = ?`,
+    [id],
+  );
+  return row ? mapIncome(row) : null;
+}
+
+/**
+ * Updates an income row with a full-row patch (VS-20). While the row is
+ * `pending`, every field may change. Once `allocated`, its money trail is
+ * immutable — deposits were made and the month's budget counted it — so only
+ * metadata (source, note, accountId) may change; an amount or date change is
+ * rejected. Reuses `createIncome`'s validation so no caller can write bad rows.
+ *
+ * @throws if the row does not exist, the patch is invalid, or it changes the
+ *         amount/date of an allocated row.
+ */
+export async function updateIncome(id: number, patch: UpdateIncome): Promise<void> {
+  if (!Number.isInteger(patch.amount) || patch.amount <= 0) {
+    throw new Error('Income amount must be a positive integer (FCFA).');
+  }
+  if (!INCOME_SOURCE_VALUES.has(patch.source)) {
+    throw new Error(`Unknown income source: ${patch.source}.`);
+  }
+
+  const existing = await getIncomeById(id);
+  if (!existing) throw new Error('Income not found.');
+  if (
+    existing.allocationStatus === 'allocated' &&
+    (patch.amount !== existing.amount || patch.date !== existing.date)
+  ) {
+    throw new Error('Allocated income cannot change amount or date.');
+  }
+
+  await execute(
+    `UPDATE income SET amount = ?, source = ?, date = ?, note = ?, account_id = ? WHERE id = ?`,
+    [patch.amount, patch.source, patch.date, patch.note ?? null, patch.accountId ?? null, id],
+  );
+}
+
+/**
+ * Deletes a *pending* income row (VS-20). Allocated rows are never deleted —
+ * their deposits and budget contribution would silently desynchronise. Note:
+ * like `deleteExpense` (VS-17), this is a plain DELETE with no sync tombstone;
+ * a previously pushed row can resurrect on the next cloud pull.
+ *
+ * @throws if the row does not exist or is allocated.
+ */
+export async function deleteIncome(id: number): Promise<void> {
+  const existing = await getIncomeById(id);
+  if (!existing) throw new Error('Income not found.');
+  if (existing.allocationStatus === 'allocated') {
+    throw new Error('Allocated income cannot be deleted.');
+  }
+  await execute('DELETE FROM income WHERE id = ?', [id]);
 }
 
 /** Returns every income row, newest first (by date, then insertion time). */

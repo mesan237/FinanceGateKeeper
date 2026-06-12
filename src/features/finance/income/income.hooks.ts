@@ -72,6 +72,113 @@ export function useIncomeLog() {
 }
 
 /**
+ * Form state for the income detail/edit screen (VS-20). Loads the row, exposes
+ * pre-filled field state plus the `isAllocated` lock (the screen disables
+ * amount/date when set — the service enforces the same rule), and boolean
+ * `update`/`remove` results so the caller can navigate on success. Mirrors
+ * `useExpenseEdit`, minus the original-value diffing (no over-budget check on
+ * income).
+ */
+export function useIncomeEdit(id: number) {
+  const [amount, setAmount] = useState('');
+  const [source, setSource] = useState<IncomeSource | null>(null);
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState('');
+  const [accountId, setAccountId] = useState<number | null>(null);
+  const [isAllocated, setIsAllocated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      try {
+        const income = await incomeService.getIncomeById(id);
+        if (cancelled) return;
+        if (!income) {
+          setNotFound(true);
+          setError('Income not found.');
+          return;
+        }
+        setAmount(String(income.amount));
+        setSource(income.source);
+        setNote(income.note ?? '');
+        setDate(income.date);
+        setAccountId(income.accountId);
+        setIsAllocated(income.allocationStatus === 'allocated');
+        setError(null);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load income.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const numericAmount = Number(amount);
+  const canSubmit =
+    !notFound && Number.isFinite(numericAmount) && numericAmount > 0 && source !== null;
+
+  /** Persists the full patch. Returns true on success so the screen can navigate. */
+  const update = useCallback(async (): Promise<boolean> => {
+    if (!canSubmit || source === null) {
+      setError('Enter an amount greater than 0 and pick a source.');
+      return false;
+    }
+    try {
+      await incomeService.updateIncome(id, {
+        amount: Math.trunc(numericAmount),
+        source,
+        note: note.trim() ? note.trim() : null,
+        date,
+        accountId,
+      });
+      setError(null);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to update income.');
+      return false;
+    }
+  }, [id, canSubmit, source, numericAmount, note, date, accountId]);
+
+  /** Deletes the row. Returns true on success so the screen can navigate. */
+  const remove = useCallback(async (): Promise<boolean> => {
+    try {
+      await incomeService.deleteIncome(id);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete income.');
+      return false;
+    }
+  }, [id]);
+
+  return {
+    amount,
+    setAmount,
+    source,
+    setSource,
+    note,
+    setNote,
+    date,
+    setDate,
+    accountId,
+    setAccountId,
+    isAllocated,
+    loading,
+    notFound,
+    canSubmit,
+    error,
+    update,
+    remove,
+  };
+}
+
+/**
  * Loads income, re-querying whenever the filter changes. Filtering is done in
  * SQL (not in memory): a source filter takes precedence, then a date range,
  * otherwise all income is returned.

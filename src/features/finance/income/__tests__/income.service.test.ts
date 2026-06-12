@@ -21,14 +21,17 @@ jest.mock('@/services/database', () => {
 
 import {
   createIncome,
+  deleteIncome,
   getAllIncome,
   getIncomeByDateRange,
+  getIncomeById,
   getIncomeBySource,
   getMonthlyTotal,
   getPendingIncome,
   markIncomeAllocated,
+  updateIncome,
 } from '@/features/finance/income/income.service';
-import type { NewIncome } from '@/features/finance/income/income.types';
+import type { NewIncome, UpdateIncome } from '@/features/finance/income/income.types';
 
 let sqlite: Database.Database;
 
@@ -211,5 +214,139 @@ describe('allocation status (VS-19)', () => {
     const all = await getAllIncome();
     expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
     expect(await getPendingIncome()).toEqual([]);
+  });
+});
+
+// ---- VS-20: detail & edit ----------------------------------------------------
+
+function patchFrom(overrides: Partial<UpdateIncome> = {}): UpdateIncome {
+  return {
+    amount: 350000,
+    source: 'salary',
+    date: '2026-06-12',
+    note: null,
+    accountId: null,
+    ...overrides,
+  };
+}
+
+describe('getIncomeById (VS-20)', () => {
+  it('returns the mapped row with camelCase fields', async () => {
+    const id = await createIncome(newIncome({ amount: 75000, source: 'freelance', accountId: 1 }));
+
+    const row = await getIncomeById(id);
+    expect(row).toMatchObject({
+      id,
+      amount: 75000,
+      source: 'freelance',
+      date: '2026-06-12',
+      accountId: 1,
+      allocationStatus: 'pending',
+    });
+  });
+
+  it('returns null for an unknown id', async () => {
+    expect(await getIncomeById(99999)).toBeNull();
+  });
+});
+
+describe('updateIncome (VS-20)', () => {
+  it('edits every field on a pending row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, accountId: null }));
+
+    await updateIncome(
+      id,
+      patchFrom({ amount: 2500, source: 'ecommerce', date: '2026-06-15', note: 'fixed', accountId: 1 }),
+    );
+
+    expect(await getIncomeById(id)).toMatchObject({
+      amount: 2500,
+      source: 'ecommerce',
+      date: '2026-06-15',
+      note: 'fixed',
+      accountId: 1,
+    });
+  });
+
+  it('clears accountId back to null (value -> null direction)', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, accountId: 1 }));
+
+    await updateIncome(id, patchFrom({ amount: 1000, accountId: null }));
+
+    expect((await getIncomeById(id))?.accountId).toBeNull();
+  });
+
+  it('rejects a non-positive amount and an unknown source', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+
+    await expect(updateIncome(id, patchFrom({ amount: 0 }))).rejects.toThrow();
+    await expect(
+      updateIncome(id, patchFrom({ source: 'gift' as unknown as UpdateIncome['source'] })),
+    ).rejects.toThrow(/Unknown income source/);
+    expect((await getIncomeById(id))?.amount).toBe(1000);
+  });
+
+  it('throws for an unknown id', async () => {
+    await expect(updateIncome(99999, patchFrom())).rejects.toThrow('Income not found.');
+  });
+
+  it('rejects an amount change on an allocated row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+    await markIncomeAllocated(id);
+
+    await expect(updateIncome(id, patchFrom({ amount: 2000 }))).rejects.toThrow(
+      'Allocated income cannot change amount or date.',
+    );
+    expect((await getIncomeById(id))?.amount).toBe(1000);
+  });
+
+  it('rejects a date change on an allocated row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, date: '2026-06-12' }));
+    await markIncomeAllocated(id);
+
+    await expect(updateIncome(id, patchFrom({ amount: 1000, date: '2026-06-13' }))).rejects.toThrow(
+      'Allocated income cannot change amount or date.',
+    );
+  });
+
+  it('accepts a metadata-only patch on an allocated row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, source: 'salary' }));
+    await markIncomeAllocated(id);
+
+    await updateIncome(
+      id,
+      patchFrom({ amount: 1000, source: 'freelance', note: 'recategorised', accountId: 1 }),
+    );
+
+    expect(await getIncomeById(id)).toMatchObject({
+      amount: 1000,
+      source: 'freelance',
+      note: 'recategorised',
+      accountId: 1,
+      allocationStatus: 'allocated',
+    });
+  });
+});
+
+describe('deleteIncome (VS-20)', () => {
+  it('removes a pending row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+
+    await deleteIncome(id);
+
+    expect(await getIncomeById(id)).toBeNull();
+    expect(await getAllIncome()).toHaveLength(0);
+  });
+
+  it('rejects deleting an allocated row', async () => {
+    const id = await createIncome(newIncome({ amount: 1000 }));
+    await markIncomeAllocated(id);
+
+    await expect(deleteIncome(id)).rejects.toThrow('Allocated income cannot be deleted.');
+    expect(await getIncomeById(id)).not.toBeNull();
+  });
+
+  it('throws for an unknown id', async () => {
+    await expect(deleteIncome(99999)).rejects.toThrow('Income not found.');
   });
 });

@@ -146,13 +146,14 @@ describe('TransactionList', () => {
     });
   });
 
-  it('income rows are not tappable (no onPress)', async () => {
+  it('income rows are tappable — pressing one navigates to the income detail (VS-20)', async () => {
     mockGetFeed.mockResolvedValue([INCOME_TODAY]);
     render(<TransactionList />);
 
     const row = await screen.findByTestId('tx-row-income-10');
-    // Pressing an income row should not throw (it simply has no handler)
-    expect(() => fireEvent.press(row)).not.toThrow();
+    fireEvent.press(row);
+
+    expect(mockPush).toHaveBeenCalledWith('/income/10');
   });
 
   it('renders empty state when feed is empty', async () => {
@@ -285,14 +286,15 @@ describe('TransactionList', () => {
     expect(mockPush).toHaveBeenCalledWith('/expenses/1');
   });
 
-  it('income rows are not tappable — pressing one does not call router.push', async () => {
+  it('income rows push the income route, not the expense route', async () => {
     mockGetFeed.mockResolvedValue([INCOME_TODAY]);
     render(<TransactionList />);
 
     const row = await screen.findByTestId('tx-row-income-10');
     fireEvent.press(row);
 
-    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalledWith(expect.stringContaining('/expenses/'));
   });
 
   it('transfer rows render with a from→to label', async () => {

@@ -170,7 +170,11 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
             </View>
           )}
           renderItem={({ item }) => (
-            <TransactionRow item={item} onPressExpense={(id) => router.push(`/expenses/${id}`)} />
+            <TransactionRow
+              item={item}
+              onPressExpense={(id) => router.push(`/expenses/${id}`)}
+              onPressIncome={(id) => router.push(`/income/${id}`)}
+            />
           )}
         />
       ) : loading ? (
