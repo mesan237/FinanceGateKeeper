@@ -96,16 +96,26 @@ export async function applyCloudRow(table: string, cloud: Row): Promise<boolean>
     [uuid],
   );
 
+  // Only touch columns the cloud row actually carries (plus `sync_status`).
+  // A column the cloud doesn't know about — e.g. one added by a newer local
+  // migration than the cloud data was written under — is left out so its local
+  // DEFAULT fills in on insert and it is never null-overwritten on update.
+  const present = (c: string): boolean => c === 'sync_status' || translated[c] !== undefined;
+
   if (existing.length === 0) {
-    const placeholders = cols.map(() => '?').join(', ');
-    const values = cols.map((c) => (c === 'sync_status' ? 'synced' : translated[c]));
-    await execute(`INSERT INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`, bind(values));
+    const insertCols = cols.filter(present);
+    const placeholders = insertCols.map(() => '?').join(', ');
+    const values = insertCols.map((c) => (c === 'sync_status' ? 'synced' : translated[c]));
+    await execute(
+      `INSERT INTO ${table} (${insertCols.join(', ')}) VALUES (${placeholders})`,
+      bind(values),
+    );
     return true;
   }
 
   if (incomingUpdatedAt <= (existing[0].updated_at ?? '')) return false;
 
-  const setCols = cols.filter((c) => c !== 'uuid');
+  const setCols = cols.filter((c) => c !== 'uuid' && present(c));
   const assignments = setCols.map((c) => `${c} = ?`).join(', ');
   const values = setCols.map((c) => (c === 'sync_status' ? 'synced' : translated[c]));
   await execute(`UPDATE ${table} SET ${assignments} WHERE uuid = ?`, bind([...values, uuid]));

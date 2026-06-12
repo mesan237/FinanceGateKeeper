@@ -93,14 +93,15 @@ create table expenses (
 );
 
 create table income (
-  uuid       text primary key,
-  user_id    uuid not null default auth.uid(),
-  amount     integer not null,
-  source     text not null,
-  note       text,
-  date       text not null,
-  created_at text not null,
-  updated_at text not null
+  uuid              text primary key,
+  user_id           uuid not null default auth.uid(),
+  amount            integer not null,
+  source            text not null,
+  note              text,
+  date              text not null,
+  allocation_status text not null default 'allocated',
+  created_at        text not null,
+  updated_at        text not null
 );
 
 create table allocations (
