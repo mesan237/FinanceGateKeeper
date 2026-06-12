@@ -2,7 +2,10 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { BACKGROUND, PRIMARY_GREEN, TEXT_INVERSE, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
+import { hapticTap } from '@/utils/haptics';
 
 export interface Segment {
   key: string;
@@ -33,7 +36,10 @@ export function SegmentedControl({ segments, value, onChange, testID }: Segmente
             testID={testID ? `${testID}-${segment.key}` : undefined}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            onPress={() => onChange(segment.key)}
+            onPress={() => {
+              if (!active) hapticTap();
+              onChange(segment.key);
+            }}
             style={[styles.segment, active && styles.segmentActive]}
           >
             <Typography style={active ? styles.labelActive : styles.label}>
@@ -50,14 +56,14 @@ const styles = StyleSheet.create({
   track: {
     flexDirection: 'row',
     backgroundColor: BACKGROUND,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     padding: 4,
     gap: 4,
   },
   segment: {
     flex: 1,
     minHeight: 44,
-    borderRadius: 9,
+    borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -66,10 +72,10 @@ const styles = StyleSheet.create({
   },
   label: {
     color: TEXT_MUTED,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   labelActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: TEXT_INVERSE,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

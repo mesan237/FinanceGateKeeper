@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE } from '@/constants/icons';
 
 export interface ScreenHeaderProps {
@@ -29,6 +30,7 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
         accessibilityRole="button"
         accessibilityLabel={cancelLabel ?? 'Back'}
         onPress={() => router.back()}
+        hitSlop={8}
         style={styles.backSlot}
       >
         {cancelLabel ? (
@@ -71,6 +73,6 @@ const styles = StyleSheet.create({
   },
   cancelLabel: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

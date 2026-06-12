@@ -2,8 +2,9 @@ import React from 'react';
 import { StyleSheet, TextInput as RNTextInput, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
+import { BACKGROUND, BORDER, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { groupDigits } from '@/utils/groupDigits';
 
 export interface AmountInputProps {
@@ -58,9 +59,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     gap: 8,
     backgroundColor: BACKGROUND,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: BORDER,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },

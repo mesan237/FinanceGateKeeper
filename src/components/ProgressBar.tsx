@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 
-import { PRIMARY_GREEN } from '@/constants/colors';
+import { BORDER, PRIMARY_GREEN } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 
 export interface ProgressBarProps extends ViewProps {
   value: number;
@@ -31,8 +32,8 @@ export function ProgressBar({ value, color = PRIMARY_GREEN, testID, style, ...re
 const styles = StyleSheet.create({
   track: {
     height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
+    backgroundColor: BORDER,
+    borderRadius: RADIUS.full,
     overflow: 'hidden',
   },
   fill: {

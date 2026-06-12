@@ -4,6 +4,7 @@ import { Pressable } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 
@@ -20,6 +21,7 @@ function GearIcon() {
       accessibilityRole="button"
       accessibilityLabel="Settings"
       onPress={() => router.push('/settings')}
+      hitSlop={12}
       style={{ marginRight: 16 }}
     >
       <Icon name="settings" size={ICON_SIZE.md} color={TEXT_PRIMARY} />
@@ -37,6 +39,12 @@ export default function TabsLayout() {
         headerShown: true,
         headerRight: () => <GearIcon />,
         headerStyle: { backgroundColor: SURFACE },
+        // Match the app's heading face — the native default is the system
+        // font, which visibly clashes with Poppins everywhere else.
+        headerTitleStyle: {
+          fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+          fontSize: 17,
+        },
         headerShadowVisible: false,
         tabBarActiveTintColor: PRIMARY_GREEN,
         tabBarInactiveTintColor: TEXT_MUTED,
@@ -49,7 +57,7 @@ export default function TabsLayout() {
         },
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '500',
+          fontFamily: FONT_FAMILY.WORK_SANS_MEDIUM,
         },
       }}
     >

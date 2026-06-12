@@ -6,6 +6,9 @@ import {
   type ModalProps as RNModalProps,
 } from 'react-native';
 
+import { SURFACE } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
+
 export interface ModalProps extends RNModalProps {
   children: React.ReactNode;
 }
@@ -34,8 +37,8 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   content: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    backgroundColor: SURFACE,
+    borderRadius: RADIUS.md,
     padding: 16,
     width: '100%',
     maxWidth: 400,

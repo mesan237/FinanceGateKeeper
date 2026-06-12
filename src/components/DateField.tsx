@@ -6,7 +6,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
+import { BACKGROUND, BORDER, PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 import { ICON_SIZE } from '@/constants/icons';
 import { formatSectionDate } from '@/utils/formatDate';
 
@@ -80,9 +81,9 @@ const styles = StyleSheet.create({
     gap: 8,
     alignSelf: 'flex-start',
     backgroundColor: BACKGROUND,
-    borderRadius: 20,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: BORDER,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },

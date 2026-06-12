@@ -88,7 +88,7 @@ describe('shared primitives', () => {
     const flattened = Array.isArray(label.props.style)
       ? Object.assign({}, ...label.props.style)
       : label.props.style;
-    expect(flattened.color).toBe('#D32F2F'); // DANGER
+    expect(flattened.color).toBe('#C62828'); // DANGER_TEXT
   });
 });
 
