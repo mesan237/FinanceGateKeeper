@@ -7,6 +7,7 @@ import { Icon } from '@/components/Icon';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Typography } from '@/components/Typography';
 import { PRIMARY_GREEN } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { IncomeEntryPanel } from '@/features/finance/income/IncomeEntryPanel';
 
 import { ExpenseEntryPanel } from './ExpenseEntryPanel';
@@ -74,9 +75,7 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
             }}
           />
         ) : (
-          <View style={styles.templates}>
-            <QuickAddGrid onLogged={onExpenseSaved} />
-          </View>
+          <QuickAddGrid scrollable={false} onLogged={onExpenseSaved} />
         )}
       </View>
 
@@ -104,9 +103,6 @@ const styles = StyleSheet.create({
   body: {
     marginTop: 16,
   },
-  templates: {
-    height: 360,
-  },
   transferLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,6 +113,6 @@ const styles = StyleSheet.create({
   },
   transferText: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
 import { buildOverBudgetAlert } from '@/notifications/triggers/overBudget';
+import { hapticWarning } from '@/utils/haptics';
 
 export interface OverBudgetAlertProps {
   visible: boolean;
@@ -24,6 +25,12 @@ export interface OverBudgetAlertProps {
  */
 export function OverBudgetAlert({ visible, overage, onProceed, onCancel }: OverBudgetAlertProps) {
   const payload = buildOverBudgetAlert({ overage });
+
+  // A cautionary buzz when the warning appears — the modal interrupts a save,
+  // so it should feel different from a success.
+  useEffect(() => {
+    if (visible) hapticWarning();
+  }, [visible]);
 
   return (
     <Modal visible={visible} onRequestClose={onCancel}>

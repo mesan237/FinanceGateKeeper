@@ -6,6 +6,7 @@ import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
 import { Icon } from '@/components/Icon';
 import { TextInput } from '@/components/TextInput';
+import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 import { ICON_SIZE } from '@/constants/icons';
@@ -13,6 +14,8 @@ import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
+
+import { formatCurrency } from '@/utils/formatCurrency';
 
 import { CategoryPicker } from './CategoryPicker';
 import { useExpenseLog } from './expenses.hooks';
@@ -32,6 +35,7 @@ export interface ExpenseEntryPanelProps {
 export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
   const log = useExpenseLog();
   const { check } = useOverBudgetCheck();
+  const { show } = useToast();
   const defaultAccountId = useDefaultAccountId();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
@@ -46,8 +50,13 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
   const persist = async () => {
     setSaving(true);
     try {
+      // Capture before submit — the hook resets its fields on success.
+      const amountLabel = formatCurrency(Math.trunc(Number(log.amount)));
       const id = await log.submit();
-      if (id !== null) onSaved();
+      if (id !== null) {
+        show(categoryLabel ? `Logged ${amountLabel} · ${categoryLabel}` : `Logged ${amountLabel}`);
+        onSaved();
+      }
     } finally {
       setSaving(false);
     }

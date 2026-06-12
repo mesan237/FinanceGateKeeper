@@ -6,6 +6,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
   },
   suggestion: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {
     color: DANGER,

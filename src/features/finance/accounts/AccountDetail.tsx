@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { DANGER, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { DANGER, SUCCESS, SUCCESS_TEXT, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import type { IconName } from '@/constants/icons';
 import { currentMonthISO, formatDateShort } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -97,11 +98,11 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   hero: { alignItems: 'center', paddingVertical: 16, gap: 4 },
   statsRow: { flexDirection: 'row', gap: 16, marginTop: 4 },
-  statIn: { color: SUCCESS },
+  statIn: { color: SUCCESS_TEXT },
   statOut: { color: DANGER },
   list: { padding: 16, gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowBody: { flex: 1 },
-  amountCredit: { color: SUCCESS, fontWeight: '600' },
-  amountDebit: { color: DANGER, fontWeight: '600' },
+  amountCredit: { color: SUCCESS_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  amountDebit: { color: DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
 });

@@ -6,7 +6,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, BUCKET_VALUES, type Bucket } from '@/constants/allocation';
-import { DANGER, TEXT_MUTED, WARNING } from '@/constants/colors';
+import { DANGER, TEXT_MUTED, WARNING_TEXT } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 import { currentMonthISO } from '@/utils/formatDate';
 
 import { useAllocation } from './budget.hooks';
@@ -234,13 +235,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: TEXT_MUTED,
-    borderRadius: 6,
+    borderRadius: RADIUS.sm,
   },
   arrowDisabled: {
     opacity: 0.3,
   },
   lockedBanner: {
-    color: WARNING,
+    color: WARNING_TEXT,
   },
   error: {
     color: DANGER,

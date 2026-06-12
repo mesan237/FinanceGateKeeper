@@ -7,7 +7,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { BORDER, DANGER } from '@/constants/colors';
 import { PROJECT_STATUS_LABELS } from '@/constants/projects';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: BORDER,
   },
   error: {
     color: DANGER,

@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
+import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
 import { DANGER } from '@/constants/colors';
 
@@ -20,6 +21,7 @@ import { useTransferLog } from './accounts.hooks';
 export function TransferLogScreen() {
   const router = useRouter();
   const transfer = useTransferLog();
+  const { show } = useToast();
   const [saving, setSaving] = useState(false);
 
   const sameAccount =
@@ -30,6 +32,7 @@ export function TransferLogScreen() {
     setSaving(true);
     const ok = await transfer.submit();
     if (ok) {
+      show('Transfer logged');
       router.back();
     } else {
       setSaving(false);

@@ -6,7 +6,7 @@ import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
-import { DANGER } from '@/constants/colors';
+import { BORDER, DANGER } from '@/constants/colors';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { depositToFund } from '@/features/finance/funds/funds.service';
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: BORDER,
   },
   holdHint: {
     textAlign: 'center',

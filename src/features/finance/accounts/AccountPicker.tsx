@@ -4,7 +4,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
-import { PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { BORDER, BORDER_STRONG, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 
 import { ACCOUNT_TYPE_ICON } from './accountIcons';
 import { useAccounts } from './accounts.hooks';
@@ -108,8 +110,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#CCCCCC',
-    borderRadius: 8,
+    borderColor: BORDER_STRONG,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  action: { color: PRIMARY_GREEN, fontWeight: '600' },
+  action: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   list: { maxHeight: 320 },
   row: {
     flexDirection: 'row',
@@ -128,8 +130,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: BORDER,
   },
   rowName: { flex: 1 },
-  defaultMarker: { color: PRIMARY_GREEN, fontWeight: '600', fontSize: 12 },
+  defaultMarker: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
 });

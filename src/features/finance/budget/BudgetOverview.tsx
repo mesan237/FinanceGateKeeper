@@ -16,8 +16,10 @@ import {
   TEXT_MUTED,
   WARNING,
   WARNING_LIGHT,
+  WARNING_TEXT,
 } from '@/constants/colors';
 import type { IconName } from '@/constants/icons';
+import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { currentMonthISO } from '@/utils/formatDate';
 
@@ -187,13 +189,13 @@ const styles = StyleSheet.create({
   pill: {
     alignSelf: 'flex-start',
     backgroundColor: WARNING_LIGHT,
-    borderRadius: 999,
+    borderRadius: RADIUS.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 8,
   },
   pillText: {
-    color: WARNING,
+    color: WARNING_TEXT,
     fontSize: 12,
   },
   heroBar: {

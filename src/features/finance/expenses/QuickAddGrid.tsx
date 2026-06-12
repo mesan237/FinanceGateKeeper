@@ -1,15 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import { PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_INVERSE, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { QuickAddTemplateForm } from './QuickAddTemplateForm';
-import { useQuickAdd } from './expenses.hooks';
+import { useCategories, useQuickAdd } from './expenses.hooks';
 import type { QuickAddTemplate } from './expenses.types';
 
 /** Sentinel appended to the grid for the create-template tile. */
@@ -21,11 +24,17 @@ type ModalState =
   | { mode: 'create' }
   | { mode: 'edit'; template: QuickAddTemplate };
 
-const TOAST_MS = 2000;
-
 export interface QuickAddGridProps {
   /** Called after a tile successfully logs an expense (e.g. to refresh a feed). */
   onLogged?: () => void;
+  /**
+   * Whether the grid provides its own vertical scroll. Default `true` (the
+   * standalone `QuickAddScreen`). Pass `false` when embedded in a parent that
+   * already scrolls — e.g. the `AddTransactionSheet` inside `BottomSheet` —
+   * since a scroll container nested in another with the same orientation breaks
+   * windowing.
+   */
+  scrollable?: boolean;
 }
 
 /**
@@ -34,35 +43,21 @@ export interface QuickAddGridProps {
  * transient confirmation; long-pressing opens the edit modal. Shared between
  * `QuickAddScreen` and the unified `AddTransactionSheet`.
  */
-export function QuickAddGrid({ onLogged }: QuickAddGridProps) {
+export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps) {
   const { templates, add, update, remove, log } = useQuickAdd();
+  const { labelFor } = useCategories();
   const { check } = useOverBudgetCheck();
+  const { show } = useToast();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
-  const [toast, setToast] = useState<string | null>(null);
   // Holds the template awaiting confirmation while the over-budget warning shows.
   const [pending, setPending] = useState<{ template: QuickAddTemplate; overage: number } | null>(
     null,
   );
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Clear a pending toast timer on unmount so it can't fire after teardown.
-  useEffect(
-    () => () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    },
-    [],
-  );
-
-  const flashToast = (message: string) => {
-    setToast(message);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), TOAST_MS);
-  };
 
   const performLog = async (template: QuickAddTemplate) => {
     const id = await log(template.id);
     if (id !== null) {
-      flashToast(`Logged ${formatCurrency(template.amount)} · ${template.label}`);
+      show(`Logged ${formatCurrency(template.amount)} · ${template.label}`);
       onLogged?.();
     }
   };
@@ -78,7 +73,7 @@ export function QuickAddGrid({ onLogged }: QuickAddGridProps) {
 
   const data: GridItem[] = [...templates, ADD_TILE];
 
-  const renderItem = ({ item }: { item: GridItem }) => {
+  const renderTile = (item: GridItem) => {
     if ('kind' in item) {
       return (
         <Pressable
@@ -92,7 +87,7 @@ export function QuickAddGrid({ onLogged }: QuickAddGridProps) {
         </Pressable>
       );
     }
-    const emoji = getTransactionIcon('expense', item.categoryId);
+    const emoji = getTransactionIcon('expense', labelFor(item.categoryId, null));
     const avatar = emoji ? null : getCategoryAvatar(item.label);
     return (
       <Pressable
@@ -120,24 +115,27 @@ export function QuickAddGrid({ onLogged }: QuickAddGridProps) {
     );
   };
 
+  const grid = (
+    <View style={styles.grid}>
+      {data.map((item) => (
+        <View key={'kind' in item ? 'add-tile' : String(item.id)} style={styles.cell}>
+          {renderTile(item)}
+        </View>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <Typography variant="muted">Tap to log instantly · long-press a tile to edit</Typography>
 
-      <FlatList
-        data={data}
-        keyExtractor={(item) => ('kind' in item ? 'add-tile' : String(item.id))}
-        renderItem={renderItem}
-        numColumns={2}
-        columnWrapperStyle={styles.column}
-        contentContainerStyle={styles.grid}
-      />
-
-      {toast ? (
-        <View style={styles.toast}>
-          <Typography style={styles.toastText}>{toast}</Typography>
-        </View>
-      ) : null}
+      {scrollable ? (
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          {grid}
+        </ScrollView>
+      ) : (
+        grid
+      )}
 
       <QuickAddTemplateForm
         visible={modal.mode !== 'idle'}
@@ -173,20 +171,28 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     paddingTop: 12,
-    gap: 12,
   },
-  column: {
-    gap: 12,
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 8,
+  },
+  cell: {
+    width: '48%',
+    marginBottom: 12,
   },
   tile: {
-    flex: 1,
     minHeight: 88,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     padding: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SURFACE,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: BORDER,
     justifyContent: 'center',
   },
   addTile: {
@@ -197,37 +203,23 @@ const styles = StyleSheet.create({
   addLabel: {
     color: PRIMARY_GREEN,
     fontSize: 32,
-    fontWeight: '700',
+    fontFamily: FONT_FAMILY.POPPINS_BOLD,
   },
   tileEmoji: { fontSize: 28, lineHeight: 32, marginBottom: 4 },
   tileAvatarCircle: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  tileAvatarLetter: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  tileAvatarLetter: { color: TEXT_INVERSE, fontSize: 13, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   tileLabel: {
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   tileAmount: {
     color: TEXT_MUTED,
     marginTop: 4,
-  },
-  toast: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 24,
-    backgroundColor: SUCCESS,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-  },
-  toastText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
 });

@@ -7,7 +7,7 @@ import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { PRIMARY_GREEN, SUCCESS } from '@/constants/colors';
+import { PRIMARY_GREEN, SUCCESS_TEXT } from '@/constants/colors';
 import { currentMonthISO } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -85,5 +85,5 @@ const styles = StyleSheet.create({
   cardName: { flex: 1 },
   badge: { color: PRIMARY_GREEN },
   statsRow: { flexDirection: 'row', gap: 16 },
-  statIn: { color: SUCCESS },
+  statIn: { color: SUCCESS_TEXT },
 });

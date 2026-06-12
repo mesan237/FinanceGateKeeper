@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import { BORDER, DANGER, SUCCESS_TEXT, TEXT_MUTED } from '@/constants/colors';
 
 import { SpendingBarChart } from './SpendingBarChart';
 import type { CategoryDelta, MonthComparison as MonthComparisonData } from './reports.types';
@@ -24,7 +24,7 @@ function formatChange(delta: CategoryDelta): string {
 function changeColor(delta: CategoryDelta): string {
   if (delta.pctChange === null) return TEXT_MUTED;
   if (delta.pctChange > 0) return DANGER;
-  if (delta.pctChange < 0) return SUCCESS;
+  if (delta.pctChange < 0) return SUCCESS_TEXT;
   return TEXT_MUTED;
 }
 

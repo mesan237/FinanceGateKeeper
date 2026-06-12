@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { DANGER, SUCCESS, WARNING } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import type { FundProgress } from './funds.types';
@@ -56,6 +57,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pct: {
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

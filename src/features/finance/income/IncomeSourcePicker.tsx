@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
 import { INCOME_SOURCES, type IncomeSource } from '@/constants/incomeSources';
-import { PRIMARY_GREEN } from '@/constants/colors';
+import { PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 
 export interface IncomeSourcePickerProps {
   value: IncomeSource | null;
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
   pill: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: RADIUS.full,
     borderWidth: 1,
     borderColor: PRIMARY_GREEN,
   },
@@ -54,6 +55,6 @@ const styles = StyleSheet.create({
     borderColor: PRIMARY_GREEN,
   },
   pillTextActive: {
-    color: '#FFFFFF',
+    color: TEXT_INVERSE,
   },
 });

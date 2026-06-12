@@ -3,6 +3,7 @@ import { Dimensions, View } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 
 import { PRIMARY_GREEN, SURFACE, TEXT_SECONDARY } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 
 export interface SpendingBarChartProps {
   labels: string[];
@@ -40,7 +41,7 @@ export function SpendingBarChart({ labels, values, width }: SpendingBarChartProp
         fromZero
         withInnerLines={false}
         chartConfig={chartConfig}
-        style={{ borderRadius: 12 }}
+        style={{ borderRadius: RADIUS.md }}
       />
     </View>
   );

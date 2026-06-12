@@ -6,6 +6,7 @@ import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { BORDER, DANGER, PRIMARY_GREEN, SUCCESS } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { MonthComparison } from './MonthComparison';
@@ -184,5 +185,5 @@ const styles = StyleSheet.create({
   progressBlock: { gap: 4, paddingVertical: 4 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between' },
   weeklyLink: { paddingVertical: 12, alignItems: 'center' },
-  weeklyLinkText: { color: PRIMARY_GREEN, fontWeight: '600' },
+  weeklyLinkText: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
 });
