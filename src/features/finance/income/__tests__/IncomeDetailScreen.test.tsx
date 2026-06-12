@@ -92,10 +92,45 @@ describe('IncomeDetailScreen — pending income', () => {
     await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
     fireEvent.press(screen.getByTestId('allocate-now'));
 
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/income/allocate',
-      params: { amount: '350000', month: '2026-06', incomeId: '9' },
-    });
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/income/allocate',
+        params: { amount: '350000', month: '2026-06', incomeId: '9' },
+      }),
+    );
+  });
+
+  it('Allocate now persists in-form edits before navigating', async () => {
+    render(<IncomeDetailScreen incomeId={9} />);
+
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '400000');
+    fireEvent.press(screen.getByTestId('allocate-now'));
+
+    // The edited amount must be saved to the row before the allocation flow
+    // deposits from it — otherwise deposits and the stored row desynchronise.
+    await waitFor(() =>
+      expect(mockUpdateIncome).toHaveBeenCalledWith(9, expect.objectContaining({ amount: 400000 })),
+    );
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/income/allocate',
+        params: { amount: '400000', month: '2026-06', incomeId: '9' },
+      }),
+    );
+  });
+
+  it('Allocate now does not navigate when the pre-allocation save fails', async () => {
+    mockUpdateIncome.mockRejectedValue(new Error('Income amount must be a positive integer (FCFA).'));
+    render(<IncomeDetailScreen incomeId={9} />);
+
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
+    fireEvent.press(screen.getByTestId('allocate-now'));
+
+    expect(
+      await screen.findByText('Income amount must be a positive integer (FCFA).'),
+    ).toBeTruthy();
+    expect(mockPush).not.toHaveBeenCalled();
   });
 });
 

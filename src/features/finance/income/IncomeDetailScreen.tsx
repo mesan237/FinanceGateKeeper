@@ -61,15 +61,26 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
     }
   };
 
-  const handleAllocateNow = () => {
-    router.push({
-      pathname: '/income/allocate',
-      params: {
-        amount: String(Math.trunc(Number(edit.amount))),
-        month: edit.date.slice(0, 7),
-        incomeId: String(incomeId),
-      },
-    });
+  const handleAllocateNow = async () => {
+    // Persist any in-form edits first: the allocation flow deposits from the
+    // amount it is handed and Confirm locks the row, so navigating with
+    // unsaved values would desynchronise deposits from the stored row —
+    // past the point the service-layer lock can protect.
+    setSaving(true);
+    try {
+      const ok = await edit.update();
+      if (!ok) return;
+      router.push({
+        pathname: '/income/allocate',
+        params: {
+          amount: String(Math.trunc(Number(edit.amount))),
+          month: edit.date.slice(0, 7),
+          incomeId: String(incomeId),
+        },
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (edit.notFound) {
