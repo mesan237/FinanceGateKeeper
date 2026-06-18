@@ -35,6 +35,7 @@ import {
   getMonthlyReport,
   getMonthComparison,
   generateSuggestions,
+  expenseSpentPct,
 } from '@/features/finance/reports/reports.service';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
 import * as incomeService from '@/features/finance/income/income.service';
@@ -308,5 +309,23 @@ describe('generateSuggestions', () => {
       ],
     });
     expect(out).toHaveLength(0);
+  });
+});
+
+describe('expenseSpentPct', () => {
+  it('returns the rounded share of the budget spent', () => {
+    expect(expenseSpentPct(31250, 133250)).toBe(23);
+  });
+
+  it('returns 0 when nothing is planned', () => {
+    expect(expenseSpentPct(5000, 0)).toBe(0);
+  });
+
+  it('returns 0 when nothing has been spent', () => {
+    expect(expenseSpentPct(0, 100000)).toBe(0);
+  });
+
+  it('clamps to 100 when spending exceeds the budget', () => {
+    expect(expenseSpentPct(150000, 100000)).toBe(100);
   });
 });

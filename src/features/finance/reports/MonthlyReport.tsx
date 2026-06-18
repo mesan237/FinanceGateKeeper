@@ -7,13 +7,17 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { colorForIndex } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
 import { OptimizationSuggestions } from './OptimizationSuggestions';
-import { SpendingPieChart } from './SpendingPieChart';
+import { SpendingDonutChart } from './SpendingDonutChart';
+import { expenseSpentPct } from './reports.service';
 import { useMonthlyReport } from './reports.hooks';
 
 const MONTH_NAMES = [
@@ -64,11 +68,12 @@ export function MonthlyReport() {
           <Card>
             <View style={styles.summaryRow}>
               <View>
-                <Typography variant="muted">Income</Typography>
+                <Typography variant="muted" style={styles.capLabel}>INCOME</Typography>
                 <Typography variant="subheading">{formatCurrency(report.incomeTotal)}</Typography>
               </View>
+              <View style={styles.summaryDivider} />
               <View style={styles.alignEnd}>
-                <Typography variant="muted">Expenses</Typography>
+                <Typography variant="muted" style={styles.capLabel}>EXPENSES</Typography>
                 <Typography variant="subheading">
                   {formatCurrency(report.expensePerformance.actual)}
                 </Typography>
@@ -79,9 +84,18 @@ export function MonthlyReport() {
           <View style={styles.section}>
             <Typography variant="subheading">Expense Performance</Typography>
             <PerfRow label="Planned" value={report.expensePerformance.planned} />
-            <PerfRow label="Actual" value={report.expensePerformance.actual} />
+            <ProgressBar
+              testID="expense-performance-bar"
+              value={expenseSpentPct(
+                report.expensePerformance.actual,
+                report.expensePerformance.planned,
+              )}
+              color={c.TEXT_PRIMARY}
+              trackColor={c.SUCCESS}
+            />
+            <PerfRow label="Actual Spending" value={report.expensePerformance.actual} />
             <PerfRow
-              label="Remaining"
+              label="Remaining Budget"
               value={report.expensePerformance.remaining}
               color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
             />
@@ -89,16 +103,33 @@ export function MonthlyReport() {
 
           <View style={styles.section}>
             <Typography variant="subheading">Spending by Category</Typography>
-            <SpendingPieChart data={report.categoryBreakdown} />
-            {report.categoryBreakdown.map((c) => (
-              <View key={c.categoryId} style={styles.row} testID={`month-category-${c.categoryId}`}>
-                <Typography variant="body">{c.categoryLabel}</Typography>
-                <View style={styles.alignEnd}>
-                  <Typography variant="body">{formatCurrency(c.amount)}</Typography>
-                  <Typography variant="muted">{Math.round(c.pct)}%</Typography>
+            <SpendingDonutChart data={report.categoryBreakdown} />
+            {report.categoryBreakdown.map((cat, i) => {
+              const emoji = getTransactionIcon('expense', cat.categoryLabel);
+              const avatar = getCategoryAvatar(cat.categoryLabel);
+              return (
+                <View
+                  key={cat.categoryId}
+                  style={styles.categoryRow}
+                  testID={`month-category-${cat.categoryId}`}
+                >
+                  <View style={[styles.dot, { backgroundColor: colorForIndex(i) }]} />
+                  <View style={styles.categoryIcon}>
+                    <Typography
+                      testID={`report-category-icon-${cat.categoryId}`}
+                      style={styles.categoryEmoji}
+                    >
+                      {emoji ?? avatar.letter}
+                    </Typography>
+                  </View>
+                  <View style={styles.categoryLabelCol}>
+                    <Typography variant="body">{cat.categoryLabel}</Typography>
+                    <Typography variant="muted">{Math.round(cat.pct)}% of total</Typography>
+                  </View>
+                  <Typography variant="body">{formatCurrency(cat.amount)}</Typography>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
 
           <View style={styles.section}>
@@ -106,13 +137,20 @@ export function MonthlyReport() {
             {report.fundProgress.map((f) => (
               <View key={f.type} style={styles.progressBlock} testID={`fund-${f.type}`}>
                 <View style={styles.progressLabel}>
-                  <Typography variant="body">{fundLabel(f.type)}</Typography>
-                  <Typography variant="muted">
-                    {formatCurrency(f.current)}
-                    {f.target !== null ? ` / ${formatCurrency(f.target)}` : ''}
-                  </Typography>
+                  <View>
+                    <Typography variant="body">{fundLabel(f.type)}</Typography>
+                    {f.pct !== null ? (
+                      <Typography variant="muted">{Math.round(f.pct)}% funded</Typography>
+                    ) : null}
+                  </View>
+                  <View style={styles.alignEnd}>
+                    <Typography variant="body">{formatCurrency(f.current)}</Typography>
+                    {f.target !== null ? (
+                      <Typography variant="muted">of {formatCurrency(f.target)}</Typography>
+                    ) : null}
+                  </View>
                 </View>
-                <ProgressBar value={f.pct ?? 0} />
+                <ProgressBar value={f.pct ?? 0} color={c.SUCCESS} />
               </View>
             ))}
           </View>
@@ -175,7 +213,9 @@ function PerfRow({ label, value, color }: { label: string; value: number; color?
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 16, gap: 16 },
-  summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  summaryDivider: { width: StyleSheet.hairlineWidth, alignSelf: 'stretch', backgroundColor: c.BORDER },
+  capLabel: { letterSpacing: 1, fontSize: 11 },
   alignEnd: { alignItems: 'flex-end' },
   section: { gap: 8 },
   row: {
@@ -186,6 +226,25 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderBottomColor: c.BORDER,
     paddingVertical: 8,
   },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.BORDER,
+    paddingVertical: 10,
+  },
+  dot: { width: 8, height: 8, borderRadius: RADIUS.full },
+  categoryIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.md,
+    backgroundColor: c.SURFACE_MUTED,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryEmoji: { fontSize: 16, lineHeight: 22 },
+  categoryLabelCol: { flex: 1 },
   progressBlock: { gap: 4, paddingVertical: 4 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between' },
   weeklyLink: { paddingVertical: 12, alignItems: 'center' },

@@ -13,6 +13,9 @@ jest.mock('expo-router', () => ({
 
 jest.mock('@/features/finance/reports/reports.service', () => ({
   getMonthlyReport: jest.fn(),
+  expenseSpentPct: jest.requireActual<typeof import('@/features/finance/reports/reports.service')>(
+    '@/features/finance/reports/reports.service',
+  ).expenseSpentPct,
 }));
 
 import { MonthlyReport } from '@/features/finance/reports/MonthlyReport';
@@ -69,12 +72,30 @@ describe('MonthlyReport', () => {
     expect(screen.getAllByText('53 000 FCFA').length).toBeGreaterThan(0);
   });
 
-  it('renders the expense performance section', async () => {
+  it('renders the expense performance section with the segmented bar', async () => {
     render(<MonthlyReport />);
     await screen.findByText('June 2026');
     expect(screen.getByText(/planned/i)).toBeTruthy();
-    expect(screen.getByText(/remaining/i)).toBeTruthy();
+    expect(screen.getByText(/actual spending/i)).toBeTruthy();
+    expect(screen.getByText(/remaining budget/i)).toBeTruthy();
     expect(screen.getByText('207 000 FCFA')).toBeTruthy();
+    expect(screen.getByTestId('expense-performance-bar')).toBeTruthy();
+  });
+
+  it('renders the spending donut and rich category rows', async () => {
+    render(<MonthlyReport />);
+    await screen.findByText('June 2026');
+    expect(screen.getByTestId('spending-donut-chart')).toBeTruthy();
+    // 62.3% rounds to 62; the row shows the "% of total" sub-label.
+    expect(screen.getByText('62% of total')).toBeTruthy();
+    expect(screen.getByTestId('report-category-icon-1')).toBeTruthy();
+  });
+
+  it('renders fund progress with a funded percentage and target', async () => {
+    render(<MonthlyReport />);
+    await screen.findByText('June 2026');
+    expect(screen.getByText('40% funded')).toBeTruthy();
+    expect(screen.getByText('of 100 000 FCFA')).toBeTruthy();
   });
 
   it('renders the optimization suggestions empty state', async () => {

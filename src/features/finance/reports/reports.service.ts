@@ -81,6 +81,16 @@ function lastDayOfMonth(monthISO: string): string {
 }
 
 /**
+ * Share of the expense budget already spent, as a whole percentage clamped to
+ * 0–100. Returns 0 when nothing is planned (avoids divide-by-zero). Drives the
+ * Expense Performance bar's spent-over-remaining fill. Pure.
+ */
+export function expenseSpentPct(actual: number, planned: number): number {
+  if (planned <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((actual / planned) * 100)));
+}
+
+/**
  * Builds the weekly report for the seven days starting at `weekStartISO` (a
  * Monday). Aggregates expenses into per-day and per-category totals and finds
  * the highest-spend day.

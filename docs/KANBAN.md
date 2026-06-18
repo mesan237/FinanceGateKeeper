@@ -641,6 +641,33 @@ Close the feed's last dead end: income rows become tappable and open a detail sc
 
 ---
 
+### VS-21: Reports Screen Visual Redesign
+
+**Priority:** Medium
+**Blocked by:** VS-14
+
+**Scope:**
+
+Presentational redesign of the Reports tab from a supplied mockup — no schema, no new data, no new cross-feature edges. Plan: `issues/ISSUE-020/implementation-plan.md`.
+
+- `ProgressBar`: add a backward-compatible `trackColor` prop (default `BORDER`) for the segmented spent-vs-remaining bar.
+- `reports.service.ts`: pure `expenseSpentPct(actual, planned)` helper (clamp 0–100, 0 when planned ≤ 0).
+- New `categoryColors.ts` (shared palette + `colorForIndex`) so donut slices and breakdown-row dots match by category position.
+- New `SpendingDonutChart.tsx` (react-native-svg arcs + centered total); retire `SpendingPieChart.tsx`.
+- `MonthlyReport.tsx`: Income/Expenses card (uppercase labels + vertical divider); Expense Performance segmented bar + "Actual Spending"/"Remaining Budget" relabel (green remaining); category donut + rich rows (dot + icon chip + "% of total"); Funds "% funded" + "of <target> FCFA" + green fill.
+
+**TDD Anchor:**
+
+- Test: `ProgressBar` renders the passed `trackColor`; defaults to `BORDER` when omitted.
+- Test: `reports.service` — `expenseSpentPct` rounds, clamps to 100 over-budget, returns 0 when planned ≤ 0.
+- Test: `categoryColors` — `colorForIndex` cycles and is stable per index.
+- Test: `SpendingDonutChart` renders arcs + center total for data; empty-state for `[]`.
+- Test: `MonthlyReport` — segmented bar present, donut center total, category row "% of total" + icon chip, fund "% funded" line.
+
+**Done when:** The Reports tab matches the mockup's four redesigned sections, all existing report data still renders, and the full suite + `tsc` + `/check-arch` are clean.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -707,4 +734,5 @@ These tasks can run simultaneously if using multiple agents:
 | VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |
 | VS-18: Accounts & Payment Channels | ✅ Done | accounts feature slice (AccountsOverview, AccountDetail+Route, AccountForm, AccountPicker, TransferLogScreen) + accounts.service/balance/hooks/types/accountIcons; migrations 018 (accounts table + seed Cash/MTN MoMo/Orange Money), 019 (account_id nullable on expenses/income/fund_transactions/project_transactions), 020 (transfers table), 021 (sync wiring: accounts/transfers join SYNCED_TABLES + account_id FK mapping in sync.mapping + recreated child update triggers; 017 refactored to export addSyncColumns/createUpdateTrigger/DATA_COLUMNS and skip not-yet-existing tables); getAccountBalance computed from history (opening + income + transfers_in − expenses − transfers_out − manual fund/project deposits; null account_id = automated allocation, excluded); getAccountStats income/expense %; Wallets section on Dashboard (WalletsCard); "Log a transfer" link in the Add-Transaction sheet → /transfers/log; AccountPicker (defaults to is_default) on ExpenseEntryPanel, ExpenseDetailScreen, IncomeEntryPanel, ProjectDetail; transfer (⇄) entries + account chips in unified feed (services/transactions.ts + TransferEntry); cross-feature edges expenses/income/projects/dashboard → accounts (funds → accounts reserved: service-level accountId, manual-deposit UI deferred since fund deposits are allocation-driven). Blocked by VS-16, VS-17. code-reviewer APPROVE WITH NITS (nits addressed: default-set wrapped in txns, redundant ORDER BY dropped, funds edge annotated). 591/592 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
 | VS-19: Deferred Income Allocation | ✅ Done | Income no longer auto-dispatches: migration 022 adds income.allocation_status (DEFAULT 'allocated' backfills legacy; service creates new income 'pending') → income.service getPendingIncome/markIncomeAllocated (getMonthlyTotal stays status-agnostic) → budget.service expense budget counts only allocated income → budget.types AllocationDestination → budget.hooks useUnallocatedPool (loads pool + funds + active projects, allocate() deposits to fund/project then marks allocated, emergency target-met redistributes once) → AllocationScreen takes incomeId, Confirm marks allocated, new "Hold for later" button leaves it pending (incomeId threaded through IncomeEntryPanel/IncomeLogScreen/AllocationFromIncomeRoute) → UnallocatedPoolScreen + Route + app/budget/unallocated.tsx + BudgetOverview "Unallocated income" link. Sync hardened: applyCloudRow omits cloud-absent columns (DEFAULT fills on insert, no null-overwrite on update) so pre-migration cloud rows restore cleanly. Added approved edge budget → income (read held income, mark allocated). Blocked by VS-06, VS-09, VS-10. 663/664 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
+| VS-21: Reports Visual Redesign | 🚧 In Progress | Presentational redesign of the Reports tab (ISSUE-020). ProgressBar `trackColor` prop, `expenseSpentPct` helper, shared `categoryColors`, SVG `SpendingDonutChart` (replaces SpendingPieChart), restyled Income/Expenses card + Expense Performance bar + category rows + Funds. No schema, no new cross-feature edges. |
 | VS-20: Income Detail & Edit   | ✅ Done    | Feed's last dead end closed: income rows tappable → IncomeDetailScreen (+Route + app/income/[id].tsx, VS-17 pattern). income.service getIncomeById/updateIncome/deleteIncome with the allocated lock enforced at the service layer — pending rows fully editable & deletable, allocated rows lock amount/date (deposits + budget already counted) and reject deletion, metadata stays editable. useIncomeEdit mirrors useExpenseEdit (no diff machinery). Pending detail offers Allocate-now into the VS-19 flow — persists in-form edits first so deposits never run on unsaved values (code-reviewer BLOCK, fixed + regression-tested) — and confirm-guarded Delete. Plain DELETE, no sync tombstone (VS-17 precedent, documented). No migration; no new cross-feature edges (feed navigates by path string). code-reviewer: APPROVE WITH NITS after BLOCK fix. 695/696 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |

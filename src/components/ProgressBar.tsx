@@ -11,6 +11,9 @@ export interface ProgressBarProps extends ViewProps {
   value: number;
   /** Fill color — defaults to the theme's PRIMARY_GREEN. Pass DANGER/WARNING/SUCCESS for semantic states. */
   color?: string;
+  /** Track (unfilled) color — defaults to the theme's BORDER. Pass a semantic
+   * color to read the fill as "spent over remaining" (e.g. a green track). */
+  trackColor?: string;
   /** When true, the fill grows from empty to `value` on mount/changes. Default false. */
   animated?: boolean;
 }
@@ -18,6 +21,7 @@ export interface ProgressBarProps extends ViewProps {
 export function ProgressBar({
   value,
   color,
+  trackColor,
   animated = false,
   testID,
   style,
@@ -26,6 +30,7 @@ export function ProgressBar({
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const fillColor = color ?? c.PRIMARY_GREEN;
+  const trackStyle = trackColor ? { backgroundColor: trackColor } : undefined;
   const clamped = Math.min(100, Math.max(0, value));
 
   if (animated) {
@@ -34,7 +39,7 @@ export function ProgressBar({
         clamped={clamped}
         color={fillColor}
         testID={testID}
-        style={style}
+        style={[trackStyle, style]}
         {...rest}
       />
     );
@@ -44,7 +49,7 @@ export function ProgressBar({
     <View
       accessibilityRole="progressbar"
       testID={testID}
-      style={[styles.track, style]}
+      style={[styles.track, trackStyle, style]}
       {...rest}
     >
       <View
