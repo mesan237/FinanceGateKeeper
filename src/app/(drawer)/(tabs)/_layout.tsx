@@ -1,4 +1,5 @@
-import { Tabs, useRouter } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+import { Tabs, useNavigation } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
 
@@ -14,18 +15,18 @@ function tabIcon(name: IconName, focused: boolean, color: string) {
   return <Icon name={name} size={ICON_SIZE.md} color={color} strokeWidth={focused ? 2.5 : 2} />;
 }
 
-function GearIcon() {
-  const router = useRouter();
+function MenuIcon() {
+  const navigation = useNavigation();
   const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Settings"
-      onPress={() => router.push('/settings')}
+      accessibilityLabel="Open menu"
+      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       hitSlop={12}
-      style={{ marginRight: 16 }}
+      style={{ marginLeft: 16 }}
     >
-      <Icon name="settings" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
+      <Icon name="menu" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
     </Pressable>
   );
 }
@@ -39,7 +40,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        headerRight: () => <GearIcon />,
+        headerLeft: () => <MenuIcon />,
         headerStyle: { backgroundColor: c.SURFACE },
         headerTintColor: c.TEXT_PRIMARY,
         // Match the app's heading face — the native default is the system
