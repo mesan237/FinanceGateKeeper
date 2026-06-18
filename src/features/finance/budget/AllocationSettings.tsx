@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { IconButton } from '@/components/IconButton';
+import { Pill } from '@/components/Pill';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionCard } from '@/components/SectionCard';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, BUCKET_VALUES, type Bucket } from '@/constants/allocation';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { RADIUS } from '@/constants/layout';
 import { currentMonthISO } from '@/utils/formatDate';
@@ -38,7 +41,7 @@ export function AllocationSettings({
 
   if (!allocation) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loading}>
         <ScreenHeader title="Budget Settings" />
         <Typography variant="muted">{loading ? 'Loading…' : 'No allocation yet.'}</Typography>
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
@@ -133,84 +136,115 @@ function AllocationSettingsForm({
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <ScreenHeader title="Budget Settings" />
 
       {isLocked ? (
-        <Typography style={styles.lockedBanner}>
-          🔒 Locked for this month — comes back next month.
-        </Typography>
+        <View style={styles.lockedBanner}>
+          <Typography style={styles.lockedText}>
+            🔒 Locked for this month — comes back next month.
+          </Typography>
+        </View>
       ) : null}
 
-      {BUCKET_VALUES.map((bucket) => (
-        <View key={bucket} style={styles.row}>
-          <Typography>{BUCKET_LABELS[bucket]}</Typography>
-          <TextInput
-            value={pct[bucket]}
-            onChangeText={(text) => setPct((prev) => ({ ...prev, [bucket]: text }))}
-            keyboardType="numeric"
-            editable={!isLocked}
-            accessibilityLabel={BUCKET_LABELS[bucket]}
-            style={styles.input}
-          />
-        </View>
-      ))}
-
-      <Typography variant="muted">{`Total: ${total}%`}</Typography>
-
-      <Typography variant="subheading" style={styles.priorityHeading}>
-        Priority order
-      </Typography>
-
-      {order.map((bucket, index) => {
-
-        const upDisabled = isLocked || index === 0;
-        const downDisabled = isLocked || index === order.length - 1;
-        return (
-          <View key={bucket} style={styles.priorityRow}>
+      <SectionCard
+        icon="allocation"
+        title="Allocation"
+        subtitle="Split each income across buckets. Must total 100%."
+        right={<Pill label={`${total}%`} tone={total === TOTAL_TARGET ? 'success' : 'danger'} />}
+      >
+        {BUCKET_VALUES.map((bucket) => (
+          <View key={bucket} style={styles.pctRow}>
             <Typography>{BUCKET_LABELS[bucket]}</Typography>
-            <View style={styles.arrows}>
-              <Pressable
-                testID={`move-${bucket}-up`}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${BUCKET_LABELS[bucket]} up`}
-                accessibilityState={{ disabled: upDisabled }}
-                disabled={upDisabled}
-                onPress={() => moveUp(bucket)}
-                style={[styles.arrow, upDisabled && styles.arrowDisabled]}
-              >
-                <Typography>↑</Typography>
-              </Pressable>
-              <Pressable
-                testID={`move-${bucket}-down`}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${BUCKET_LABELS[bucket]} down`}
-                accessibilityState={{ disabled: downDisabled }}
-                disabled={downDisabled}
-                onPress={() => moveDown(bucket)}
-                style={[styles.arrow, downDisabled && styles.arrowDisabled]}
-              >
-                <Typography>↓</Typography>
-              </Pressable>
-            </View>
+            <TextInput
+              value={pct[bucket]}
+              onChangeText={(text) => setPct((prev) => ({ ...prev, [bucket]: text }))}
+              keyboardType="numeric"
+              editable={!isLocked}
+              accessibilityLabel={BUCKET_LABELS[bucket]}
+              style={styles.input}
+            />
           </View>
-        );
-      })}
+        ))}
+      </SectionCard>
+
+      <SectionCard
+        icon="priority"
+        title="Priority order"
+        subtitle="Buckets at the top are funded first."
+      >
+        {order.map((bucket, index) => {
+          const upDisabled = isLocked || index === 0;
+          const downDisabled = isLocked || index === order.length - 1;
+          return (
+            <View key={bucket} style={styles.priorityRow}>
+              <View style={styles.rankBadge}>
+                <Typography style={styles.rankText}>{index + 1}</Typography>
+              </View>
+              <Typography style={styles.priorityLabel}>{BUCKET_LABELS[bucket]}</Typography>
+              <View style={styles.arrows}>
+                <ArrowButton
+                  bucket={bucket}
+                  direction="up"
+                  disabled={upDisabled}
+                  onPress={() => moveUp(bucket)}
+                />
+                <ArrowButton
+                  bucket={bucket}
+                  direction="down"
+                  disabled={downDisabled}
+                  onPress={() => moveDown(bucket)}
+                />
+              </View>
+            </View>
+          );
+        })}
+      </SectionCard>
 
       <Button label="Save" onPress={handleSave} disabled={!canSave} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
-    </View>
+    </ScrollView>
+  );
+}
+
+interface ArrowButtonProps {
+  bucket: Bucket;
+  direction: 'up' | 'down';
+  disabled: boolean;
+  onPress: () => void;
+}
+
+/** A square reorder control nudging a bucket up or down the priority list. */
+function ArrowButton({ bucket, direction, disabled, onPress }: ArrowButtonProps) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <IconButton
+      icon={direction === 'up' ? 'moveUp' : 'moveDown'}
+      accessibilityLabel={`Move ${BUCKET_LABELS[bucket]} ${direction}`}
+      testID={`move-${bucket}-${direction}`}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.arrow, disabled && styles.arrowDisabled]}
+    />
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
   container: {
+    padding: 16,
+    gap: 14,
+    paddingBottom: 40,
+  },
+  loading: {
     flex: 1,
     padding: 16,
     gap: 12,
   },
-  row: {
+  pctRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -221,30 +255,49 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     maxWidth: 100,
     textAlign: 'right',
   },
-  priorityHeading: {
-    marginTop: 8,
-  },
   priorityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
+    gap: 12,
+  },
+  rankBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: RADIUS.full,
+    backgroundColor: c.SURFACE_MUTED,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankText: {
+    color: c.TEXT_SECONDARY,
+    fontSize: 12,
+  },
+  priorityLabel: {
+    flex: 1,
   },
   arrows: {
     flexDirection: 'row',
     gap: 8,
   },
   arrow: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: c.TEXT_MUTED,
+    borderColor: c.BORDER,
     borderRadius: RADIUS.sm,
   },
   arrowDisabled: {
     opacity: 0.3,
   },
   lockedBanner: {
+    backgroundColor: c.WARNING_LIGHT,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  lockedText: {
     color: c.WARNING_TEXT,
   },
   error: {

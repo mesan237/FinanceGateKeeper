@@ -56,11 +56,16 @@ beforeEach(() => {
 });
 
 describe('CategoryManager', () => {
-  it('renders seeded parents with their subcategories', async () => {
+  it('lists parents collapsed and reveals subcategories when expanded', async () => {
     render(<CategoryManager />);
     expect(await screen.findByText('Food')).toBeTruthy();
-    expect(screen.getByText('Restaurant')).toBeTruthy();
     expect(screen.getByText('Transport')).toBeTruthy();
+
+    // Subcategories are hidden until the parent is expanded.
+    expect(screen.queryByText('Restaurant')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('toggle-1'));
+    expect(await screen.findByText('Restaurant')).toBeTruthy();
   });
 
   it('adds a category and shows it after the re-fetch', async () => {

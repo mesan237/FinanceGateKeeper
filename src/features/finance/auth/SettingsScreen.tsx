@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Pill } from '@/components/Pill';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionCard } from '@/components/SectionCard';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
@@ -47,14 +49,16 @@ export function SettingsScreen() {
 
   if (!settings) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loading}>
         <Typography variant="muted">Loading settings…</Typography>
       </View>
     );
   }
 
+  const isControl = settings.appMode === 'control';
+
   const toggleMode = async () => {
-    await setMode(settings.appMode === 'control' ? 'learning' : 'control');
+    await setMode(isControl ? 'learning' : 'control');
     await refreshMode();
   };
 
@@ -80,28 +84,34 @@ export function SettingsScreen() {
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <ScreenHeader title="Settings" />
 
-      <View style={styles.section}>
-        <Typography variant="subheading">App mode</Typography>
-        <Typography variant="muted">
-          {settings.appMode === 'control'
+      <SectionCard
+        icon="appMode"
+        title="App mode"
+        subtitle={
+          isControl
             ? 'Control mode — full budgeting features.'
-            : 'Learning mode — logging only. Budgeting is hidden.'}
-        </Typography>
-        {monthOneComplete && settings.appMode === 'learning' ? (
+            : 'Learning mode — logging only. Budgeting is hidden.'
+        }
+        right={<Pill label={isControl ? 'Control' : 'Learning'} />}
+      >
+        {monthOneComplete && !isControl ? (
           <Typography testID="settings-control-suggestion" style={styles.suggestion}>
             You&apos;ve used the app for a month — switch to Control mode?
           </Typography>
         ) : null}
         <Button
           testID="settings-mode-toggle"
-          label={settings.appMode === 'control' ? 'Switch to Learning mode' : 'Switch to Control mode'}
+          label={isControl ? 'Switch to Learning mode' : 'Switch to Control mode'}
+          variant="secondary"
           onPress={toggleMode}
         />
-      </View>
+      </SectionCard>
 
-      <View style={styles.section}>
-        <Typography variant="subheading">Appearance</Typography>
-        <Typography variant="muted">Choose a light or dark look, or follow your device.</Typography>
+      <SectionCard
+        icon="appearance"
+        title="Appearance"
+        subtitle="Choose a light or dark look, or follow your device."
+      >
         <SegmentedControl
           testID="settings-theme-control"
           value={themeMode}
@@ -112,10 +122,14 @@ export function SettingsScreen() {
           ]}
           onChange={(key) => void setThemeMode(key as ThemeMode)}
         />
-      </View>
+      </SectionCard>
 
-      <View style={styles.section}>
-        <Typography variant="subheading">Daily reminder</Typography>
+      <SectionCard
+        icon="reminder"
+        title="Daily reminder"
+        subtitle="We'll nudge you to log the day's spending."
+        right={<Pill label={settings.reminderTime} />}
+      >
         <TextInput
           testID="settings-reminder-input"
           value={reminderInput}
@@ -125,32 +139,45 @@ export function SettingsScreen() {
         />
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
         <Button testID="settings-reminder-save" label="Save reminder" onPress={saveReminder} />
-      </View>
+      </SectionCard>
 
-      <View style={styles.section}>
-        <View style={styles.switchRow}>
-          <Typography variant="subheading">Notifications</Typography>
+      <SectionCard
+        icon="notifications"
+        title="Notifications"
+        subtitle="Daily reminders and budget alerts."
+        right={
           <Switch
             testID="settings-notifications-switch"
             value={settings.notificationsEnabled}
             onValueChange={toggleNotifications}
           />
-        </View>
-      </View>
+        }
+      />
 
-      <View style={styles.section}>
-        <Typography variant="subheading">Cloud backup</Typography>
+      <SectionCard
+        icon="cloud"
+        title="Cloud backup"
+        subtitle={
+          cloud.signedIn
+            ? undefined
+            : 'Back up your data to the cloud and restore it on a new device.'
+        }
+      >
         {cloud.signedIn ? (
           <>
-            <Typography variant="muted">Signed in as</Typography>
-            <Typography>{cloud.userEmail ?? 'your account'}</Typography>
-            {cloud.lastSyncedAt ? (
-              <Typography testID="settings-last-synced" variant="muted">
-                Last synced {formatDateLong(cloud.lastSyncedAt)}
-              </Typography>
-            ) : (
-              <Typography variant="muted">Not synced yet.</Typography>
-            )}
+            <View style={styles.accountRow}>
+              <View style={styles.accountText}>
+                <Typography variant="muted">Signed in as</Typography>
+                <Typography>{cloud.userEmail ?? 'your account'}</Typography>
+              </View>
+              {cloud.lastSyncedAt ? (
+                <Typography testID="settings-last-synced" variant="muted" style={styles.syncStamp}>
+                  Synced {formatDateLong(cloud.lastSyncedAt)}
+                </Typography>
+              ) : (
+                <Typography variant="muted">Not synced yet.</Typography>
+              )}
+            </View>
             {cloud.status === 'error' && cloud.error ? (
               <Typography style={styles.error}>{cloud.error}</Typography>
             ) : null}
@@ -160,13 +187,10 @@ export function SettingsScreen() {
               onPress={() => void cloud.syncNow()}
               disabled={cloud.status === 'syncing'}
             />
-            <Button testID="settings-sign-out" label="Sign out" compact onPress={() => void cloud.signOut()} />
+            <Button testID="settings-sign-out" label="Sign out" variant="secondary" compact onPress={() => void cloud.signOut()} />
           </>
         ) : (
           <>
-            <Typography variant="muted">
-              Back up your data to the cloud and restore it on a new device.
-            </Typography>
             <TextInput
               testID="settings-cloud-email"
               value={cloudEmail}
@@ -193,12 +217,13 @@ export function SettingsScreen() {
             <Button
               testID="settings-sign-up"
               label="Create account"
+              variant="secondary"
               compact
               onPress={() => void cloud.signUp(cloudEmail, cloudPassword)}
             />
           </>
         )}
-      </View>
+      </SectionCard>
     </ScrollView>
   );
 }
@@ -209,16 +234,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   container: {
     padding: 16,
-    gap: 20,
+    gap: 14,
     paddingBottom: 40,
   },
-  section: {
-    gap: 8,
+  loading: {
+    flex: 1,
+    padding: 16,
   },
-  switchRow: {
+  accountRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
+    gap: 12,
+  },
+  accountText: {
+    gap: 2,
+    flexShrink: 1,
+  },
+  syncStamp: {
+    textAlign: 'right',
+    flexShrink: 1,
   },
   suggestion: {
     color: c.PRIMARY_GREEN,

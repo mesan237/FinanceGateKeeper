@@ -27,8 +27,7 @@ export function ProjectListScreen() {
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Projects</Typography>
-
+      {/* The tab header already titles the screen — no in-body heading. */}
       {loading ? (
         <Typography variant="muted">Loading…</Typography>
       ) : projects.length === 0 ? (

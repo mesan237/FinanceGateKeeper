@@ -2,22 +2,25 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Card } from '@/components/Card';
+import { IconButton } from '@/components/IconButton';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
-
+import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { useCategories } from './expenses.hooks';
 import type { Category } from './expenses.types';
 
 /**
- * CRUD screen for the category tree. Lists each parent with its subcategories
- * and lets the user add, rename, hide/unhide, reorder, and delete. Default
- * categories can only be hidden; deleting a custom category first asks where to
- * move its expenses so nothing is orphaned.
+ * CRUD screen for the category tree. Lists each parent (as a card) with its
+ * subcategories and lets the user add, rename, hide/unhide, reorder, and delete.
+ * Default categories can only be hidden; deleting a custom category first asks
+ * where to move its expenses so nothing is orphaned.
  */
 export function CategoryManager() {
   const styles = useThemedStyles(makeStyles);
@@ -29,6 +32,17 @@ export function CategoryManager() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftName, setDraftName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  // Parents are collapsed by default so a long tree stays scannable; the set
+  // holds the ids the user has expanded to reveal subcategories.
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+
+  const toggleExpanded = (id: number) =>
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
@@ -63,10 +77,12 @@ export function CategoryManager() {
     await reorder(ids);
   };
 
-  const renderRow = (cat: Category, depth: number) => (
-    <View key={cat.id} style={[styles.row, depth > 0 && styles.subRow]}>
-      {editingId === cat.id ? (
-        <View style={styles.line}>
+  const renderRow = (cat: Category, depth: number) => {
+    const editing = editingId === cat.id;
+    return (
+      <View key={cat.id} style={[styles.row, depth > 0 && styles.subRow]}>
+        <Avatar cat={cat} depth={depth} />
+        {editing ? (
           <TextInput
             value={draftName}
             onChangeText={setDraftName}
@@ -74,50 +90,50 @@ export function CategoryManager() {
             testID={`edit-input-${cat.id}`}
             style={styles.grow}
           />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Save ${cat.name}`}
-            testID={`save-${cat.id}`}
-            onPress={saveEdit}
-          >
-            <Typography style={styles.action}>Save</Typography>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.line}>
+        ) : (
           <Typography style={[styles.grow, cat.isHidden && styles.hidden]}>
             {cat.isHidden ? `${cat.name} (hidden)` : cat.name}
           </Typography>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Rename ${cat.name}`}
-            testID={`rename-${cat.id}`}
-            onPress={() => startEdit(cat)}
-          >
-            <Typography style={styles.action}>Rename</Typography>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${cat.isHidden ? 'Unhide' : 'Hide'} ${cat.name}`}
-            testID={`hide-${cat.id}`}
-            onPress={() => toggleHidden(cat.id, !cat.isHidden)}
-          >
-            <Typography style={styles.action}>{cat.isHidden ? 'Unhide' : 'Hide'}</Typography>
-          </Pressable>
-          {cat.isDefault ? null : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Delete ${cat.name}`}
-              testID={`delete-${cat.id}`}
-              onPress={() => setDeleteTarget(cat)}
-            >
-              <Typography style={styles.danger}>Delete</Typography>
-            </Pressable>
+        )}
+
+        <View style={styles.actions}>
+          {editing ? (
+            <IconButton
+              icon="check"
+              tone="primary"
+              accessibilityLabel={`Save ${cat.name}`}
+              testID={`save-${cat.id}`}
+              onPress={saveEdit}
+            />
+          ) : (
+            <>
+              <IconButton
+                icon="edit"
+                accessibilityLabel={`Rename ${cat.name}`}
+                testID={`rename-${cat.id}`}
+                onPress={() => startEdit(cat)}
+              />
+              <IconButton
+                icon={cat.isHidden ? 'show' : 'hide'}
+                accessibilityLabel={`${cat.isHidden ? 'Unhide' : 'Hide'} ${cat.name}`}
+                testID={`hide-${cat.id}`}
+                onPress={() => toggleHidden(cat.id, !cat.isHidden)}
+              />
+              {cat.isDefault ? null : (
+                <IconButton
+                  icon="delete"
+                  tone="danger"
+                  accessibilityLabel={`Delete ${cat.name}`}
+                  testID={`delete-${cat.id}`}
+                  onPress={() => setDeleteTarget(cat)}
+                />
+              )}
+            </>
           )}
         </View>
-      )}
-    </View>
-  );
+      </View>
+    );
+  };
 
   // Reassignment targets are top-level categories only — expenses move to a
   // parent, never into another subcategory.
@@ -126,10 +142,14 @@ export function CategoryManager() {
     : [];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <ScreenHeader title="Categories" />
 
-      <View style={styles.line}>
+      <View style={styles.addBar}>
         <TextInput
           value={newParentName}
           onChangeText={setNewParentName}
@@ -138,50 +158,74 @@ export function CategoryManager() {
           testID="new-parent-input"
           style={styles.grow}
         />
-        <Button label="Add" onPress={addParent} testID="add-parent-btn" />
+        <IconButton
+          icon="add"
+          variant="filled"
+          accessibilityLabel="Add category"
+          testID="add-parent-btn"
+          onPress={addParent}
+        />
       </View>
 
-      {managedCategories.map((parent, index) => (
-        <View key={parent.id} style={styles.group}>
-          <View style={styles.line}>
-            <View style={styles.grow}>{renderRow(parent, 0)}</View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Move ${parent.name} up`}
-              onPress={() => moveParent(index, -1)}
-            >
-              <Typography style={styles.action}>Up</Typography>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Move ${parent.name} down`}
-              onPress={() => moveParent(index, 1)}
-            >
-              <Typography style={styles.action}>Down</Typography>
-            </Pressable>
-          </View>
+      {managedCategories.map((parent, index) => {
+        const subs = subcategoriesOf(parent.id, true);
+        const isExpanded = expandedIds.has(parent.id);
+        return (
+          <Card key={parent.id} style={styles.group}>
+            <View style={styles.parentHeader}>
+              <IconButton
+                icon={isExpanded ? 'moveDown' : 'forward'}
+                accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${parent.name}`}
+                testID={`toggle-${parent.id}`}
+                onPress={() => toggleExpanded(parent.id)}
+              />
+              <View style={styles.grow}>{renderRow(parent, 0)}</View>
+              {isExpanded ? null : (
+                <Typography variant="muted" style={styles.subCount}>
+                  {subs.length}
+                </Typography>
+              )}
+              <IconButton
+                icon="moveUp"
+                accessibilityLabel={`Move ${parent.name} up`}
+                disabled={index === 0}
+                onPress={() => moveParent(index, -1)}
+              />
+              <IconButton
+                icon="moveDown"
+                accessibilityLabel={`Move ${parent.name} down`}
+                disabled={index === managedCategories.length - 1}
+                onPress={() => moveParent(index, 1)}
+              />
+            </View>
 
-          {subcategoriesOf(parent.id, true).map((sub) => renderRow(sub, 1))}
+            {isExpanded ? (
+              <>
+                {subs.map((sub) => renderRow(sub, 1))}
 
-          <View style={[styles.line, styles.subRow]}>
-            <TextInput
-              value={subDrafts[parent.id] ?? ''}
-              onChangeText={(text) =>
-                setSubDrafts((drafts) => ({ ...drafts, [parent.id]: text }))
-              }
-              placeholder="New subcategory"
-              accessibilityLabel={`New subcategory under ${parent.name}`}
-              style={styles.grow}
-            />
-            <Button
-              label="Add"
-              onPress={() => addSub(parent.id)}
-              accessibilityLabel={`Add subcategory under ${parent.name}`}
-              testID={`add-sub-${parent.id}`}
-            />
-          </View>
-        </View>
-      ))}
+                <View style={[styles.row, styles.subRow, styles.addSubRow]}>
+                  <TextInput
+                    value={subDrafts[parent.id] ?? ''}
+                    onChangeText={(text) =>
+                      setSubDrafts((drafts) => ({ ...drafts, [parent.id]: text }))
+                    }
+                    placeholder="New subcategory"
+                    accessibilityLabel={`New subcategory under ${parent.name}`}
+                    style={styles.grow}
+                  />
+                  <IconButton
+                    icon="add"
+                    variant="filled"
+                    accessibilityLabel={`Add subcategory under ${parent.name}`}
+                    testID={`add-sub-${parent.id}`}
+                    onPress={() => addSub(parent.id)}
+                  />
+                </View>
+              </>
+            ) : null}
+          </Card>
+        );
+      })}
 
       <Modal visible={deleteTarget !== null} onRequestClose={() => setDeleteTarget(null)}>
         {deleteTarget ? (
@@ -206,7 +250,7 @@ export function CategoryManager() {
                 </Pressable>
               ))}
             </ScrollView>
-            <Button label="Cancel" onPress={() => setDeleteTarget(null)} />
+            <Button label="Cancel" variant="secondary" onPress={() => setDeleteTarget(null)} />
           </View>
         ) : (
           <View />
@@ -216,20 +260,61 @@ export function CategoryManager() {
   );
 }
 
+/** Emoji (default categories) or a coloured letter chip (custom) leading a row. */
+function Avatar({ cat, depth }: { cat: Category; depth: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const emoji = getTransactionIcon('expense', cat.name);
+  const sized = depth > 0 ? styles.avatarSub : styles.avatar;
+  if (emoji) {
+    return (
+      <View style={[sized, styles.avatarEmoji]}>
+        <Typography style={depth > 0 ? styles.emojiSub : styles.emoji}>{emoji}</Typography>
+      </View>
+    );
+  }
+  const { color, letter } = getCategoryAvatar(cat.name);
+  return (
+    <View style={[sized, { backgroundColor: color }]}>
+      <Typography style={styles.avatarLetter}>{letter}</Typography>
+    </View>
+  );
+}
+
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16, gap: 12 },
-  group: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.BORDER,
-    paddingTop: 8,
+  content: { padding: 16, gap: 12, paddingBottom: 40 },
+  addBar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  group: { gap: 4 },
+  parentHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  subRow: {
+    paddingLeft: 12,
+    marginLeft: 6,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: c.BORDER,
   },
-  row: { paddingVertical: 4 },
-  subRow: { paddingLeft: 16 },
-  line: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  addSubRow: { paddingTop: 8 },
   grow: { flex: 1 },
-  action: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
-  danger: { color: c.DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  subCount: { minWidth: 18, textAlign: 'center' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarSub: {
+    width: 26,
+    height: 26,
+    borderRadius: RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarEmoji: { backgroundColor: c.SURFACE_MUTED },
+  emoji: { fontSize: 18, lineHeight: 24 },
+  emojiSub: { fontSize: 13, lineHeight: 18 },
+  avatarLetter: { color: '#ffffff', fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 14 },
   hidden: { color: c.TEXT_MUTED, fontStyle: 'italic' },
   optionList: { maxHeight: 240, marginVertical: 8 },
   optionRow: {

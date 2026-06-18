@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -45,9 +45,8 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
   const { total: heldTotal } = useUnallocatedPool();
 
   return (
-    <View style={styles.container}>
-      <Typography variant="heading">Budget</Typography>
-
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      {/* The tab header already titles the screen — no in-body heading. */}
       {loading || !budget ? (
         <Typography variant="muted">Loading…</Typography>
       ) : budget.incomeTotal === 0 ? (
@@ -79,7 +78,7 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
       <Button label="Funds" variant="secondary" onPress={() => router.push('/funds')} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -178,8 +177,10 @@ function BucketRow({ bucket, amount, income, first }: BucketRowProps) {
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
+  },
+  container: {
     padding: 16,
     gap: 12,
   },

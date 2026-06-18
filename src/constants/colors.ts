@@ -1,4 +1,6 @@
-export const PRIMARY_GREEN = '#2E7D32';
+// Emerald — shared across light and dark themes so the accent green reads the
+// same in both (the dark palette uses this exact value).
+export const PRIMARY_GREEN = '#10b981';
 export const PRIMARY_LIGHT = '#E8F5E9';
 export const BACKGROUND = '#F5F7FA';
 export const SURFACE = '#FFFFFF';

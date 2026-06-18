@@ -2,12 +2,18 @@ import { DrawerActions } from '@react-navigation/native';
 import { Tabs, useNavigation } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { useTheme } from '@/theme';
 import { useAppMode } from '@/features/finance/auth/AppModeProvider';
+
+// Compact header: the title bar's content area below the status bar. Trimmed
+// from the platform default (~56 on Android) so the header sits tighter now
+// that the screen title lives only here and not duplicated in the page body.
+const HEADER_CONTENT_HEIGHT = 48;
 
 // Lucide ships no outline/filled pair, so the focused tab reads as a heavier
 // stroke plus the active tint rather than a different glyph.
@@ -35,13 +41,20 @@ export default function TabsLayout() {
   const appMode = useAppMode();
   const showBudget = appMode === 'control';
   const c = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         headerLeft: () => <MenuIcon />,
-        headerStyle: { backgroundColor: c.SURFACE },
+        headerTitleAlign: 'center',
+        // Total header height includes the status-bar inset (the title sits in
+        // the remaining HEADER_CONTENT_HEIGHT below it).
+        headerStyle: {
+          backgroundColor: c.SURFACE,
+          height: insets.top + HEADER_CONTENT_HEIGHT,
+        },
         headerTintColor: c.TEXT_PRIMARY,
         // Match the app's heading face — the native default is the system
         // font, which visibly clashes with Poppins everywhere else.
