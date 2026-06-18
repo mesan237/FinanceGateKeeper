@@ -18,6 +18,12 @@ export interface Project {
   createdAt: string;
 }
 
+/** A soft-deleted project awaiting recovery or purge from the recycle bin. */
+export interface DeletedProject extends Project {
+  /** ISO timestamp the project was soft-deleted. */
+  deletedAt: string;
+}
+
 /** What the create form supplies; rank/status are assigned by the service. */
 export interface NewProject {
   name: string;

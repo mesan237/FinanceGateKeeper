@@ -25,10 +25,13 @@ import {
   detectShift,
   estimateTimeline,
   fundProjects,
+  getDeletedProjects,
   getProjectById,
   getProjects,
   getProjectTransactions,
+  purgeExpiredProjects,
   reorderPriority,
+  restoreProject,
   setStatus,
   updateProject,
 } from '@/features/finance/projects/projects.service';
@@ -199,8 +202,8 @@ describe('updateProject', () => {
   });
 });
 
-describe('deleteProject', () => {
-  it('removes the project and re-packs the remaining priority ranks', async () => {
+describe('deleteProject (soft delete)', () => {
+  it('hides the project from the active list and re-packs the remaining ranks', async () => {
     const a = await createProject({ name: 'A', targetAmount: 100000 });
     const b = await createProject({ name: 'B', targetAmount: 100000 });
     const c = await createProject({ name: 'C', targetAmount: 100000 });
@@ -210,6 +213,67 @@ describe('deleteProject', () => {
     const remaining = await getProjects();
     expect(remaining.map((p) => p.id)).toEqual([a, c]);
     expect(remaining.map((p) => p.priorityRank)).toEqual([1, 2]);
+  });
+
+  it('keeps the project recoverable in the deleted list', async () => {
+    const a = await createProject({ name: 'A', targetAmount: 100000 });
+    await deleteProject(a);
+
+    const deleted = await getDeletedProjects();
+    expect(deleted.map((p) => p.id)).toEqual([a]);
+    expect(typeof deleted[0].deletedAt).toBe('string');
+  });
+
+  it('stops funding a deleted project', async () => {
+    const a = await createProject({ name: 'A', targetAmount: 100000 });
+    const b = await createProject({ name: 'B', targetAmount: 100000 });
+    await deleteProject(a);
+
+    await fundProjects(50000);
+
+    // All funding flows to B; the deleted A stays at zero.
+    expect((await getProjectById(a))?.fundedAmount).toBe(0);
+    expect((await getProjectById(b))?.fundedAmount).toBe(50000);
+  });
+});
+
+describe('restoreProject', () => {
+  it('returns a deleted project to the active list at the end of the order', async () => {
+    const a = await createProject({ name: 'A', targetAmount: 100000 });
+    const b = await createProject({ name: 'B', targetAmount: 100000 });
+    await deleteProject(a);
+    await restoreProject(a);
+
+    const active = await getProjects();
+    expect(active.map((p) => p.id)).toEqual([b, a]);
+    expect(active.map((p) => p.priorityRank)).toEqual([1, 2]);
+    expect(await getDeletedProjects()).toEqual([]);
+  });
+});
+
+describe('purgeExpiredProjects', () => {
+  it('hard-deletes projects past the recovery window but keeps recent ones', async () => {
+    const old = await createProject({ name: 'Old', targetAmount: 100000 });
+    const fresh = await createProject({ name: 'Fresh', targetAmount: 100000 });
+    await deleteProject(old);
+    await deleteProject(fresh);
+
+    // Run the purge as if it were 4 days after the deletions.
+    const purged = await purgeExpiredProjects(new Date(Date.now() + 4 * 24 * 60 * 60 * 1000));
+
+    expect(purged).toBe(2);
+    expect(await getDeletedProjects()).toEqual([]);
+    expect(await getProjectById(old)).toBeNull();
+  });
+
+  it('keeps projects still within the recovery window', async () => {
+    const recent = await createProject({ name: 'Recent', targetAmount: 100000 });
+    await deleteProject(recent);
+
+    const purged = await purgeExpiredProjects();
+
+    expect(purged).toBe(0);
+    expect((await getDeletedProjects()).map((p) => p.id)).toEqual([recent]);
   });
 });
 

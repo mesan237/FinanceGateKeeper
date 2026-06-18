@@ -34,6 +34,7 @@ import {
   Smartphone,
   SlidersHorizontal,
   Tag,
+  Target,
   Trash2,
   Wallet,
   type LucideIcon,
@@ -87,6 +88,7 @@ export const ICONS = {
   edit: Pencil,
   hide: EyeOff,
   show: Eye,
+  goal: Target,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

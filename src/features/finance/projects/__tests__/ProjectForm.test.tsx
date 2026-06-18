@@ -25,7 +25,7 @@ beforeEach(() => {
 describe('ProjectForm', () => {
   it('disables save until a name and a positive target are entered', () => {
     render(<ProjectForm />);
-    const save = screen.getByRole('button', { name: 'Save' });
+    const save = screen.getByRole('button', { name: 'Create project' });
     expect(save).toBeDisabled();
 
     fireEvent.changeText(screen.getByTestId('project-name'), 'BRVM Investment');
@@ -37,7 +37,7 @@ describe('ProjectForm', () => {
     render(<ProjectForm />);
     fireEvent.changeText(screen.getByTestId('project-name'), 'BRVM Investment');
     fireEvent.changeText(screen.getByTestId('project-target'), '200000');
-    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Create project' }));
 
     await waitFor(() =>
       expect(mockedCreate).toHaveBeenCalledWith({
@@ -53,6 +53,6 @@ describe('ProjectForm', () => {
     render(<ProjectForm />);
     fireEvent.changeText(screen.getByTestId('project-name'), 'X');
     fireEvent.changeText(screen.getByTestId('project-target'), '0');
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Create project' })).toBeDisabled();
   });
 });

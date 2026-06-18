@@ -1,5 +1,5 @@
 import { DrawerActions } from '@react-navigation/native';
-import { Tabs, useNavigation } from 'expo-router';
+import { Tabs, useNavigation, useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,6 +33,22 @@ function MenuIcon() {
       style={{ marginLeft: 16 }}
     >
       <Icon name="menu" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
+    </Pressable>
+  );
+}
+
+function DeletedProjectsLink() {
+  const router = useRouter();
+  const c = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Recently deleted projects"
+      onPress={() => router.push('/projects/deleted')}
+      hitSlop={12}
+      style={{ marginRight: 16 }}
+    >
+      <Icon name="delete" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
     </Pressable>
   );
 }
@@ -106,6 +122,7 @@ export default function TabsLayout() {
         options={{
           title: 'Projects',
           tabBarIcon: ({ color, focused }) => tabIcon('projects', focused, color),
+          headerRight: () => <DeletedProjectsLink />,
         }}
       />
       <Tabs.Screen

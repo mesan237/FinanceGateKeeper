@@ -2,7 +2,17 @@ import type { ProjectStatus } from '@/constants/projects';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 
-import type { NewProject, Project, ProjectPatch, ProjectTransaction } from './projects.types';
+import type {
+  DeletedProject,
+  NewProject,
+  Project,
+  ProjectPatch,
+  ProjectTransaction,
+} from './projects.types';
+
+/** How long a soft-deleted project stays recoverable before it is purged. */
+export const PROJECT_RECOVERY_DAYS = 3;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // Pure timeline math lives in its own module (decoupled, re-exported here) so
 // this service stays focused on DB access and under the file-length cap.
@@ -56,12 +66,21 @@ function mapTransaction(row: ProjectTransactionRow): ProjectTransaction {
   };
 }
 
-/** Reads all projects ordered by priority rank (1 = highest). */
+/** Reads all active (non-deleted) projects ordered by priority rank (1 = highest). */
 export async function getProjects(): Promise<Project[]> {
   const rows = await query<ProjectRow>(
-    `SELECT ${PROJECT_COLUMNS} FROM projects ORDER BY priority_rank`,
+    `SELECT ${PROJECT_COLUMNS} FROM projects WHERE deleted_at IS NULL ORDER BY priority_rank`,
   );
   return rows.map(mapProject);
+}
+
+/** Reads soft-deleted projects (the recovery list), most recently deleted first. */
+export async function getDeletedProjects(): Promise<DeletedProject[]> {
+  const rows = await query<ProjectRow & { deleted_at: string }>(
+    `SELECT ${PROJECT_COLUMNS}, deleted_at FROM projects
+      WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC`,
+  );
+  return rows.map((row) => ({ ...mapProject(row), deletedAt: row.deleted_at }));
 }
 
 /** Reads a project by id, or `null` if no such row exists. */
@@ -134,11 +153,48 @@ export async function setStatus(id: number, status: ProjectStatus): Promise<void
   await execute('UPDATE projects SET status = ? WHERE id = ?', [status, id]);
 }
 
-/** Deletes a project and re-packs the remaining priority ranks to stay contiguous. */
+/**
+ * Soft-deletes a project: stamps `deleted_at`, pulls it from the active list
+ * (so funding flows to the remaining projects), and re-packs their priority
+ * ranks. The row and its contribution history survive for recovery until the
+ * purge job removes it (see {@link purgeExpiredProjects}).
+ */
 export async function deleteProject(id: number): Promise<void> {
-  await execute('DELETE FROM projects WHERE id = ?', [id]);
+  await requireProject(id);
+  await execute('UPDATE projects SET deleted_at = ? WHERE id = ?', [new Date().toISOString(), id]);
   const remaining = await getProjects();
   await reorderPriority(remaining.map((p) => p.id));
+}
+
+/**
+ * Restores a soft-deleted project: clears `deleted_at` and appends it to the
+ * end of the active priority order (its old rank may now belong to another
+ * project). Throws if no such project exists.
+ */
+export async function restoreProject(id: number): Promise<void> {
+  await requireProject(id);
+  const active = await getProjects();
+  await execute('UPDATE projects SET deleted_at = NULL, priority_rank = ? WHERE id = ?', [
+    active.length + 1,
+    id,
+  ]);
+}
+
+/**
+ * Permanently removes soft-deleted projects whose `deleted_at` is older than
+ * the recovery window. Returns how many were purged. Runs on project reads so
+ * the recycle bin self-empties. `now` is injectable for tests.
+ */
+export async function purgeExpiredProjects(now: Date = new Date()): Promise<number> {
+  const cutoff = new Date(now.getTime() - PROJECT_RECOVERY_DAYS * DAY_MS).toISOString();
+  const [{ n }] = await query<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM projects WHERE deleted_at IS NOT NULL AND deleted_at <= ?',
+    [cutoff],
+  );
+  if (n > 0) {
+    await execute('DELETE FROM projects WHERE deleted_at IS NOT NULL AND deleted_at <= ?', [cutoff]);
+  }
+  return n;
 }
 
 /**
@@ -202,7 +258,8 @@ export async function fundProjects(
   if (projectsAmount <= 0) return;
   let remaining = projectsAmount;
   const active = await query<ProjectRow>(
-    `SELECT ${PROJECT_COLUMNS} FROM projects WHERE status = 'active' ORDER BY priority_rank`,
+    `SELECT ${PROJECT_COLUMNS} FROM projects
+      WHERE status = 'active' AND deleted_at IS NULL ORDER BY priority_rank`,
   );
   for (const row of active) {
     if (remaining <= 0) break;

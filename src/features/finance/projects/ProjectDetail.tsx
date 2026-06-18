@@ -1,13 +1,15 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { IconButton } from '@/components/IconButton';
 import { Modal } from '@/components/Modal';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { PROJECT_STATUS_LABELS } from '@/constants/projects';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
@@ -15,6 +17,7 @@ import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks'
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
+import { DeleteProjectModal, EditProjectModal } from './ProjectEditModals';
 import { useProjectDetail } from './projects.hooks';
 import type { ProjectTransaction } from './projects.types';
 
@@ -25,15 +28,18 @@ export interface ProjectDetailProps {
 
 /**
  * One project's detail: progress toward its target, contribution history, and
- * controls to pause/resume funding and add a manual contribution. Editing the
- * name/target and drag-reordering priority are deferred (the service supports
- * them; the UI lands in a later polish slice).
+ * controls to pause/resume funding, add a manual contribution, edit the
+ * name/target/deadline, or delete the project (with a funded-aware
+ * confirmation). Drag-reordering priority is still deferred.
  */
 export function ProjectDetail({ projectId }: ProjectDetailProps) {
   const styles = useThemedStyles(makeStyles);
-  const { project, transactions, loading, error, setStatus, contribute } =
+  const router = useRouter();
+  const { project, transactions, loading, error, setStatus, contribute, update, remove } =
     useProjectDetail(projectId);
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (!project) {
     return (
@@ -49,7 +55,18 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Project" />
+      <ScreenHeader
+        title="Project"
+        rightAction={
+          <IconButton
+            icon="edit"
+            accessibilityLabel="Edit project"
+            testID="edit-project"
+            tone="primary"
+            onPress={() => setEditOpen(true)}
+          />
+        }
+      />
       <View style={styles.rowHeader}>
         <Typography variant="heading">{project.name}</Typography>
         <Typography variant="muted">{PROJECT_STATUS_LABELS[project.status]}</Typography>
@@ -83,12 +100,40 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
 
+      <Button
+        label="Delete project"
+        variant="danger"
+        testID="delete-project"
+        onPress={() => setDeleteOpen(true)}
+      />
+
       <AddFundsModal
         visible={addOpen}
         onClose={() => setAddOpen(false)}
         onSubmit={async (amount, accountId) => {
           await contribute(amount, accountId);
           setAddOpen(false);
+        }}
+      />
+
+      <EditProjectModal
+        visible={editOpen}
+        project={project}
+        onClose={() => setEditOpen(false)}
+        onSubmit={async (patch) => {
+          const ok = await update(patch);
+          if (ok) setEditOpen(false);
+        }}
+      />
+
+      <DeleteProjectModal
+        visible={deleteOpen}
+        fundedAmount={project.fundedAmount}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={async () => {
+          const ok = await remove();
+          setDeleteOpen(false);
+          if (ok) router.replace('/(tabs)/projects');
         }}
       />
     </View>

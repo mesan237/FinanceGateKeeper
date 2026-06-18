@@ -3,6 +3,11 @@ import React from 'react';
 
 import type { Project, ProjectTransaction } from '@/features/finance/projects/projects.types';
 
+const mockReplace = jest.fn();
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ replace: mockReplace, push: jest.fn(), back: jest.fn() }),
+}));
+
 jest.mock('@/features/finance/projects/projects.hooks', () => ({
   useProjectDetail: jest.fn(),
 }));
@@ -43,6 +48,8 @@ const TXNS: ProjectTransaction[] = [
 
 const setStatus = jest.fn();
 const contribute = jest.fn();
+const update = jest.fn().mockResolvedValue(true);
+const remove = jest.fn().mockResolvedValue(true);
 
 function mockState(over: Partial<ReturnType<typeof useProjectDetail>> = {}) {
   mockedUseProjectDetail.mockReturnValue({
@@ -53,6 +60,8 @@ function mockState(over: Partial<ReturnType<typeof useProjectDetail>> = {}) {
     refresh: jest.fn(),
     setStatus,
     contribute,
+    update,
+    remove,
     ...over,
   });
 }
@@ -91,5 +100,30 @@ describe('ProjectDetail', () => {
     // Second arg is the selected account id; null here since the test does not
     // mock the accounts service so no default resolves.
     await waitFor(() => expect(contribute).toHaveBeenCalledWith(15000, null));
+  });
+
+  it('edits the project name and target', async () => {
+    render(<ProjectDetail projectId={1} />);
+    fireEvent.press(screen.getByTestId('edit-project'));
+    fireEvent.changeText(screen.getByTestId('edit-name'), 'BRVM Fund');
+    fireEvent.changeText(screen.getByTestId('edit-target'), '250000');
+    fireEvent.press(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() =>
+      expect(update).toHaveBeenCalledWith({
+        name: 'BRVM Fund',
+        targetAmount: 250000,
+        deadline: null,
+      }),
+    );
+  });
+
+  it('deletes the project after confirmation and returns to the list', async () => {
+    render(<ProjectDetail projectId={1} />);
+    fireEvent.press(screen.getByTestId('delete-project'));
+    fireEvent.press(screen.getByTestId('confirm-delete'));
+
+    await waitFor(() => expect(remove).toHaveBeenCalled());
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/projects'));
   });
 });
