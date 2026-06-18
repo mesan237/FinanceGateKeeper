@@ -130,27 +130,32 @@ function AddFundsModal({ visible, onClose, onSubmit }: AddFundsModalProps) {
 
   return (
     <Modal visible={visible} onRequestClose={onClose}>
-      <Typography variant="subheading">Add funds</Typography>
-      <TextInput
-        testID="contribution-amount"
-        placeholder="Amount (FCFA)"
-        keyboardType="number-pad"
-        value={amount}
-        onChangeText={setAmount}
-      />
-      <AccountPicker
-        testID="contribution-account"
-        label="From which account?"
-        value={accountId}
-        onChange={setAccountId}
-      />
-      <View style={styles.actions}>
-        <Button label="Cancel" onPress={onClose} />
-        <Button
-          label="Confirm contribution"
-          disabled={!valid}
-          onPress={() => onSubmit(parsed, accountId)}
+      <View style={styles.modalBody}>
+        <Typography variant="subheading">Add funds</Typography>
+        <TextInput
+          testID="contribution-amount"
+          placeholder="Amount (FCFA)"
+          keyboardType="number-pad"
+          value={amount}
+          onChangeText={setAmount}
         />
+        <AccountPicker
+          testID="contribution-account"
+          label="From which account?"
+          value={accountId}
+          onChange={setAccountId}
+        />
+        <View style={styles.modalActions}>
+          <Button label="Cancel" variant="secondary" compact onPress={onClose} />
+          <View style={styles.grow}>
+            <Button
+              label="Confirm contribution"
+              compact
+              disabled={!valid}
+              onPress={() => onSubmit(parsed, accountId)}
+            />
+          </View>
+        </View>
       </View>
     </Modal>
   );
@@ -170,6 +175,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 12,
+  },
+  modalBody: {
+    gap: 14,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 4,
+  },
+  grow: {
+    flex: 1,
   },
   list: {
     gap: 4,

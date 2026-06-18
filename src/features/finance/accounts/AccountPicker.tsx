@@ -80,26 +80,44 @@ export function AccountPicker({
           </Pressable>
         </View>
         <ScrollView style={styles.list}>
-          {accounts.map((account) => (
-            <Pressable
-              key={account.id}
-              accessibilityRole="button"
-              testID={`${testID}-option-${account.id}`}
-              style={styles.row}
-              onPress={() => choose(account.id)}
-            >
-              <Icon name={ACCOUNT_TYPE_ICON[account.type]} size={20} />
-              <Typography style={styles.rowName}>{account.name}</Typography>
-              {account.isDefault ? (
-                <Typography
-                  testID={`${testID}-default-marker-${account.id}`}
-                  style={styles.defaultMarker}
-                >
-                  ✓ Default
+          {accounts.map((account) => {
+            const isSelected = account.id === value;
+            return (
+              <Pressable
+                key={account.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                testID={`${testID}-option-${account.id}`}
+                style={[styles.row, isSelected && styles.rowSelected]}
+                onPress={() => choose(account.id)}
+              >
+                <Icon
+                  name={ACCOUNT_TYPE_ICON[account.type]}
+                  size={20}
+                  color={isSelected ? c.PRIMARY_GREEN : undefined}
+                />
+                <Typography style={[styles.rowName, isSelected && styles.rowNameSelected]}>
+                  {account.name}
                 </Typography>
-              ) : null}
-            </Pressable>
-          ))}
+                {account.isDefault ? (
+                  <Typography
+                    testID={`${testID}-default-marker-${account.id}`}
+                    style={styles.defaultMarker}
+                  >
+                    ✓ Default
+                  </Typography>
+                ) : null}
+                {isSelected && !account.isDefault ? (
+                  <Icon
+                    name="check"
+                    size={18}
+                    color={c.PRIMARY_GREEN}
+                    testID={`${testID}-selected-marker-${account.id}`}
+                  />
+                ) : null}
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </Modal>
     </View>
@@ -132,9 +150,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 12,
+    paddingHorizontal: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.BORDER,
   },
+  rowSelected: {
+    backgroundColor: c.PRIMARY_LIGHT,
+    borderRadius: RADIUS.sm,
+    borderBottomColor: 'transparent',
+  },
   rowName: { flex: 1 },
+  rowNameSelected: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   defaultMarker: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
 });
