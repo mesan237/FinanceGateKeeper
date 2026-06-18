@@ -212,13 +212,13 @@ Some features legitimately need each other. These are the **approved cross-featu
 
 | Feature     | Can import from                                                                               |
 | ----------- | --------------------------------------------------------------------------------------------- |
-| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation)                     |
-| `budget`    | `expenses` (reads categories), `funds` (triggers redistribution), `projects` (funds on allocation confirm) |
-| `expenses`  | `budget` (pre-save over-budget check on the expense log and quick-add screens)                |
+| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation); `accounts` (Wallets summary section) |
+| `budget`    | `expenses` (reads categories), `funds` (triggers redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated — unallocated-pool screen, VS-19) |
+| `expenses`  | `budget` (pre-save over-budget check on the expense log and quick-add screens); `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); `accounts` (AccountPicker on the expense log and detail screens) |
 | `reports`   | `expenses`, `income`, `budget`, `funds`, `projects`, `debt` (read-only for report generation) |
-| `income`    | `budget` (triggers allocation screen after income log)                                        |
-| `funds`     | `budget` (reads allocation percentages)                                                       |
-| `projects`  | `budget` (reads allocation percentages)                                                       |
+| `income`    | `budget` (triggers allocation screen after income log); `accounts` (AccountPicker on the income log screen) |
+| `funds`     | `budget` (reads allocation percentages); `accounts` (reserved — `depositToFund` accepts an `accountId`; manual-deposit picker UI deferred, fund deposits are allocation-driven) |
+| `projects`  | `budget` (reads allocation percentages); `accounts` (AccountPicker on the manual contribution section) |
 
 All other cross-feature imports are **forbidden** unless explicitly justified and documented.
 

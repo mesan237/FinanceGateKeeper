@@ -31,11 +31,19 @@ export interface Expense {
   note: string | null;
   date: string;
   isRecurring: boolean;
+  /** Source wallet, or null for legacy/unattributed expenses (VS-18). */
+  accountId: number | null;
   createdAt: string;
 }
 
-/** The shape accepted by `createExpense` — id and createdAt are assigned on insert. */
-export type NewExpense = Omit<Expense, 'id' | 'createdAt'>;
+/**
+ * The shape accepted by `createExpense` — id and createdAt are assigned on
+ * insert. `accountId` is optional so existing callers (quick-add, recurring
+ * auto-log) need not supply a wallet.
+ */
+export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId'> & {
+  accountId?: number | null;
+};
 
 /** Filter applied to the transaction list. All fields are optional. */
 export interface TransactionFilter {

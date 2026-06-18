@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
@@ -9,7 +9,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 
-// `calculateBreakdown` is a pure function the screen calls directly — use the
+// `calculateBreakdown` is a pure function the screen calls directly â€” use the
 // real implementation so the test asserts on real amounts. Async DB-backed
 // functions are mocked.
 jest.mock('@/features/finance/budget/budget.service', () => ({
@@ -31,9 +31,14 @@ jest.mock('@/features/finance/projects/projects.service', () => ({
   fundProjects: jest.fn(),
 }));
 
+jest.mock('@/features/finance/income/income.service', () => ({
+  markIncomeAllocated: jest.fn(),
+}));
+
 import { AllocationScreen } from '@/features/finance/budget/AllocationScreen';
 import * as budgetService from '@/features/finance/budget/budget.service';
 import * as fundsService from '@/features/finance/funds/funds.service';
+import * as incomeService from '@/features/finance/income/income.service';
 import * as projectsService from '@/features/finance/projects/projects.service';
 
 const mockedGetOrCreate = budgetService.getOrCreateCurrentAllocation as jest.MockedFunction<
@@ -53,6 +58,9 @@ const mockedDeposit = fundsService.depositToFund as jest.MockedFunction<
 >;
 const mockedFundProjects = projectsService.fundProjects as jest.MockedFunction<
   typeof projectsService.fundProjects
+>;
+const mockedMarkAllocated = incomeService.markIncomeAllocated as jest.MockedFunction<
+  typeof incomeService.markIncomeAllocated
 >;
 
 function depositResult(targetNewlyMet: boolean) {
@@ -89,11 +97,12 @@ beforeEach(() => {
   mockedRedistribute.mockResolvedValue(undefined);
   mockedDeposit.mockResolvedValue(depositResult(false));
   mockedFundProjects.mockResolvedValue(undefined);
+  mockedMarkAllocated.mockResolvedValue(undefined);
 });
 
 describe('AllocationScreen', () => {
   it('renders the four bucket rows with the correctly calculated amounts', async () => {
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
 
     await screen.findByText('Emergency Fund');
     expect(screen.getByText('Emergency Fund')).toBeTruthy();
@@ -115,7 +124,7 @@ describe('AllocationScreen', () => {
     mockedGetOrCreate.mockResolvedValue(reordered);
     mockedGetAllocation.mockResolvedValue(reordered);
 
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     const labels = screen
@@ -125,7 +134,7 @@ describe('AllocationScreen', () => {
   });
 
   it('Confirm locks the month and navigates to the dashboard', async () => {
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     const confirm = screen.getByRole('button', { name: 'Confirm' });
@@ -139,12 +148,12 @@ describe('AllocationScreen', () => {
   });
 
   it('deposits the emergency and savings portions on confirm', async () => {
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
 
-    // 400 000 × 10% = 40 000 to each of emergency and savings.
+    // 400 000 Ã— 10% = 40 000 to each of emergency and savings.
     await waitFor(() =>
       expect(mockedDeposit).toHaveBeenCalledWith('emergency', 40000, 'Allocation 2026-06'),
     );
@@ -157,7 +166,7 @@ describe('AllocationScreen', () => {
       depositResult(type === 'emergency'),
     );
 
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
@@ -176,7 +185,7 @@ describe('AllocationScreen', () => {
     mockedGetOrCreate.mockResolvedValue(noEmergency);
     mockedGetAllocation.mockResolvedValue(noEmergency);
 
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
@@ -187,15 +196,14 @@ describe('AllocationScreen', () => {
   });
 
   it('funds projects with the projects-bucket amount on confirm', async () => {
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
 
-    // 400 000 × 15% = 60 000 to projects.
-    await waitFor(() =>
-      expect(mockedFundProjects).toHaveBeenCalledWith(60000, 'Allocation 2026-06'),
-    );
+    // 400 000 Ã— 15% = 60 000 to projects. fundProjects dates each contribution
+    // itself (defaults to today) â€” no reason/date argument is passed.
+    await waitFor(() => expect(mockedFundProjects).toHaveBeenCalledWith(60000));
     await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
   });
 
@@ -208,7 +216,7 @@ describe('AllocationScreen', () => {
     mockedGetOrCreate.mockResolvedValue(noProjects);
     mockedGetAllocation.mockResolvedValue(noProjects);
 
-    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" />);
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
     await screen.findByText('Emergency Fund');
 
     fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
@@ -216,4 +224,27 @@ describe('AllocationScreen', () => {
     await waitFor(() => expect(mockedLock).toHaveBeenCalled());
     expect(mockedFundProjects).not.toHaveBeenCalled();
   });
+
+  it('marks the income allocated on confirm', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm' }));
+
+    await waitFor(() => expect(mockedMarkAllocated).toHaveBeenCalledWith(42));
+  });
+
+  it('Hold for later leaves the income pending and navigates without depositing', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Hold for later' }));
+
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/dashboard'));
+    expect(mockedMarkAllocated).not.toHaveBeenCalled();
+    expect(mockedDeposit).not.toHaveBeenCalled();
+    expect(mockedFundProjects).not.toHaveBeenCalled();
+    expect(mockedLock).not.toHaveBeenCalled();
+  });
 });
+

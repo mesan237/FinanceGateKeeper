@@ -1,72 +1,47 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Button } from '@/components/Button';
-import { Modal } from '@/components/Modal';
-import type { ActionBarStyle } from '@/types/settings';
+import { Icon } from '@/components/Icon';
+import { PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { ICON_SIZE } from '@/constants/icons';
+import { RADIUS, SHADOW } from '@/constants/layout';
+import { hapticTap } from '@/utils/haptics';
 
+import { AddTransactionSheet } from './AddTransactionSheet';
 import { TransactionList } from './TransactionList';
 
-export interface TransactionsScreenProps {
-  actionBarStyle: ActionBarStyle;
-}
-
 /**
- * The Transactions tab: unified income+expense feed plus the floating action
- * bar. In `explicit` mode the bar always shows Quick Add (compact) and Log
- * Expense (primary). In `speed_dial` mode a single "+" FAB expands to a Modal
- * with both options — keeping the screen clean without losing discoverability.
+ * The Transactions tab: the unified income+expense feed plus a single circular
+ * FAB that opens the `AddTransactionSheet` (Expense / Income / Templates). An
+ * expense or template logged from the sheet bumps `reloadToken` so the feed
+ * refreshes in place without navigating away.
  */
-export function TransactionsScreen({ actionBarStyle }: TransactionsScreenProps) {
-  const router = useRouter();
-  const [dialOpen, setDialOpen] = useState(false);
-
-  if (actionBarStyle === 'speed_dial') {
-    return (
-      <View style={styles.container}>
-        <TransactionList />
-        <View style={styles.fab}>
-          <Button
-            testID="speed-dial-fab"
-            label="+"
-            onPress={() => setDialOpen(true)}
-          />
-        </View>
-
-        <Modal visible={dialOpen} onRequestClose={() => setDialOpen(false)} transparent animationType="fade">
-          <View style={styles.dialOptions}>
-            <Button
-              label="+ Log Expense"
-              onPress={() => {
-                setDialOpen(false);
-                router.push('/expenses/log');
-              }}
-            />
-            <Button
-              label="Quick Add"
-              onPress={() => {
-                setDialOpen(false);
-                router.push('/expenses/quick-add');
-              }}
-            />
-          </View>
-        </Modal>
-      </View>
-    );
-  }
+export function TransactionsScreen() {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   return (
     <View style={styles.container}>
-      <TransactionList />
-      <View style={styles.fab}>
-        <View style={styles.secondaryRow}>
-          <View style={styles.grow}>
-            <Button compact label="Quick Add" onPress={() => router.push('/expenses/quick-add')} />
-          </View>
-        </View>
-        <Button label="+ Log Expense" onPress={() => router.push('/expenses/log')} />
-      </View>
+      <TransactionList reloadToken={reloadToken} />
+
+      <Pressable
+        testID="add-transaction-fab"
+        accessibilityRole="button"
+        accessibilityLabel="Add transaction"
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        onPress={() => {
+          hapticTap();
+          setSheetOpen(true);
+        }}
+      >
+        <Icon name="add" size={ICON_SIZE.lg} color={TEXT_INVERSE} />
+      </Pressable>
+
+      <AddTransactionSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onExpenseSaved={() => setReloadToken((t) => t + 1)}
+      />
     </View>
   );
 }
@@ -77,21 +52,17 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    right: 20,
     bottom: 24,
-    gap: 8,
+    width: 56,
+    height: 56,
+    borderRadius: RADIUS.full,
+    backgroundColor: PRIMARY_GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...SHADOW.floating,
   },
-  secondaryRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  grow: {
-    flex: 1,
-  },
-  dialOptions: {
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+  fabPressed: {
+    opacity: 0.85,
   },
 });

@@ -12,6 +12,7 @@ import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { ToastProvider } from '@/components/Toast';
 import { BACKGROUND } from '@/constants/colors';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
@@ -70,7 +71,9 @@ export default function RootLayout() {
               >
                 <SafeAreaView style={styles.safeArea} edges={['top']}>
                   <StatusBar style="dark" />
-                  <Stack screenOptions={{ headerShown: false }} />
+                  <ToastProvider>
+                    <Stack screenOptions={{ headerShown: false }} />
+                  </ToastProvider>
                 </SafeAreaView>
               </ZeroDayGate>
             </DailyReminderScheduler>

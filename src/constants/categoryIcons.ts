@@ -1,6 +1,9 @@
-import { DEFAULT_CATEGORIES } from '@/constants/categories';
-
-const CATEGORY_ICON_BY_NAME: Record<string, string> = {
+/**
+ * Emoji for each seeded default parent category, keyed by name. Name is the
+ * stable key: a category's row id drifts after the dedupe heal (migration 015),
+ * manual edits, or any reseed, so icons must never be looked up by id.
+ */
+export const CATEGORY_ICON_BY_NAME: Record<string, string> = {
   Food: '🍔',
   Transport: '🚗',
   Bills: '💡',
@@ -20,25 +23,6 @@ export const INCOME_SOURCE_ICON_MAP: Record<string, string> = {
   ecommerce: '🏪',
 };
 
-/**
- * Derives the id→icon map from DEFAULT_CATEGORIES so it stays in sync if the
- * seed list ever changes. IDs are assigned by migration 001 in insertion order:
- * each parent takes one row, then its subcategories follow. The parent id is
- * therefore `1 + sum of (1 + subcategory-count) for all preceding entries`.
- */
-function buildCategoryIconMap(): Record<number, string> {
-  const map: Record<number, string> = {};
-  let nextId = 1;
-  for (const cat of DEFAULT_CATEGORIES) {
-    const icon = CATEGORY_ICON_BY_NAME[cat.name];
-    if (icon) map[nextId] = icon;
-    nextId += 1 + cat.subcategories.length;
-  }
-  return map;
-}
-
-export const CATEGORY_ICON_MAP: Record<number, string> = buildCategoryIconMap();
-
 const AVATAR_PALETTE = [
   '#E57373', // red
   '#81C784', // green
@@ -52,18 +36,20 @@ const AVATAR_PALETTE = [
 
 /**
  * Returns the emoji for a transaction row, or null if no emoji is mapped for
- * the given id/source (signals the caller to render a letter avatar instead).
+ * the given category name / income source (signals the caller to render a
+ * letter avatar instead). Expenses resolve by the parent category name, not by
+ * row id — see {@link CATEGORY_ICON_BY_NAME}.
  */
 export function getTransactionIcon(
   type: 'expense' | 'income',
-  categoryId?: number,
+  categoryName?: string,
   source?: string,
 ): string | null {
   if (type === 'income' && source) {
     return INCOME_SOURCE_ICON_MAP[source] ?? null;
   }
-  if (type === 'expense' && categoryId != null) {
-    return CATEGORY_ICON_MAP[categoryId] ?? null;
+  if (type === 'expense' && categoryName) {
+    return CATEGORY_ICON_BY_NAME[categoryName] ?? null;
   }
   return null;
 }

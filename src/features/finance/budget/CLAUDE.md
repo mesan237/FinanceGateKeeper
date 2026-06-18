@@ -14,7 +14,8 @@ Manages percentage-based income allocation, monthly category budgets, over-budge
 - When income is logged, navigate to AllocationScreen showing breakdown. User confirms, allocation records are updated.
 - Over-budget check (VS-12): `checkOverBudget(monthISO, newExpenseAmount)` returns `{ isOver, overage, remaining, expenseBudget }`. It compares (expenses logged this month + the new amount) against the month's expense allocation, and only flags once the allocation is **locked** (so it stays inert in learning mode and before the month is confirmed). The expense screens consume it via `useOverBudgetCheck` + `OverBudgetAlert`.
 - Per-category budgets (a `category_budgets` table subdividing the expense allocation, with a per-category overage) are **not built yet** — deferred to a follow-up slice.
-- Remaining budget = (total income for month × expenses_pct) − (total expenses for month).
+- Remaining budget = (total **allocated** income for month × expenses_pct) − (total expenses for month). Held (`pending`) income is excluded until the user allocates it (VS-19).
+- Deferred allocation (VS-19): income is held until allocated. `AllocationScreen` Confirm marks the income allocated; "Hold for later" leaves it pending. `UnallocatedPoolScreen` (reached from BudgetOverview) lists held income and lets the user send each entry to a destination — the expense budget, a fund, or an active project — via `useUnallocatedPool().allocate`. This is why `budget → income` is an approved edge (read held income, mark allocated).
 
 ## Allocation Flow
 1. User logs income in `income` feature.
@@ -31,10 +32,11 @@ When emergency fund hits its target:
 3. New percentages are saved for the current month (exception to the lock rule — redistribution is automatic).
 
 ## Files in This Feature
-- `AllocationScreen.tsx` — Post-income breakdown view
-- `BudgetOverview.tsx` — Category progress bars
+- `AllocationScreen.tsx` — Post-income breakdown view (Confirm / Hold for later)
+- `UnallocatedPoolScreen.tsx` + `UnallocatedPoolRoute.tsx` — Held-income pool with per-entry destination picker (VS-19)
+- `BudgetOverview.tsx` — Category progress bars + unallocated-income link
 - `AllocationSettings.tsx` — Percentage sliders + priority reorder
 - `OverBudgetAlert.tsx` — Warning modal
-- `budget.hooks.ts` — useAllocation, useBudgetStatus, useOverBudgetCheck
+- `budget.hooks.ts` — useAllocation, useBudgetStatus, useOverBudgetCheck, useUnallocatedPool
 - `budget.service.ts` — Allocation math, budget tracking, over-budget detection
-- `budget.types.ts` — Allocation, BudgetBucket, BucketPriority, MonthlyBudget
+- `budget.types.ts` — Allocation, BudgetBucket, BucketPriority, MonthlyBudget, AllocationDestination

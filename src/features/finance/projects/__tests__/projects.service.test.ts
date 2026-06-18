@@ -138,6 +138,16 @@ describe('reorderPriority', () => {
 });
 
 describe('contributeManually', () => {
+  it('stores the source account on a manual contribution, null when omitted (VS-18)', async () => {
+    const { brvm } = await seedTwo();
+    await contributeManually(brvm, 30000, '2026-06-03', 1); // Cash = 1 (migration 018)
+
+    const row = sqlite
+      .prepare('SELECT account_id FROM project_transactions WHERE project_id = ?')
+      .get(brvm) as { account_id: number | null };
+    expect(row.account_id).toBe(1);
+  });
+
   it('adds a manual contribution and records it', async () => {
     const { brvm } = await seedTwo();
     await contributeManually(brvm, 30000, '2026-06-03');

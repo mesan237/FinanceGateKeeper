@@ -58,7 +58,7 @@ interface ProjectRowProps {
 }
 
 function ProjectRow({ project, timeline, onPress }: ProjectRowProps) {
-  const pct = Math.round((project.fundedAmount / project.targetAmount) * 100);
+  const pct = Math.min(100, Math.round((project.fundedAmount / project.targetAmount) * 100));
   return (
     <Pressable testID={`project-row-${project.id}`} onPress={onPress}>
       <Card>

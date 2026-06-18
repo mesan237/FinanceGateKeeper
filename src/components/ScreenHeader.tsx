@@ -1,10 +1,12 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { ICON_SIZE } from '@/constants/icons';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -28,12 +30,13 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
         accessibilityRole="button"
         accessibilityLabel={cancelLabel ?? 'Back'}
         onPress={() => router.back()}
+        hitSlop={8}
         style={styles.backSlot}
       >
         {cancelLabel ? (
           <Typography style={styles.cancelLabel}>{cancelLabel}</Typography>
         ) : (
-          <Ionicons name="chevron-back" size={24} color={TEXT_PRIMARY} />
+          <Icon name="back" size={ICON_SIZE.lg} color={TEXT_PRIMARY} />
         )}
       </Pressable>
 
@@ -70,6 +73,6 @@ const styles = StyleSheet.create({
   },
   cancelLabel: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

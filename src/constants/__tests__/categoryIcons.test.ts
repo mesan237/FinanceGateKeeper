@@ -1,15 +1,19 @@
 import {
-  CATEGORY_ICON_MAP,
+  CATEGORY_ICON_BY_NAME,
   getCategoryAvatar,
   getTransactionIcon,
 } from '@/constants/categoryIcons';
 
-// Food is always id 1 in a fresh seed (first parent inserted by migration 001).
-const FOOD_ID = 1;
-
 describe('getTransactionIcon', () => {
-  it('returns the correct emoji for a known default category id', () => {
-    expect(getTransactionIcon('expense', FOOD_ID)).toBe('🍔');
+  it('returns the correct emoji for a known default category name', () => {
+    expect(getTransactionIcon('expense', 'Food')).toBe('🍔');
+  });
+
+  it('resolves by name regardless of the underlying database id', () => {
+    // The icon must not depend on a category's row id (which drifts after the
+    // dedupe heal / manual edits). Name is the stable key.
+    expect(getTransactionIcon('expense', 'Transport')).toBe('🚗');
+    expect(getTransactionIcon('expense', 'Shopping')).toBe('🛍️');
   });
 
   it('returns 💼 for income source "salary"', () => {
@@ -24,11 +28,11 @@ describe('getTransactionIcon', () => {
     expect(getTransactionIcon('income', undefined, 'ecommerce')).toBe('🏪');
   });
 
-  it('returns null for an unknown category id (signals fallback to avatar)', () => {
-    expect(getTransactionIcon('expense', 99999)).toBeNull();
+  it('returns null for an unknown category name (signals fallback to avatar)', () => {
+    expect(getTransactionIcon('expense', 'Zap')).toBeNull();
   });
 
-  it('returns null when no categoryId and no source are given', () => {
+  it('returns null when no category name and no source are given', () => {
     expect(getTransactionIcon('expense')).toBeNull();
   });
 });
@@ -56,8 +60,10 @@ describe('getCategoryAvatar', () => {
   });
 });
 
-describe('CATEGORY_ICON_MAP', () => {
-  it('maps at least 8 default category ids', () => {
-    expect(Object.keys(CATEGORY_ICON_MAP).length).toBeGreaterThanOrEqual(8);
+describe('CATEGORY_ICON_BY_NAME', () => {
+  it('maps every seeded default parent category name to an emoji', () => {
+    for (const name of ['Food', 'Transport', 'Bills', 'Health', 'Shopping', 'Other']) {
+      expect(CATEGORY_ICON_BY_NAME[name]).toBeTruthy();
+    }
   });
 });

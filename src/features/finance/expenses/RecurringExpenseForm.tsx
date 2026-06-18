@@ -5,7 +5,9 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
+import { DANGER, PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { toISODate } from '@/utils/formatDate';
 
 import { CategoryPicker } from './CategoryPicker';
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   pill: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
     borderColor: PRIMARY_GREEN,
     alignItems: 'center',
@@ -183,11 +185,11 @@ const styles = StyleSheet.create({
   },
   pillText: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   pillTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
+    color: TEXT_INVERSE,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {
     color: DANGER,

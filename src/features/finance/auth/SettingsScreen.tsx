@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { formatDateLong } from '@/utils/formatDate';
 
 import { useAppModeContext } from './AppModeProvider';
-import { useActionBarStyle, useAppSettings } from './auth.hooks';
+import { useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
 /**
@@ -29,7 +30,6 @@ export function SettingsScreen() {
     setNotificationsEnabled,
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
-  const { style: actionBarStyle, setStyle: setActionBarStyle } = useActionBarStyle();
   const cloud = useCloudSync();
 
   const [reminderInput, setReminderInput] = useState('');
@@ -121,30 +121,6 @@ export function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Typography variant="subheading">Action bar style</Typography>
-        <Typography variant="muted">
-          Controls how the Transactions tab action bar appears.
-        </Typography>
-        {(['explicit', 'speed_dial'] as const).map((option) => (
-          <Pressable
-            key={option}
-            testID={`settings-action-bar-${option}`}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: actionBarStyle === option }}
-            style={[styles.optionRow, actionBarStyle === option && styles.optionRowActive]}
-            onPress={() => void setActionBarStyle(option)}
-          >
-            <Typography style={actionBarStyle === option ? styles.optionTextActive : undefined}>
-              {option === 'explicit' ? 'Explicit buttons' : 'Speed dial'}
-            </Typography>
-            {actionBarStyle === option ? (
-              <Typography style={styles.checkmark}>✓</Typography>
-            ) : null}
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={styles.section}>
         <Typography variant="subheading">Cloud backup</Typography>
         {cloud.signedIn ? (
           <>
@@ -228,31 +204,9 @@ const styles = StyleSheet.create({
   },
   suggestion: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {
     color: DANGER,
-  },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  optionRowActive: {
-    borderColor: PRIMARY_GREEN,
-    backgroundColor: '#E8F5E9',
-  },
-  optionTextActive: {
-    color: PRIMARY_GREEN,
-    fontWeight: '600',
-  },
-  checkmark: {
-    color: PRIMARY_GREEN,
-    fontWeight: '700',
   },
 });

@@ -70,6 +70,21 @@ describe('getOrCreateFunds', () => {
 });
 
 describe('depositToFund', () => {
+  it('stores the source account on a manual deposit, and null when omitted (VS-18)', async () => {
+    await getOrCreateFunds();
+    await depositToFund('savings', 5000, 'Manual top-up', '2026-06-12', 1); // Cash = 1
+    await depositToFund('emergency', 5000, 'Allocation 2026-06'); // automated → null
+
+    const withAccount = sqlite
+      .prepare("SELECT account_id FROM fund_transactions WHERE reason = 'Manual top-up'")
+      .get() as { account_id: number | null };
+    const automated = sqlite
+      .prepare("SELECT account_id FROM fund_transactions WHERE reason = 'Allocation 2026-06'")
+      .get() as { account_id: number | null };
+    expect(withAccount.account_id).toBe(1);
+    expect(automated.account_id).toBeNull();
+  });
+
   it('increases the balance and records a deposit transaction', async () => {
     await getOrCreateFunds();
     const result = await depositToFund('emergency', 100000, 'Allocation 2026-06');

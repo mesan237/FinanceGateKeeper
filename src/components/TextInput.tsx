@@ -5,7 +5,8 @@ import {
   type TextInputProps as RNTextInputProps,
 } from 'react-native';
 
-import { BACKGROUND, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
+import { BACKGROUND, BORDER, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
+import { RADIUS } from '@/constants/layout';
 
 export type TextInputProps = RNTextInputProps;
 
@@ -23,9 +24,9 @@ const styles = StyleSheet.create({
   base: {
     backgroundColor: BACKGROUND,
     color: TEXT_PRIMARY,
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: BORDER,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,

@@ -5,7 +5,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import { PRIMARY_GREEN } from '@/constants/colors';
+import { BORDER, PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 
 import { useCategories } from './expenses.hooks';
 import type { Category } from './expenses.types';
@@ -23,8 +25,8 @@ export interface CategoryPickerProps {
   onSelect: (selection: CategorySelection) => void;
 }
 
-function PickerIcon({ id, name }: { id: number; name: string }) {
-  const emoji = getTransactionIcon('expense', id);
+function PickerIcon({ name }: { name: string }) {
+  const emoji = getTransactionIcon('expense', name);
   if (emoji) {
     return <Typography style={styles.rowEmojiIcon}>{emoji}</Typography>;
   }
@@ -86,7 +88,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 style={styles.row}
                 onPress={() => setParent(category)}
               >
-                <PickerIcon id={category.id} name={category.name} />
+                <PickerIcon name={category.name} />
                 <Typography>{category.name}</Typography>
               </Pressable>
             ))
@@ -99,7 +101,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                   commit({ categoryId: parent.id, subcategoryId: null, label: parent.name })
                 }
               >
-                <PickerIcon id={parent.id} name={parent.name} />
+                <PickerIcon name={parent.name} />
                 <Typography style={styles.action}>{`Use ${parent.name}`}</Typography>
               </Pressable>,
               ...subcategories.map((sub) => (
@@ -111,7 +113,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                     commit({ categoryId: parent.id, subcategoryId: sub.id, label: sub.name })
                   }
                 >
-                  <PickerIcon id={sub.id} name={sub.name} />
+                  <PickerIcon name={sub.name} />
                   <Typography>{sub.name}</Typography>
                 </Pressable>
               )),
@@ -142,7 +144,7 @@ const styles = StyleSheet.create({
   },
   action: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   list: {
     maxHeight: 320,
@@ -153,17 +155,17 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: BORDER,
   },
   rowEmojiIcon: { fontSize: 20, lineHeight: 24, width: 20, textAlign: 'center' },
   rowAvatar: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowAvatarLetter: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  rowAvatarLetter: { color: TEXT_INVERSE, fontSize: 10, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   manage: {
     paddingTop: 14,
     alignItems: 'center',

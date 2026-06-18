@@ -28,6 +28,7 @@ export function useExpenseLog() {
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState(() => toISODate(new Date()));
+  const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const numericAmount = Number(amount);
@@ -48,6 +49,7 @@ export function useExpenseLog() {
         note: note.trim() ? note.trim() : null,
         date,
         isRecurring: false,
+        accountId,
       });
       setError(null);
       return id;
@@ -55,7 +57,7 @@ export function useExpenseLog() {
       setError(e instanceof Error ? e.message : 'Failed to save expense.');
       return null;
     }
-  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date]);
+  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId]);
 
   return {
     amount,
@@ -68,6 +70,8 @@ export function useExpenseLog() {
     setNote,
     date,
     setDate,
+    accountId,
+    setAccountId,
     submit,
     canSubmit,
     error,
@@ -109,8 +113,10 @@ export function useTransactions(
 
   const entries = useMemo(() => {
     if (categoryId == null) return allEntries;
-    return allEntries.filter(
-      (e) => e.type === 'income' || e.categoryId === categoryId,
+    // A category filter keeps all income and the matching expenses; transfers
+    // (no category) drop out, like non-matching expenses.
+    return allEntries.filter((e) =>
+      e.type === 'expense' ? e.categoryId === categoryId : e.type === 'income',
     );
   }, [allEntries, categoryId]);
 
@@ -380,6 +386,8 @@ export function useExpenseEdit(id: number): {
   setNote: (v: string) => void;
   date: string;
   setDate: (v: string) => void;
+  accountId: number | null;
+  setAccountId: (v: number | null) => void;
   originalAmount: number | null;
   canSubmit: boolean;
   loading: boolean;
@@ -392,11 +400,13 @@ export function useExpenseEdit(id: number): {
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
+  const [accountId, setAccountId] = useState<number | null>(null);
   const [originalAmount, setOriginalAmount] = useState<number | null>(null);
   const [originalCategoryId, setOriginalCategoryId] = useState<number | null>(null);
   const [originalSubcategoryId, setOriginalSubcategoryId] = useState<number | null>(null);
   const [originalNote, setOriginalNote] = useState<string | null>(null);
   const [originalDate, setOriginalDate] = useState('');
+  const [originalAccountId, setOriginalAccountId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -413,11 +423,13 @@ export function useExpenseEdit(id: number): {
       setSubcategoryId(expense.subcategoryId);
       setNote(expense.note ?? '');
       setDate(expense.date);
+      setAccountId(expense.accountId);
       setOriginalAmount(expense.amount);
       setOriginalCategoryId(expense.categoryId);
       setOriginalSubcategoryId(expense.subcategoryId);
       setOriginalNote(expense.note ?? null);
       setOriginalDate(expense.date);
+      setOriginalAccountId(expense.accountId);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load expense.');
@@ -436,7 +448,7 @@ export function useExpenseEdit(id: number): {
 
   const update = useCallback(async (): Promise<boolean> => {
     try {
-      const fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date'>> = {};
+      const fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId'>> = {};
       const newAmount = Math.trunc(numericAmount);
       if (newAmount !== originalAmount) fields.amount = newAmount;
       if (categoryId !== originalCategoryId) fields.categoryId = categoryId ?? undefined;
@@ -444,6 +456,7 @@ export function useExpenseEdit(id: number): {
       const trimmedNote = note.trim() || null;
       if (trimmedNote !== originalNote) fields.note = trimmedNote;
       if (date !== originalDate) fields.date = date;
+      if (accountId !== originalAccountId) fields.accountId = accountId;
 
       await expenseService.updateExpense(id, fields);
       await load();
@@ -453,7 +466,7 @@ export function useExpenseEdit(id: number): {
       setError(e instanceof Error ? e.message : 'Failed to update expense.');
       return false;
     }
-  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, load]);
+  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, load]);
 
   const remove = useCallback(async (): Promise<boolean> => {
     try {
@@ -476,6 +489,8 @@ export function useExpenseEdit(id: number): {
     setNote,
     date,
     setDate,
+    accountId,
+    setAccountId,
     originalAmount,
     canSubmit,
     loading,

@@ -19,6 +19,14 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   getExpensesMonthlyTotal: jest.fn(),
 }));
 
+// Override only the unallocated-pool hook so BudgetOverview tests don't reach
+// the income/funds/projects services; useBudgetStatus stays real.
+const mockUnallocatedPool = jest.fn();
+jest.mock('@/features/finance/budget/budget.hooks', () => ({
+  ...jest.requireActual<object>('@/features/finance/budget/budget.hooks'),
+  useUnallocatedPool: () => mockUnallocatedPool(),
+}));
+
 import { BudgetOverview } from '@/features/finance/budget/BudgetOverview';
 import * as budgetService from '@/features/finance/budget/budget.service';
 
@@ -58,6 +66,7 @@ const EMPTY: MonthlyBudget = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUnallocatedPool.mockReturnValue({ total: 0 });
 });
 
 describe('BudgetOverview', () => {
@@ -72,6 +81,22 @@ describe('BudgetOverview', () => {
       el.props.testID.replace('bucket-row-', ''),
     );
     expect(labels).toEqual(['emergency_fund', 'savings', 'projects', 'expenses']);
+  });
+
+  it('renders the expense-progress bar reflecting spent vs. allocated budget', async () => {
+    mockedGetBudget.mockResolvedValue(POPULATED);
+    render(<BudgetOverview monthISO="2026-06" />);
+
+    const fill = await screen.findByTestId('expense-progress-fill');
+    // 12 000 logged of 260 000 allocated ≈ 5%.
+    expect(fill.props.accessibilityValue.now).toBe(5);
+  });
+
+  it('surfaces the locked pill when the month is locked', async () => {
+    mockedGetBudget.mockResolvedValue(POPULATED);
+    render(<BudgetOverview monthISO="2026-06" />);
+
+    expect(await screen.findByText(/Locked for this month/i)).toBeTruthy();
   });
 
   it('renders the empty state when no income has been logged for the month', async () => {
@@ -90,5 +115,26 @@ describe('BudgetOverview', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Edit allocation' }));
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/budget/settings'));
+  });
+
+  it('surfaces the unallocated pool and navigates to it when income is held', async () => {
+    mockedGetBudget.mockResolvedValue(POPULATED);
+    mockUnallocatedPool.mockReturnValue({ total: 75000 });
+    render(<BudgetOverview monthISO="2026-06" />);
+
+    await screen.findByText(/Unallocated income/i);
+    expect(screen.getByText('75 000 FCFA')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('unallocated-pool-link'));
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/budget/unallocated'));
+  });
+
+  it('hides the unallocated-pool row when nothing is held', async () => {
+    mockedGetBudget.mockResolvedValue(POPULATED);
+    mockUnallocatedPool.mockReturnValue({ total: 0 });
+    render(<BudgetOverview monthISO="2026-06" />);
+
+    await screen.findByText(/Expenses remaining/i);
+    expect(screen.queryByTestId('unallocated-pool-link')).toBeNull();
   });
 });

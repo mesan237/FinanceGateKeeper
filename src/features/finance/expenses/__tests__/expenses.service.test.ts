@@ -88,6 +88,25 @@ afterEach(() => {
   mockState.driver = null;
 });
 
+describe('account attribution (VS-18)', () => {
+  it('persists accountId on create and exposes it on read', async () => {
+    // accounts are seeded by migration 018 (Cash = 1, MTN MoMo = 2).
+    const id = await createExpense(newExpense({ amount: 1000, date: '2026-06-12', accountId: 1 }));
+    expect((await getExpenseById(id))?.accountId).toBe(1);
+  });
+
+  it('defaults accountId to null when not supplied', async () => {
+    const id = await createExpense(newExpense({ amount: 1000, date: '2026-06-12' }));
+    expect((await getExpenseById(id))?.accountId).toBeNull();
+  });
+
+  it('updates accountId via updateExpense', async () => {
+    const id = await createExpense(newExpense({ amount: 1000, date: '2026-06-12', accountId: 1 }));
+    await updateExpense(id, { accountId: 2 });
+    expect((await getExpenseById(id))?.accountId).toBe(2);
+  });
+});
+
 describe('createExpense / getAllExpenses', () => {
   it('creates an expense and includes it in getAllExpenses', async () => {
     const id = await createExpense(newExpense({ amount: 1500, date: '2026-06-12' }));

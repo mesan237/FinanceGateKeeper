@@ -22,6 +22,7 @@ interface ExpenseRow {
   note: string | null;
   date: string;
   is_recurring: number;
+  account_id: number | null;
   created_at: string;
 }
 
@@ -34,7 +35,7 @@ interface CategoryRow {
 }
 
 const EXPENSE_COLUMNS =
-  'id, amount, category_id, subcategory_id, note, date, is_recurring, created_at';
+  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, created_at';
 const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
@@ -47,6 +48,7 @@ function mapExpense(row: ExpenseRow): Expense {
     note: row.note,
     date: row.date,
     isRecurring: row.is_recurring === 1,
+    accountId: row.account_id,
     createdAt: row.created_at,
   };
 }
@@ -78,8 +80,8 @@ export async function createExpense(input: NewExpense): Promise<number> {
 
   await execute(
     `INSERT INTO expenses
-       (amount, category_id, subcategory_id, note, date, is_recurring, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.amount,
       input.categoryId,
@@ -87,6 +89,7 @@ export async function createExpense(input: NewExpense): Promise<number> {
       input.note ?? null,
       input.date,
       input.isRecurring ? 1 : 0,
+      input.accountId ?? null,
       new Date().toISOString(),
     ],
   );
@@ -696,7 +699,7 @@ export async function getExpenseById(id: number): Promise<Expense | null> {
  */
 export async function updateExpense(
   id: number,
-  fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date'>>,
+  fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId'>>,
 ): Promise<void> {
   const sets: string[] = [];
   const params: (string | number | null)[] = [];
@@ -723,6 +726,10 @@ export async function updateExpense(
   if (fields.date !== undefined) {
     sets.push('date = ?');
     params.push(fields.date);
+  }
+  if ('accountId' in fields) {
+    sets.push('account_id = ?');
+    params.push(fields.accountId ?? null);
   }
   if (sets.length === 0) return;
 

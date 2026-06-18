@@ -48,6 +48,7 @@ const MOCK_TOP_PROJECT = {
 
 const CONTROL_STATE: DashboardState = {
   todaySpending: 5000,
+  spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: MOCK_BUDGET,
   funds: MOCK_FUNDS,
@@ -56,6 +57,7 @@ const CONTROL_STATE: DashboardState = {
 
 const LEARNING_STATE: DashboardState = {
   todaySpending: 5000,
+  spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
   budget: null,
   funds: null,

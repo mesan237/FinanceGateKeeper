@@ -6,7 +6,8 @@ import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
 
 import { useCategories } from './expenses.hooks';
 import type { Category } from './expenses.types';
@@ -218,20 +219,20 @@ const styles = StyleSheet.create({
   content: { padding: 16, gap: 12 },
   group: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: BORDER,
     paddingTop: 8,
   },
   row: { paddingVertical: 4 },
   subRow: { paddingLeft: 16 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   grow: { flex: 1 },
-  action: { color: PRIMARY_GREEN, fontWeight: '600' },
-  danger: { color: DANGER, fontWeight: '600' },
+  action: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  danger: { color: DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   hidden: { color: TEXT_MUTED, fontStyle: 'italic' },
   optionList: { maxHeight: 240, marginVertical: 8 },
   optionRow: {
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: BORDER,
   },
 });

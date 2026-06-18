@@ -1,15 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, SectionList, StyleSheet, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
-import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
+import { BACKGROUND, PRIMARY_GREEN, TEXT_DISABLED, TEXT_MUTED } from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { ICON_SIZE } from '@/constants/icons';
 import type { TransactionEntry } from '@/types/transactions';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { currentMonthISO, formatSectionDate } from '@/utils/formatDate';
 
+import { CategoryChips } from './CategoryChips';
+import { TransactionRow } from './TransactionRow';
 import { useCategories, useTransactions } from './expenses.hooks';
 
 interface Section {
@@ -29,72 +32,48 @@ function buildSections(entries: TransactionEntry[]): Section[] {
   const sortedDates = Array.from(byDate.keys()).sort((a, b) => (a > b ? -1 : 1));
   return sortedDates.map((date) => {
     const rows = byDate.get(date)!;
+    // Transfers move money between wallets without entering or leaving the
+    // budget, so they do not affect a day's net total. Positive = net spend.
     const netTotal = rows.reduce((acc, e) => {
-      return e.type === 'expense' ? acc + e.amount : acc - e.amount;
+      if (e.type === 'expense') return acc + e.amount;
+      if (e.type === 'income') return acc - e.amount;
+      return acc;
     }, 0);
     return { title: formatSectionDate(date), date, netTotal, data: rows };
   });
 }
 
-interface ChipProps {
-  label: string;
-  active: boolean;
-  onPress: () => void;
+/** Formats a day's net as a signed figure: −spend, +income surplus. */
+function formatNet(netTotal: number): string {
+  if (netTotal > 0) return `−${formatCurrency(netTotal)}`;
+  if (netTotal < 0) return `+${formatCurrency(-netTotal)}`;
+  return formatCurrency(0);
 }
 
-function Chip({ label, active, onPress }: ChipProps) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={[styles.chip, active && styles.chipActive]}
-    >
-      <Typography style={active ? styles.chipTextActive : undefined}>{label}</Typography>
-    </Pressable>
-  );
-}
-
-interface RowIconProps {
-  entry: TransactionEntry;
-}
-
-function RowIcon({ entry }: RowIconProps) {
-  const emoji =
-    entry.type === 'income'
-      ? getTransactionIcon('income', undefined, entry.source)
-      : getTransactionIcon('expense', entry.categoryId);
-
-  if (emoji) {
-    return (
-      <Typography testID={`tx-icon-${entry.type}-${entry.id}`} style={styles.rowEmoji}>
-        {emoji}
-      </Typography>
-    );
-  }
-
-  const label = entry.type === 'expense' ? entry.categoryLabel : entry.sourceLabel;
-  const avatar = getCategoryAvatar(label);
-  return (
-    <View
-      testID={`tx-avatar-${entry.type}-${entry.id}`}
-      style={[styles.avatar, { backgroundColor: avatar.color }]}
-    >
-      <Typography style={styles.avatarLetter}>{avatar.letter}</Typography>
-    </View>
-  );
+export interface TransactionListProps {
+  /**
+   * Bump this to force a re-fetch without navigating — e.g. after an expense is
+   * logged from the in-page `AddTransactionSheet`, which never leaves the tab.
+   */
+  reloadToken?: number;
 }
 
 /**
  * Unified income+expense feed grouped by calendar day, with month navigation.
  * The category chip row filters only expense rows; income rows always appear.
  */
-export function TransactionList() {
+export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   const router = useRouter();
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const { entries, loading } = useTransactions(monthISO, selectedCategoryId);
+  const { entries, loading, error, refresh } = useTransactions(monthISO, selectedCategoryId);
   const { categories } = useCategories();
+
+  // Re-fetch when the parent bumps the token (skip the initial 0 — the hook
+  // already loads on mount).
+  useEffect(() => {
+    if (reloadToken) void refresh();
+  }, [reloadToken, refresh]);
 
   const sections = useMemo(() => buildSections(entries), [entries]);
   const isCurrentMonth = monthISO === currentMonthISO();
@@ -129,8 +108,9 @@ export function TransactionList() {
           accessibilityRole="button"
           accessibilityLabel="Previous month"
           onPress={prevMonth}
+          hitSlop={12}
         >
-          <Ionicons name="chevron-back" size={22} color={TEXT_MUTED} />
+          <Icon name="back" size={ICON_SIZE.md} color={TEXT_MUTED} />
         </Pressable>
         <Typography variant="subheading">{monthLabel}</Typography>
         <Pressable
@@ -139,38 +119,43 @@ export function TransactionList() {
           accessibilityLabel="Next month"
           accessibilityState={{ disabled: isCurrentMonth }}
           onPress={isCurrentMonth ? undefined : nextMonth}
+          hitSlop={12}
           style={isCurrentMonth ? styles.disabled : undefined}
         >
-          <Ionicons name="chevron-forward" size={22} color={isCurrentMonth ? '#C0C0C0' : TEXT_MUTED} />
+          <Icon
+            name="forward"
+            size={ICON_SIZE.md}
+            color={isCurrentMonth ? TEXT_DISABLED : TEXT_MUTED}
+          />
         </Pressable>
       </View>
 
-      {/* Category chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipsScroll}
-        contentContainerStyle={styles.chips}
-      >
-        <Chip label="All" active={selectedCategoryId === null} onPress={() => setSelectedCategoryId(null)} />
-        {categories.map((cat) => (
-          <Chip
-            key={cat.id}
-            label={cat.name}
-            active={selectedCategoryId === cat.id}
-            onPress={() => setSelectedCategoryId(cat.id)}
-          />
-        ))}
-      </ScrollView>
+      <CategoryChips
+        categories={categories}
+        selectedId={selectedCategoryId}
+        onSelect={setSelectedCategoryId}
+      />
 
-      {loading ? null : sections.length === 0 ? (
-        <Typography variant="muted" style={styles.empty}>
-          No transactions in {monthLabel}.
-        </Typography>
-      ) : (
+      {error ? (
+        <View style={styles.errorRow}>
+          <Typography variant="muted" style={styles.errorText}>
+            {error}
+          </Typography>
+          <Pressable testID="feed-retry" accessibilityRole="button" onPress={() => void refresh()}>
+            <Typography style={styles.retryText}>Retry</Typography>
+          </Pressable>
+        </View>
+      ) : null}
+
+      {/* The list stays mounted while a refetch is in flight (it just dims), so
+          month navigation never blanks the screen. The spinner only covers a
+          cold load with nothing cached yet, and the empty message waits for the
+          query to settle instead of flashing first. */}
+      {sections.length > 0 ? (
         <SectionList
           sections={sections}
           keyExtractor={(item) => `${item.type}-${item.id}`}
+          style={loading ? styles.refreshing : undefined}
           contentContainerStyle={styles.listContent}
           renderSectionHeader={({ section }) => (
             <View style={styles.sectionHeader}>
@@ -180,50 +165,25 @@ export function TransactionList() {
                 variant="muted"
                 style={styles.sectionNet}
               >
-                {formatCurrency(Math.abs(section.netTotal))}
+                {formatNet(section.netTotal)}
               </Typography>
             </View>
           )}
-          renderItem={({ item }) => {
-            const label =
-              item.type === 'expense'
-                ? (item.subcategoryLabel ?? item.categoryLabel)
-                : item.sourceLabel;
-            const isIncome = item.type === 'income';
-
-            const rowContent = (
-              <>
-                <RowIcon entry={item} />
-                <Typography style={styles.rowLabel}>{label}</Typography>
-                <Typography style={isIncome ? styles.rowAmountIncome : styles.rowAmountExpense}>
-                  {isIncome ? formatCurrency(item.amount) : `−${formatCurrency(item.amount)}`}
-                </Typography>
-              </>
-            );
-
-            if (isIncome) {
-              return (
-                <View
-                  testID={`tx-row-income-${item.id}`}
-                  style={[styles.row, styles.rowIncomeBorder]}
-                >
-                  {rowContent}
-                </View>
-              );
-            }
-
-            return (
-              <Pressable
-                testID={`tx-row-expense-${item.id}`}
-                onPress={() => router.push(`/expenses/${item.id}`)}
-                style={[styles.row, styles.rowExpenseBorder]}
-              >
-                {rowContent}
-              </Pressable>
-            );
-          }}
+          renderItem={({ item }) => (
+            <TransactionRow
+              item={item}
+              onPressExpense={(id) => router.push(`/expenses/${id}`)}
+              onPressIncome={(id) => router.push(`/income/${id}`)}
+            />
+          )}
         />
-      )}
+      ) : loading ? (
+        <ActivityIndicator testID="feed-loading" color={PRIMARY_GREEN} style={styles.firstLoad} />
+      ) : !error ? (
+        <Typography variant="muted" style={styles.empty}>
+          No transactions in {monthLabel}.
+        </Typography>
+      ) : null}
     </View>
   );
 }
@@ -243,32 +203,8 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
-  chipsScroll: {
-    flexGrow: 0,
-    marginBottom: 8,
-  },
-  chips: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  chip: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: BACKGROUND,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  chipActive: {
-    backgroundColor: PRIMARY_GREEN,
-    borderColor: PRIMARY_GREEN,
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-  },
   listContent: {
-    paddingBottom: 170,
+    paddingBottom: 96,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -278,60 +214,35 @@ const styles = StyleSheet.create({
     backgroundColor: BACKGROUND,
   },
   sectionDate: {
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 12,
     textTransform: 'uppercase',
   },
   sectionNet: {
     fontSize: 12,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
-    borderLeftWidth: 3,
-    paddingLeft: 10,
-  },
-  rowIncomeBorder: {
-    borderLeftColor: SUCCESS,
-  },
-  rowExpenseBorder: {
-    borderLeftColor: TEXT_MUTED,
-  },
-  rowLabel: {
-    flex: 1,
-  },
-  rowAmountIncome: {
-    color: SUCCESS,
-    fontWeight: '600',
-  },
-  rowAmountExpense: {
-    color: DANGER,
-    fontWeight: '600',
-  },
-  rowEmoji: {
-    fontSize: 22,
-    lineHeight: 28,
-    width: 26,
-    textAlign: 'center',
-  },
-  avatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarLetter: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
   empty: {
     marginTop: 24,
     textAlign: 'center',
+  },
+  firstLoad: {
+    marginTop: 32,
+  },
+  refreshing: {
+    opacity: 0.6,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingVertical: 8,
+  },
+  errorText: {
+    flex: 1,
+  },
+  retryText: {
+    color: PRIMARY_GREEN,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

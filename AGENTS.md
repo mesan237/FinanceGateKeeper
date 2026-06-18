@@ -32,4 +32,5 @@ Full table lives in `docs/ARCHITECTURE.md`. The short version:
 - `docs/PRODUCT DOCUMENT.md` — what we're building and why.
 - `docs/ARCHITECTURE.md` — how the code is organized and what rules govern it.
 - `docs/KANBAN.md` — the vertical-slice backlog. ISSUE-00X maps 1:1 to VS-XX.
+- `docs/CLOUD-SYNC.md` — Supabase cloud backup & sync: setup, data model, and the sync engine.
 - `issues/ISSUE-00X/implementation-plan.md` — working spec for the current slice. Read this before writing code.

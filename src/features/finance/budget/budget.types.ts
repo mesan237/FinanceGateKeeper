@@ -21,6 +21,16 @@ export interface Allocation {
 /** What the settings screen edits — id, createdAt, and isLocked are server-managed. */
 export type AllocationDraft = Omit<Allocation, 'id' | 'createdAt' | 'isLocked'>;
 
+/**
+ * Where a held (pending) income amount is sent when the user allocates it from
+ * the unallocated pool (VS-19). `expense` adds nothing extra — flipping the
+ * income to `allocated` is what lets it count toward the expense budget.
+ */
+export type AllocationDestination =
+  | { kind: 'expense' }
+  | { kind: 'fund'; fundType: 'emergency' | 'savings' }
+  | { kind: 'project'; projectId: number };
+
 /** Result of splitting an income amount across the four buckets. Whole FCFA only. */
 export interface AllocationBreakdown {
   emergencyFund: number;

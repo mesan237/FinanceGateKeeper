@@ -116,6 +116,7 @@ export async function depositToFund(
   amount: number,
   reason: string,
   dateISO: string = toISODate(new Date()),
+  accountId: number | null = null,
 ): Promise<DepositResult> {
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new Error('Deposit amount must be a positive integer.');
@@ -128,9 +129,9 @@ export async function depositToFund(
   await execute('BEGIN TRANSACTION');
   try {
     await execute(
-      `INSERT INTO fund_transactions (fund_id, amount, direction, reason, date, created_at)
-       VALUES (?, ?, 'deposit', ?, ?, ?)`,
-      [fund.id, amount, reason, dateISO, new Date().toISOString()],
+      `INSERT INTO fund_transactions (fund_id, amount, direction, reason, date, account_id, created_at)
+       VALUES (?, ?, 'deposit', ?, ?, ?, ?)`,
+      [fund.id, amount, reason, dateISO, accountId, new Date().toISOString()],
     );
     await execute('UPDATE funds SET current_amount = ?, is_target_met = ? WHERE id = ?', [
       newAmount,

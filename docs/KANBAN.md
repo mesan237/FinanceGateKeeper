@@ -509,6 +509,138 @@ Action bar style preference (migration + settings):
 
 ---
 
+### VS-18: Accounts & Payment Channels
+
+**Priority:** High
+**Blocked by:** VS-16, VS-17
+
+**Scope:**
+
+New feature slice — `src/features/finance/accounts/`:
+
+- `accounts.types.ts`: `AccountType = 'cash' | 'mobile_money' | 'bank' | 'card'`. `AccountPurpose = 'spending' | 'saving' | 'emergency' | 'general'`. `Account` (id, name, type, purpose, openingBalance, isDefault, isActive, createdAt). `Transfer` (id, fromAccountId, toAccountId, amount, date, note, createdAt). `AccountStats` (accountId, monthISO, totalIncome, totalExpenses, incomePercent, expensePercent).
+- `accounts.service.ts`: `getAccounts()`, `getAccountById(id)`, `createAccount(fields)`, `updateAccount(id, fields)`, `hideAccount(id)` (soft-delete, is_active = false), `setDefaultAccount(id)` (clears previous default first), `getAccountBalance(id)` — computed, never stored: `opening_balance + SUM(income WHERE account_id) − SUM(expenses WHERE account_id) + SUM(transfers WHERE to_account_id) − SUM(transfers WHERE from_account_id) − SUM(fund_transactions WHERE account_id AND type='deposit') − SUM(project_transactions WHERE account_id AND type='contribution')`. Automated allocation deposits carry no account_id and are excluded. `getAccountStats(id, monthISO)` — income % and expense % of that month's totals across all accounts. `logTransfer(fromId, toId, amount, date, note)`. `getTransfers(monthISO)`.
+- `accounts.hooks.ts`: `useAccounts()`, `useAccountDetail(id)`, `useAccountStats(id, monthISO)`, `useTransferLog()`.
+- `AccountsOverview.tsx`: one card per active account — account name, type icon (Ionicons: cash → `cash-outline`, mobile\_money → `phone-portrait-outline`, bank → `business-outline`, card → `card-outline`), computed balance, purpose badge, this-month income % and expense %. "Add account" button. Tap card → AccountDetail.
+- `AccountDetail.tsx` + `AccountDetailRoute.tsx`: balance hero. Stats row (month income %, expense %). Scrollable transaction history filtered to this account: income credits, expense debits, transfers in/out, manual fund contributions out, manual project contributions out — each entry shows type icon, label, amount, date. Edit button → AccountForm (edit mode).
+- `AccountForm.tsx`: name input (required), type picker with icons, purpose picker, optional opening balance input labelled "Current balance — leave blank to start from 0", set-as-default toggle. Used for both create and edit.
+- `AccountPicker.tsx`: modal listing active accounts with type icon and a default marker ("✓ Default"). Accepts `value: number | null` and `onChange: (id: number) => void`. Used by ExpenseLogScreen, ExpenseDetailScreen, IncomeLogScreen, TransferLogScreen, FundDetail, ProjectDetail.
+- `TransferLogScreen.tsx`: from-account picker (defaults to is\_default account), to-account picker, amount input, date (defaults today), optional note. Validates that from ≠ to. Save calls `logTransfer` and navigates back.
+
+Migrations:
+
+- Migration 018: create `accounts` table. Seed three rows: `{ name: 'Cash', type: 'cash', purpose: 'spending', opening_balance: 0, is_default: 1 }`, `{ name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', opening_balance: 0, is_default: 0 }`, `{ name: 'Orange Money', type: 'mobile_money', purpose: 'general', opening_balance: 0, is_default: 0 }`.
+- Migration 019: add nullable `account_id INTEGER REFERENCES accounts(id)` to `expenses`, `income`, `fund_transactions`, `project_transactions`. Existing rows get NULL (legacy; no account associated).
+- Migration 020: create `transfers` table (id INTEGER PRIMARY KEY, from\_account\_id INTEGER NOT NULL REFERENCES accounts(id), to\_account\_id INTEGER NOT NULL REFERENCES accounts(id), amount INTEGER NOT NULL, date TEXT NOT NULL, note TEXT, created\_at TEXT NOT NULL).
+
+Routes:
+
+- `app/accounts/index.tsx` → thin route, renders `AccountsOverview`.
+- `app/accounts/[id].tsx` → thin route, renders `AccountDetailRoute`.
+- `app/accounts/create.tsx` → thin route, renders `AccountForm` in create mode.
+- `app/transfers/log.tsx` → thin route, renders `TransferLogScreen`.
+
+Updates to existing code:
+
+- `ExpenseLogScreen.tsx` + `ExpenseDetailScreen.tsx`: add optional `AccountPicker` (defaults to is\_default account). Passes selected `accountId` to `createExpense` / `updateExpense`.
+- `IncomeLogScreen.tsx`: add optional `AccountPicker` (defaults to is\_default).
+- `QuickAddScreen.tsx` template form (`QuickAddTemplateForm.tsx`): add account field so each template carries a default account.
+- `FundDetail.tsx`: manual deposit section adds `AccountPicker` labelled "From which account?".
+- `ProjectDetail.tsx`: manual contribution section adds `AccountPicker`.
+- `TransactionsScreen.tsx`: FAB updated — explicit mode: Quick Add (compact) | Transfer (compact) | + Log Expense (primary); speed-dial mode: expands to Log Expense, Quick Add, Log Transfer. Transfer button navigates to `/transfers/log`.
+- `services/transactions.ts` (VS-16): `getTransactionFeed` extended to join and include transfers. `TransactionEntry` union type extended with `TransferEntry` (type: `'transfer'`, fromAccountName, toAccountName, amount, date).
+- `TransactionList.tsx`: transfer rows render with `⇄` icon, "Cash → MTN MoMo" label, amount. Expense and income rows gain a small account name chip (omitted when `account_id` is null — legacy records before VS-18).
+- `DashboardScreen.tsx`: add a compact "Wallets" section below the budget summary — one row per active account showing name and live balance. Tap navigates to `/accounts`.
+- `expenses.service.ts`: `createExpense` + `updateExpense` accept optional `accountId`.
+- `income.service.ts`: `createIncome` accepts optional `accountId`.
+- `funds.service.ts`: manual deposit function accepts optional `accountId`, stored on the `fund_transactions` row.
+- `projects.service.ts`: `contributeManually` accepts optional `accountId`, stored on the `project_transactions` row.
+
+Approved cross-feature edges to add (ARCHITECTURE.md + CLAUDE.md):
+
+- `expenses` → reads from `accounts` (AccountPicker in ExpenseLogScreen and ExpenseDetailScreen)
+- `income` → reads from `accounts` (AccountPicker in IncomeLogScreen)
+- `funds` → reads from `accounts` (AccountPicker in FundDetail manual deposit)
+- `projects` → reads from `accounts` (AccountPicker in ProjectDetail manual contribution)
+- `dashboard` → reads from `accounts` (Wallets summary section)
+
+**TDD Anchor:**
+
+- Test: `accounts.service.ts` — migration seeds Cash, MTN MoMo, Orange Money correctly; `getAccountBalance` correctly sums income credits, expense debits, transfers in/out, manual fund contributions, and manual project contributions while excluding automated allocation deposits (null account\_id rows); `logTransfer` creates the transfer record; `getAccountStats` returns correct income/expense percentages for a month where multiple accounts are active; `setDefaultAccount` clears the previous default before setting the new one; `hideAccount` removes the account from `getAccounts` but does not delete its transaction history.
+- Test: `AccountsOverview` — renders all active accounts with balance and purpose badge; hidden accounts absent; "Add account" navigates to `/accounts/create`; tapping a card navigates to `/accounts/[id]`.
+- Test: `AccountDetail` — renders balance and stats; shows income entries, expense entries, transfers, and fund/project contributions for that account only; edit button navigates to `AccountForm` in edit mode.
+- Test: `AccountForm` — name is required; type and purpose pickers persist; optional balance defaults to 0 when blank; set-as-default toggle calls `setDefaultAccount`; submit in create mode calls `createAccount`, in edit mode calls `updateAccount`.
+- Test: `AccountPicker` — renders active accounts with type icons; default account shows checkmark marker; selecting an account fires `onChange` with its id; hidden accounts not listed.
+- Test: `TransferLogScreen` — from and to account pickers are required; selecting the same account for both shows a validation error; amount must be > 0; save calls `logTransfer` with correct params and navigates back.
+- Test: `TransactionList` — transfer entries render with `⇄` icon and from→to label; expense rows with non-null account\_id show account chip; expense rows with null account\_id (legacy) render without chip.
+- Test: `DashboardScreen` Wallets section — renders one row per active account; balance reflects mock service return; tapping navigates to `/accounts`.
+
+**Done when:** The Dashboard shows a Wallets section with live balances per account. AccountsOverview shows income % and expense % per account for the current month alongside purpose badges. Tapping an account shows its full transaction history. Transfers are logged from the Transactions FAB (explicit and speed-dial modes), appear in the unified feed with a `⇄` icon, and correctly adjust both account balances. Expense, income, manual fund deposit, and project contribution screens have an optional account picker that pre-fills with the default account. Automated allocation deposits do not affect account balances. All tests pass.
+
+---
+
+### VS-19: Deferred Income Allocation (Hold & Unallocated Pool)
+
+**Priority:** High
+**Blocked by:** VS-06, VS-09, VS-10
+
+**Scope:**
+
+Make income opt-in to allocation instead of auto-dispatching. Income is logged as **held** until the user deliberately allocates it, so logging income several times a day no longer inflates the spendable expense budget. Supports manually capping expenses at a share of salary (allocate the salary, hold the extra).
+
+- Migration 022: `ALTER TABLE income ADD COLUMN allocation_status TEXT NOT NULL DEFAULT 'allocated'` (+ index). Legacy rows backfill to `allocated`; the service creates new income as `pending`.
+- `income.types.ts`: `IncomeAllocationStatus = 'allocated' | 'pending'`; `Income.allocationStatus`; optional on `NewIncome` (defaults `pending`).
+- `income.service.ts`: persist/read `allocation_status`; `getPendingIncome()`; `markIncomeAllocated(id)`. `getMonthlyTotal` stays status-agnostic (income history/reports unchanged).
+- `budget.service.ts`: the derived expense budget counts only **allocated** income (`getIncomeMonthlyTotal` filters `allocation_status = 'allocated'`).
+- `budget.types.ts`: `AllocationDestination` (`expense | fund | project`).
+- `budget.hooks.ts`: `useUnallocatedPool()` — loads the pending pool + funds + active projects and exposes `allocate(income, destination)` (deposits to fund/project where applicable, then marks the income allocated; emergency deposit that meets target triggers redistribution once).
+- `AllocationScreen.tsx`: takes `incomeId`; **Confirm** marks the income allocated (alongside the existing deposits + lock); new **Hold for later** button leaves it pending and returns to the dashboard. `IncomeEntryPanel`/`IncomeLogScreen`/`AllocationFromIncomeRoute` thread the new income id through the route.
+- `UnallocatedPoolScreen.tsx` + `UnallocatedPoolRoute.tsx` + `app/budget/unallocated.tsx`: pool total, list of held income, per-entry destination picker (Expense budget / Emergency / Savings / each active project). `BudgetOverview` surfaces an "Unallocated income" row (with amount) linking to it when the pool is non-empty.
+- Sync hardening: `applyCloudRow` omits columns absent from a cloud row, so a row written before this migration restores cleanly (DEFAULT fills `allocation_status`; never null-overwrites on update).
+
+Approved cross-feature edge added (ARCHITECTURE.md + CLAUDE.md): `budget → income` (read held income, mark allocated).
+
+**TDD Anchor:**
+
+- Test: `income.service` — new income defaults `pending`; `getPendingIncome` returns only pending newest-first; `markIncomeAllocated` flips status; `getMonthlyTotal` counts both.
+- Test: `budget.service` — `getMonthlyBudget` excludes pending income; counts only allocated.
+- Test: `useUnallocatedPool` — totals the pool; allocate→fund deposits then marks allocated (emergency target-met redistributes once); allocate→project contributes; allocate→expense marks allocated with no deposit.
+- Test: `AllocationScreen` — Confirm marks the income allocated; Hold leaves it pending and navigates without depositing/locking.
+- Test: `UnallocatedPoolScreen` — pool total + entries; empty state; picking a destination calls `allocate`.
+- Test: migration 022 backfills existing income to `allocated`.
+
+**Done when:** Logging income lands it in the pool unless you Confirm the split. The Budget tab shows held income and a tap-through pool screen where you send each held amount to the expense budget, a fund, or a project. Logging income several times a day no longer raises the spendable budget. All tests pass.
+
+---
+
+### VS-20: Income Detail & Edit
+
+**Priority:** Medium
+**Blocked by:** VS-05, VS-16, VS-19
+
+**Scope:**
+
+Close the feed's last dead end: income rows become tappable and open a detail screen where held income can be corrected or removed before it is allocated. Editing money that has already been dispatched (deposits made, budget counted) stays restricted — reversing fund/project deposits remains out of scope (the VS-17 deferral stands; VS-19's `allocation_status` is what makes this slice tractable).
+
+- `income.service.ts`: `getIncomeById(id)`; `updateIncome(id, patch)` — full edit (amount, source, date, note, accountId) while `allocation_status = 'pending'`; once `allocated`, only metadata (source, note, accountId) may change — amount/date changes are rejected at the service layer; `deleteIncome(id)` — pending rows only, allocated rows are rejected.
+- `income.hooks.ts`: `useIncomeEdit(id)` — loads the row, exposes form state + `canSubmit`/`submit`/`remove`, and surfaces the allocated lock so the UI can disable fields.
+- `IncomeDetailScreen.tsx` + `IncomeDetailRoute.tsx` (VS-17 `ExpenseDetailRoute` param pattern) + thin `app/income/[id].tsx` route.
+- Pending rows: pre-filled form + Delete (confirmation modal) + an "Allocate now" button into the existing `/income/allocate` flow with the row's id and amount.
+- Allocated rows: amount and date render read-only with an explanatory line; source/note/account stay editable.
+- `TransactionRow.tsx`: income rows gain `onPress` → `/income/{id}` (mirrors expense rows).
+- No migration. No new cross-feature edges (routing by path string, not imports).
+
+**TDD Anchor:**
+
+- Test: `income.service` — `getIncomeById` returns the row or null; `updateIncome` edits all fields while pending; rejects amount/date changes once allocated but accepts metadata; `deleteIncome` removes a pending row and rejects an allocated one.
+- Test: `useIncomeEdit` — loads the row, submits a patch, `remove` deletes, exposes the allocated lock.
+- Test: `IncomeDetailScreen` — pending: pre-filled form saves and deletes with confirmation; allocated: amount disabled and Delete hidden; Allocate-now navigates with id + amount.
+- Test: `TransactionList` — tapping an income row pushes `/income/{id}`.
+
+**Done when:** Tapping an income row opens its detail. Held income can be fixed or deleted before allocation, or sent straight into the allocation flow. Allocated income can only have its metadata corrected — its money trail is immutable. All tests pass.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -529,7 +661,8 @@ VS-01 (Scaffold)
 ├── VS-14 (Reports) ◄── VS-03, VS-05, VS-06, VS-09, VS-10, VS-11
 ├── VS-15 (Supabase Sync) ◄── VS-02, VS-03, VS-05, VS-06
 ├── VS-16 (Transaction UX) ◄── VS-03, VS-05, VS-08
-└── VS-17 (Expense Edit & Delete) ◄── VS-16
+│   ├── VS-17 (Expense Edit & Delete) ◄── VS-16
+│   └── VS-18 (Accounts & Payment Channels) ◄── VS-16, VS-17
 ```
 
 ## PARALLEL LANES
@@ -546,7 +679,8 @@ These tasks can run simultaneously if using multiple agents:
 | VS-10  | VS-12  | —      |
 | VS-13  | VS-14  | VS-15  |
 | VS-16  | VS-14  | VS-15  |
-| VS-17  | —      | —      |
+| VS-17  | VS-18  | —      |
+| VS-18  | —      | —      |
 
 ---
 
@@ -571,4 +705,6 @@ These tasks can run simultaneously if using multiple agents:
 | VS-15: Supabase Sync          | ✅ Done | Decoupled email/password cloud identity (SecureStore session, not PIN-linked) → migration 017 adds uuid/updated_at/sync_status + dirty-marking triggers (with `_sync_guard` + `NEW.uuid IS NULL` loop-suppression) + `sync_meta` cursor to 12 financial tables (users excluded; default categories get deterministic uuids) → services/sync.ts local-first push/pull, last-write-wins (local breaks ties), FK uuid↔local-id round-trip via sync.mapping.ts → useCloudSync + useBackgroundSync (on-open/on-foreground, signed-in-guarded, mounted in _layout) → Settings "Cloud backup" section. Supabase fully mocked in tests; supabase/schema.sql (uuid-keyed, owner-scoped RLS; supersedes the old integer-id schema) for manual server setup. code-reviewer APPROVE (no BLOCK). 523/523 tests (1 pre-existing flaky auth CHECK test unrelated to VS-15). |
 | VS-16: Transaction UX Enhancement | ✅ Done | ScreenHeader shared component, Settings gear in tab headers, SectionList date grouping, unified income+expense feed (services/transactions.ts), month-scoped filter with prev/next nav, FAB = Quick Add + Log Expense only (Log Income stays on Dashboard), action bar style preference (explicit/speed-dial) with migration 016 + settings toggle, category icons via Ionicons (constants/categoryIcons.ts) in TransactionList + QuickAddScreen + CategoryPicker. ActionBarStyle lifted to src/types/settings.ts (no cross-feature edge). Blocked by VS-03, VS-05, VS-08. 460/460 tests passing. |
 | VS-17: Expense Edit & Delete  | ✅ Done    | getExpenseById + updateExpense + deleteExpense in service, useExpenseEdit hook, ExpenseDetailScreen (pre-filled form + over-budget check on amount increase + delete with confirmation modal), ExpenseDetailRoute, app/expenses/[id].tsx thin route, tappable expense rows in TransactionList (income rows non-tappable). Blocked by VS-16. |
-
+| VS-18: Accounts & Payment Channels | ✅ Done | accounts feature slice (AccountsOverview, AccountDetail+Route, AccountForm, AccountPicker, TransferLogScreen) + accounts.service/balance/hooks/types/accountIcons; migrations 018 (accounts table + seed Cash/MTN MoMo/Orange Money), 019 (account_id nullable on expenses/income/fund_transactions/project_transactions), 020 (transfers table), 021 (sync wiring: accounts/transfers join SYNCED_TABLES + account_id FK mapping in sync.mapping + recreated child update triggers; 017 refactored to export addSyncColumns/createUpdateTrigger/DATA_COLUMNS and skip not-yet-existing tables); getAccountBalance computed from history (opening + income + transfers_in − expenses − transfers_out − manual fund/project deposits; null account_id = automated allocation, excluded); getAccountStats income/expense %; Wallets section on Dashboard (WalletsCard); "Log a transfer" link in the Add-Transaction sheet → /transfers/log; AccountPicker (defaults to is_default) on ExpenseEntryPanel, ExpenseDetailScreen, IncomeEntryPanel, ProjectDetail; transfer (⇄) entries + account chips in unified feed (services/transactions.ts + TransferEntry); cross-feature edges expenses/income/projects/dashboard → accounts (funds → accounts reserved: service-level accountId, manual-deposit UI deferred since fund deposits are allocation-driven). Blocked by VS-16, VS-17. code-reviewer APPROVE WITH NITS (nits addressed: default-set wrapped in txns, redundant ORDER BY dropped, funds edge annotated). 591/592 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
+| VS-19: Deferred Income Allocation | ✅ Done | Income no longer auto-dispatches: migration 022 adds income.allocation_status (DEFAULT 'allocated' backfills legacy; service creates new income 'pending') → income.service getPendingIncome/markIncomeAllocated (getMonthlyTotal stays status-agnostic) → budget.service expense budget counts only allocated income → budget.types AllocationDestination → budget.hooks useUnallocatedPool (loads pool + funds + active projects, allocate() deposits to fund/project then marks allocated, emergency target-met redistributes once) → AllocationScreen takes incomeId, Confirm marks allocated, new "Hold for later" button leaves it pending (incomeId threaded through IncomeEntryPanel/IncomeLogScreen/AllocationFromIncomeRoute) → UnallocatedPoolScreen + Route + app/budget/unallocated.tsx + BudgetOverview "Unallocated income" link. Sync hardened: applyCloudRow omits cloud-absent columns (DEFAULT fills on insert, no null-overwrite on update) so pre-migration cloud rows restore cleanly. Added approved edge budget → income (read held income, mark allocated). Blocked by VS-06, VS-09, VS-10. 663/664 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |
+| VS-20: Income Detail & Edit   | ✅ Done    | Feed's last dead end closed: income rows tappable → IncomeDetailScreen (+Route + app/income/[id].tsx, VS-17 pattern). income.service getIncomeById/updateIncome/deleteIncome with the allocated lock enforced at the service layer — pending rows fully editable & deletable, allocated rows lock amount/date (deposits + budget already counted) and reject deletion, metadata stays editable. useIncomeEdit mirrors useExpenseEdit (no diff machinery). Pending detail offers Allocate-now into the VS-19 flow — persists in-form edits first so deposits never run on unsaved values (code-reviewer BLOCK, fixed + regression-tested) — and confirm-guarded Delete. Plain DELETE, no sync tombstone (VS-17 precedent, documented). No migration; no new cross-feature edges (feed navigates by path string). code-reviewer: APPROVE WITH NITS after BLOCK fix. 695/696 tests (1 pre-existing flaky auth CHECK test, passes in isolation). |

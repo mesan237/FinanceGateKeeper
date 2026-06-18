@@ -24,6 +24,7 @@ import { createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 import { createProject } from '@/features/finance/projects/projects.service';
 import {
+  buildSpendingTrend,
   daysRemainingInMonth,
   getDashboardSnapshot,
   paceIndicator,
@@ -93,6 +94,33 @@ describe('daysRemainingInMonth', () => {
   });
 });
 
+// ---- buildSpendingTrend (pure) ----------------------------------------------
+
+describe('buildSpendingTrend', () => {
+  it('buckets per-day totals for the 7 days ending today, oldest first', () => {
+    const trend = buildSpendingTrend(
+      [
+        { date: '2026-06-08', amount: 5000 },
+        { date: '2026-06-08', amount: 1000 },
+        { date: '2026-06-07', amount: 2000 },
+        { date: '2026-06-02', amount: 700 },
+      ],
+      '2026-06-08',
+    );
+    expect(trend).toEqual([700, 0, 0, 0, 0, 2000, 6000]);
+  });
+
+  it('spans month boundaries correctly', () => {
+    const trend = buildSpendingTrend([{ date: '2026-05-29', amount: 400 }], '2026-06-03');
+    expect(trend).toEqual([0, 400, 0, 0, 0, 0, 0]);
+  });
+
+  it('ignores expenses outside the window', () => {
+    const trend = buildSpendingTrend([{ date: '2026-06-01', amount: 999 }], '2026-06-08');
+    expect(trend).toEqual([0, 0, 0, 0, 0, 0, 0]);
+  });
+});
+
 // ---- getDashboardSnapshot --------------------------------------------------
 
 describe('getDashboardSnapshot', () => {
@@ -138,10 +166,18 @@ describe('getDashboardSnapshot', () => {
 
     const state = await getDashboardSnapshot(MONTH, { includeBudgetData: false }, TODAY);
     expect(state.todaySpending).toBe(5000);
+    // The 7-day trend covers 2026-06-02 → 2026-06-08, oldest first.
+    expect(state.spendingTrend).toEqual([0, 0, 0, 0, 0, 2000, 5000]);
   });
 
   it('populates budget, funds, and topProject when includeBudgetData is true', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     await createExpense({
@@ -174,7 +210,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns yellow pace when >= 75% of expense budget spent with days remaining', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     // 50 000 / 65 000 ≈ 76.9% — above the 75% threshold
@@ -192,7 +234,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns red pace when over budget', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     // 70 000 > 65 000
@@ -210,7 +258,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('returns topProject null when no active projects exist', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
 
@@ -219,7 +273,13 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('selects the lowest priority_rank active project as top project', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({
+      amount: 100000,
+      source: 'salary',
+      note: null,
+      date: TODAY,
+      allocationStatus: 'allocated',
+    });
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
     await createProject({ name: 'Priority One', targetAmount: 100000 });

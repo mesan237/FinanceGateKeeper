@@ -3,7 +3,7 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { TEXT_MUTED } from '@/constants/colors';
+import { TEXT_DISABLED, TEXT_MUTED } from '@/constants/colors';
 
 export interface NavArrowsProps {
   /** Centered label between the arrows (e.g. "June 2026"). */
@@ -28,6 +28,7 @@ export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }:
         accessibilityRole="button"
         accessibilityLabel="Previous period"
         onPress={onPrev}
+        hitSlop={12}
       >
         <Ionicons name="chevron-back" size={22} color={TEXT_MUTED} />
       </Pressable>
@@ -38,9 +39,10 @@ export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }:
         accessibilityLabel="Next period"
         accessibilityState={{ disabled: nextDisabled }}
         onPress={nextDisabled ? undefined : onNext}
+        hitSlop={12}
         style={nextDisabled ? styles.disabled : undefined}
       >
-        <Ionicons name="chevron-forward" size={22} color={nextDisabled ? '#C0C0C0' : TEXT_MUTED} />
+        <Ionicons name="chevron-forward" size={22} color={nextDisabled ? TEXT_DISABLED : TEXT_MUTED} />
       </Pressable>
     </View>
   );

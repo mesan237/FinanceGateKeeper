@@ -5,7 +5,16 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN, SUCCESS, TEXT_MUTED } from '@/constants/colors';
+import {
+  BORDER,
+  DANGER,
+  PRIMARY_GREEN,
+  SUCCESS_TEXT,
+  SURFACE,
+  TEXT_MUTED,
+} from '@/constants/colors';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -145,11 +154,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   row: {
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     padding: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: SURFACE,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: BORDER,
     gap: 8,
   },
   rowHeader: {
@@ -157,10 +166,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: {
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   amount: {
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   rowMeta: {
     flexDirection: 'row',
@@ -169,7 +178,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     textTransform: 'capitalize',
   },
   actions: {
@@ -178,24 +187,24 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   active: {
-    color: SUCCESS,
-    fontWeight: '600',
+    color: SUCCESS_TEXT,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   inactive: {
     color: TEXT_MUTED,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   action: {
     color: PRIMARY_GREEN,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   disabled: {
     color: TEXT_MUTED,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   danger: {
     color: DANGER,
-    fontWeight: '600',
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   confirm: {
     gap: 12,
