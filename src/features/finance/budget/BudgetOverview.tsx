@@ -8,16 +8,8 @@ import { Icon } from '@/components/Icon';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
-import {
-  BORDER,
-  DANGER,
-  PRIMARY_GREEN,
-  SUCCESS,
-  TEXT_MUTED,
-  WARNING,
-  WARNING_LIGHT,
-  WARNING_TEXT,
-} from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import type { IconName } from '@/constants/icons';
 import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -47,6 +39,7 @@ const BUCKET_ICONS: Record<Bucket, IconName> = {
  * regardless of state. Lock status surfaces as an inline pill.
  */
 export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewProps) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { budget, loading, error } = useBudgetStatus(monthISO);
   const { total: heldTotal } = useUnallocatedPool();
@@ -92,10 +85,12 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
 /** Remaining-budget hero with a spent-vs-allocated progress bar and lock pill. */
 function HeroCard({ budget }: { budget: MonthlyBudget }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const expenseBudget = budget.breakdown.expenses;
   const spentPct = expenseBudget > 0 ? Math.round((budget.expensesLogged / expenseBudget) * 100) : 0;
   const isOver = budget.expensesRemaining < 0;
-  const barColor = isOver ? DANGER : spentPct >= 80 ? WARNING : SUCCESS;
+  const barColor = isOver ? c.DANGER : spentPct >= 80 ? c.WARNING : c.SUCCESS;
 
   return (
     <Card>
@@ -162,25 +157,27 @@ interface BucketRowProps {
 }
 
 function BucketRow({ bucket, amount, income, first }: BucketRowProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const sharePct = income > 0 ? Math.round((amount / income) * 100) : 0;
 
   return (
     <View testID={`bucket-row-${bucket}`} style={[styles.row, first && styles.rowFirst]}>
       <View style={styles.rowIcon}>
-        <Icon name={BUCKET_ICONS[bucket]} size={18} color={TEXT_MUTED} />
+        <Icon name={BUCKET_ICONS[bucket]} size={18} color={c.TEXT_MUTED} />
       </View>
       <View style={styles.rowBody}>
         <View style={styles.rowHeader}>
           <Typography>{BUCKET_LABELS[bucket]}</Typography>
           <Typography variant="subheading">{formatCurrency(amount)}</Typography>
         </View>
-        <ProgressBar value={sharePct} color={PRIMARY_GREEN} style={styles.shareBar} />
+        <ProgressBar value={sharePct} color={c.PRIMARY_GREEN} style={styles.shareBar} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -188,14 +185,14 @@ const styles = StyleSheet.create({
   },
   pill: {
     alignSelf: 'flex-start',
-    backgroundColor: WARNING_LIGHT,
+    backgroundColor: c.WARNING_LIGHT,
     borderRadius: RADIUS.full,
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginBottom: 8,
   },
   pillText: {
-    color: WARNING_TEXT,
+    color: c.WARNING_TEXT,
     fontSize: 12,
   },
   heroBar: {
@@ -203,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   overAmount: {
-    color: DANGER,
+    color: c.DANGER,
   },
   row: {
     flexDirection: 'row',
@@ -212,7 +209,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     marginTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER,
+    borderTopColor: c.BORDER,
   },
   rowFirst: {
     borderTopWidth: 0,
@@ -244,6 +241,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

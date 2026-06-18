@@ -2,8 +2,8 @@ import React from 'react';
 import { Dimensions, View } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 
-import { PRIMARY_GREEN, SURFACE, TEXT_SECONDARY } from '@/constants/colors';
 import { RADIUS } from '@/constants/layout';
+import { useTheme } from '@/theme';
 
 export interface SpendingBarChartProps {
   labels: string[];
@@ -12,22 +12,23 @@ export interface SpendingBarChartProps {
   width?: number;
 }
 
-const chartConfig = {
-  backgroundGradientFrom: SURFACE,
-  backgroundGradientTo: SURFACE,
-  decimalPlaces: 0,
-  color: () => PRIMARY_GREEN,
-  labelColor: () => TEXT_SECONDARY,
-  barPercentage: 0.6,
-};
-
 /**
  * Thin wrapper around `react-native-chart-kit`'s `BarChart`. Renders nothing
  * when there is no spend to show (empty or all-zero values), so callers don't
  * need to guard. Bars use the app's primary green.
  */
 export function SpendingBarChart({ labels, values, width }: SpendingBarChartProps) {
+  const c = useTheme();
   if (values.length === 0 || values.every((v) => v === 0)) return null;
+
+  const chartConfig = {
+    backgroundGradientFrom: c.SURFACE,
+    backgroundGradientTo: c.SURFACE,
+    decimalPlaces: 0,
+    color: () => c.PRIMARY_GREEN,
+    labelColor: () => c.TEXT_SECONDARY,
+    barPercentage: 0.6,
+  };
 
   const chartWidth = width ?? Dimensions.get('window').width - 32;
   return (

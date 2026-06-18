@@ -2,9 +2,9 @@ import React from 'react';
 import { StyleSheet, TextInput as RNTextInput, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, BORDER, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { groupDigits } from '@/utils/groupDigits';
 
 export interface AmountInputProps {
@@ -30,6 +30,8 @@ export function AmountInput({
   autoFocus,
   testID,
 }: AmountInputProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const handleChange = (text: string) => {
     onChangeText(text.replace(/\D/g, ''));
   };
@@ -40,7 +42,7 @@ export function AmountInput({
         value={value ? groupDigits(value) : ''}
         onChangeText={handleChange}
         placeholder="0"
-        placeholderTextColor={TEXT_MUTED}
+        placeholderTextColor={c.TEXT_MUTED}
         keyboardType="numeric"
         accessibilityLabel={accessibilityLabel}
         autoFocus={autoFocus}
@@ -52,29 +54,29 @@ export function AmountInput({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'flex-end',
     gap: 8,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
   input: {
     flex: 1,
     textAlign: 'right',
-    color: TEXT_PRIMARY,
+    color: c.TEXT_PRIMARY,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
     fontSize: 32,
     padding: 0,
   },
   suffix: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 16,
   },

@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
-import { DANGER, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { DEBT_STATUS_LABELS, type DebtDirection } from '@/constants/debt';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
@@ -20,6 +21,7 @@ import type { Debt } from './debt.types';
  * not a bottom tab).
  */
 export function DebtListScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [direction, setDirection] = useState<DebtDirection>('lent');
   const { debts, totals, loading, error } = useDebts(direction);
@@ -64,6 +66,7 @@ interface DebtRowProps {
 }
 
 function DebtRow({ debt, onPress }: DebtRowProps) {
+  const styles = useThemedStyles(makeStyles);
   const settled = debt.status === 'settled';
   return (
     <Pressable testID={`debt-row-${debt.id}`} onPress={onPress}>
@@ -83,7 +86,7 @@ function DebtRow({ debt, onPress }: DebtRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -104,13 +107,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   due: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     marginTop: 4,
   },
   settledCard: {
     opacity: 0.6,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

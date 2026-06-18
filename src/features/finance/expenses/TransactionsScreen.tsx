@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
-import { PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { ICON_SIZE } from '@/constants/icons';
 import { RADIUS, SHADOW } from '@/constants/layout';
 import { hapticTap } from '@/utils/haptics';
@@ -17,6 +18,8 @@ import { TransactionList } from './TransactionList';
  * refreshes in place without navigating away.
  */
 export function TransactionsScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -34,7 +37,7 @@ export function TransactionsScreen() {
           setSheetOpen(true);
         }}
       >
-        <Icon name="add" size={ICON_SIZE.lg} color={TEXT_INVERSE} />
+        <Icon name="add" size={ICON_SIZE.lg} color={c.TEXT_INVERSE} />
       </Pressable>
 
       <AddTransactionSheet
@@ -46,7 +49,7 @@ export function TransactionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -57,7 +60,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: RADIUS.full,
-    backgroundColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOW.floating,

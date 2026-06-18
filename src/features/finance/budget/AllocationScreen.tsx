@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
-import { BORDER, DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { depositToFund } from '@/features/finance/funds/funds.service';
@@ -35,6 +36,7 @@ export interface AllocationScreenProps {
  * Editing the percentages lives in `AllocationSettings`, not here.
  */
 export function AllocationScreen({ amountFCFA, monthISO, incomeId }: AllocationScreenProps) {
+  const styles = useThemedStyles(makeStyles);
   const { allocation, loading, error, lock } = useAllocation(monthISO);
 
   if (!allocation) {
@@ -76,6 +78,7 @@ function AllocationScreenBody({
   onLock,
   error,
 }: AllocationScreenBodyProps) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
   const breakdown = calculateBreakdown(amountFCFA, allocation);
@@ -172,6 +175,7 @@ interface BucketRowProps {
 }
 
 function BucketRow({ bucket, amount }: BucketRowProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View testID={`bucket-row-${bucket}`} style={styles.row}>
       <Typography>{BUCKET_LABELS[bucket]}</Typography>
@@ -180,7 +184,7 @@ function BucketRow({ bucket, amount }: BucketRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -191,12 +195,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
   holdHint: {
     textAlign: 'center',
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

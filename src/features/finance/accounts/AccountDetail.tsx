@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { DANGER, SUCCESS, SUCCESS_TEXT, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import type { IconName } from '@/constants/icons';
 import { currentMonthISO, formatDateShort } from '@/utils/formatDate';
@@ -37,6 +38,8 @@ const KIND_ICON: Record<AccountHistoryKind, IconName> = {
  * contributions). The Edit button opens the form in edit mode.
  */
 export function AccountDetail({ accountId }: AccountDetailProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const { account, balance, history, loading } = useAccountDetail(accountId);
   const { stats } = useAccountStats(accountId, currentMonthISO());
@@ -74,10 +77,11 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
           <Typography variant="muted">No transactions yet.</Typography>
         ) : null}
         {history.map((entry) => {
+
           const credit = CREDIT_KINDS.includes(entry.kind);
           return (
             <View key={`${entry.kind}-${entry.refId}`} style={styles.row}>
-              <Icon name={KIND_ICON[entry.kind]} size={20} color={credit ? SUCCESS : TEXT_MUTED} />
+              <Icon name={KIND_ICON[entry.kind]} size={20} color={credit ? c.SUCCESS : c.TEXT_MUTED} />
               <View style={styles.rowBody}>
                 <Typography>{entry.label}</Typography>
                 <Typography variant="muted">{formatDateShort(entry.date)}</Typography>
@@ -94,15 +98,15 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
   hero: { alignItems: 'center', paddingVertical: 16, gap: 4 },
   statsRow: { flexDirection: 'row', gap: 16, marginTop: 4 },
-  statIn: { color: SUCCESS_TEXT },
-  statOut: { color: DANGER },
+  statIn: { color: c.SUCCESS_TEXT },
+  statOut: { color: c.DANGER },
   list: { padding: 16, gap: 12 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   rowBody: { flex: 1 },
-  amountCredit: { color: SUCCESS_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
-  amountDebit: { color: DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  amountCredit: { color: c.SUCCESS_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  amountDebit: { color: c.DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
 });

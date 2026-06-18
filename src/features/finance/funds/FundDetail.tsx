@@ -7,21 +7,10 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import {
-  BACKGROUND,
-  BORDER,
-  DANGER,
-  PRIMARY_GREEN,
-  PRIMARY_LIGHT,
-  SUCCESS,
-  SUCCESS_TEXT,
-  SURFACE,
-  TEXT_PRIMARY,
-  WARNING,
-} from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { FUND_TYPE_LABELS } from '@/constants/funds';
 import { RADIUS } from '@/constants/layout';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -30,10 +19,10 @@ import { getFundProgress } from './funds.service';
 import type { FundProgress, FundTransaction } from './funds.types';
 
 /** Semantic fill colour for the progress bar, keyed to how close the fund is. */
-function progressColor(pct: number): string {
-  if (pct >= 75) return SUCCESS;
-  if (pct >= 40) return WARNING;
-  return DANGER;
+function progressColor(pct: number, c: ThemeColors): string {
+  if (pct >= 75) return c.SUCCESS;
+  if (pct >= 40) return c.WARNING;
+  return c.DANGER;
 }
 
 export interface FundDetailProps {
@@ -50,6 +39,7 @@ export function FundDetail({ fundId }: FundDetailProps) {
   const { fund, transactions, loading, error, withdraw, setTarget } = useFundDetail(fundId);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [targetOpen, setTargetOpen] = useState(false);
+  const styles = useThemedStyles(makeStyles);
 
   if (!fund) {
     return (
@@ -125,6 +115,8 @@ export function FundDetail({ fundId }: FundDetailProps) {
  * Funds without a target (savings) show the balance and a "no target" note.
  */
 function FundHero({ progress }: { progress: FundProgress }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const hasTarget = progress.target !== null && progress.pct !== null;
   return (
     <View style={styles.hero}>
@@ -141,7 +133,7 @@ function FundHero({ progress }: { progress: FundProgress }) {
         <>
           <ProgressBar
             value={progress.pct as number}
-            color={progressColor(progress.pct as number)}
+            color={progressColor(progress.pct as number, c)}
             style={styles.heroBar}
             testID="fund-detail-progress"
           />
@@ -155,6 +147,8 @@ function FundHero({ progress }: { progress: FundProgress }) {
 }
 
 function TransactionRow({ txn, first }: { txn: FundTransaction; first: boolean }) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const isDeposit = txn.direction === 'deposit';
   const sign = isDeposit ? '+' : '−';
   return (
@@ -165,7 +159,7 @@ function TransactionRow({ txn, first }: { txn: FundTransaction; first: boolean }
         </Typography>
         <Typography variant="muted">{formatDateShort(txn.date)}</Typography>
       </View>
-      <Typography style={[styles.amount, { color: isDeposit ? SUCCESS_TEXT : TEXT_PRIMARY }]}>
+      <Typography style={[styles.amount, { color: isDeposit ? c.SUCCESS_TEXT : c.TEXT_PRIMARY }]}>
         {`${sign}${formatCurrency(txn.amount)}`}
       </Typography>
     </View>
@@ -180,6 +174,7 @@ interface WithdrawModalProps {
 }
 
 function WithdrawModal({ visible, max, onClose, onSubmit }: WithdrawModalProps) {
+  const styles = useThemedStyles(makeStyles);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const parsed = Number(amount);
@@ -228,6 +223,7 @@ interface TargetModalProps {
 }
 
 function TargetModal({ visible, current, canClear, onClose, onSubmit }: TargetModalProps) {
+  const styles = useThemedStyles(makeStyles);
   const [amount, setAmount] = useState(current === null ? '' : String(current));
   const parsed = Number(amount);
   const cleared = amount.trim() === '';
@@ -261,10 +257,10 @@ function TargetModal({ visible, current, canClear, onClose, onSubmit }: TargetMo
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
   },
   content: {
     padding: 16,
@@ -275,10 +271,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   hero: {
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     padding: 20,
     gap: 10,
   },
@@ -288,13 +284,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pctBadge: {
-    backgroundColor: PRIMARY_LIGHT,
+    backgroundColor: c.PRIMARY_LIGHT,
     borderRadius: RADIUS.full,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   pctBadgeText: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontSize: 13,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
@@ -312,10 +308,10 @@ const styles = StyleSheet.create({
     marginBottom: -8,
   },
   historyCard: {
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     paddingHorizontal: 16,
   },
   row: {
@@ -325,7 +321,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER,
+    borderTopColor: c.BORDER,
   },
   rowFirst: {
     borderTopWidth: 0,
@@ -346,6 +342,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

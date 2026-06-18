@@ -4,8 +4,8 @@ import { StyleSheet, View } from 'react-native';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, SUCCESS_TEXT, TEXT_PRIMARY } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import type { Cashflow } from './dashboard.types';
 
@@ -19,7 +19,9 @@ interface CashflowCardProps {
  * surplus or a deficit. Net is coloured green when positive, danger when negative.
  */
 export function CashflowCard({ cashflow }: CashflowCardProps) {
-  const netColor = cashflow.net >= 0 ? SUCCESS_TEXT : DANGER;
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
+  const netColor = cashflow.net >= 0 ? c.SUCCESS_TEXT : c.DANGER;
 
   return (
     <Card testID="cashflow-card">
@@ -48,7 +50,7 @@ export function CashflowCard({ cashflow }: CashflowCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -61,11 +63,11 @@ const styles = StyleSheet.create({
   divider: {
     width: StyleSheet.hairlineWidth,
     alignSelf: 'stretch',
-    backgroundColor: BORDER,
+    backgroundColor: c.BORDER,
     marginHorizontal: 10,
   },
   amount: {
-    color: TEXT_PRIMARY,
+    color: c.TEXT_PRIMARY,
     fontSize: 16,
     fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
   },

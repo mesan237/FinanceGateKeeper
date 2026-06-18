@@ -3,7 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
 import { INCOME_SOURCES, type IncomeSource } from '@/constants/incomeSources';
-import { PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { RADIUS } from '@/constants/layout';
 
 export interface IncomeSourcePickerProps {
@@ -13,13 +14,15 @@ export interface IncomeSourcePickerProps {
 
 /**
  * Visual source selector: one pill per `INCOME_SOURCES` entry, laid out in a
- * row. The selected pill is filled with `PRIMARY_GREEN`; the others are
+ * row. The selected pill is filled with `c.PRIMARY_GREEN`; the others are
  * outlined. Selection state is exposed via `accessibilityState.selected`.
  */
 export function IncomeSourcePicker({ value, onChange }: IncomeSourcePickerProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row}>
       {INCOME_SOURCES.map(({ value: source, label }) => {
+
         const active = value === source;
         return (
           <Pressable
@@ -37,7 +40,7 @@ export function IncomeSourcePicker({ value, onChange }: IncomeSourcePickerProps)
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -48,13 +51,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: PRIMARY_GREEN,
+    borderColor: c.PRIMARY_GREEN,
   },
   pillActive: {
-    backgroundColor: PRIMARY_GREEN,
-    borderColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
+    borderColor: c.PRIMARY_GREEN,
   },
   pillTextActive: {
-    color: TEXT_INVERSE,
+    color: c.TEXT_INVERSE,
   },
 });

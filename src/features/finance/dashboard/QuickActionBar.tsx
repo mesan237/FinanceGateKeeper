@@ -4,17 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import {
-  DANGER_LIGHT,
-  DANGER_TEXT,
-  PRIMARY_GREEN,
-  PRIMARY_LIGHT,
-  SURFACE_MUTED,
-  TEXT_MUTED,
-} from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
+import { useTheme } from '@/theme';
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
 
 interface ActionButtonProps {
@@ -51,6 +44,7 @@ interface QuickActionBarProps {
  */
 export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProps) {
   const router = useRouter();
+  const c = useTheme();
   const showZeroDay = !zeroDay.hasExpenses && !zeroDay.zeroDayConfirmed;
 
   return (
@@ -60,16 +54,16 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         icon="expense"
         label="Log Expense"
         onPress={() => router.push('/expenses/log')}
-        tint={DANGER_LIGHT}
-        iconColor={DANGER_TEXT}
+        tint={c.DANGER_LIGHT}
+        iconColor={c.DANGER_TEXT}
       />
       <ActionButton
         testID="quick-log-income"
         icon="income"
         label="Log Income"
         onPress={() => router.push('/income/log')}
-        tint={PRIMARY_LIGHT}
-        iconColor={PRIMARY_GREEN}
+        tint={c.PRIMARY_LIGHT}
+        iconColor={c.PRIMARY_GREEN}
       />
       {showZeroDay && (
         <ActionButton
@@ -77,8 +71,8 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
           icon="zeroDay"
           label="Zero Day"
           onPress={onConfirmZeroDay}
-          tint={SURFACE_MUTED}
-          iconColor={TEXT_MUTED}
+          tint={c.SURFACE_MUTED}
+          iconColor={c.TEXT_MUTED}
         />
       )}
     </View>

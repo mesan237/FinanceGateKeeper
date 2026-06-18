@@ -11,7 +11,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
-import { DANGER, TEXT_PRIMARY } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE } from '@/constants/icons';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
@@ -33,6 +34,8 @@ export interface IncomeDetailScreenProps {
  * note, account — can still be corrected.
  */
 export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const edit = useIncomeEdit(incomeId);
   const { show } = useToast();
@@ -153,7 +156,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
       {edit.error ? (
         <View style={styles.errorRow}>
-          <Icon name="alert" size={ICON_SIZE.sm} color={DANGER} />
+          <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
           <Typography style={styles.error}>{edit.error}</Typography>
         </View>
       ) : null}
@@ -176,7 +179,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   lockedAmount: {
-    color: TEXT_PRIMARY,
+    color: c.TEXT_PRIMARY,
     fontSize: 28,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
   },
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
   deleteModal: {
     gap: 12,

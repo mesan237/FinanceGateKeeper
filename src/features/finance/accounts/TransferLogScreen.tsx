@@ -7,7 +7,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import { AccountPicker } from './AccountPicker';
 import { useTransferLog } from './accounts.hooks';
@@ -19,6 +20,7 @@ import { useTransferLog } from './accounts.hooks';
  * transfer and returns to the previous screen.
  */
 export function TransferLogScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const transfer = useTransferLog();
   const { show } = useToast();
@@ -90,7 +92,7 @@ export function TransferLogScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
-  error: { color: DANGER },
+  error: { color: c.DANGER },
 });

@@ -3,10 +3,11 @@ import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -30,7 +31,9 @@ export function SettingsScreen() {
     setNotificationsEnabled,
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
+  const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
   const cloud = useCloudSync();
+  const styles = useThemedStyles(makeStyles);
 
   const [reminderInput, setReminderInput] = useState('');
   const [cloudEmail, setCloudEmail] = useState('');
@@ -93,6 +96,21 @@ export function SettingsScreen() {
           testID="settings-mode-toggle"
           label={settings.appMode === 'control' ? 'Switch to Learning mode' : 'Switch to Control mode'}
           onPress={toggleMode}
+        />
+      </View>
+
+      <View style={styles.section}>
+        <Typography variant="subheading">Appearance</Typography>
+        <Typography variant="muted">Choose a light or dark look, or follow your device.</Typography>
+        <SegmentedControl
+          testID="settings-theme-control"
+          value={themeMode}
+          segments={[
+            { key: 'system', label: 'System' },
+            { key: 'light', label: 'Light' },
+            { key: 'dark', label: 'Dark' },
+          ]}
+          onChange={(key) => void setThemeMode(key as ThemeMode)}
         />
       </View>
 
@@ -185,7 +203,7 @@ export function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   scroll: {
     flex: 1,
   },
@@ -203,10 +221,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   suggestion: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

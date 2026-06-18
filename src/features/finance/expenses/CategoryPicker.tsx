@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import { BORDER, PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 
@@ -26,6 +27,7 @@ export interface CategoryPickerProps {
 }
 
 function PickerIcon({ name }: { name: string }) {
+  const styles = useThemedStyles(makeStyles);
   const emoji = getTransactionIcon('expense', name);
   if (emoji) {
     return <Typography style={styles.rowEmojiIcon}>{emoji}</Typography>;
@@ -44,6 +46,7 @@ function PickerIcon({ name }: { name: string }) {
  * alone (no subcategory). Either choice closes the picker.
  */
 export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerProps) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { categories, subcategoriesOf, refresh } = useCategories();
   const [parent, setParent] = useState<Category | null>(null);
@@ -135,7 +138,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   action: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   list: {
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
   rowEmojiIcon: { fontSize: 20, lineHeight: 24, width: 20, textAlign: 'center' },
   rowAvatar: {
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowAvatarLetter: { color: TEXT_INVERSE, fontSize: 10, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  rowAvatarLetter: { color: c.TEXT_INVERSE, fontSize: 10, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   manage: {
     paddingTop: 14,
     alignItems: 'center',

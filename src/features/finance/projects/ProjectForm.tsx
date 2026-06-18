@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import { createProject } from './projects.service';
 
@@ -16,6 +17,7 @@ import { createProject } from './projects.service';
  * existing project lives in `ProjectDetail`; this form is create-only for now.)
  */
 export function ProjectForm() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
@@ -77,13 +79,13 @@ export function ProjectForm() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
     gap: 12,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

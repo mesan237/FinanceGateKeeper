@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { DANGER, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { DEBT_DIRECTION_LABELS, DEBT_STATUS_LABELS } from '@/constants/debt';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong } from '@/utils/formatDate';
@@ -23,6 +24,7 @@ export interface DebtDetailProps {
  * and mutates through `useDebtDetail`.
  */
 export function DebtDetail({ debtId }: DebtDetailProps) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { debt, loading, error, settle, remove } = useDebtDetail(debtId);
 
@@ -74,7 +76,7 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -85,10 +87,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   note: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     marginTop: 8,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

@@ -5,30 +5,23 @@ import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
-import {
-  DANGER,
-  DANGER_LIGHT,
-  DANGER_TEXT,
-  SUCCESS,
-  SUCCESS_LIGHT,
-  SUCCESS_TEXT,
-  TEXT_PRIMARY,
-  WARNING,
-  WARNING_LIGHT,
-  WARNING_TEXT,
-} from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { SpendingSparkline } from './SpendingSparkline';
 import type { BudgetSummary, PaceLevel } from './dashboard.types';
 
-const PACE_CONFIG: Record<PaceLevel, { bg: string; text: string; bar: string; label: string }> = {
-  green:  { bg: SUCCESS_LIGHT,  text: SUCCESS_TEXT,  bar: SUCCESS,  label: 'On Track'    },
-  yellow: { bg: WARNING_LIGHT,  text: WARNING_TEXT,  bar: WARNING,  label: 'Watch Out'   },
-  red:    { bg: DANGER_LIGHT,   text: DANGER_TEXT,   bar: DANGER,   label: 'Over Budget' },
-};
+function paceConfigFor(
+  c: ThemeColors,
+): Record<PaceLevel, { bg: string; text: string; bar: string; label: string }> {
+  return {
+    green:  { bg: c.SUCCESS_LIGHT, text: c.SUCCESS_TEXT, bar: c.SUCCESS, label: 'On Track'    },
+    yellow: { bg: c.WARNING_LIGHT, text: c.WARNING_TEXT, bar: c.WARNING, label: 'Watch Out'   },
+    red:    { bg: c.DANGER_LIGHT,  text: c.DANGER_TEXT,  bar: c.DANGER,  label: 'Over Budget' },
+  };
+}
 
 interface BudgetSummaryCardProps {
   summary: BudgetSummary;
@@ -42,7 +35,8 @@ interface BudgetSummaryCardProps {
  * a 7-day spending sparkline grounding the number in its recent trend.
  */
 export function BudgetSummaryCard({ summary, trend }: BudgetSummaryCardProps) {
-  const pace = PACE_CONFIG[summary.pace];
+  const styles = useThemedStyles(makeStyles);
+  const pace = paceConfigFor(useTheme())[summary.pace];
   const peak = trend ? Math.max(0, ...trend) : 0;
   const hasTrend = peak > 0;
 
@@ -85,9 +79,9 @@ export function BudgetSummaryCard({ summary, trend }: BudgetSummaryCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   amount: {
-    color: TEXT_PRIMARY,
+    color: c.TEXT_PRIMARY,
     fontSize: 34,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
     letterSpacing: -0.5,

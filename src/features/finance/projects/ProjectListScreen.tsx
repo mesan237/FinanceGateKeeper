@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
-import { DANGER, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { PROJECT_STATUS_LABELS } from '@/constants/projects';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong } from '@/utils/formatDate';
@@ -20,6 +21,7 @@ import type { Project, TimelineEstimate } from './projects.types';
  * tapping a row opens its detail.
  */
 export function ProjectListScreen() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { projects, timelines, loading, error } = useProjects();
 
@@ -58,6 +60,7 @@ interface ProjectRowProps {
 }
 
 function ProjectRow({ project, timeline, onPress }: ProjectRowProps) {
+  const styles = useThemedStyles(makeStyles);
   const pct = Math.min(100, Math.round((project.fundedAmount / project.targetAmount) * 100));
   return (
     <Pressable testID={`project-row-${project.id}`} onPress={onPress}>
@@ -82,7 +85,7 @@ function ProjectRow({ project, timeline, onPress }: ProjectRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -96,10 +99,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   eta: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     marginTop: 4,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

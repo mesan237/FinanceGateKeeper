@@ -3,7 +3,8 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { TEXT_DISABLED, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 export interface NavArrowsProps {
   /** Centered label between the arrows (e.g. "June 2026"). */
@@ -21,6 +22,8 @@ export interface NavArrowsProps {
  * reports. Mirrors the month navigator in TransactionList.
  */
 export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }: NavArrowsProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   return (
     <View style={styles.nav}>
       <Pressable
@@ -30,7 +33,7 @@ export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }:
         onPress={onPrev}
         hitSlop={12}
       >
-        <Ionicons name="chevron-back" size={22} color={TEXT_MUTED} />
+        <Ionicons name="chevron-back" size={22} color={c.TEXT_MUTED} />
       </Pressable>
       <Typography variant="subheading">{label}</Typography>
       <Pressable
@@ -42,13 +45,13 @@ export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }:
         hitSlop={12}
         style={nextDisabled ? styles.disabled : undefined}
       >
-        <Ionicons name="chevron-forward" size={22} color={nextDisabled ? TEXT_DISABLED : TEXT_MUTED} />
+        <Ionicons name="chevron-forward" size={22} color={nextDisabled ? c.TEXT_DISABLED : c.TEXT_MUTED} />
       </Pressable>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   nav: {
     flexDirection: 'row',
     alignItems: 'center',

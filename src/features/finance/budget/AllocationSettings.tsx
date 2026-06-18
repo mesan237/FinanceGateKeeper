@@ -6,7 +6,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { BUCKET_LABELS, BUCKET_VALUES, type Bucket } from '@/constants/allocation';
-import { DANGER, TEXT_MUTED, WARNING_TEXT } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { RADIUS } from '@/constants/layout';
 import { currentMonthISO } from '@/utils/formatDate';
 
@@ -32,6 +33,7 @@ const TOTAL_TARGET = 100;
 export function AllocationSettings({
   monthISO = currentMonthISO(),
 }: AllocationSettingsProps) {
+  const styles = useThemedStyles(makeStyles);
   const { allocation, loading, error, save } = useAllocation(monthISO);
 
   if (!allocation) {
@@ -70,6 +72,7 @@ function AllocationSettingsForm({
   onSave,
   error,
 }: AllocationSettingsFormProps) {
+  const styles = useThemedStyles(makeStyles);
   const [pct, setPct] = useState<Record<Bucket, string>>(() => ({
     emergency_fund: String(allocation.emergencyFundPct),
     savings: String(allocation.savingsPct),
@@ -160,6 +163,7 @@ function AllocationSettingsForm({
       </Typography>
 
       {order.map((bucket, index) => {
+
         const upDisabled = isLocked || index === 0;
         const downDisabled = isLocked || index === order.length - 1;
         return (
@@ -200,7 +204,7 @@ function AllocationSettingsForm({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -234,16 +238,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: TEXT_MUTED,
+    borderColor: c.TEXT_MUTED,
     borderRadius: RADIUS.sm,
   },
   arrowDisabled: {
     opacity: 0.3,
   },
   lockedBanner: {
-    color: WARNING_TEXT,
+    color: c.WARNING_TEXT,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

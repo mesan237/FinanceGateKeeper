@@ -5,7 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FUND_TYPE_LABELS } from '@/constants/funds';
 
 import { FundProgressBar } from './FundProgressBar';
@@ -18,6 +19,7 @@ import type { Fund, FundProgress } from './funds.types';
  * detail. Loading/error states surface inline.
  */
 export function FundsOverview() {
+  const styles = useThemedStyles(makeStyles);
   const { funds, progress, loading, error } = useFunds();
 
   return (
@@ -60,13 +62,13 @@ function FundCard({ fund, progress }: FundCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
     gap: 12,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

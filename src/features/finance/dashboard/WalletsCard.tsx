@@ -5,8 +5,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { BORDER, PRIMARY_GREEN } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 import { ACCOUNT_TYPE_ICON } from '@/features/finance/accounts/accountIcons';
 import { useAccounts } from '@/features/finance/accounts/accounts.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -21,6 +21,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 export function WalletsCard() {
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
+  const styles = useThemedStyles(makeStyles);
 
   if (loading) return null;
 
@@ -66,14 +67,14 @@ export function WalletsCard() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   list: { marginTop: 8, gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   name: { flex: 1 },
   balance: { fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   emptyCard: {
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     borderStyle: 'dashed',
     backgroundColor: 'transparent',
     shadowOpacity: 0,
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   emptyCta: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

@@ -4,7 +4,8 @@ import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'rea
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, PRIMARY_GREEN, TEXT_DISABLED, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE } from '@/constants/icons';
 import type { TransactionEntry } from '@/types/transactions';
@@ -63,6 +64,8 @@ export interface TransactionListProps {
  * The category chip row filters only expense rows; income rows always appear.
  */
 export function TransactionList({ reloadToken }: TransactionListProps = {}) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
@@ -110,7 +113,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
           onPress={prevMonth}
           hitSlop={12}
         >
-          <Icon name="back" size={ICON_SIZE.md} color={TEXT_MUTED} />
+          <Icon name="back" size={ICON_SIZE.md} color={c.TEXT_MUTED} />
         </Pressable>
         <Typography variant="subheading">{monthLabel}</Typography>
         <Pressable
@@ -125,7 +128,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
           <Icon
             name="forward"
             size={ICON_SIZE.md}
-            color={isCurrentMonth ? TEXT_DISABLED : TEXT_MUTED}
+            color={isCurrentMonth ? c.TEXT_DISABLED : c.TEXT_MUTED}
           />
         </Pressable>
       </View>
@@ -178,7 +181,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
           )}
         />
       ) : loading ? (
-        <ActivityIndicator testID="feed-loading" color={PRIMARY_GREEN} style={styles.firstLoad} />
+        <ActivityIndicator testID="feed-loading" color={c.PRIMARY_GREEN} style={styles.firstLoad} />
       ) : !error ? (
         <Typography variant="muted" style={styles.empty}>
           No transactions in {monthLabel}.
@@ -188,7 +191,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 16,
@@ -211,7 +214,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 6,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
   },
   sectionDate: {
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
@@ -242,7 +245,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   retryText: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

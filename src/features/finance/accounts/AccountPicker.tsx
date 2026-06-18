@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
-import { BORDER, BORDER_STRONG, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 
@@ -34,6 +35,8 @@ export function AccountPicker({
   label,
   testID = 'account-picker',
 }: AccountPickerProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const { accounts } = useAccounts();
   const [open, setOpen] = useState(false);
 
@@ -66,7 +69,7 @@ export function AccountPicker({
         ) : (
           <Typography variant="muted">Select account</Typography>
         )}
-        <Icon name="forward" size={18} color={TEXT_MUTED} />
+        <Icon name="forward" size={18} color={c.TEXT_MUTED} />
       </Pressable>
 
       <Modal visible={open} onRequestClose={() => setOpen(false)}>
@@ -103,14 +106,14 @@ export function AccountPicker({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   label: { marginBottom: 6 },
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: BORDER_STRONG,
+    borderColor: c.BORDER_STRONG,
     borderRadius: RADIUS.sm,
     paddingHorizontal: 12,
     paddingVertical: 12,
@@ -122,7 +125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  action: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  action: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   list: { maxHeight: 320 },
   row: {
     flexDirection: 'row',
@@ -130,8 +133,8 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
   rowName: { flex: 1 },
-  defaultMarker: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
+  defaultMarker: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
 });

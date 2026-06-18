@@ -10,16 +10,9 @@ import {
 
 import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
-import {
-  BACKGROUND,
-  BORDER,
-  DANGER,
-  DANGER_LIGHT,
-  PRIMARY_GREEN,
-  SURFACE,
-} from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -44,6 +37,8 @@ interface DashboardScreenProps {
 export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
   const { state, loading, error, refresh } = useDashboard({ includeBudgetData });
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
 
   useFocusEffect(
     useCallback(() => {
@@ -55,7 +50,7 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={PRIMARY_GREEN} />
+        <ActivityIndicator size="large" color={c.PRIMARY_GREEN} />
         <Typography variant="muted" style={styles.loadingText}>
           Loading…
         </Typography>
@@ -138,10 +133,10 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
   },
   scroll: {
     flex: 1,
@@ -153,7 +148,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
@@ -166,13 +161,13 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   errorCard: {
-    backgroundColor: DANGER_LIGHT,
+    backgroundColor: c.DANGER_LIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   errorText: {
-    color: DANGER,
+    color: c.DANGER,
     flex: 1,
     fontSize: 14,
   },
@@ -180,17 +175,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: RADIUS.sm,
-    backgroundColor: DANGER,
+    backgroundColor: c.DANGER,
     marginLeft: 12,
   },
   retryText: {
-    color: SURFACE,
+    color: c.SURFACE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 13,
   },
   emptyCard: {
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     borderStyle: 'dashed',
     backgroundColor: 'transparent',
     shadowOpacity: 0,
@@ -201,9 +196,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   actionBarWrapper: {
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderTopWidth: 1,
-    borderTopColor: BORDER,
+    borderTopColor: c.BORDER,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 12,

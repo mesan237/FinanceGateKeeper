@@ -7,7 +7,8 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { PROJECT_STATUS_LABELS } from '@/constants/projects';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
@@ -29,6 +30,7 @@ export interface ProjectDetailProps {
  * them; the UI lands in a later polish slice).
  */
 export function ProjectDetail({ projectId }: ProjectDetailProps) {
+  const styles = useThemedStyles(makeStyles);
   const { project, transactions, loading, error, setStatus, contribute } =
     useProjectDetail(projectId);
   const [addOpen, setAddOpen] = useState(false);
@@ -94,6 +96,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
 }
 
 function TransactionRow({ txn }: { txn: ProjectTransaction }) {
+  const styles = useThemedStyles(makeStyles);
   const label =
     txn.source === 'allocation' ? `Allocation ${txn.date.slice(0, 7)}` : 'Manual contribution';
   return (
@@ -114,6 +117,7 @@ interface AddFundsModalProps {
 }
 
 function AddFundsModal({ visible, onClose, onSubmit }: AddFundsModalProps) {
+  const styles = useThemedStyles(makeStyles);
   const defaultAccountId = useDefaultAccountId();
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState<number | null>(null);
@@ -152,7 +156,7 @@ function AddFundsModal({ visible, onClose, onSubmit }: AddFundsModalProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -175,9 +179,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

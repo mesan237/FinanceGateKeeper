@@ -11,9 +11,9 @@ import { StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeOut } from 'react-native-reanimated';
 
 import { Typography } from '@/components/Typography';
-import { SUCCESS, TEXT_INVERSE } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 import { hapticSuccess } from '@/utils/haptics';
 
 const TOAST_MS = 2000;
@@ -45,6 +45,7 @@ export function useToast(): ToastApi {
  */
 export function ToastViewport() {
   const message = useContext(ToastMessageContext);
+  const styles = useThemedStyles(makeStyles);
   if (!message) return null;
 
   return (
@@ -96,19 +97,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   toast: {
     position: 'absolute',
     left: 16,
     right: 16,
     bottom: 24,
-    backgroundColor: SUCCESS,
+    backgroundColor: c.SUCCESS,
     borderRadius: RADIUS.sm,
     padding: 12,
     alignItems: 'center',
   },
   text: {
-    color: TEXT_INVERSE,
+    color: c.TEXT_INVERSE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

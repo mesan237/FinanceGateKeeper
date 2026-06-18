@@ -5,7 +5,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, PRIMARY_GREEN, SUCCESS } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -39,6 +40,8 @@ function fundLabel(type: string): string {
  * the current month. A link navigates to the weekly report.
  */
 export function MonthlyReport() {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const { report, monthISO, loading, error, goToPrevMonth, goToNextMonth, isCurrentMonth } =
     useMonthlyReport();
@@ -80,7 +83,7 @@ export function MonthlyReport() {
             <PerfRow
               label="Remaining"
               value={report.expensePerformance.remaining}
-              color={report.expensePerformance.remaining < 0 ? DANGER : SUCCESS}
+              color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
             />
           </View>
 
@@ -159,6 +162,7 @@ export function MonthlyReport() {
 
 /** A label + right-aligned currency value row used across the report sections. */
 function PerfRow({ label, value, color }: { label: string; value: number; color?: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row}>
       <Typography variant="body">{label}</Typography>
@@ -169,7 +173,7 @@ function PerfRow({ label, value, color }: { label: string; value: number; color?
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { padding: 16, gap: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
   alignEnd: { alignItems: 'flex-end' },
@@ -179,11 +183,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
     paddingVertical: 8,
   },
   progressBlock: { gap: 4, paddingVertical: 4 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between' },
   weeklyLink: { paddingVertical: 12, alignItems: 'center' },
-  weeklyLinkText: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  weeklyLinkText: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
 });

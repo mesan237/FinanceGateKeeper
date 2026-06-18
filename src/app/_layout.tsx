@@ -4,16 +4,21 @@ import {
   WorkSans_500Medium,
   WorkSans_600SemiBold,
 } from '@expo-google-fonts/work-sans';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider as NavThemeProvider,
+} from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ToastProvider } from '@/components/Toast';
-import { BACKGROUND } from '@/constants/colors';
+import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
@@ -61,32 +66,70 @@ export default function RootLayout() {
   // screen at once (react-native's own SafeAreaView is a no-op on Android).
   return (
     <SafeAreaProvider>
-      <AppModeProvider>
-        <RecurringAutoLogger>
-          <DebtReminderScheduler>
-            <DailyReminderScheduler>
-              <ZeroDayGate
-                reminderTime={settings?.reminderTime ?? '21:00'}
-                notificationsEnabled={settings?.notificationsEnabled ?? false}
-              >
-                <SafeAreaView style={styles.safeArea} edges={['top']}>
-                  <StatusBar style="dark" />
-                  <ToastProvider>
-                    <Stack screenOptions={{ headerShown: false }} />
-                  </ToastProvider>
-                </SafeAreaView>
-              </ZeroDayGate>
-            </DailyReminderScheduler>
-          </DebtReminderScheduler>
-        </RecurringAutoLogger>
-      </AppModeProvider>
+      <ThemeProvider>
+        <AppModeProvider>
+          <RecurringAutoLogger>
+            <DebtReminderScheduler>
+              <DailyReminderScheduler>
+                <ZeroDayGate
+                  reminderTime={settings?.reminderTime ?? '21:00'}
+                  notificationsEnabled={settings?.notificationsEnabled ?? false}
+                >
+                  <ThemedShell>
+                    <ToastProvider>
+                      <Stack screenOptions={{ headerShown: false }} />
+                    </ToastProvider>
+                  </ThemedShell>
+                </ZeroDayGate>
+              </DailyReminderScheduler>
+            </DebtReminderScheduler>
+          </RecurringAutoLogger>
+        </AppModeProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+/**
+ * The top safe-area inset + status-bar styling, themed. Lives inside
+ * `ThemeProvider` so the background and status-bar contrast track the active
+ * scheme (light status-bar text on the dark ground, dark text on light).
+ */
+function ThemedShell({ children }: { children: React.ReactNode }) {
+  const colors = useTheme();
+  const { scheme } = useThemeMode();
+
+  // Drives React Navigation's default scene background. Without this, screens
+  // that don't set their own background show the navigator's light default,
+  // leaving light dark-mode text unreadable on it.
+  const navTheme = useMemo(() => {
+    const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.BACKGROUND,
+        card: colors.SURFACE,
+        text: colors.TEXT_PRIMARY,
+        border: colors.BORDER,
+        primary: colors.PRIMARY_GREEN,
+        notification: colors.DANGER,
+      },
+    };
+  }, [scheme, colors]);
+
+  return (
+    <NavThemeProvider value={navTheme}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.BACKGROUND }]} edges={['top']}>
+        <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+        {children}
+      </SafeAreaView>
+    </NavThemeProvider>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: BACKGROUND,
   },
 });

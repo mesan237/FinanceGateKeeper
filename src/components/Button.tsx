@@ -13,15 +13,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {
-  DANGER_LIGHT,
-  DANGER_TEXT,
-  PRIMARY_GREEN,
-  PRIMARY_LIGHT,
-  TEXT_INVERSE,
-} from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useTheme, type ThemeColors } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -44,12 +38,14 @@ interface VariantStyle {
   foreground: string;
 }
 
-const VARIANTS: Record<ButtonVariant, VariantStyle> = {
-  primary: { background: PRIMARY_GREEN, foreground: TEXT_INVERSE },
-  secondary: { background: PRIMARY_LIGHT, foreground: PRIMARY_GREEN },
-  ghost: { background: 'transparent', foreground: PRIMARY_GREEN },
-  danger: { background: DANGER_LIGHT, foreground: DANGER_TEXT },
-};
+function variantsFor(c: ThemeColors): Record<ButtonVariant, VariantStyle> {
+  return {
+    primary: { background: c.PRIMARY_GREEN, foreground: c.TEXT_INVERSE },
+    secondary: { background: c.PRIMARY_LIGHT, foreground: c.PRIMARY_GREEN },
+    ghost: { background: 'transparent', foreground: c.PRIMARY_GREEN },
+    danger: { background: c.DANGER_LIGHT, foreground: c.DANGER_TEXT },
+  };
+}
 
 export function Button({
   label,
@@ -60,7 +56,7 @@ export function Button({
   loading = false,
   ...rest
 }: ButtonProps) {
-  const { background, foreground } = VARIANTS[variant];
+  const { background, foreground } = variantsFor(useTheme())[variant];
   const isDisabled = disabled || loading;
 
   // A shared value drives a subtle scale + dim while the finger is down, so the

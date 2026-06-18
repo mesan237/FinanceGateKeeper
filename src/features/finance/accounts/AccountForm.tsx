@@ -7,7 +7,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import { ACCOUNT_PURPOSE_LABEL, ACCOUNT_TYPE_LABEL } from './accountIcons';
 import { createAccount, getAccountById, updateAccount } from './accounts.service';
@@ -27,6 +28,7 @@ const PURPOSE_SEGMENTS = (
  * purpose, an optional opening balance (blank → 0), and a set-as-default toggle.
  */
 export function AccountForm() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const editId = Number.isInteger(Number(params.id)) && Number(params.id) > 0 ? Number(params.id) : null;
@@ -135,8 +137,8 @@ export function AccountForm() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
   toggle: { paddingVertical: 8 },
-  error: { color: DANGER },
+  error: { color: c.DANGER },
 });

@@ -3,16 +3,17 @@ import { StyleSheet, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
-import { DANGER, SUCCESS, WARNING } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import type { FundProgress } from './funds.types';
 
-function progressColor(pct: number): string {
-  if (pct >= 75) return SUCCESS;
-  if (pct >= 40) return WARNING;
-  return DANGER;
+function progressColor(pct: number, c: ThemeColors): string {
+  if (pct >= 75) return c.SUCCESS;
+  if (pct >= 40) return c.WARNING;
+  return c.DANGER;
 }
 
 export interface FundProgressBarProps {
@@ -27,6 +28,8 @@ export interface FundProgressBarProps {
  * the balance only — no bar, no percentage.
  */
 export function FundProgressBar({ progress, testID }: FundProgressBarProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   if (progress.target === null || progress.pct === null) {
     return (
       <View style={styles.container}>
@@ -43,12 +46,12 @@ export function FundProgressBar({ progress, testID }: FundProgressBarProps) {
         </Typography>
         <Typography variant="muted" style={styles.pct}>{`${progress.pct}%`}</Typography>
       </View>
-      <ProgressBar value={progress.pct} color={progressColor(progress.pct)} testID={testID} />
+      <ProgressBar value={progress.pct} color={progressColor(progress.pct, c)} testID={testID} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: 6,
   },

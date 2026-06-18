@@ -4,9 +4,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE } from '@/constants/icons';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -22,6 +22,8 @@ export interface ScreenHeaderProps {
  */
 export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderProps) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
 
   return (
     <View style={styles.container}>
@@ -36,7 +38,7 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
         {cancelLabel ? (
           <Typography style={styles.cancelLabel}>{cancelLabel}</Typography>
         ) : (
-          <Icon name="back" size={ICON_SIZE.lg} color={TEXT_PRIMARY} />
+          <Icon name="back" size={ICON_SIZE.lg} color={c.TEXT_PRIMARY} />
         )}
       </Pressable>
 
@@ -51,7 +53,7 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -72,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   cancelLabel: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

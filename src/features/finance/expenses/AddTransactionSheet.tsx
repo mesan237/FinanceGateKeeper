@@ -6,7 +6,8 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Icon } from '@/components/Icon';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { Typography } from '@/components/Typography';
-import { PRIMARY_GREEN } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { IncomeEntryPanel } from '@/features/finance/income/IncomeEntryPanel';
 
@@ -35,6 +36,8 @@ export interface AddTransactionSheetProps {
  * log closes the sheet and continues to the allocation flow.
  */
 export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTransactionSheetProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>('expense');
 
@@ -88,14 +91,14 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
           router.push('/transfers/log');
         }}
       >
-        <Icon name="transfer" size={18} color={PRIMARY_GREEN} />
+        <Icon name="transfer" size={18} color={c.PRIMARY_GREEN} />
         <Typography style={styles.transferText}>Log a transfer between accounts</Typography>
       </Pressable>
     </BottomSheet>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     textAlign: 'center',
     marginBottom: 12,
@@ -112,7 +115,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   transferText: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

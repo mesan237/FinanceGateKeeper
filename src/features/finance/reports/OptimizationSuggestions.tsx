@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BORDER, WARNING } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import type { OptimizationSuggestion } from './reports.types';
 
@@ -15,6 +16,7 @@ export interface OptimizationSuggestionsProps {
  * is a single line of advice; an empty list shows a reassuring muted message.
  */
 export function OptimizationSuggestions({ suggestions }: OptimizationSuggestionsProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.container}>
       <Typography variant="subheading">Suggestions</Typography>
@@ -31,15 +33,15 @@ export function OptimizationSuggestions({ suggestions }: OptimizationSuggestions
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: 8,
   },
   item: {
     borderLeftWidth: 3,
-    borderLeftColor: WARNING,
+    borderLeftColor: c.WARNING,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
     paddingLeft: 12,
     paddingVertical: 8,
   },

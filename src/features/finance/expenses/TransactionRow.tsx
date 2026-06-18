@@ -4,7 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import { BORDER, DANGER, SUCCESS_TEXT, SURFACE_MUTED, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import type { ExpenseEntry, IncomeEntry, TransactionEntry } from '@/types/transactions';
@@ -25,6 +26,7 @@ interface RowIconProps {
  * regardless of which icon kind it gets.
  */
 function RowIcon({ entry }: RowIconProps) {
+  const styles = useThemedStyles(makeStyles);
   const label = entry.type === 'expense' ? entry.categoryLabel : entry.sourceLabel;
   const avatar = getCategoryAvatar(label);
   const emoji =
@@ -64,11 +66,13 @@ export interface TransactionRowProps {
  * amount — +green income, −red expense, muted transfers.
  */
 export function TransactionRow({ item, onPressExpense, onPressIncome }: TransactionRowProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   if (item.type === 'transfer') {
     return (
       <View testID={`tx-row-transfer-${item.id}`} style={styles.row}>
         <View style={[styles.iconBox, styles.iconBoxTransfer]}>
-          <Icon name="transfer" size={18} color={TEXT_MUTED} />
+          <Icon name="transfer" size={18} color={c.TEXT_MUTED} />
         </View>
         <Typography style={styles.label}>
           {item.fromAccountName} → {item.toAccountName}
@@ -126,14 +130,14 @@ export function TransactionRow({ item, onPressExpense, onPressIncome }: Transact
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
   iconBox: {
     width: ICON_BOX,
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconBoxTransfer: {
-    backgroundColor: SURFACE_MUTED,
+    backgroundColor: c.SURFACE_MUTED,
   },
   iconEmoji: {
     fontSize: 18,
@@ -161,15 +165,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   amountIncome: {
-    color: SUCCESS_TEXT,
+    color: c.SUCCESS_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   amountExpense: {
-    color: DANGER,
+    color: c.DANGER,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   amountTransfer: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

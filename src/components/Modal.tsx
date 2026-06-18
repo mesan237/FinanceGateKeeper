@@ -6,8 +6,8 @@ import {
   type ModalProps as RNModalProps,
 } from 'react-native';
 
-import { SURFACE } from '@/constants/colors';
 import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface ModalProps extends RNModalProps {
   children: React.ReactNode;
@@ -19,6 +19,7 @@ export function Modal({
   animationType = 'fade',
   ...rest
 }: ModalProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <RNModal transparent={transparent} animationType={animationType} {...rest}>
       <View style={styles.backdrop}>
@@ -28,7 +29,7 @@ export function Modal({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   content: {
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderRadius: RADIUS.md,
     padding: 16,
     width: '100%',

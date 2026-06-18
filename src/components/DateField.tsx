@@ -6,9 +6,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, BORDER, PRIMARY_GREEN, TEXT_PRIMARY } from '@/constants/colors';
 import { RADIUS } from '@/constants/layout';
 import { ICON_SIZE } from '@/constants/icons';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatSectionDate } from '@/utils/formatDate';
 
 export interface DateFieldProps {
@@ -29,6 +29,8 @@ export interface DateFieldProps {
  */
 export function DateField({ value, onChange, accessibilityLabel, testID }: DateFieldProps) {
   const [open, setOpen] = useState(false);
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   // `value` can be empty while an edited record is still loading; fall back to a
   // neutral label and today's date for the picker until a real date arrives.
   const isISO = /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -58,7 +60,7 @@ export function DateField({ value, onChange, accessibilityLabel, testID }: DateF
         onPress={() => setOpen(true)}
         style={styles.pill}
       >
-        <Icon name="calendar" size={ICON_SIZE.sm} color={PRIMARY_GREEN} />
+        <Icon name="calendar" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} />
         <Typography style={styles.label}>{label}</Typography>
       </Pressable>
 
@@ -74,20 +76,20 @@ export function DateField({ value, onChange, accessibilityLabel, testID }: DateF
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     alignSelf: 'flex-start',
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
     borderRadius: RADIUS.full,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
   label: {
-    color: TEXT_PRIMARY,
+    color: c.TEXT_PRIMARY,
   },
 });

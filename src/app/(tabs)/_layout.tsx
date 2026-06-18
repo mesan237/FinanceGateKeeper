@@ -3,9 +3,9 @@ import React from 'react';
 import { Pressable } from 'react-native';
 
 import { Icon } from '@/components/Icon';
-import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_MUTED, TEXT_PRIMARY } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
+import { useTheme } from '@/theme';
 import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 
 // Lucide ships no outline/filled pair, so the focused tab reads as a heavier
@@ -16,6 +16,7 @@ function tabIcon(name: IconName, focused: boolean, color: string) {
 
 function GearIcon() {
   const router = useRouter();
+  const c = useTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -24,7 +25,7 @@ function GearIcon() {
       hitSlop={12}
       style={{ marginRight: 16 }}
     >
-      <Icon name="settings" size={ICON_SIZE.md} color={TEXT_PRIMARY} />
+      <Icon name="settings" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
     </Pressable>
   );
 }
@@ -32,25 +33,28 @@ function GearIcon() {
 export default function TabsLayout() {
   const appMode = useAppMode();
   const showBudget = appMode === 'control';
+  const c = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
         headerRight: () => <GearIcon />,
-        headerStyle: { backgroundColor: SURFACE },
+        headerStyle: { backgroundColor: c.SURFACE },
+        headerTintColor: c.TEXT_PRIMARY,
         // Match the app's heading face — the native default is the system
         // font, which visibly clashes with Poppins everywhere else.
         headerTitleStyle: {
           fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
           fontSize: 17,
+          color: c.TEXT_PRIMARY,
         },
         headerShadowVisible: false,
-        tabBarActiveTintColor: PRIMARY_GREEN,
-        tabBarInactiveTintColor: TEXT_MUTED,
+        tabBarActiveTintColor: c.PRIMARY_GREEN,
+        tabBarInactiveTintColor: c.TEXT_MUTED,
         tabBarStyle: {
-          backgroundColor: SURFACE,
-          borderTopColor: BORDER,
+          backgroundColor: c.SURFACE,
+          borderTopColor: c.BORDER,
           borderTopWidth: 1,
           elevation: 0,
           shadowOpacity: 0,

@@ -6,7 +6,8 @@ import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, PRIMARY_GREEN, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 
 import { useCategories } from './expenses.hooks';
@@ -19,6 +20,7 @@ import type { Category } from './expenses.types';
  * move its expenses so nothing is orphaned.
  */
 export function CategoryManager() {
+  const styles = useThemedStyles(makeStyles);
   const { managedCategories, subcategoriesOf, addCategory, rename, remove, toggleHidden, reorder } =
     useCategories();
 
@@ -214,25 +216,25 @@ export function CategoryManager() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, gap: 12 },
   group: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER,
+    borderTopColor: c.BORDER,
     paddingTop: 8,
   },
   row: { paddingVertical: 4 },
   subRow: { paddingLeft: 16 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   grow: { flex: 1 },
-  action: { color: PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
-  danger: { color: DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
-  hidden: { color: TEXT_MUTED, fontStyle: 'italic' },
+  action: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  danger: { color: c.DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  hidden: { color: c.TEXT_MUTED, fontStyle: 'italic' },
   optionList: { maxHeight: 240, marginVertical: 8 },
   optionRow: {
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
   },
 });

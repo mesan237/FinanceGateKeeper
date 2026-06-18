@@ -4,7 +4,8 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
-import { BORDER, PRIMARY_GREEN, SURFACE, TEXT_INVERSE, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
@@ -44,6 +45,7 @@ export interface QuickAddGridProps {
  * `QuickAddScreen` and the unified `AddTransactionSheet`.
  */
 export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps) {
+  const styles = useThemedStyles(makeStyles);
   const { templates, add, update, remove, log } = useQuickAdd();
   const { labelFor } = useCategories();
   const { check } = useOverBudgetCheck();
@@ -74,6 +76,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   const data: GridItem[] = [...templates, ADD_TILE];
 
   const renderTile = (item: GridItem) => {
+
     if ('kind' in item) {
       return (
         <Pressable
@@ -165,7 +168,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     gap: 8,
@@ -190,18 +193,18 @@ const styles = StyleSheet.create({
     minHeight: 88,
     borderRadius: RADIUS.md,
     padding: 12,
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     justifyContent: 'center',
   },
   addTile: {
     alignItems: 'center',
     borderStyle: 'dashed',
-    borderColor: PRIMARY_GREEN,
+    borderColor: c.PRIMARY_GREEN,
   },
   addLabel: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontSize: 32,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
   },
@@ -214,12 +217,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
   },
-  tileAvatarLetter: { color: TEXT_INVERSE, fontSize: 13, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  tileAvatarLetter: { color: c.TEXT_INVERSE, fontSize: 13, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   tileLabel: {
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   tileAmount: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     marginTop: 4,
   },
 });

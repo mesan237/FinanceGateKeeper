@@ -5,7 +5,8 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER, PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { toISODate } from '@/utils/formatDate';
@@ -34,6 +35,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  * locally before delegating to `onSave`.
  */
 export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: RecurringExpenseFormProps) {
+  const styles = useThemedStyles(makeStyles);
   const { labelFor } = useCategories();
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
@@ -164,7 +166,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   form: {
     gap: 12,
   },
@@ -177,21 +179,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: RADIUS.sm,
     borderWidth: 1,
-    borderColor: PRIMARY_GREEN,
+    borderColor: c.PRIMARY_GREEN,
     alignItems: 'center',
   },
   pillActive: {
-    backgroundColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
   },
   pillText: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   pillTextActive: {
-    color: TEXT_INVERSE,
+    color: c.TEXT_INVERSE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

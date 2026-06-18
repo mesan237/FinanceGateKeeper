@@ -12,8 +12,8 @@ import {
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 
 import { ToastViewport } from '@/components/Toast';
-import { BORDER_STRONG, SURFACE } from '@/constants/colors';
 import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** How long the slide-down/fade-out exit plays before the Modal unmounts. */
 const EXIT_DURATION_MS = 200;
@@ -44,6 +44,7 @@ export interface BottomSheetProps {
 export function BottomSheet({ visible, onClose, children, testID }: BottomSheetProps) {
   const { height: windowHeight } = useWindowDimensions();
   const [mounted, setMounted] = useState(visible);
+  const styles = useThemedStyles(makeStyles);
 
   useEffect(() => {
     if (visible) {
@@ -108,7 +109,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   fill: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -124,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderTopLeftRadius: RADIUS.lg,
     borderTopRightRadius: RADIUS.lg,
     paddingHorizontal: 16,
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: BORDER_STRONG,
+    backgroundColor: c.BORDER_STRONG,
     marginBottom: 12,
   },
 });

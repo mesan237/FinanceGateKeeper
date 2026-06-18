@@ -3,7 +3,8 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 
 import { Typography } from '@/components/Typography';
-import { SURFACE, TEXT_SECONDARY } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import type { CategorySpend } from './reports.types';
 
@@ -25,18 +26,19 @@ const PALETTE = [
   '#607D8B',
 ];
 
-const chartConfig = {
-  color: () => TEXT_SECONDARY,
-  backgroundGradientFrom: SURFACE,
-  backgroundGradientTo: SURFACE,
-};
-
 /**
  * Thin wrapper around `react-native-chart-kit`'s `PieChart`. Maps
  * `CategorySpend[]` into the library's data shape, cycling a fixed 8-color
  * palette. Shows a muted "No data" message when there is nothing to plot.
  */
 export function SpendingPieChart({ data, width }: SpendingPieChartProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
+  const chartConfig = {
+    color: () => c.TEXT_SECONDARY,
+    backgroundGradientFrom: c.SURFACE,
+    backgroundGradientTo: c.SURFACE,
+  };
   if (data.length === 0) {
     return (
       <View style={styles.empty}>
@@ -50,7 +52,7 @@ export function SpendingPieChart({ data, width }: SpendingPieChartProps) {
     name: d.categoryLabel,
     population: d.amount,
     color: PALETTE[i % PALETTE.length],
-    legendFontColor: TEXT_SECONDARY,
+    legendFontColor: c.TEXT_SECONDARY,
     legendFontSize: 12,
   }));
 
@@ -69,7 +71,7 @@ export function SpendingPieChart({ data, width }: SpendingPieChartProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   empty: {
     paddingVertical: 24,
     alignItems: 'center',

@@ -10,7 +10,8 @@ import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { ICON_SIZE } from '@/constants/icons';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
@@ -28,6 +29,8 @@ export interface ExpenseDetailScreenProps {
  * category, subcategory, note, and date, or deleting the expense entirely.
  */
 export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const edit = useExpenseEdit(expenseId);
   const { labelFor, loading: categoriesLoading } = useCategories();
@@ -103,7 +106,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
 
       {edit.error ? (
         <View style={styles.errorRow}>
-          <Icon name="alert" size={ICON_SIZE.sm} color={DANGER} />
+          <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
           <Typography style={styles.error}>{edit.error}</Typography>
         </View>
       ) : null}
@@ -153,7 +156,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
   deleteModal: {
     gap: 12,

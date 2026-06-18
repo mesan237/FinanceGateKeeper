@@ -2,7 +2,8 @@ import React from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, BORDER, PRIMARY_GREEN, TEXT_INVERSE } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { RADIUS } from '@/constants/layout';
 
 import type { Category } from './expenses.types';
@@ -14,6 +15,7 @@ interface ChipProps {
 }
 
 function Chip({ label, active, onPress }: ChipProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -36,6 +38,7 @@ export interface CategoryChipsProps {
 
 /** The horizontal category filter row above the transaction feed. */
 export function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <ScrollView
       horizontal
@@ -56,7 +59,7 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   scroll: {
     flexGrow: 0,
     marginBottom: 8,
@@ -70,15 +73,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: RADIUS.full,
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
   },
   chipActive: {
-    backgroundColor: PRIMARY_GREEN,
-    borderColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
+    borderColor: c.PRIMARY_GREEN,
   },
   chipTextActive: {
-    color: TEXT_INVERSE,
+    color: c.TEXT_INVERSE,
   },
 });

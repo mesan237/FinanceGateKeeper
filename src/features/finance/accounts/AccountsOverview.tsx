@@ -7,7 +7,8 @@ import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { PRIMARY_GREEN, SUCCESS_TEXT } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { currentMonthISO } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -16,6 +17,7 @@ import { useAccountStats, useAccounts } from './accounts.hooks';
 import type { Account } from './accounts.types';
 
 function AccountCard({ account, balance }: { account: Account; balance: number }) {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { stats } = useAccountStats(account.id, currentMonthISO());
 
@@ -53,6 +55,7 @@ function AccountCard({ account, balance }: { account: Account; balance: number }
  * opens the create form; tapping a card opens its detail.
  */
 export function AccountsOverview() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
 
@@ -77,13 +80,13 @@ export function AccountsOverview() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
   list: { padding: 16, gap: 12 },
   card: { gap: 8 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardName: { flex: 1 },
-  badge: { color: PRIMARY_GREEN },
+  badge: { color: c.PRIMARY_GREEN },
   statsRow: { flexDirection: 'row', gap: 16 },
-  statIn: { color: SUCCESS_TEXT },
+  statIn: { color: c.SUCCESS_TEXT },
 });

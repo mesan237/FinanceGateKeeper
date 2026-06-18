@@ -13,6 +13,10 @@ jest.mock('@/features/finance/auth/auth.service', () => ({
 jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn(async () => null),
+  setItemAsync: jest.fn(async () => undefined),
+}));
 
 const mockCloud: {
   userEmail: string | null;
@@ -37,6 +41,9 @@ const mockCloud: {
 };
 jest.mock('@/hooks/useCloudSync', () => ({ useCloudSync: () => mockCloud }));
 
+import * as SecureStore from 'expo-secure-store';
+
+import { ThemeProvider } from '@/theme';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
@@ -100,6 +107,25 @@ describe('SettingsScreen', () => {
     renderSettings();
     fireEvent.press(await screen.findByTestId('settings-mode-toggle'));
     await waitFor(() => expect(mockedSetMode).toHaveBeenCalledWith('control'));
+  });
+
+  it('renders the appearance control', async () => {
+    renderSettings();
+    expect(await screen.findByTestId('settings-theme-control')).toBeTruthy();
+  });
+
+  it('persists the chosen theme when a segment is tapped', async () => {
+    render(
+      <ThemeProvider>
+        <AppModeProvider>
+          <SettingsScreen />
+        </AppModeProvider>
+      </ThemeProvider>,
+    );
+    fireEvent.press(await screen.findByTestId('settings-theme-control-dark'));
+    await waitFor(() =>
+      expect(SecureStore.setItemAsync).toHaveBeenCalledWith('theme-mode', 'dark'),
+    );
   });
 
   it('shows the control-mode suggestion only after month 1 in learning mode', async () => {

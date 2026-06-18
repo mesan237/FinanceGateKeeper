@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { BORDER, DANGER, TEXT_MUTED } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { getTransactionIcon } from '@/constants/categoryIcons';
 import { labelForSource } from '@/constants/incomeSources';
 import type { Fund } from '@/features/finance/funds/funds.types';
@@ -32,6 +33,7 @@ const FUND_LABELS: Record<Fund['type'], string> = {
  * month's spendable budget.
  */
 export function UnallocatedPoolScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { pending, total, funds, projects, loading, error, allocate } = useUnallocatedPool();
   const [selected, setSelected] = useState<Income | null>(null);
 
@@ -94,6 +96,7 @@ interface PendingRowProps {
 }
 
 function PendingRow({ income, first, onPress }: PendingRowProps) {
+  const styles = useThemedStyles(makeStyles);
   const icon = getTransactionIcon('income', undefined, income.source);
   return (
     <Pressable
@@ -119,6 +122,7 @@ interface DestinationPickerProps {
 }
 
 function DestinationPicker({ income, funds, projects, onPick }: DestinationPickerProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.picker}>
       <Typography variant="subheading">
@@ -148,7 +152,7 @@ function DestinationPicker({ income, funds, projects, onPick }: DestinationPicke
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -161,7 +165,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
     marginTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: BORDER,
+    borderTopColor: c.BORDER,
   },
   rowFirst: {
     borderTopWidth: 0,
@@ -172,7 +176,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     width: 28,
     textAlign: 'center',
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
   },
   rowBody: {
     flex: 1,
@@ -181,6 +185,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

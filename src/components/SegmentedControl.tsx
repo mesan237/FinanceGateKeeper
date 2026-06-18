@@ -2,9 +2,9 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
-import { BACKGROUND, PRIMARY_GREEN, TEXT_INVERSE, TEXT_MUTED } from '@/constants/colors';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 import { hapticTap } from '@/utils/haptics';
 
 export interface Segment {
@@ -26,6 +26,7 @@ export interface SegmentedControlProps {
  * tab for comfortable touch, exposing its selected state for accessibility.
  */
 export function SegmentedControl({ segments, value, onChange, testID }: SegmentedControlProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.track} testID={testID}>
       {segments.map((segment) => {
@@ -52,10 +53,10 @@ export function SegmentedControl({ segments, value, onChange, testID }: Segmente
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   track: {
     flexDirection: 'row',
-    backgroundColor: BACKGROUND,
+    backgroundColor: c.BACKGROUND,
     borderRadius: RADIUS.md,
     padding: 4,
     gap: 4,
@@ -68,14 +69,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   segmentActive: {
-    backgroundColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
   },
   label: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   labelActive: {
-    color: TEXT_INVERSE,
+    color: c.TEXT_INVERSE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

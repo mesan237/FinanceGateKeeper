@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { BORDER_STRONG, PRIMARY_GREEN } from '@/constants/colors';
 import { RADIUS } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 const BAR_MAX_HEIGHT = 28;
 const BAR_MIN_HEIGHT = 3;
@@ -19,6 +19,7 @@ export interface SpendingSparklineProps {
  * value is zero — an empty chart is noise, not information.
  */
 export function SpendingSparkline({ values, testID }: SpendingSparklineProps) {
+  const styles = useThemedStyles(makeStyles);
   const max = Math.max(0, ...values);
   if (values.length === 0 || max === 0) return null;
 
@@ -40,7 +41,7 @@ export function SpendingSparkline({ values, testID }: SpendingSparklineProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -55,9 +56,9 @@ const styles = StyleSheet.create({
   bar: {
     width: 6,
     borderRadius: RADIUS.full,
-    backgroundColor: BORDER_STRONG,
+    backgroundColor: c.BORDER_STRONG,
   },
   barToday: {
-    backgroundColor: PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_GREEN,
   },
 });

@@ -5,7 +5,8 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 
 import { CategoryPicker } from './CategoryPicker';
 import { useCategories } from './expenses.hooks';
@@ -32,6 +33,7 @@ export function QuickAddTemplateForm({
   onDelete,
   onClose,
 }: QuickAddTemplateFormProps) {
+  const styles = useThemedStyles(makeStyles);
   const { labelFor } = useCategories();
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
@@ -132,11 +134,11 @@ export function QuickAddTemplateForm({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   form: {
     gap: 12,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

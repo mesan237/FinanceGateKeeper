@@ -1,7 +1,7 @@
 import React from 'react';
 
-import { TEXT_PRIMARY } from '@/constants/colors';
 import { ICON_SIZE, ICON_STROKE, ICONS, type IconName } from '@/constants/icons';
+import { useTheme } from '@/theme';
 
 export interface IconProps {
   /** Semantic icon name from the chrome registry in `@/constants/icons`. */
@@ -24,16 +24,17 @@ export interface IconProps {
 export function Icon({
   name,
   size = ICON_SIZE.md,
-  color = TEXT_PRIMARY,
+  color,
   strokeWidth = ICON_STROKE,
   testID,
   accessibilityLabel,
 }: IconProps) {
+  const c = useTheme();
   const Glyph = ICONS[name];
   return (
     <Glyph
       size={size}
-      color={color}
+      color={color ?? c.TEXT_PRIMARY}
       strokeWidth={strokeWidth}
       testID={testID}
       accessibilityLabel={accessibilityLabel}

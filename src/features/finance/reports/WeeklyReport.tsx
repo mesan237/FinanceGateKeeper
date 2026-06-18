@@ -4,7 +4,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import { BORDER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -20,6 +21,7 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
  * "next" is disabled on the current week.
  */
 export function WeeklyReport() {
+  const styles = useThemedStyles(makeStyles);
   const { report, loading, error, goToPrevWeek, goToNextWeek, isCurrentWeek } = useWeeklyReport();
 
   return (
@@ -90,7 +92,7 @@ export function WeeklyReport() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   screen: { flex: 1 },
   content: { padding: 16, gap: 16 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -102,7 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: BORDER,
+    borderBottomColor: c.BORDER,
     paddingVertical: 8,
   },
 });

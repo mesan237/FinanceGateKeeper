@@ -8,7 +8,8 @@ import { Icon } from '@/components/Icon';
 import { TextInput } from '@/components/TextInput';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { ICON_SIZE } from '@/constants/icons';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
@@ -33,6 +34,8 @@ export interface ExpenseEntryPanelProps {
  * `AddTransactionSheet`.
  */
 export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
+  const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const log = useExpenseLog();
   const { check } = useOverBudgetCheck();
   const { show } = useToast();
@@ -101,7 +104,7 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
 
       {log.error ? (
         <View style={styles.errorRow}>
-          <Icon name="alert" size={ICON_SIZE.sm} color={DANGER} />
+          <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
           <Typography style={styles.error}>{log.error}</Typography>
         </View>
       ) : null}
@@ -130,7 +133,7 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: 12,
   },
@@ -140,6 +143,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });

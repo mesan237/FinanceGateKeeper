@@ -5,14 +5,8 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
-import {
-  BORDER,
-  DANGER,
-  PRIMARY_GREEN,
-  SUCCESS_TEXT,
-  SURFACE,
-  TEXT_MUTED,
-} from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -34,6 +28,7 @@ type ModalState =
  * recurring" button opens the create form.
  */
 export function RecurringExpensesScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { recurring, add, update, setActive, skip, remove } = useRecurring();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
   const [deleteTarget, setDeleteTarget] = useState<RecurringExpense | null>(null);
@@ -144,7 +139,7 @@ export function RecurringExpensesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -156,9 +151,9 @@ const styles = StyleSheet.create({
   row: {
     borderRadius: RADIUS.md,
     padding: 12,
-    backgroundColor: SURFACE,
+    backgroundColor: c.SURFACE,
     borderWidth: 1,
-    borderColor: BORDER,
+    borderColor: c.BORDER,
     gap: 8,
   },
   rowHeader: {
@@ -177,7 +172,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     textTransform: 'capitalize',
   },
@@ -187,23 +182,23 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   active: {
-    color: SUCCESS_TEXT,
+    color: c.SUCCESS_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   inactive: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   action: {
-    color: PRIMARY_GREEN,
+    color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   disabled: {
-    color: TEXT_MUTED,
+    color: c.TEXT_MUTED,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   danger: {
-    color: DANGER,
+    color: c.DANGER,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   confirm: {

@@ -6,7 +6,8 @@ import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { DANGER } from '@/constants/colors';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+
 import { DEBT_DIRECTION_LABELS, DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
 
 import { createDebt } from './debt.service';
@@ -17,6 +18,7 @@ import { createDebt } from './debt.service';
  * ledger. (Editing lives in `DebtDetail`; this form is create-only.)
  */
 export function DebtForm() {
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [person, setPerson] = useState('');
   const [amount, setAmount] = useState('');
@@ -70,6 +72,7 @@ export function DebtForm() {
 
       <View style={styles.directionRow}>
         {DEBT_DIRECTION_VALUES.map((value) => {
+
           const active = direction === value;
           const label = active
             ? `● ${DEBT_DIRECTION_LABELS[value]}`
@@ -108,7 +111,7 @@ export function DebtForm() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
@@ -122,6 +125,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   error: {
-    color: DANGER,
+    color: c.DANGER,
   },
 });
