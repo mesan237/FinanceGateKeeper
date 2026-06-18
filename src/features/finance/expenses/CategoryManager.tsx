@@ -13,27 +13,35 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
+import { CategoryFormModal } from './CategoryFormModal';
 import { useCategories } from './expenses.hooks';
 import type { Category } from './expenses.types';
 
+/** Open add-dialog target: a top-level category (`parentId: null`) or a sub. */
+interface AddTarget {
+  parentId: number | null;
+  parentName: string | null;
+}
+
 /**
- * CRUD screen for the category tree. Lists each parent (as a card) with its
- * subcategories and lets the user add, rename, hide/unhide, reorder, and delete.
- * Default categories can only be hidden; deleting a custom category first asks
- * where to move its expenses so nothing is orphaned.
+ * CRUD screen for the category tree. Parents render as collapsible cards; the
+ * common actions (rename, hide/unhide, reorder, delete, add subcategory) reveal
+ * when a card is expanded, keeping each row's name readable. Creating a category
+ * or subcategory opens a focused dialog rather than an inline field. Default
+ * categories can only be hidden; deleting a custom category first asks where to
+ * move its expenses so nothing is orphaned.
  */
 export function CategoryManager() {
   const styles = useThemedStyles(makeStyles);
   const { managedCategories, subcategoriesOf, addCategory, rename, remove, toggleHidden, reorder } =
     useCategories();
 
-  const [newParentName, setNewParentName] = useState('');
-  const [subDrafts, setSubDrafts] = useState<Record<number, string>>({});
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftName, setDraftName] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [addTarget, setAddTarget] = useState<AddTarget | null>(null);
   // Parents are collapsed by default so a long tree stays scannable; the set
-  // holds the ids the user has expanded to reveal subcategories.
+  // holds the ids the user has expanded to reveal subcategories and actions.
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
 
   const toggleExpanded = (id: number) =>
@@ -56,17 +64,8 @@ export function CategoryManager() {
     setEditingId(null);
   };
 
-  const addParent = async () => {
-    if (!newParentName.trim()) return;
-    await addCategory({ name: newParentName, parentId: null });
-    setNewParentName('');
-  };
-
-  const addSub = async (parentId: number) => {
-    const name = subDrafts[parentId] ?? '';
-    if (!name.trim()) return;
-    await addCategory({ name, parentId });
-    setSubDrafts((drafts) => ({ ...drafts, [parentId]: '' }));
+  const submitAdd = async (name: string) => {
+    await addCategory({ name, parentId: addTarget?.parentId ?? null });
   };
 
   const moveParent = async (index: number, direction: -1 | 1) => {
@@ -77,25 +76,30 @@ export function CategoryManager() {
     await reorder(ids);
   };
 
-  const renderRow = (cat: Category, depth: number) => {
+  // The name cell: an inline editor while this row is being renamed, otherwise
+  // the (optionally "hidden"-tagged) label. Capped at two lines so an unusually
+  // long custom name never explodes the row height.
+  const renderName = (cat: Category) =>
+    editingId === cat.id ? (
+      <TextInput
+        value={draftName}
+        onChangeText={setDraftName}
+        accessibilityLabel={`Edit name for ${cat.name}`}
+        testID={`edit-input-${cat.id}`}
+        style={styles.grow}
+      />
+    ) : (
+      <Typography numberOfLines={2} style={[styles.grow, cat.isHidden && styles.hidden]}>
+        {cat.isHidden ? `${cat.name} (hidden)` : cat.name}
+      </Typography>
+    );
+
+  const renderSubRow = (cat: Category) => {
     const editing = editingId === cat.id;
     return (
-      <View key={cat.id} style={[styles.row, depth > 0 && styles.subRow]}>
-        <Avatar cat={cat} depth={depth} />
-        {editing ? (
-          <TextInput
-            value={draftName}
-            onChangeText={setDraftName}
-            accessibilityLabel={`Edit name for ${cat.name}`}
-            testID={`edit-input-${cat.id}`}
-            style={styles.grow}
-          />
-        ) : (
-          <Typography style={[styles.grow, cat.isHidden && styles.hidden]}>
-            {cat.isHidden ? `${cat.name} (hidden)` : cat.name}
-          </Typography>
-        )}
-
+      <View key={cat.id} style={[styles.row, styles.subRow]}>
+        <Avatar cat={cat} depth={1} />
+        {renderName(cat)}
         <View style={styles.actions}>
           {editing ? (
             <IconButton
@@ -149,27 +153,16 @@ export function CategoryManager() {
     >
       <ScreenHeader title="Categories" />
 
-      <View style={styles.addBar}>
-        <TextInput
-          value={newParentName}
-          onChangeText={setNewParentName}
-          placeholder="New category"
-          accessibilityLabel="New category name"
-          testID="new-parent-input"
-          style={styles.grow}
-        />
-        <IconButton
-          icon="add"
-          variant="filled"
-          accessibilityLabel="Add category"
-          testID="add-parent-btn"
-          onPress={addParent}
-        />
-      </View>
+      <Button
+        label="+ New category"
+        testID="add-parent-btn"
+        onPress={() => setAddTarget({ parentId: null, parentName: null })}
+      />
 
       {managedCategories.map((parent, index) => {
         const subs = subcategoriesOf(parent.id, true);
         const isExpanded = expandedIds.has(parent.id);
+        const editing = editingId === parent.id;
         return (
           <Card key={parent.id} style={styles.group}>
             <View style={styles.parentHeader}>
@@ -179,53 +172,85 @@ export function CategoryManager() {
                 testID={`toggle-${parent.id}`}
                 onPress={() => toggleExpanded(parent.id)}
               />
-              <View style={styles.grow}>{renderRow(parent, 0)}</View>
-              {isExpanded ? null : (
+              <Avatar cat={parent} depth={0} />
+              {renderName(parent)}
+              {editing ? (
+                <IconButton
+                  icon="check"
+                  tone="primary"
+                  accessibilityLabel={`Save ${parent.name}`}
+                  testID={`save-${parent.id}`}
+                  onPress={saveEdit}
+                />
+              ) : !isExpanded ? (
                 <Typography variant="muted" style={styles.subCount}>
                   {subs.length}
                 </Typography>
-              )}
-              <IconButton
-                icon="moveUp"
-                accessibilityLabel={`Move ${parent.name} up`}
-                disabled={index === 0}
-                onPress={() => moveParent(index, -1)}
-              />
-              <IconButton
-                icon="moveDown"
-                accessibilityLabel={`Move ${parent.name} down`}
-                disabled={index === managedCategories.length - 1}
-                onPress={() => moveParent(index, 1)}
-              />
+              ) : null}
             </View>
 
             {isExpanded ? (
               <>
-                {subs.map((sub) => renderRow(sub, 1))}
+                {editing ? null : (
+                  <View style={styles.toolbar}>
+                    <IconButton
+                      icon="edit"
+                      accessibilityLabel={`Rename ${parent.name}`}
+                      testID={`rename-${parent.id}`}
+                      onPress={() => startEdit(parent)}
+                    />
+                    <IconButton
+                      icon={parent.isHidden ? 'show' : 'hide'}
+                      accessibilityLabel={`${parent.isHidden ? 'Unhide' : 'Hide'} ${parent.name}`}
+                      testID={`hide-${parent.id}`}
+                      onPress={() => toggleHidden(parent.id, !parent.isHidden)}
+                    />
+                    {parent.isDefault ? null : (
+                      <IconButton
+                        icon="delete"
+                        tone="danger"
+                        accessibilityLabel={`Delete ${parent.name}`}
+                        testID={`delete-${parent.id}`}
+                        onPress={() => setDeleteTarget(parent)}
+                      />
+                    )}
+                    <View style={styles.grow} />
+                    <IconButton
+                      icon="moveUp"
+                      accessibilityLabel={`Move ${parent.name} up`}
+                      disabled={index === 0}
+                      onPress={() => moveParent(index, -1)}
+                    />
+                    <IconButton
+                      icon="moveDown"
+                      accessibilityLabel={`Move ${parent.name} down`}
+                      disabled={index === managedCategories.length - 1}
+                      onPress={() => moveParent(index, 1)}
+                    />
+                  </View>
+                )}
 
-                <View style={[styles.row, styles.subRow, styles.addSubRow]}>
-                  <TextInput
-                    value={subDrafts[parent.id] ?? ''}
-                    onChangeText={(text) =>
-                      setSubDrafts((drafts) => ({ ...drafts, [parent.id]: text }))
-                    }
-                    placeholder="New subcategory"
-                    accessibilityLabel={`New subcategory under ${parent.name}`}
-                    style={styles.grow}
-                  />
-                  <IconButton
-                    icon="add"
-                    variant="filled"
-                    accessibilityLabel={`Add subcategory under ${parent.name}`}
-                    testID={`add-sub-${parent.id}`}
-                    onPress={() => addSub(parent.id)}
-                  />
-                </View>
+                {subs.map(renderSubRow)}
+
+                <Button
+                  label="+ Add subcategory"
+                  variant="secondary"
+                  compact
+                  testID={`add-sub-${parent.id}`}
+                  onPress={() => setAddTarget({ parentId: parent.id, parentName: parent.name })}
+                />
               </>
             ) : null}
           </Card>
         );
       })}
+
+      <CategoryFormModal
+        visible={addTarget !== null}
+        parentName={addTarget?.parentName ?? null}
+        onSubmit={submitAdd}
+        onClose={() => setAddTarget(null)}
+      />
 
       <Modal visible={deleteTarget !== null} onRequestClose={() => setDeleteTarget(null)}>
         {deleteTarget ? (
@@ -283,9 +308,9 @@ function Avatar({ cat, depth }: { cat: Category; depth: number }) {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, gap: 12, paddingBottom: 40 },
-  addBar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   group: { gap: 4 },
-  parentHeader: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  parentHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  toolbar: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingVertical: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
   subRow: {
     paddingLeft: 12,
@@ -293,7 +318,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: c.BORDER,
   },
-  addSubRow: { paddingTop: 8 },
   grow: { flex: 1 },
   subCount: { minWidth: 18, textAlign: 'center' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 2 },

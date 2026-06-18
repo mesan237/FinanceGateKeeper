@@ -68,7 +68,7 @@ describe('CategoryManager', () => {
     expect(await screen.findByText('Restaurant')).toBeTruthy();
   });
 
-  it('adds a category and shows it after the re-fetch', async () => {
+  it('adds a category through the add dialog and shows it after the re-fetch', async () => {
     mockedGetAll
       .mockResolvedValueOnce(BASE)
       .mockResolvedValueOnce([
@@ -78,13 +78,28 @@ describe('CategoryManager', () => {
     render(<CategoryManager />);
     await screen.findByText('Food');
 
-    fireEvent.changeText(screen.getByTestId('new-parent-input'), 'Investments');
     fireEvent.press(screen.getByTestId('add-parent-btn'));
+    fireEvent.changeText(screen.getByTestId('category-name-input'), 'Investments');
+    fireEvent.press(screen.getByTestId('category-save-btn'));
 
     await waitFor(() =>
       expect(mockedCreate).toHaveBeenCalledWith({ name: 'Investments', parentId: null }),
     );
     expect(await screen.findByText('Investments')).toBeTruthy();
+  });
+
+  it('adds a subcategory under the expanded parent', async () => {
+    render(<CategoryManager />);
+    await screen.findByText('Food');
+
+    fireEvent.press(screen.getByTestId('toggle-1'));
+    fireEvent.press(screen.getByTestId('add-sub-1'));
+    fireEvent.changeText(screen.getByTestId('category-name-input'), 'Coffee');
+    fireEvent.press(screen.getByTestId('category-save-btn'));
+
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith({ name: 'Coffee', parentId: 1 }),
+    );
   });
 
   it('renames a category through the inline editor', async () => {
@@ -99,6 +114,8 @@ describe('CategoryManager', () => {
     render(<CategoryManager />);
     await screen.findByText('Food');
 
+    // Rename lives in the expanded card's action toolbar.
+    fireEvent.press(screen.getByTestId('toggle-1'));
     fireEvent.press(screen.getByTestId('rename-1'));
     fireEvent.changeText(screen.getByTestId('edit-input-1'), 'Nourriture');
     fireEvent.press(screen.getByTestId('save-1'));
@@ -111,7 +128,10 @@ describe('CategoryManager', () => {
     render(<CategoryManager />);
     await screen.findByText('Freelance');
 
-    // Default categories offer no Delete action.
+    fireEvent.press(screen.getByTestId('toggle-4'));
+
+    // Default categories offer no Delete action, even when expanded.
+    fireEvent.press(screen.getByTestId('toggle-1'));
     expect(screen.queryByTestId('delete-1')).toBeNull();
 
     fireEvent.press(screen.getByTestId('delete-4'));
