@@ -25,9 +25,12 @@ import { createIncome } from '@/features/finance/income/income.service';
 import { createProject } from '@/features/finance/projects/projects.service';
 import {
   buildSpendingTrend,
+  dailyBudgetPace,
+  daysInMonth,
   daysRemainingInMonth,
   getDashboardSnapshot,
   paceIndicator,
+  spentPct,
 } from '@/features/finance/dashboard/dashboard.service';
 
 let sqlite: Database.Database;
@@ -94,6 +97,58 @@ describe('daysRemainingInMonth', () => {
   });
 });
 
+// ---- daysInMonth (pure) -----------------------------------------------------
+
+describe('daysInMonth', () => {
+  it('returns 30 for June', () => {
+    expect(daysInMonth('2026-06')).toBe(30);
+  });
+
+  it('returns 31 for January', () => {
+    expect(daysInMonth('2026-01')).toBe(31);
+  });
+
+  it('handles February in a non-leap year', () => {
+    expect(daysInMonth('2026-02')).toBe(28);
+  });
+
+  it('handles February in a leap year', () => {
+    expect(daysInMonth('2024-02')).toBe(29);
+  });
+});
+
+// ---- spentPct (pure) --------------------------------------------------------
+
+describe('spentPct', () => {
+  it('returns the rounded percentage of budget spent', () => {
+    expect(spentPct(50000, 65000)).toBe(77);
+  });
+
+  it('clamps to 100 when over budget', () => {
+    expect(spentPct(70000, 65000)).toBe(100);
+  });
+
+  it('returns 0 when the budget is zero', () => {
+    expect(spentPct(5000, 0)).toBe(0);
+  });
+
+  it('returns 0 when nothing is spent', () => {
+    expect(spentPct(0, 65000)).toBe(0);
+  });
+});
+
+// ---- dailyBudgetPace (pure) -------------------------------------------------
+
+describe('dailyBudgetPace', () => {
+  it('divides the expense budget across the days in the month', () => {
+    expect(dailyBudgetPace(60000, '2026-06')).toBe(2000); // 60 000 / 30
+  });
+
+  it('returns 0 when there is no expense budget', () => {
+    expect(dailyBudgetPace(0, '2026-06')).toBe(0);
+  });
+});
+
 // ---- buildSpendingTrend (pure) ----------------------------------------------
 
 describe('buildSpendingTrend', () => {
@@ -144,6 +199,8 @@ describe('getDashboardSnapshot', () => {
     expect(state.budget).toBeNull();
     expect(state.funds).toBeNull();
     expect(state.topProject).toBeNull();
+    expect(state.cashflow).toBeNull();
+    expect(state.dailyPace).toBeNull();
   });
 
   it("sums only today's expenses, not the whole month's", async () => {
@@ -195,8 +252,16 @@ describe('getDashboardSnapshot', () => {
     // budget — 100 000 × 65% = 65 000 expense allocation
     expect(state.budget).not.toBeNull();
     expect(state.budget!.expenseBudget).toBe(65000);
+    expect(state.budget!.expensesLogged).toBe(5000);
     expect(state.budget!.expensesRemaining).toBe(60000);
+    expect(state.budget!.spentPct).toBe(8); // 5 000 / 65 000 ≈ 7.7% → 8
     expect(state.budget!.pace).toBe('green'); // 5 000 / 65 000 ≈ 7.7%
+
+    // cashflow — income 100 000 in, 5 000 out, net 95 000
+    expect(state.cashflow).toEqual({ income: 100000, expenses: 5000, net: 95000 });
+
+    // dailyPace — 65 000 / 30 days in June
+    expect(state.dailyPace).toBeCloseTo(65000 / 30);
 
     // funds — seeds emergency + savings on first call
     expect(state.funds).not.toBeNull();

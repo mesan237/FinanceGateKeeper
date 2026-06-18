@@ -21,13 +21,14 @@ import {
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
-import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong } from '@/utils/formatDate';
 
 import { BudgetSummaryCard } from './BudgetSummaryCard';
+import { CashflowCard } from './CashflowCard';
 import { FundStatusCard } from './FundStatusCard';
 import { QuickActionBar } from './QuickActionBar';
-import { SpendingSparkline } from './SpendingSparkline';
+import { TodaySpendingCard } from './TodaySpendingCard';
+import { TopProjectCard } from './TopProjectCard';
 import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
@@ -92,53 +93,25 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
           <BudgetSummaryCard summary={state.budget} trend={state.spendingTrend} />
         ) : null}
 
+        {/* Month cashflow — income in vs expenses out (control mode only) */}
+        {state?.cashflow ? <CashflowCard cashflow={state.cashflow} /> : null}
+
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />
 
         {state?.funds ? <FundStatusCard funds={state.funds} /> : null}
 
-        {state?.topProject ? (
-          <Card testID="top-project-card">
-            <Typography variant="label">Top Project</Typography>
-            <Typography variant="subheading" style={styles.projectName}>
-              {state.topProject.project.name}
-            </Typography>
-            <Typography variant="muted">{`${state.topProject.pct}% funded`}</Typography>
-          </Card>
-        ) : null}
+        {state?.topProject ? <TopProjectCard topProject={state.topProject} /> : null}
 
         {/* Today's spending — the hero in learning mode (with the trend),
             a compact supporting row in control mode (the budget hero leads). */}
-        <Card testID="today-spending">
-          {includeBudgetData ? (
-            <View style={styles.todayRow}>
-              <View>
-                <Typography variant="label">Today's Spending</Typography>
-                <Typography variant="muted" style={styles.todayDate}>
-                  {today}
-                </Typography>
-              </View>
-              <Typography variant="subheading">
-                {formatCurrency(state?.todaySpending ?? 0)}
-              </Typography>
-            </View>
-          ) : (
-            <>
-              <Typography variant="label">Spent today</Typography>
-              <Typography style={styles.heroAmount}>
-                {formatCurrency(state?.todaySpending ?? 0)}
-              </Typography>
-              {state?.spendingTrend.some((v) => v > 0) ? (
-                <View style={styles.trend}>
-                  <SpendingSparkline values={state.spendingTrend} testID="spending-sparkline" />
-                  <Typography variant="muted" style={styles.trendCaption}>
-                    Spending · last 7 days
-                  </Typography>
-                </View>
-              ) : null}
-            </>
-          )}
-        </Card>
+        <TodaySpendingCard
+          includeBudgetData={includeBudgetData}
+          todaySpending={state?.todaySpending ?? 0}
+          dailyPace={state?.dailyPace ?? null}
+          spendingTrend={state?.spendingTrend ?? []}
+          today={today}
+        />
 
         {/* Learning-mode empty state */}
         {!includeBudgetData ? (
@@ -214,31 +187,6 @@ const styles = StyleSheet.create({
     color: SURFACE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 13,
-  },
-  todayRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  todayDate: {
-    marginTop: 2,
-  },
-  heroAmount: {
-    fontSize: 34,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
-    letterSpacing: -0.5,
-    marginTop: 4,
-  },
-  trend: {
-    marginTop: 16,
-    gap: 6,
-  },
-  trendCaption: {
-    fontSize: 11,
-  },
-  projectName: {
-    marginTop: 4,
-    marginBottom: 2,
   },
   emptyCard: {
     borderWidth: 1,

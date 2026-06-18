@@ -6,6 +6,7 @@ import { toISODate } from '@/utils/formatDate';
 
 import type {
   BudgetSummary,
+  Cashflow,
   DashboardState,
   FundsSummary,
   PaceLevel,
@@ -74,6 +75,32 @@ export function daysRemainingInMonth(monthISO: string, todayISO: string): number
   return Math.max(0, lastDay - todayDate.getUTCDate());
 }
 
+/** Number of calendar days in `monthISO` (e.g. `'2026-06'` → 30). Pure. */
+export function daysInMonth(monthISO: string): number {
+  const [y, m] = monthISO.split('-').map(Number);
+  // Date.UTC(y, m, 0) is the last day of month `m` (1-indexed) — see daysRemainingInMonth.
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/**
+ * Share of the expense budget already spent, as a whole percentage clamped to
+ * 0–100. Returns 0 when there is no budget (avoids divide-by-zero). Pure.
+ */
+export function spentPct(expensesLogged: number, expenseBudget: number): number {
+  if (expenseBudget <= 0) return 0;
+  return Math.min(100, Math.max(0, Math.round((expensesLogged / expenseBudget) * 100)));
+}
+
+/**
+ * The recommended even daily spend: the month's expense budget spread across
+ * every calendar day of the month. Returns 0 when no budget is set. Pure.
+ */
+export function dailyBudgetPace(expenseBudget: number, monthISO: string): number {
+  const days = daysInMonth(monthISO);
+  if (days <= 0 || expenseBudget <= 0) return 0;
+  return expenseBudget / days;
+}
+
 /**
  * Aggregates the dashboard state for `monthISO`. Always loads today's spending
  * and zero-day status. Loads budget, funds, and project data only when
@@ -97,7 +124,16 @@ export async function getDashboardSnapshot(
   const todaySpending = spendingTrend[spendingTrend.length - 1];
 
   if (!opts.includeBudgetData) {
-    return { todaySpending, spendingTrend, zeroDay, budget: null, funds: null, topProject: null };
+    return {
+      todaySpending,
+      spendingTrend,
+      zeroDay,
+      budget: null,
+      cashflow: null,
+      dailyPace: null,
+      funds: null,
+      topProject: null,
+    };
   }
 
   const [monthlyBudget, allFunds, projects] = await Promise.all([
@@ -110,13 +146,23 @@ export async function getDashboardSnapshot(
 
   const budget: BudgetSummary = {
     expenseBudget: monthlyBudget.breakdown.expenses,
+    expensesLogged: monthlyBudget.expensesLogged,
     expensesRemaining: monthlyBudget.expensesRemaining,
+    spentPct: spentPct(monthlyBudget.expensesLogged, monthlyBudget.breakdown.expenses),
     pace: paceIndicator(
       monthlyBudget.expensesLogged,
       monthlyBudget.breakdown.expenses,
       daysRemaining,
     ),
   };
+
+  const cashflow: Cashflow = {
+    income: monthlyBudget.incomeTotal,
+    expenses: monthlyBudget.expensesLogged,
+    net: monthlyBudget.incomeTotal - monthlyBudget.expensesLogged,
+  };
+
+  const dailyPace = dailyBudgetPace(monthlyBudget.breakdown.expenses, monthISO);
 
   const fundProgressList = allFunds.map(fundsService.getFundProgress);
   const emergencyProgress = fundProgressList.find((f) => f.type === 'emergency');
@@ -134,5 +180,5 @@ export async function getDashboardSnapshot(
       }
     : null;
 
-  return { todaySpending, spendingTrend, zeroDay, budget, funds, topProject };
+  return { todaySpending, spendingTrend, zeroDay, budget, cashflow, dailyPace, funds, topProject };
 }

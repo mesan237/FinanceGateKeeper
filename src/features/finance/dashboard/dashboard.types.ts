@@ -6,8 +6,20 @@ export type PaceLevel = 'green' | 'yellow' | 'red';
 
 export interface BudgetSummary {
   expenseBudget: number;
+  /** Total expenses logged this month (the spent side of the budget). */
+  expensesLogged: number;
   expensesRemaining: number;
+  /** Share of the expense budget already spent, 0–100 (clamped). */
+  spentPct: number;
   pace: PaceLevel;
+}
+
+/** Month-to-date money in vs out. Income is the month's total; expenses the logged total. */
+export interface Cashflow {
+  income: number;
+  expenses: number;
+  /** income − expenses; negative when the month is running at a deficit. */
+  net: number;
 }
 
 export interface FundsSummary {
@@ -28,6 +40,11 @@ export interface DashboardState {
   zeroDay: DayActivityStatus;
   /** null in learning mode or before budget data is available */
   budget: BudgetSummary | null;
+  /** Month-to-date income vs expenses. null in learning mode. */
+  cashflow: Cashflow | null;
+  /** Recommended daily expense spend (expense budget ÷ days in month). null in
+   * learning mode or when no expense budget is set. */
+  dailyPace: number | null;
   /** null in learning mode */
   funds: FundsSummary | null;
   /** null in learning mode or when no active projects exist */

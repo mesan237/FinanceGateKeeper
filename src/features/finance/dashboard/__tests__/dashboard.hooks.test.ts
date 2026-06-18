@@ -19,6 +19,8 @@ const MOCK_STATE: DashboardState = {
   spendingTrend: [0, 0, 0, 0, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: null,
+  cashflow: null,
+  dailyPace: null,
   funds: null,
   topProject: null,
 };

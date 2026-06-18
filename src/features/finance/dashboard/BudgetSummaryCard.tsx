@@ -1,14 +1,19 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
+import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import {
+  DANGER,
   DANGER_LIGHT,
   DANGER_TEXT,
+  SUCCESS,
   SUCCESS_LIGHT,
   SUCCESS_TEXT,
   TEXT_PRIMARY,
+  WARNING,
   WARNING_LIGHT,
   WARNING_TEXT,
 } from '@/constants/colors';
@@ -19,10 +24,10 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { SpendingSparkline } from './SpendingSparkline';
 import type { BudgetSummary, PaceLevel } from './dashboard.types';
 
-const PACE_CONFIG: Record<PaceLevel, { bg: string; text: string; label: string }> = {
-  green:  { bg: SUCCESS_LIGHT,  text: SUCCESS_TEXT,  label: 'On Track'    },
-  yellow: { bg: WARNING_LIGHT,  text: WARNING_TEXT,  label: 'Watch Out'   },
-  red:    { bg: DANGER_LIGHT,   text: DANGER_TEXT,   label: 'Over Budget' },
+const PACE_CONFIG: Record<PaceLevel, { bg: string; text: string; bar: string; label: string }> = {
+  green:  { bg: SUCCESS_LIGHT,  text: SUCCESS_TEXT,  bar: SUCCESS,  label: 'On Track'    },
+  yellow: { bg: WARNING_LIGHT,  text: WARNING_TEXT,  bar: WARNING,  label: 'Watch Out'   },
+  red:    { bg: DANGER_LIGHT,   text: DANGER_TEXT,   bar: DANGER,   label: 'Over Budget' },
 };
 
 interface BudgetSummaryCardProps {
@@ -38,26 +43,41 @@ interface BudgetSummaryCardProps {
  */
 export function BudgetSummaryCard({ summary, trend }: BudgetSummaryCardProps) {
   const pace = PACE_CONFIG[summary.pace];
-  const hasTrend = trend !== undefined && trend.some((v) => v > 0);
+  const peak = trend ? Math.max(0, ...trend) : 0;
+  const hasTrend = peak > 0;
 
   return (
     <Card testID="budget-summary-card">
       <Typography variant="label">Remaining this month</Typography>
-      <Typography style={styles.amount}>{formatCurrency(summary.expensesRemaining)}</Typography>
-      <View
-        testID="budget-pace-chip"
-        style={[styles.chip, { backgroundColor: pace.bg }]}
-      >
-        <Typography style={[styles.chipText, { color: pace.text }]}>
-          {pace.label}
+      <AnimatedCounter value={summary.expensesRemaining} style={styles.amount} />
+
+      {/* Spent-of-budget context: a bar + caption so "remaining" reads against the whole. */}
+      <ProgressBar
+        value={summary.spentPct}
+        color={pace.bar}
+        animated
+        testID="budget-progress"
+        style={styles.bar}
+      />
+      <View style={styles.metaRow}>
+        <Typography variant="muted">
+          {`${formatCurrency(summary.expensesLogged)} of ${formatCurrency(summary.expenseBudget)} spent`}
         </Typography>
+        <View
+          testID="budget-pace-chip"
+          style={[styles.chip, { backgroundColor: pace.bg }]}
+        >
+          <Typography style={[styles.chipText, { color: pace.text }]}>
+            {pace.label}
+          </Typography>
+        </View>
       </View>
 
-      {hasTrend ? (
+      {trend && hasTrend ? (
         <View style={styles.trend}>
           <SpendingSparkline values={trend} testID="spending-sparkline" />
           <Typography variant="muted" style={styles.trendCaption}>
-            Spending · last 7 days
+            {`Last 7 days · peak ${formatCurrency(peak)}`}
           </Typography>
         </View>
       ) : null}
@@ -72,7 +92,16 @@ const styles = StyleSheet.create({
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
     letterSpacing: -0.5,
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 12,
+  },
+  bar: {
+    marginBottom: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   chip: {
     paddingHorizontal: 10,

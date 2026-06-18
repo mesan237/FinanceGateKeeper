@@ -25,7 +25,9 @@ const mockedUseZeroDay = useZeroDay as jest.MockedFunction<typeof useZeroDay>;
 
 const MOCK_BUDGET = {
   expenseBudget: 65000,
+  expensesLogged: 20000,
   expensesRemaining: 45000,
+  spentPct: 31,
   pace: 'green' as const,
 };
 const MOCK_FUNDS = {
@@ -51,6 +53,8 @@ const CONTROL_STATE: DashboardState = {
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: MOCK_BUDGET,
+  cashflow: { income: 100000, expenses: 20000, net: 80000 },
+  dailyPace: 2167,
   funds: MOCK_FUNDS,
   topProject: MOCK_TOP_PROJECT,
 };
@@ -60,6 +64,8 @@ const LEARNING_STATE: DashboardState = {
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
   budget: null,
+  cashflow: null,
+  dailyPace: null,
   funds: null,
   topProject: null,
 };
