@@ -129,6 +129,38 @@ export async function runMigrations(
 }
 
 /**
+ * Drops every user table (then re-runs migrations) on the given driver, wiping
+ * all local data back to a fresh-install state — default categories and seeded
+ * accounts are restored, and the single `users` row regenerates with no PIN.
+ * Split from `resetLocalData` so it can be exercised against an in-memory
+ * better-sqlite3 instance in tests. Foreign keys are disabled during the drop so
+ * table order doesn't matter; `sqlite_*` and Android's `android_metadata` system
+ * tables are left untouched.
+ */
+export async function resetDataWithDriver(driver: SqliteDriver): Promise<void> {
+  await driver.execute('PRAGMA foreign_keys = OFF');
+  const tables = await driver.query<{ name: string }>(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'android_metadata'",
+  );
+  for (const { name } of tables) {
+    await driver.execute(`DROP TABLE IF EXISTS "${name}"`);
+  }
+  await driver.execute('PRAGMA foreign_keys = ON');
+  await runMigrations(driver, registeredMigrations);
+}
+
+/**
+ * Wipes all local data on the singleton database. Used by the "Forgot PIN?"
+ * recovery flow as the last resort for users with no cloud backup to verify
+ * against: erasing the protected data is the only safe way to clear the lock
+ * without an identity check. Irreversible.
+ */
+export async function resetLocalData(): Promise<void> {
+  const db = await getDb();
+  await resetDataWithDriver(expoDriverFor(db));
+}
+
+/**
  * Wraps a better-sqlite3 instance behind the `SqliteDriver` interface so the
  * migration runner can be tested in a Node environment without expo-sqlite.
  */

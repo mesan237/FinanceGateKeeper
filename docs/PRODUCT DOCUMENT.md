@@ -168,7 +168,13 @@ Automated allocation deposits carry no account tag and do not affect balances â€
 
 ## 7. Security
 
-- **PIN protection** on app launch.
+- **4-digit PIN protection** on app launch (salted SHA-256, stored on-device). First
+  launch forces PIN setup; 3 wrong entries trigger a 30-second cooldown.
+- **Forgot-PIN recovery:** re-authenticate with the cloud account password to reset
+  the PIN without data loss; users with no cloud backup can erase the device's data
+  (confirm-guarded) as a last resort, since wiping the protected data is the only safe
+  reset without an identity check.
+- The PIN is a **device-local lock**, separate from the cloud identity (email/password).
 - All financial data stored locally on-device as source of truth.
 - **Cloud backup via Supabase** (auth + DB) for recovery on phone loss.
 
@@ -188,7 +194,7 @@ Automated allocation deposits carry no account tag and do not affect balances â€
 
 ## 9. Data Model (High Level)
 
-- **User:** PIN, preferences, allocation %s, mode (learning/control), action bar style.
+- **User (single row):** PIN (hash + salt), display name, avatar (color + emoji), preferences, allocation %s, mode (learning/control), action bar style. Device-local; excluded from cloud sync.
 - **Account:** name, type (cash/mobile_money/bank/card), purpose (spending/saving/emergency/general), opening_balance, is_default. Balance derived from transaction history.
 - **Transfer:** from_account, to_account, amount, date, note.
 - **Income:** amount, source, account (optional), date.

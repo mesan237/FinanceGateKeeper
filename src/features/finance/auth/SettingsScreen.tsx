@@ -1,7 +1,9 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
+import { Icon } from '@/components/Icon';
 import { Pill } from '@/components/Pill';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionCard } from '@/components/SectionCard';
@@ -9,11 +11,10 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
-import { useCloudSync } from '@/hooks/useCloudSync';
-import { formatDateLong } from '@/utils/formatDate';
+import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
 import { useAppModeContext } from './AppModeProvider';
+import { CloudAccountCard } from './CloudAccountCard';
 import { useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
@@ -34,12 +35,11 @@ export function SettingsScreen() {
   } = useAppSettings();
   const { refresh: refreshMode } = useAppModeContext();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
-  const cloud = useCloudSync();
+  const router = useRouter();
+  const c = useTheme();
   const styles = useThemedStyles(makeStyles);
 
   const [reminderInput, setReminderInput] = useState('');
-  const [cloudEmail, setCloudEmail] = useState('');
-  const [cloudPassword, setCloudPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   // Seed the editable reminder field once settings load.
@@ -83,6 +83,19 @@ export function SettingsScreen() {
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <ScreenHeader title="Settings" />
+
+      <Pressable
+        testID="settings-profile-link"
+        accessibilityRole="button"
+        onPress={() => router.push('/profile')}
+      >
+        <SectionCard
+          icon="profile"
+          title="Profile"
+          subtitle="Your name, avatar, and account."
+          right={<Icon name="forward" color={c.TEXT_MUTED} />}
+        />
+      </Pressable>
 
       <SectionCard
         icon="appMode"
@@ -154,76 +167,7 @@ export function SettingsScreen() {
         }
       />
 
-      <SectionCard
-        icon="cloud"
-        title="Cloud backup"
-        subtitle={
-          cloud.signedIn
-            ? undefined
-            : 'Back up your data to the cloud and restore it on a new device.'
-        }
-      >
-        {cloud.signedIn ? (
-          <>
-            <View style={styles.accountRow}>
-              <View style={styles.accountText}>
-                <Typography variant="muted">Signed in as</Typography>
-                <Typography>{cloud.userEmail ?? 'your account'}</Typography>
-              </View>
-              {cloud.lastSyncedAt ? (
-                <Typography testID="settings-last-synced" variant="muted" style={styles.syncStamp}>
-                  Synced {formatDateLong(cloud.lastSyncedAt)}
-                </Typography>
-              ) : (
-                <Typography variant="muted">Not synced yet.</Typography>
-              )}
-            </View>
-            {cloud.status === 'error' && cloud.error ? (
-              <Typography style={styles.error}>{cloud.error}</Typography>
-            ) : null}
-            <Button
-              testID="settings-sync-now"
-              label={cloud.status === 'syncing' ? 'Syncing…' : 'Sync now'}
-              onPress={() => void cloud.syncNow()}
-              disabled={cloud.status === 'syncing'}
-            />
-            <Button testID="settings-sign-out" label="Sign out" variant="secondary" compact onPress={() => void cloud.signOut()} />
-          </>
-        ) : (
-          <>
-            <TextInput
-              testID="settings-cloud-email"
-              value={cloudEmail}
-              onChangeText={setCloudEmail}
-              placeholder="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              accessibilityLabel="Cloud account email"
-            />
-            <TextInput
-              testID="settings-cloud-password"
-              value={cloudPassword}
-              onChangeText={setCloudPassword}
-              placeholder="Password"
-              secureTextEntry
-              accessibilityLabel="Cloud account password"
-            />
-            {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
-            <Button
-              testID="settings-sign-in"
-              label="Sign in"
-              onPress={() => void cloud.signIn(cloudEmail, cloudPassword)}
-            />
-            <Button
-              testID="settings-sign-up"
-              label="Create account"
-              variant="secondary"
-              compact
-              onPress={() => void cloud.signUp(cloudEmail, cloudPassword)}
-            />
-          </>
-        )}
-      </SectionCard>
+      <CloudAccountCard />
     </ScrollView>
   );
 }
@@ -240,20 +184,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   loading: {
     flex: 1,
     padding: 16,
-  },
-  accountRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  accountText: {
-    gap: 2,
-    flexShrink: 1,
-  },
-  syncStamp: {
-    textAlign: 'right',
-    flexShrink: 1,
   },
   suggestion: {
     color: c.PRIMARY_GREEN,
