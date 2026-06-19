@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 const PIN_LENGTH = 4;
@@ -84,7 +85,7 @@ const makeStyles = (c: ThemeColors) =>
     dot: {
       width: 14,
       height: 14,
-      borderRadius: 7,
+      borderRadius: RADIUS.full,
       borderWidth: 2,
       borderColor: c.BORDER_STRONG,
     },
@@ -103,7 +104,7 @@ const makeStyles = (c: ThemeColors) =>
     key: {
       width: 72,
       height: 72,
-      borderRadius: 36,
+      borderRadius: RADIUS.full,
       alignItems: 'center',
       justifyContent: 'center',
     },
