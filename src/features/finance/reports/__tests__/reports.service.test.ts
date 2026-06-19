@@ -86,6 +86,7 @@ function income(amount: number, date: string): Income {
     note: null,
     date,
     accountId: null,
+    allocationStatus: 'allocated',
     createdAt: '2026-06-01T00:00:00.000Z',
   };
 }

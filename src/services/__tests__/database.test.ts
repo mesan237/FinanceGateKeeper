@@ -10,7 +10,12 @@ import { migrations as realMigrations } from '@/services/migrations';
 
 function freshDriver() {
   const sqlite = new Database(':memory:');
-  return { sqlite, driver: createBetterSqliteDriver(sqlite) };
+  return {
+    sqlite,
+    driver: createBetterSqliteDriver(
+      sqlite as unknown as Parameters<typeof createBetterSqliteDriver>[0],
+    ),
+  };
 }
 
 const migration001: Migration = {

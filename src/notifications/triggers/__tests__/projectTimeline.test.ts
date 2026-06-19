@@ -3,7 +3,6 @@ import { buildProjectTimelineAlert } from '@/notifications/triggers/projectTimel
 describe('buildProjectTimelineAlert', () => {
   it('builds a project-timeline payload with non-empty copy', () => {
     const payload = buildProjectTimelineAlert({
-      projectId: 1,
       previous: '2026-09-15',
       next: '2026-10-15',
       shiftedMonths: 1,

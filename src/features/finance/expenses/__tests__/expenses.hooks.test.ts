@@ -97,17 +97,20 @@ describe('useTransactions', () => {
     id: 1, amount: 1000, date: '2026-06-01',
     categoryId: 3, categoryLabel: 'Food',
     subcategoryId: null, subcategoryLabel: null, note: null,
+    accountId: null, accountLabel: null,
   };
   const TRANSPORT_ENTRY = {
     type: 'expense' as const,
     id: 2, amount: 2000, date: '2026-06-01',
     categoryId: 5, categoryLabel: 'Transport',
     subcategoryId: null, subcategoryLabel: null, note: null,
+    accountId: null, accountLabel: null,
   };
   const INCOME_ENTRY = {
     type: 'income' as const,
     id: 3, amount: 50000, date: '2026-06-01',
     source: 'salary', sourceLabel: 'Salary', note: null,
+    accountId: null, accountLabel: null,
   };
 
   it('calls getTransactionFeed with the given monthISO on mount', async () => {
@@ -181,6 +184,7 @@ const STORED_EXPENSE = {
   note: 'lunch',
   date: '2026-06-10',
   isRecurring: false,
+  accountId: null,
   createdAt: '2026-06-10T10:00:00.000Z',
 };
 
