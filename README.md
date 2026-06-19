@@ -34,21 +34,33 @@ The app is built as a series of **vertical slices** — each one cuts through ev
 | **Budget allocation** | Split monthly income across four buckets — Emergency Fund, Savings, Projects, Expenses — with editable percentages and priority order, locked per month. Track spent-vs-allocated with a budget overview. |
 | **Quick-Add** | One-tap template tiles (e.g. "Taxi 500", "Lunch 1 500") that log an expense instantly — no form. Long-press to edit, `+` tile to create. |
 | **Recurring expenses** | Register recurring bills (monthly/weekly). On app open, due occurrences **auto-log** at their due date — idempotent and replay-safe (missed months are backfilled into the correct budget month). Toggle active/inactive, or skip a single occurrence without logging. |
+| **Edit & delete** | Tap any expense or income row to open a pre-filled detail screen. Held (unallocated) income is fully editable or deletable; once allocated, only its metadata can change — the money trail stays immutable. |
+| **Funds** | Emergency Fund and Savings, each with a target and live progress. Allocations deposit into them automatically; when the emergency target is met, its percentage redistributes proportionally to the other buckets. |
+| **Projects** | Priority-ranked funding goals with estimated completion timelines. Allocation flows to the highest-priority project first; timeline-shift alerts surface when a goal slips. |
+| **Deferred income allocation** | Income lands in an **unallocated pool** as *held* until you deliberately allocate it, so logging income several times a day never inflates the spendable budget. Send each held amount to the expense budget, a fund, or a project. |
+| **Debt ledger** | Track money lent and owed per person, with due dates, settle actions, and reminders 3 days before (and after) a due date. |
+| **Accounts & transfers** | Cash / mobile-money / bank / card accounts with computed live balances, per-account income/expense share, and transfers between them. Expense, income, and contribution screens carry an optional account picker. |
+| **Over-budget alerts** | A pre-save check warns when an expense would push you past the month's locked expense budget, with a proceed-anyway option. |
+| **Dashboard** | At-a-glance overview: today's spending, budget pace (green/yellow/red), fund and top-project progress, a Wallets balance summary, and quick-action shortcuts. |
+| **Reports** | Weekly pulse and a monthly deep dive — income vs. expenses, expense performance, a category donut + breakdown, fund/project progress, month-over-month comparison, and rule-based optimization suggestions. |
+| **Daily reminders** | A configurable end-of-day local notification, with a zero-day prompt ("spent nothing today?") and a learning/control app mode that gates budgeting features. |
 | **PIN lock** | A 4-digit PIN (salted SHA-256, device-local) gates the app on launch. First run forces setup; 3 wrong entries trigger a 30s cooldown. **Forgot-PIN recovery** resets the PIN via cloud-account re-authentication (no data loss), or — for users with no cloud backup — a confirm-guarded device wipe. |
 | **Profile** | An editable display name and on-device avatar (name initials or an emoji on a chosen color — no photo upload), plus the cloud account and Change-PIN entry. |
+| **Cloud sync** | Optional Supabase backup with a local-first, last-write-wins strategy. Sign in with an email/password account (separate from the device PIN) to back up and restore on a new device. |
 
-> **Status:** Active development. The app currently spans PIN lock & profile, income/expense/budget tracking, categories, funds, projects, debt, accounts & transfers, dashboard, reports, and Supabase cloud sync. See [`docs/KANBAN.md`](docs/KANBAN.md) for the authoritative per-slice status.
+> **Status:** Feature-complete against the planned roadmap. All vertical slices **VS-01 → VS-22** are implemented and tested; see [`docs/KANBAN.md`](docs/KANBAN.md) for the authoritative per-slice status.
 
 ---
 
 ## Tech Stack
 
-- **Framework:** [Expo](https://expo.dev) ~55 with [Expo Router](https://docs.expo.dev/router/introduction/) (file-based navigation)
-- **Runtime:** React Native 0.83 · React 19.2
+- **Framework:** [Expo](https://expo.dev) SDK 54 with [Expo Router](https://docs.expo.dev/router/introduction/) (file-based navigation)
+- **Runtime:** React Native 0.81 · React 19.1
 - **Language:** TypeScript 5.9 (strict mode, no `any`)
 - **Local database:** SQLite via [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/) with a custom migration runner
 - **Local auth:** 4-digit PIN hashed with [`expo-crypto`](https://docs.expo.dev/versions/latest/sdk/crypto/) (salted SHA-256); session persisted via `expo-secure-store`
 - **Notifications:** [`expo-notifications`](https://docs.expo.dev/versions/latest/sdk/notifications/) (local scheduled)
+- **Charts & animation:** `react-native-svg` (custom spending donut), `react-native-chart-kit`, and `react-native-reanimated`
 - **Cloud:** Supabase for account auth + backup sync
 - **Testing:** [Jest](https://jestjs.io/) (`jest-expo`) + [React Native Testing Library](https://callstack.github.io/react-native-testing-library/); `better-sqlite3` provides a real in-memory SQLite engine for service tests
 
@@ -78,6 +90,21 @@ npm run web        # Run in the browser
 ```
 
 The database is created and all pending migrations run automatically on first launch — no manual setup step.
+
+> **Note:** The app relies on native modules (SQLite, Reanimated, notifications) that **Expo Go cannot run**. Use a development build (below) or a native run (`npm run android` / `npm run ios`) rather than Expo Go.
+
+### Install on a physical device
+
+`eas.json` defines three [EAS Build](https://docs.expo.dev/build/introduction/) profiles for getting the app onto a real phone:
+
+```bash
+npm install -g eas-cli                                  # or: npx eas-cli@latest …
+eas login
+eas build --profile development --platform android      # dev-client APK — install once, iterate over Wi-Fi
+eas build --profile preview --platform android          # standalone APK — test without a dev server
+```
+
+Install the APK from the link EAS prints, then iterate with `npx expo start --dev-client`. The `development` build only needs rebuilding when a **native** dependency changes — pure JS/TS edits reload live.
 
 ---
 
@@ -126,12 +153,13 @@ app/ ──────────► features/finance/*
 
 | Feature | May read from |
 | --- | --- |
-| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` |
-| `budget` | `expenses` (categories), `funds` (redistribution) |
+| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt`, `accounts` |
+| `budget` | `expenses` (categories), `funds` (redistribution), `projects`, `income` (held/pending pool) |
 | `reports` | `expenses`, `income`, `budget`, `funds`, `projects`, `debt` |
-| `income` | `budget` (triggers allocation after income log) |
-| `funds` | `budget` (allocation percentages) |
-| `projects` | `budget` (allocation percentages) |
+| `income` | `budget` (triggers allocation after income log), `accounts` |
+| `funds` | `budget` (allocation percentages), `accounts` |
+| `projects` | `budget` (allocation percentages), `accounts` |
+| `expenses` | `budget` (over-budget check), `income` (unified add-transaction sheet), `accounts` |
 
 All other cross-feature imports are forbidden. The `/check-arch` skill scans branch diffs for violations.
 
@@ -157,12 +185,13 @@ src/
 │       ├── expenses.service.ts       # All DB operations for the domain
 │       ├── expenses.hooks.ts         # useExpenseLog, useTransactions, useCategories, useQuickAdd, useRecurring
 │       └── expenses.types.ts
-│   └── income/ , budget/             # Same four-file slice layout
+│   └── auth/  income/  budget/  funds/  projects/  debt/
+│       accounts/  dashboard/  reports/    # Same four-file slice layout
 │
 ├── components/                       # Shared UI primitives (Button, TextInput, Typography, Modal, …)
 ├── services/
 │   ├── database.ts                   # SQLite connection, query helpers, migration runner
-│   └── migrations/                   # Numbered, registered migrations (001 … 007)
+│   └── migrations/                   # Numbered, registered migrations (001 … 024)
 ├── hooks/        utils/        notifications/        constants/        types/
 ```
 
@@ -176,17 +205,21 @@ Each major directory carries a scoped `CLAUDE.md` documenting its rules. The ful
 - **Migrations** live in [`src/services/migrations/`](src/services/migrations/), are numbered, and are registered in [`migrations/index.ts`](src/services/migrations/index.ts). The runner applies any not yet recorded in a `_migrations` ledger table — running it twice is a no-op.
 - **Amounts** are stored as integers (FCFA has no decimals). **Dates** are ISO 8601 strings (`YYYY-MM-DD`, or full timestamps for `created_at`), anchored to UTC so month/day boundaries stay stable across timezones.
 
-Migrations applied so far:
+Migrations applied so far (**24 total**):
 
 | # | Table / change |
 | --- | --- |
-| 001 | `categories` (+ seeds the eight default categories and subcategories) |
-| 002 | `expenses` (+ indexes on `date` and `category_id`) |
-| 003 | adds `is_hidden` to `categories` |
-| 004 | `income` |
-| 005 | `allocations` (one row per `YYYY-MM` month) |
-| 006 | `quick_add_templates` |
-| 007 | `recurring_expenses` (+ index on `is_active, next_due_date`) |
+| 001–003 | `categories` (+ eight seeded defaults), `expenses` (indexed), `categories.is_hidden` |
+| 004–007 | `income`, `allocations` (per `YYYY-MM`), `quick_add_templates`, `recurring_expenses` |
+| 008–009 | `users` (single row), `zero_days` |
+| 010–013 | `funds`, `fund_transactions`, `projects`, `project_transactions` |
+| 014 | `debts` |
+| 015–016 | category dedupe heal, `users.action_bar_style` |
+| 017 | sync metadata (uuid / updated_at / sync_status + dirty-marking triggers) |
+| 018–021 | `accounts` (+ seeds), `account_id` columns, `transfers`, accounts sync wiring |
+| 022 | `income.allocation_status` (held vs. allocated) |
+| 023 | `projects.deleted_at` (soft delete) |
+| 024 | `users` PIN salt + profile columns (display name, avatar) |
 
 ---
 
@@ -202,7 +235,7 @@ npm test
 - **Screens** → React Native Testing Library, asserting behavior the user would see.
 - Tests colocate with source under `__tests__/` (e.g. `features/finance/expenses/__tests__/expenses.service.test.ts`).
 
-Current suite: **182 tests across 23 suites, all passing.**
+Current suite: **829 tests across 111 suites, all passing.**
 
 ---
 
@@ -231,7 +264,7 @@ Current suite: **182 tests across 23 suites, all passing.**
 
 ## Roadmap
 
-Tracked in [`docs/KANBAN.md`](docs/KANBAN.md) (authoritative). **VS-01 → VS-22** are largely complete — PIN lock & profile (VS-02/VS-22), logging, budget, funds, projects, debt, dashboard, reports, transaction UX, accounts & transfers, deferred income allocation, and Supabase sync. In progress: **VS-21** (Reports visual redesign).
+Tracked in [`docs/KANBAN.md`](docs/KANBAN.md) (authoritative). All planned vertical slices **VS-01 → VS-22** are complete — PIN lock & profile, expense/income/budget tracking, categories, quick-add & recurring, funds, projects, debt, over-budget alerts, dashboard, reports (incl. the visual redesign), transaction UX, edit & delete, accounts & transfers, deferred income allocation, and Supabase cloud sync. Future work beyond the current roadmap (e.g. release packaging and on-device QA) is not yet scheduled.
 
 ---
 
