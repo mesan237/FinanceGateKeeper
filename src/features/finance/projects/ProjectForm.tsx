@@ -84,7 +84,7 @@ export function ProjectForm() {
         targetAmount: parsedTarget,
         deadline: deadline.trim() === '' ? null : deadline.trim(),
       });
-      router.replace('/(tabs)/projects');
+      router.replace('/projects');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create project.');
       setSaving(false);

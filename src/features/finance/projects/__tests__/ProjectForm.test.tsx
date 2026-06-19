@@ -46,7 +46,7 @@ describe('ProjectForm', () => {
         deadline: null,
       }),
     );
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/projects'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/projects'));
   });
 
   it('does not save a zero target', () => {

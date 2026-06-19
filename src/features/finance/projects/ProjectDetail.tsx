@@ -133,7 +133,7 @@ export function ProjectDetail({ projectId }: ProjectDetailProps) {
         onConfirm={async () => {
           const ok = await remove();
           setDeleteOpen(false);
-          if (ok) router.replace('/(tabs)/projects');
+          if (ok) router.replace('/projects');
         }}
       />
     </View>

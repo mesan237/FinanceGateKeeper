@@ -144,7 +144,7 @@ describe('AllocationScreen', () => {
 
     await waitFor(() => expect(mockedLock).toHaveBeenCalledWith('2026-06'));
     expect(mockedLock).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/dashboard'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 
   it('deposits the emergency and savings portions on confirm', async () => {
@@ -240,7 +240,7 @@ describe('AllocationScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Hold for later' }));
 
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/dashboard'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
     expect(mockedMarkAllocated).not.toHaveBeenCalled();
     expect(mockedDeposit).not.toHaveBeenCalled();
     expect(mockedFundProjects).not.toHaveBeenCalled();

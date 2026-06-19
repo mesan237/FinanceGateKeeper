@@ -80,7 +80,7 @@ describe('ExpenseLogScreen', () => {
         isRecurring: false,
       }),
     );
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/transactions'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/transactions'));
   });
 
   it('runs the over-budget check against the entered amount and skips the modal when within budget', async () => {
@@ -111,7 +111,7 @@ describe('ExpenseLogScreen', () => {
     fireEvent.press(screen.getByTestId('over-budget-proceed'));
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/transactions'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/transactions'));
   });
 
   it('Cancel on the over-budget modal saves nothing', async () => {
