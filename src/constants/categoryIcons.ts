@@ -23,7 +23,7 @@ export const INCOME_SOURCE_ICON_MAP: Record<string, string> = {
   ecommerce: '🏪',
 };
 
-const AVATAR_PALETTE = [
+export const AVATAR_PALETTE = [
   '#E57373', // red
   '#81C784', // green
   '#64B5F6', // blue

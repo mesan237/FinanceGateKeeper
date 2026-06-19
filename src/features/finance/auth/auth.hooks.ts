@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import * as authService from './auth.service';
-import type { ActionBarStyle, AppMode, AppSettings } from './auth.types';
+import { getProfile, setProfile } from './auth.profile';
+import type { ActionBarStyle, AppMode, AppSettings, Profile } from './auth.types';
 
 /**
  * Loads the app/user settings and exposes setters for app mode, reminder time,
@@ -92,4 +93,37 @@ export function useActionBarStyle(): {
   );
 
   return { style, setStyle, loading, refresh };
+}
+
+/**
+ * Loads the local profile (display name + avatar) and exposes a `save` that
+ * patches only the supplied fields, re-fetching on success.
+ */
+export function useProfile(): {
+  profile: Profile | null;
+  loading: boolean;
+  save: (patch: Partial<Profile>) => Promise<void>;
+  refresh: () => Promise<void>;
+} {
+  const [profile, setProfileState] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    setProfileState(await getProfile());
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const save = useCallback(
+    async (patch: Partial<Profile>) => {
+      await setProfile(patch);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { profile, loading, save, refresh };
 }

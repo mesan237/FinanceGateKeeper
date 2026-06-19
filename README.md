@@ -34,8 +34,10 @@ The app is built as a series of **vertical slices** — each one cuts through ev
 | **Budget allocation** | Split monthly income across four buckets — Emergency Fund, Savings, Projects, Expenses — with editable percentages and priority order, locked per month. Track spent-vs-allocated with a budget overview. |
 | **Quick-Add** | One-tap template tiles (e.g. "Taxi 500", "Lunch 1 500") that log an expense instantly — no form. Long-press to edit, `+` tile to create. |
 | **Recurring expenses** | Register recurring bills (monthly/weekly). On app open, due occurrences **auto-log** at their due date — idempotent and replay-safe (missed months are backfilled into the correct budget month). Toggle active/inactive, or skip a single occurrence without logging. |
+| **PIN lock** | A 4-digit PIN (salted SHA-256, device-local) gates the app on launch. First run forces setup; 3 wrong entries trigger a 30s cooldown. **Forgot-PIN recovery** resets the PIN via cloud-account re-authentication (no data loss), or — for users with no cloud backup — a confirm-guarded device wipe. |
+| **Profile** | An editable display name and on-device avatar (name initials or an emoji on a chosen color — no photo upload), plus the cloud account and Change-PIN entry. |
 
-> **Status:** Vertical slices **VS-01 through VS-07** are complete (**182 tests passing**). PIN authentication, daily reminders/zero-day, funds, projects, debt tracking, dashboard, reports, and Supabase cloud sync are on the [roadmap](#roadmap) but **not yet implemented**.
+> **Status:** Active development. The app currently spans PIN lock & profile, income/expense/budget tracking, categories, funds, projects, debt, accounts & transfers, dashboard, reports, and Supabase cloud sync. See [`docs/KANBAN.md`](docs/KANBAN.md) for the authoritative per-slice status.
 
 ---
 
@@ -45,8 +47,9 @@ The app is built as a series of **vertical slices** — each one cuts through ev
 - **Runtime:** React Native 0.83 · React 19.2
 - **Language:** TypeScript 5.9 (strict mode, no `any`)
 - **Local database:** SQLite via [`expo-sqlite`](https://docs.expo.dev/versions/latest/sdk/sqlite/) with a custom migration runner
-- **Notifications:** [`expo-notifications`](https://docs.expo.dev/versions/latest/sdk/notifications/) (local scheduled — wiring planned in VS-08)
-- **Cloud (planned):** Supabase for auth + backup sync (VS-15)
+- **Local auth:** 4-digit PIN hashed with [`expo-crypto`](https://docs.expo.dev/versions/latest/sdk/crypto/) (salted SHA-256); session persisted via `expo-secure-store`
+- **Notifications:** [`expo-notifications`](https://docs.expo.dev/versions/latest/sdk/notifications/) (local scheduled)
+- **Cloud:** Supabase for account auth + backup sync
 - **Testing:** [Jest](https://jestjs.io/) (`jest-expo`) + [React Native Testing Library](https://callstack.github.io/react-native-testing-library/); `better-sqlite3` provides a real in-memory SQLite engine for service tests
 
 ---
@@ -228,17 +231,7 @@ Current suite: **182 tests across 23 suites, all passing.**
 
 ## Roadmap
 
-Tracked in [`docs/KANBAN.md`](docs/KANBAN.md). Done: **VS-01 → VS-07**. Remaining:
-
-- **VS-02** — PIN authentication gate
-- **VS-08** — Daily reminder, zero-day confirmation & app mode
-- **VS-09** — Funds (emergency fund & savings)
-- **VS-10** — Project funding with timeline
-- **VS-11** — People ledger (debt tracking)
-- **VS-12** — Over-budget alerts
-- **VS-13** — Dashboard
-- **VS-14** — Weekly & monthly reports with charts
-- **VS-15** — Supabase cloud backup & sync
+Tracked in [`docs/KANBAN.md`](docs/KANBAN.md) (authoritative). **VS-01 → VS-22** are largely complete — PIN lock & profile (VS-02/VS-22), logging, budget, funds, projects, debt, dashboard, reports, transaction UX, accounts & transfers, deferred income allocation, and Supabase sync. In progress: **VS-21** (Reports visual redesign).
 
 ---
 

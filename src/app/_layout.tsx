@@ -21,6 +21,8 @@ import { ToastProvider } from '@/components/Toast';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
+import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
+import { AuthScreen } from '@/features/finance/auth/AuthScreen';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
 import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
@@ -67,27 +69,52 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AppModeProvider>
-          <RecurringAutoLogger>
-            <DebtReminderScheduler>
-              <DailyReminderScheduler>
-                <ZeroDayGate
-                  reminderTime={settings?.reminderTime ?? '21:00'}
-                  notificationsEnabled={settings?.notificationsEnabled ?? false}
-                >
-                  <ThemedShell>
-                    <ToastProvider>
-                      <Stack screenOptions={{ headerShown: false }} />
-                    </ToastProvider>
-                  </ThemedShell>
-                </ZeroDayGate>
-              </DailyReminderScheduler>
-            </DebtReminderScheduler>
-          </RecurringAutoLogger>
-        </AppModeProvider>
+        <AuthProvider>
+          <AuthGate>
+            <AppModeProvider>
+              <RecurringAutoLogger>
+                <DebtReminderScheduler>
+                  <DailyReminderScheduler>
+                    <ZeroDayGate
+                      reminderTime={settings?.reminderTime ?? '21:00'}
+                      notificationsEnabled={settings?.notificationsEnabled ?? false}
+                    >
+                      <ThemedShell>
+                        <ToastProvider>
+                          <Stack screenOptions={{ headerShown: false }} />
+                        </ToastProvider>
+                      </ThemedShell>
+                    </ZeroDayGate>
+                  </DailyReminderScheduler>
+                </DebtReminderScheduler>
+              </RecurringAutoLogger>
+            </AppModeProvider>
+          </AuthGate>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
+}
+
+/**
+ * Hard PIN gate. Renders nothing until the lock state has resolved (so the tabs
+ * never flash before the lock decision), shows the themed `AuthScreen` while the
+ * app is unset (first-run setup) or locked, and only mounts the real app — and
+ * its schedulers — once unlocked. Lives inside `AuthProvider` so it can read the
+ * lock state and inside `ThemeProvider` so the lock screen is themed.
+ */
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { ready, pinState } = useAuthLock();
+
+  if (!ready) return null;
+  if (pinState !== 'unlocked') {
+    return (
+      <ThemedShell>
+        <AuthScreen />
+      </ThemedShell>
+    );
+  }
+  return <>{children}</>;
 }
 
 /**

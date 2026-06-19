@@ -25,6 +25,7 @@ import {
   HelpCircle,
   Home,
   ListOrdered,
+  Lock,
   Menu,
   MessageSquareText,
   Palette,
@@ -36,6 +37,7 @@ import {
   Tag,
   Target,
   Trash2,
+  UserRound,
   Wallet,
   type LucideIcon,
 } from 'lucide-react-native';
@@ -89,6 +91,8 @@ export const ICONS = {
   hide: EyeOff,
   show: Eye,
   goal: Target,
+  profile: UserRound,
+  lock: Lock,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

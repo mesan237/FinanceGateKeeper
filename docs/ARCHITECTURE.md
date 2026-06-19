@@ -9,9 +9,10 @@ src/
 ├── app/                              # Routing Layer (thin entry points)
 │   ├── _layout.tsx                   # Root layout (PIN gate, providers)
 │   ├── index.tsx                     # Redirect to dashboard or auth
-│   ├── (auth)/
-│   │   ├── _layout.tsx
-│   │   └── pin.tsx                   # PIN entry screen route
+│   ├── profile/
+│   │   ├── index.tsx                 # Profile (name, avatar, account) route
+│   │   └── change-pin.tsx            # Change-PIN route
+│   │                                 # (the PIN lock itself is gated in _layout.tsx — no standalone route)
 │   ├── (tabs)/
 │   │   ├── _layout.tsx               # Bottom tab bar layout
 │   │   ├── dashboard.tsx             # Dashboard tab route
@@ -45,11 +46,20 @@ src/
 │
 ├── features/                         # FeatureSlices Layer (business logic)
 │   └── finance/
-│       ├── auth/
-│       │   ├── AuthScreen.tsx                # PIN input UI
-│       │   ├── auth.hooks.ts                 # useAuth, usePinValidation
-│       │   ├── auth.service.ts               # PIN storage, verification logic
-│       │   └── auth.types.ts                 # AuthState, PinConfig
+│       ├── auth/                             # PIN lock, profile & app settings (owns the users row)
+│       │   ├── AuthProvider.tsx              # PIN lock state + AuthGate context
+│       │   ├── AuthScreen.tsx                # PIN setup/unlock UI
+│       │   ├── PinKeypad.tsx                 # Numeric keypad + progress dots
+│       │   ├── ChangePinScreen.tsx           # Change-PIN flow (current→new→confirm)
+│       │   ├── PinRecoveryScreen.tsx         # Forgot-PIN recovery (cloud verify / wipe)
+│       │   ├── ProfileScreen.tsx             # Display name + avatar editor
+│       │   ├── ProfileAvatar.tsx             # Initials/emoji avatar (no image upload)
+│       │   ├── SettingsScreen.tsx            # App mode, reminder, appearance, cloud
+│       │   ├── CloudAccountCard.tsx          # Shared cloud sign-in/out card
+│       │   ├── auth.service.ts               # PIN hash/verify (expo-crypto), app settings
+│       │   ├── auth.profile.ts               # Profile get/set
+│       │   ├── auth.hooks.ts                 # useAppSettings, useProfile, useActionBarStyle
+│       │   └── auth.types.ts                 # PinState, Profile, AppMode, AppSettings
 │       │
 │       ├── income/
 │       │   ├── IncomeLogScreen.tsx            # Income entry form UI

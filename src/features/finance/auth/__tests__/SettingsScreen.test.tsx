@@ -40,6 +40,7 @@ const mockCloud: {
   syncNow: jest.fn().mockResolvedValue(undefined),
 };
 jest.mock('@/hooks/useCloudSync', () => ({ useCloudSync: () => mockCloud }));
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), back: jest.fn() }) }));
 
 import * as SecureStore from 'expo-secure-store';
 

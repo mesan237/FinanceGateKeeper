@@ -17,13 +17,18 @@ jest.mock('@/services/database', () => {
 });
 
 import {
+  changePin,
+  clearPin,
   getActionBarStyle,
   getAppSettings,
+  hasPin,
   isMonth1Complete,
   setActionBarStyle,
   setAppMode,
   setNotificationsEnabled,
+  setPin,
   setReminderTime,
+  verifyPin,
 } from '@/features/finance/auth/auth.service';
 
 let sqlite: Database.Database;
@@ -103,6 +108,64 @@ describe('getActionBarStyle', () => {
 
   it('setActionBarStyle throws for an unrecognised value', async () => {
     await expect(setActionBarStyle('marquee' as never)).rejects.toThrow();
+  });
+});
+
+describe('PIN', () => {
+  it('reports no PIN on a fresh install', async () => {
+    expect(await hasPin()).toBe(false);
+  });
+
+  it('sets a PIN and then reports one exists', async () => {
+    await setPin('1234');
+    expect(await hasPin()).toBe(true);
+  });
+
+  it('does not persist the raw PIN', async () => {
+    await setPin('1234');
+    const [row] = sqlite.prepare('SELECT pin_hash, pin_salt FROM users').all() as {
+      pin_hash: string;
+      pin_salt: string;
+    }[];
+    expect(row.pin_hash).toBeTruthy();
+    expect(row.pin_hash).not.toBe('1234');
+    expect(row.pin_salt).toBeTruthy();
+  });
+
+  it('verifies the correct PIN and rejects a wrong one', async () => {
+    await setPin('1234');
+    expect(await verifyPin('1234')).toBe(true);
+    expect(await verifyPin('9999')).toBe(false);
+  });
+
+  it('returns false from verifyPin when no PIN is set', async () => {
+    expect(await verifyPin('1234')).toBe(false);
+  });
+
+  it('rejects a PIN that is not four digits', async () => {
+    await expect(setPin('12')).rejects.toThrow();
+    await expect(setPin('12345')).rejects.toThrow();
+    await expect(setPin('abcd')).rejects.toThrow();
+  });
+
+  it('changePin replaces the PIN when the current one matches', async () => {
+    await setPin('1234');
+    await changePin('1234', '5678');
+    expect(await verifyPin('5678')).toBe(true);
+    expect(await verifyPin('1234')).toBe(false);
+  });
+
+  it('changePin rejects a wrong current PIN', async () => {
+    await setPin('1234');
+    await expect(changePin('0000', '5678')).rejects.toThrow();
+    expect(await verifyPin('1234')).toBe(true);
+  });
+
+  it('clearPin removes the PIN', async () => {
+    await setPin('1234');
+    await clearPin();
+    expect(await hasPin()).toBe(false);
+    expect(await verifyPin('1234')).toBe(false);
   });
 });
 

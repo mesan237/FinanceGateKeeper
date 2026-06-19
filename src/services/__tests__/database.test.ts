@@ -2,9 +2,11 @@ import Database from 'better-sqlite3';
 
 import {
   createBetterSqliteDriver,
+  resetDataWithDriver,
   runMigrations,
   type Migration,
 } from '@/services/database';
+import { migrations as realMigrations } from '@/services/migrations';
 
 function freshDriver() {
   const sqlite = new Database(':memory:');
@@ -112,5 +114,31 @@ describe('runMigrations', () => {
     const second = freshDriver();
     await expect(runMigrations(second.driver, [migration001])).resolves.toBeUndefined();
     second.sqlite.close();
+  });
+});
+
+describe('resetDataWithDriver', () => {
+  it('wipes user data and rebuilds a fresh schema', async () => {
+    const { sqlite, driver } = freshDriver();
+    await runMigrations(driver, realMigrations);
+
+    // Seed a PIN-bearing user row and an expense.
+    await driver.execute("INSERT INTO users (pin_hash, created_at) VALUES ('secret-hash', '2026-06-19')");
+    const [{ before }] = await driver.query<{ before: number }>(
+      'SELECT COUNT(*) AS before FROM categories',
+    );
+    expect(before).toBeGreaterThan(0); // defaults seeded
+
+    await resetDataWithDriver(driver);
+
+    // The users row (and its PIN) is gone; the table still exists.
+    const [{ users }] = await driver.query<{ users: number }>('SELECT COUNT(*) AS users FROM users');
+    expect(users).toBe(0);
+
+    // Default categories are reseeded, so the schema rebuilt cleanly.
+    const [{ after }] = await driver.query<{ after: number }>('SELECT COUNT(*) AS after FROM categories');
+    expect(after).toBe(before);
+
+    sqlite.close();
   });
 });

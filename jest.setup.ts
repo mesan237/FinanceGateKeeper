@@ -37,6 +37,36 @@ jest.mock('@react-native-community/datetimepicker', () => {
   return { __esModule: true, default: Picker };
 });
 
+// expo-crypto wraps native digest/RNG that don't exist under Jest. The mock is
+// deterministic: `digestStringAsync` folds the input into a stable hex string
+// (same input ⇒ same digest, different input ⇒ different digest) so PIN hash
+// verification can be tested, and `getRandomBytesAsync` returns fresh bytes per
+// call so generated salts vary.
+jest.mock('expo-crypto', () => {
+  let counter = 0;
+  return {
+    CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+    digestStringAsync: async (_algorithm: string, data: string) => {
+      let h1 = 0x811c9dc5;
+      let h2 = 0x1000193;
+      for (let i = 0; i < data.length; i += 1) {
+        const c = data.charCodeAt(i);
+        h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+        h2 = Math.imul(h2 + c + i, 0x85ebca6b) >>> 0;
+      }
+      return (h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0')).repeat(4);
+    },
+    getRandomBytesAsync: async (byteCount: number) => {
+      const out = new Uint8Array(byteCount);
+      for (let i = 0; i < byteCount; i += 1) {
+        counter = (counter + 1) % 256;
+        out[i] = (counter * 31 + i) % 256;
+      }
+      return out;
+    },
+  };
+});
+
 // Jest does not load `.env`, so seed the Supabase env vars the real `supabase.ts`
 // guards on at import time. Tests run against the manual `@supabase/supabase-js`
 // mock, so these values are never used to reach a real network endpoint.
