@@ -138,7 +138,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'center',
     width: 40,
     height: 4,
-    borderRadius: 2,
+    borderRadius: RADIUS.full,
     backgroundColor: c.BORDER_STRONG,
     marginBottom: 12,
   },

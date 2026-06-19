@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/SectionCard';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { AVATAR_PALETTE } from '@/constants/categoryIcons';
+import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { CloudAccountCard } from './CloudAccountCard';
@@ -161,7 +162,7 @@ const makeStyles = (c: ThemeColors) =>
     swatch: {
       width: 40,
       height: 40,
-      borderRadius: 20,
+      borderRadius: RADIUS.full,
       borderWidth: 3,
       borderColor: 'transparent',
     },
@@ -176,7 +177,7 @@ const makeStyles = (c: ThemeColors) =>
     emojiChip: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: RADIUS.full,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.SURFACE_MUTED,

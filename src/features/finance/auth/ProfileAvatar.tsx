@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { AVATAR_PALETTE } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** Derives up-to-two-letter initials from a display name (e.g. "Abdiel K" → "AK"). */
 export function initialsFor(name: string | null): string {
@@ -39,6 +40,7 @@ export function ProfileAvatar({
   avatarEmoji,
   size = 96,
 }: ProfileAvatarProps) {
+  const styles = useThemedStyles(makeStyles);
   const background = colorFor(displayName, avatarColor);
   const circle = {
     width: size,
@@ -58,13 +60,13 @@ export function ProfileAvatar({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   circle: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   initials: {
-    color: '#FFFFFF',
+    color: c.TEXT_INVERSE,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
   },
 });

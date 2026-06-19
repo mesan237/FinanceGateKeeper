@@ -338,7 +338,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avatarEmoji: { backgroundColor: c.SURFACE_MUTED },
   emoji: { fontSize: 18, lineHeight: 24 },
   emojiSub: { fontSize: 13, lineHeight: 18 },
-  avatarLetter: { color: '#ffffff', fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 14 },
+  avatarLetter: { color: c.TEXT_INVERSE, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 14 },
   hidden: { color: c.TEXT_MUTED, fontStyle: 'italic' },
   optionList: { maxHeight: 240, marginVertical: 8 },
   optionRow: {
