@@ -85,7 +85,7 @@ function AllocationScreenBody({
 
   const handleHold = () => {
     // The income was created `pending`; holding just leaves it in the pool.
-    router.replace('/(tabs)/dashboard');
+    router.replace('/dashboard');
   };
 
   const handleConfirm = async () => {
@@ -118,7 +118,7 @@ function AllocationScreenBody({
       // budget (VS-19 — pending income is excluded until confirmed).
       await markIncomeAllocated(incomeId);
       await onLock();
-      router.replace('/(tabs)/dashboard');
+      router.replace('/dashboard');
     } finally {
       setIsConfirming(false);
     }

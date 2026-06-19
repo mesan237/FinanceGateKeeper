@@ -124,6 +124,6 @@ describe('ProjectDetail', () => {
     fireEvent.press(screen.getByTestId('confirm-delete'));
 
     await waitFor(() => expect(remove).toHaveBeenCalled());
-    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(tabs)/projects'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/projects'));
   });
 });

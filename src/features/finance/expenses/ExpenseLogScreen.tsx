@@ -17,7 +17,7 @@ export function ExpenseLogScreen() {
   return (
     <View style={styles.container}>
       <ScreenHeader title="Log Expense" cancelLabel="Cancel" />
-      <ExpenseEntryPanel onSaved={() => router.replace('/(tabs)/transactions')} />
+      <ExpenseEntryPanel onSaved={() => router.replace('/transactions')} />
     </View>
   );
 }
