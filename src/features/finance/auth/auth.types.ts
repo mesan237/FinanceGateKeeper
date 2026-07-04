@@ -17,6 +17,8 @@ export interface AppSettings {
   notificationsEnabled: boolean;
   /** ISO timestamp of first run — anchors the "month 1 complete" check. */
   createdAt: string;
+  /** Whether the first-run onboarding carousel has been finished or skipped (VS-23). */
+  onboardingComplete: boolean;
 }
 
 export type { ActionBarStyle } from '@/types/settings';

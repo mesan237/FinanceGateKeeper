@@ -26,6 +26,7 @@ import {
   setActionBarStyle,
   setAppMode,
   setNotificationsEnabled,
+  setOnboardingComplete,
   setPin,
   setReminderTime,
   verifyPin,
@@ -166,6 +167,23 @@ describe('PIN', () => {
     await clearPin();
     expect(await hasPin()).toBe(false);
     expect(await verifyPin('1234')).toBe(false);
+  });
+});
+
+describe('onboarding', () => {
+  it('defaults onboardingComplete to false on a fresh row', async () => {
+    expect((await getAppSettings()).onboardingComplete).toBe(false);
+  });
+
+  it('persists setOnboardingComplete(true) across a re-read', async () => {
+    await setOnboardingComplete(true);
+    expect((await getAppSettings()).onboardingComplete).toBe(true);
+  });
+
+  it('can be flipped back to false', async () => {
+    await setOnboardingComplete(true);
+    await setOnboardingComplete(false);
+    expect((await getAppSettings()).onboardingComplete).toBe(false);
   });
 });
 

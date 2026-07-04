@@ -76,6 +76,7 @@ beforeEach(() => {
     reminderTime: '21:00',
     notificationsEnabled: true,
     createdAt: '2026-01-01T00:00:00.000Z',
+    onboardingComplete: true,
   });
   mockedMonth1.mockResolvedValue(false);
   mockCloud.userEmail = null;

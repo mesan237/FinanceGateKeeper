@@ -15,10 +15,11 @@ export interface UserRow {
   avatar_color: string | null;
   avatar_emoji: string | null;
   created_at: string;
+  onboarding_complete: number;
 }
 
 const USER_COLUMNS =
-  'id, pin_hash, pin_salt, app_mode, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at';
+  'id, pin_hash, pin_salt, app_mode, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at, onboarding_complete';
 const VALID_ACTION_BAR_STYLES: ReadonlySet<string> = new Set(['explicit', 'speed_dial']);
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const PIN_PATTERN = /^\d{4}$/;
@@ -30,6 +31,7 @@ function mapSettings(row: UserRow): AppSettings {
     reminderTime: row.reminder_time,
     notificationsEnabled: row.notifications_enabled === 1,
     createdAt: row.created_at,
+    onboardingComplete: row.onboarding_complete === 1,
   };
 }
 
@@ -91,6 +93,16 @@ export async function isMonth1Complete(nowISO: string = new Date().toISOString()
   const row = await getOrCreateUserRow();
   const elapsed = new Date(nowISO).getTime() - new Date(row.created_at).getTime();
   return elapsed >= MONTH_1_MS;
+}
+
+/**
+ * Marks the first-run onboarding carousel as finished (or skipped). Persisted on
+ * the single `users` row so it survives relaunch; VS-23 shows the carousel only
+ * while this is `false`.
+ */
+export async function setOnboardingComplete(value: boolean): Promise<void> {
+  const row = await getOrCreateUserRow();
+  await execute('UPDATE users SET onboarding_complete = ? WHERE id = ?', [value ? 1 : 0, row.id]);
 }
 
 /** Whether a local PIN has been configured (the unlock gate is active). */
