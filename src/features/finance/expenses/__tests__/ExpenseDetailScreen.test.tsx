@@ -65,6 +65,14 @@ describe('ExpenseDetailScreen', () => {
     expect(screen.getByText('Food')).toBeTruthy();
   });
 
+  it('uses a back chevron, not a "Cancel" label — it is a drill-down (VS-26 M3)', async () => {
+    render(<ExpenseDetailScreen expenseId={5} />);
+
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+    expect(screen.getByLabelText('Back')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+
   it('Save button is disabled when amount is cleared', async () => {
     render(<ExpenseDetailScreen expenseId={5} />);
 

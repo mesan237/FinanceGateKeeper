@@ -85,7 +85,12 @@ export function AccountForm() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={editId !== null ? 'Edit Account' : 'New Account'} cancelLabel="Cancel" />
+      {/* Create is a modal entry form ("Cancel"); edit is a drill-down from
+          AccountDetail (back chevron) — VS-26 M3 header rule. */}
+      <ScreenHeader
+        title={editId !== null ? 'Edit Account' : 'New Account'}
+        cancelLabel={editId !== null ? undefined : 'Cancel'}
+      />
 
       <TextInput
         testID="account-name"

@@ -27,6 +27,12 @@ export interface AddTransactionSheetProps {
   onClose: () => void;
   /** Called after an expense or template is logged from the sheet (refresh the feed). */
   onExpenseSaved: () => void;
+  /**
+   * Segment to select each time the sheet opens. Lets a caller (e.g. the
+   * dashboard "Log Income" action) request a specific tab. Defaults to
+   * 'expense' — the most common action.
+   */
+  initialSegment?: Segment;
 }
 
 /**
@@ -35,16 +41,21 @@ export interface AddTransactionSheetProps {
  * shared panel. Expense and template logs refresh the feed in place; an income
  * log closes the sheet and continues to the allocation flow.
  */
-export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTransactionSheetProps) {
+export function AddTransactionSheet({
+  visible,
+  onClose,
+  onExpenseSaved,
+  initialSegment = 'expense',
+}: AddTransactionSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
-  const [segment, setSegment] = useState<Segment>('expense');
+  const [segment, setSegment] = useState<Segment>(initialSegment);
 
-  // Always reopen on the Expense tab — the most common action.
+  // Reseed the segment each time the sheet opens (defaults to Expense).
   useEffect(() => {
-    if (visible) setSegment('expense');
-  }, [visible]);
+    if (visible) setSegment(initialSegment);
+  }, [visible, initialSegment]);
 
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="add-transaction-sheet">

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -49,6 +50,13 @@ export function DashboardScreen({
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+
+  // The dashboard opens the same add-transaction sheet the Transactions FAB
+  // uses (VS-26) rather than pushing standalone log routes.
+  const [sheet, setSheet] = useState<{ open: boolean; segment: 'expense' | 'income' }>({
+    open: false,
+    segment: 'expense',
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -152,8 +160,20 @@ export function DashboardScreen({
         <QuickActionBar
           zeroDay={zeroDayStatus ?? { hasExpenses: false, zeroDayConfirmed: false }}
           onConfirmZeroDay={confirmZeroDay}
+          onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
+          onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
       </View>
+
+      {/* Unified add-transaction sheet — shared with the Transactions FAB (VS-26).
+          An expense/template log refreshes the aggregates in place; an income log
+          continues to the allocation flow via the sheet's own handler. */}
+      <AddTransactionSheet
+        visible={sheet.open}
+        initialSegment={sheet.segment}
+        onClose={() => setSheet((s) => ({ ...s, open: false }))}
+        onExpenseSaved={() => void refresh()}
+      />
     </View>
   );
 }
