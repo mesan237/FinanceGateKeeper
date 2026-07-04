@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -14,7 +14,7 @@ import { depositToFund } from '@/features/finance/funds/funds.service';
 import { markIncomeAllocated } from '@/features/finance/income/income.service';
 import { fundProjects } from '@/features/finance/projects/projects.service';
 
-import { useAllocation } from './budget.hooks';
+import { useAllocation, useIsFirstEverAllocation } from './budget.hooks';
 import { calculateBreakdown, redistributeEmergencyPct } from './budget.service';
 import type { Allocation, AllocationBreakdown } from './budget.types';
 
@@ -33,17 +33,47 @@ export interface AllocationScreenProps {
  * the fund/project portions, marks the income `allocated` (so it counts toward
  * the expense budget), locks the month, and routes to the dashboard.
  * **Hold for later** leaves the income `pending` in the unallocated pool.
- * Editing the percentages lives in `AllocationSettings`, not here.
+ * **Adjust split** opens `AllocationSettings` to edit the percentages; on return
+ * the breakdown is recomputed.
+ *
+ * On the user's very first allocation (they have never confirmed one), the
+ * screen routes to settings first — so the seeded default split is set
+ * deliberately, not presented as final (VS-25).
  */
 export function AllocationScreen({ amountFCFA, monthISO, incomeId }: AllocationScreenProps) {
   const styles = useThemedStyles(makeStyles);
-  const { allocation, loading, error, lock } = useAllocation(monthISO);
+  const router = useRouter();
+  const { allocation, loading, error, lock, refresh } = useAllocation(monthISO);
+  const isFirstEver = useIsFirstEverAllocation();
+  // Guards the first-ever redirect to a single hop: returning from settings
+  // leaves the month still unlocked, so without this the screen would loop.
+  const redirectedRef = useRef(false);
 
-  if (!allocation) {
+  // Recompute the breakdown when the screen regains focus (e.g. after editing
+  // the split in settings and navigating back).
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
+
+  useEffect(() => {
+    if (allocation != null && isFirstEver === true && !redirectedRef.current) {
+      redirectedRef.current = true;
+      router.push({ pathname: '/budget/settings', params: { month: monthISO } });
+    }
+  }, [allocation, isFirstEver, monthISO, router]);
+
+  const awaitingDecision = isFirstEver === null;
+  const awaitingRedirect = isFirstEver === true && !redirectedRef.current;
+
+  if (!allocation || awaitingDecision || awaitingRedirect) {
     return (
       <View style={styles.container}>
         <ScreenHeader title="Allocation" />
-        <Typography variant="muted">{loading ? 'Loading…' : 'No allocation yet.'}</Typography>
+        <Typography variant="muted">
+          {!allocation && !loading ? 'No allocation yet.' : 'Loading…'}
+        </Typography>
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </View>
     );
@@ -86,6 +116,12 @@ function AllocationScreenBody({
   const handleHold = () => {
     // The income was created `pending`; holding just leaves it in the pool.
     router.replace('/dashboard');
+  };
+
+  const handleAdjust = () => {
+    // Edit the percentages in settings; `useFocusEffect` refreshes the
+    // breakdown when the user navigates back.
+    router.push({ pathname: '/budget/settings', params: { month: monthISO } });
   };
 
   const handleConfirm = async () => {
@@ -139,10 +175,21 @@ function AllocationScreenBody({
         disabled={isConfirming}
       />
 
+      <Typography variant="muted" style={styles.lockHint}>
+        Confirming locks this split until next month.
+      </Typography>
+
       <Button
         label="Hold for later"
         variant="secondary"
         onPress={handleHold}
+        disabled={isConfirming}
+      />
+
+      <Button
+        label="Adjust split"
+        variant="ghost"
+        onPress={handleAdjust}
         disabled={isConfirming}
       />
 
@@ -196,6 +243,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.BORDER,
+  },
+  lockHint: {
+    textAlign: 'center',
   },
   holdHint: {
     textAlign: 'center',

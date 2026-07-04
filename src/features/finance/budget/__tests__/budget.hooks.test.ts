@@ -16,6 +16,7 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   getMonthlyBudget: jest.fn(),
   checkOverBudget: jest.fn(),
   redistributeEmergencyPct: jest.fn(),
+  hasConfirmedAnyAllocation: jest.fn(),
 }));
 
 jest.mock('@/features/finance/funds/funds.service', () => ({
@@ -36,6 +37,7 @@ jest.mock('@/features/finance/income/income.service', () => ({
 import {
   useAllocation,
   useBudgetStatus,
+  useIsFirstEverAllocation,
   useOverBudgetCheck,
   useUnallocatedPool,
 } from '@/features/finance/budget/budget.hooks';
@@ -73,6 +75,9 @@ const mockedGetPending = incomeService.getPendingIncome as jest.MockedFunction<
 >;
 const mockedMarkAllocated = incomeService.markIncomeAllocated as jest.MockedFunction<
   typeof incomeService.markIncomeAllocated
+>;
+const mockedHasConfirmed = budgetService.hasConfirmedAnyAllocation as jest.MockedFunction<
+  typeof budgetService.hasConfirmedAnyAllocation
 >;
 
 function pendingIncome(overrides: Partial<Income> = {}): Income {
@@ -198,6 +203,30 @@ describe('useAllocation', () => {
 
     expect(mockedLock).toHaveBeenCalledWith('2026-06');
     await waitFor(() => expect(result.current.allocation?.isLocked).toBe(true));
+  });
+});
+
+describe('useIsFirstEverAllocation', () => {
+  it('is null while the check is in flight, then false once a confirmation exists', async () => {
+    mockedHasConfirmed.mockResolvedValue(true);
+    const { result } = renderHook(() => useIsFirstEverAllocation());
+
+    expect(result.current).toBeNull();
+    await waitFor(() => expect(result.current).toBe(false));
+  });
+
+  it('is true when no allocation has ever been confirmed', async () => {
+    mockedHasConfirmed.mockResolvedValue(false);
+    const { result } = renderHook(() => useIsFirstEverAllocation());
+
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it('falls back to false when the check fails, so the user is never trapped', async () => {
+    mockedHasConfirmed.mockRejectedValue(new Error('db unavailable'));
+    const { result } = renderHook(() => useIsFirstEverAllocation());
+
+    await waitFor(() => expect(result.current).toBe(false));
   });
 });
 
