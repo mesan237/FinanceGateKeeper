@@ -50,6 +50,11 @@ export function useAppSettings() {
     [refresh],
   );
 
+  const completeOnboarding = useCallback(async () => {
+    await authService.setOnboardingComplete(true);
+    await refresh();
+  }, [refresh]);
+
   return {
     settings,
     loading,
@@ -58,6 +63,7 @@ export function useAppSettings() {
     setMode,
     setReminderTime,
     setNotificationsEnabled,
+    completeOnboarding,
   };
 }
 
