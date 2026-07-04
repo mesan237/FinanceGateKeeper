@@ -28,6 +28,7 @@ import { useAppSettings } from '@/features/finance/auth/auth.hooks';
 import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
 import { RecurringAutoLogger } from '@/features/finance/expenses/RecurringAutoLogger';
 import { ZeroDayGate } from '@/features/finance/expenses/ZeroDayGate';
+import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
 
 // Keep the splash screen up until the custom fonts have loaded, so text never
 // flashes in a fallback system face first.
@@ -37,7 +38,9 @@ export default function RootLayout() {
   // The root layout is the only seam allowed to read auth settings AND mount an
   // expenses component: it injects the reminder prefs into ZeroDayGate so the
   // expenses feature never imports the auth feature (see ISSUE-008 decision #2).
-  const { settings } = useAppSettings();
+  // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
+  // feature stays presentational (see ISSUE-023).
+  const { settings, loading: settingsLoading, completeOnboarding } = useAppSettings();
 
   // Best-effort cloud backup: pull/push on app open and foreground when signed
   // in. No-op when signed out or offline; never blocks render.
@@ -71,24 +74,30 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <AuthGate>
-            <AppModeProvider>
-              <RecurringAutoLogger>
-                <DebtReminderScheduler>
-                  <DailyReminderScheduler>
-                    <ZeroDayGate
-                      reminderTime={settings?.reminderTime ?? '21:00'}
-                      notificationsEnabled={settings?.notificationsEnabled ?? false}
-                    >
-                      <ThemedShell>
-                        <ToastProvider>
-                          <Stack screenOptions={{ headerShown: false }} />
-                        </ToastProvider>
-                      </ThemedShell>
-                    </ZeroDayGate>
-                  </DailyReminderScheduler>
-                </DebtReminderScheduler>
-              </RecurringAutoLogger>
-            </AppModeProvider>
+            <OnboardingGate
+              ready={!settingsLoading && !!settings}
+              complete={settings?.onboardingComplete ?? false}
+              onDone={() => void completeOnboarding()}
+            >
+              <AppModeProvider>
+                <RecurringAutoLogger>
+                  <DebtReminderScheduler>
+                    <DailyReminderScheduler>
+                      <ZeroDayGate
+                        reminderTime={settings?.reminderTime ?? '21:00'}
+                        notificationsEnabled={settings?.notificationsEnabled ?? false}
+                      >
+                        <ThemedShell>
+                          <ToastProvider>
+                            <Stack screenOptions={{ headerShown: false }} />
+                          </ToastProvider>
+                        </ThemedShell>
+                      </ZeroDayGate>
+                    </DailyReminderScheduler>
+                  </DebtReminderScheduler>
+                </RecurringAutoLogger>
+              </AppModeProvider>
+            </OnboardingGate>
           </AuthGate>
         </AuthProvider>
       </ThemeProvider>
