@@ -23,7 +23,7 @@ export const MESSAGES: Record<NotificationType, { title: string; body: string }>
   },
   zeroDayCheck: {
     title: 'Did you spend nothing today?',
-    body: 'Confirm a zero-spend day or log what you spent.',
+    body: 'Confirm you spent nothing today, or log what you spent.',
   },
   overBudget: {
     title: 'Over budget',

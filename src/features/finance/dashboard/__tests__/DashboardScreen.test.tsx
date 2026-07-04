@@ -171,4 +171,35 @@ describe('DashboardScreen', () => {
 
     expect(screen.getByTestId('quick-confirm-zero-day')).toBeTruthy();
   });
+
+  describe('Control-mode nudge (H3)', () => {
+    it('shows the nudge in learning mode once the user has logged enough', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
+
+      expect(screen.getByTestId('control-mode-nudge')).toBeTruthy();
+    });
+
+    it('hides the nudge in learning mode when the signal is false', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={false} />);
+
+      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
+    });
+
+    it('hides the nudge in control mode even if the signal is true', () => {
+      setupHooks(CONTROL_STATE);
+      render(<DashboardScreen includeBudgetData={true} showControlNudge={true} />);
+
+      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
+    });
+
+    it('deep-links to Settings when the nudge is tapped', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
+
+      fireEvent.press(screen.getByTestId('control-mode-nudge'));
+      expect(mockPush).toHaveBeenCalledWith('/settings');
+    });
+  });
 });

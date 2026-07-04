@@ -48,3 +48,12 @@ describe('useAppSettings — completeOnboarding', () => {
     expect(result.current.settings?.onboardingComplete).toBe(true);
   });
 });
+
+describe('useAppSettings — daysSinceCreated', () => {
+  it('reports 0 days for a freshly created install', async () => {
+    const { result } = renderHook(() => useAppSettings());
+
+    await waitFor(() => expect(result.current.settings).not.toBeNull());
+    expect(result.current.daysSinceCreated).toBe(0);
+  });
+});

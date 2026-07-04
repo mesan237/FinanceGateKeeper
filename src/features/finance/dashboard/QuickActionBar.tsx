@@ -40,7 +40,7 @@ interface QuickActionBarProps {
 
 /**
  * Sticky action bar with shortcuts to the three most common actions.
- * "Confirm Zero Day" is hidden once the day has activity.
+ * The "No spending" action is hidden once the day has activity.
  */
 export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProps) {
   const router = useRouter();
@@ -69,7 +69,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         <ActionButton
           testID="quick-confirm-zero-day"
           icon="zeroDay"
-          label="Zero Day"
+          label="No spending"
           onPress={onConfirmZeroDay}
           tint={c.SURFACE_MUTED}
           iconColor={c.TEXT_MUTED}

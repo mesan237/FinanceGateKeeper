@@ -38,6 +38,12 @@ describe('QuickActionBar', () => {
     expect(screen.getByTestId('quick-confirm-zero-day')).toBeTruthy();
   });
 
+  it('labels the zero-day action in plain language, not "Zero Day" jargon', () => {
+    render(<QuickActionBar zeroDay={NO_ACTIVITY} onConfirmZeroDay={jest.fn()} />);
+    expect(screen.getByText('No spending')).toBeTruthy();
+    expect(screen.queryByText('Zero Day')).toBeNull();
+  });
+
   it('fires onConfirmZeroDay when Confirm Zero Day is pressed', () => {
     const onConfirm = jest.fn();
     render(<QuickActionBar zeroDay={NO_ACTIVITY} onConfirmZeroDay={onConfirm} />);
