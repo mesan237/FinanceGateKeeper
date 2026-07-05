@@ -8,7 +8,7 @@ import { Pill } from '@/components/Pill';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { SegmentedControl } from '@/components/SegmentedControl';
-import { TextInput } from '@/components/TextInput';
+import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
@@ -71,7 +71,9 @@ export function SettingsScreen() {
       });
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invalid time. Use HH:mm.');
+      // The picker only yields a valid HH:mm, so this surfaces genuine save
+      // failures — not a format error.
+      setError(e instanceof Error ? e.message : "Couldn't save the reminder.");
     }
   };
 
@@ -143,11 +145,10 @@ export function SettingsScreen() {
         subtitle="We'll nudge you to log the day's spending."
         right={<Pill label={settings.reminderTime} />}
       >
-        <TextInput
-          testID="settings-reminder-input"
+        <TimeField
+          testID="settings-reminder-time"
           value={reminderInput}
-          onChangeText={setReminderInput}
-          placeholder="HH:mm (e.g. 21:00)"
+          onChange={setReminderInput}
           accessibilityLabel="Reminder time"
         />
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
