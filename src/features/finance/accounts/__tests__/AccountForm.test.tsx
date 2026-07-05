@@ -41,6 +41,11 @@ beforeEach(() => {
 });
 
 describe('AccountForm — create mode', () => {
+  it('shows a "Cancel" header label — it is a modal entry form (VS-26 M3)', () => {
+    render(<AccountForm />);
+    expect(screen.getByText('Cancel')).toBeTruthy();
+  });
+
   it('disables save until a name is entered', () => {
     render(<AccountForm />);
     const save = screen.getByRole('button', { name: 'Save' });
@@ -84,6 +89,13 @@ describe('AccountForm — create mode', () => {
 describe('AccountForm — edit mode', () => {
   beforeEach(() => {
     mockParams = { id: '3' };
+  });
+
+  it('shows a back chevron, not "Cancel" — edit is a drill-down (VS-26 M3)', async () => {
+    render(<AccountForm />);
+    await waitFor(() => expect(screen.getByTestId('account-name').props.value).toBe('Orange Money'));
+    expect(screen.getByLabelText('Back')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
   });
 
   it('prefills the existing account and updates on save', async () => {

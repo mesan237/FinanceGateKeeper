@@ -196,6 +196,21 @@ export async function lockAllocation(monthISO: string): Promise<void> {
 }
 
 /**
+ * Reports whether the user has ever *confirmed* (locked) an allocation for any
+ * month. Locking only happens on the allocation screen's Confirm, so a locked
+ * row is a deliberate choice — unlike the default rows that auto-materialise on
+ * read (`getOrCreateCurrentAllocation`). The allocation screen uses this to
+ * detect the very first allocation and route the user to set percentages before
+ * presenting a breakdown, instead of showing the seeded default as final (VS-25).
+ */
+export async function hasConfirmedAnyAllocation(): Promise<boolean> {
+  const [row] = await query<{ n: number }>(
+    'SELECT COUNT(*) AS n FROM allocations WHERE is_locked = 1',
+  );
+  return row.n > 0;
+}
+
+/**
  * Splits `incomeAmount` across the four buckets per the allocation's
  * percentages, using integer-floor division. Any rounding remainder is added
  * to `expenses` (the residual bucket by PRD convention) so the four amounts

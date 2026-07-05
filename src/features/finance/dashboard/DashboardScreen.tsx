@@ -1,5 +1,5 @@
-import { useFocusEffect } from 'expo-router';
-import React, { useCallback } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -28,17 +29,34 @@ import { useDashboard } from './dashboard.hooks';
 interface DashboardScreenProps {
   /** True in control mode (budget/funds/project cards shown); false in learning mode. */
   includeBudgetData: boolean;
+  /**
+   * True when a learning-mode user has logged enough to be nudged toward
+   * Control mode. Computed at the routing layer (the dashboard never reads
+   * app mode itself). Ignored in control mode.
+   */
+  showControlNudge?: boolean;
 }
 
 /**
  * Home screen. Shows budget pace, fund balances, top active project, and
  * today's spending. Refreshes on every tab focus so numbers stay current.
  */
-export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
+export function DashboardScreen({
+  includeBudgetData,
+  showControlNudge = false,
+}: DashboardScreenProps) {
   const { state, loading, error, refresh } = useDashboard({ includeBudgetData });
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
+  const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+
+  // The dashboard opens the same add-transaction sheet the Transactions FAB
+  // uses (VS-26) rather than pushing standalone log routes.
+  const [sheet, setSheet] = useState<{ open: boolean; segment: 'expense' | 'income' }>({
+    open: false,
+    segment: 'expense',
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -118,6 +136,21 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
               Log your first expense or income using the buttons below. Budget tracking unlocks in
               Control mode once you set your allocation.
             </Typography>
+
+            {/* Control-mode nudge — surfaces the hidden budgeting feature once
+                the user has logged enough (gating computed at the route). */}
+            {showControlNudge ? (
+              <Pressable
+                testID="control-mode-nudge"
+                accessibilityRole="button"
+                onPress={() => router.push('/settings')}
+                style={({ pressed }) => [styles.nudge, pressed && styles.nudgePressed]}
+              >
+                <Typography style={styles.nudgeText}>
+                  Ready for budgeting? Switch to Control mode
+                </Typography>
+              </Pressable>
+            ) : null}
           </Card>
         ) : null}
       </ScrollView>
@@ -127,8 +160,20 @@ export function DashboardScreen({ includeBudgetData }: DashboardScreenProps) {
         <QuickActionBar
           zeroDay={zeroDayStatus ?? { hasExpenses: false, zeroDayConfirmed: false }}
           onConfirmZeroDay={confirmZeroDay}
+          onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
+          onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
       </View>
+
+      {/* Unified add-transaction sheet — shared with the Transactions FAB (VS-26).
+          An expense/template log refreshes the aggregates in place; an income log
+          continues to the allocation flow via the sheet's own handler. */}
+      <AddTransactionSheet
+        visible={sheet.open}
+        initialSegment={sheet.segment}
+        onClose={() => setSheet((s) => ({ ...s, open: false }))}
+        onExpenseSaved={() => void refresh()}
+      />
     </View>
   );
 }
@@ -194,6 +239,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   emptyTitle: {
     marginBottom: 2,
+  },
+  nudge: {
+    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: c.PRIMARY_LIGHT,
+  },
+  nudgePressed: {
+    opacity: 0.75,
+  },
+  nudgeText: {
+    color: c.PRIMARY_GREEN,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
+    fontSize: 14,
+    textAlign: 'center',
   },
   actionBarWrapper: {
     backgroundColor: c.SURFACE,

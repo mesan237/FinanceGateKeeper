@@ -1,5 +1,5 @@
-import { AllocationSettings } from '@/features/finance/budget/AllocationSettings';
+import { AllocationSettingsRoute } from '@/features/finance/budget/AllocationSettingsRoute';
 
 export default function BudgetSettingsRoute() {
-  return <AllocationSettings />;
+  return <AllocationSettingsRoute />;
 }

@@ -65,14 +65,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.BORDER,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   input: {
     flex: 1,
     textAlign: 'right',
     color: c.TEXT_PRIMARY,
     fontFamily: FONT_FAMILY.POPPINS_BOLD,
-    fontSize: 32,
+    fontSize: 28,
     padding: 0,
   },
   suffix: {

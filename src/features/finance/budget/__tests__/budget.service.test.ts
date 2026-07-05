@@ -27,6 +27,7 @@ import {
   getExpensesMonthlyTotal,
   getMonthlyBudget,
   getOrCreateCurrentAllocation,
+  hasConfirmedAnyAllocation,
   lockAllocation,
   redistributeEmergencyPct,
   updateAllocation,
@@ -193,6 +194,28 @@ describe('lockAllocation', () => {
     await getOrCreateCurrentAllocation('2026-06');
     await lockAllocation('2026-06');
     await expect(lockAllocation('2026-06')).resolves.toBeUndefined();
+  });
+});
+
+describe('hasConfirmedAnyAllocation', () => {
+  it('is false when only unlocked (default-seeded) allocation rows exist', async () => {
+    // A default row auto-materialises on read but is never a deliberate choice.
+    await getOrCreateCurrentAllocation('2026-06');
+    await getOrCreateCurrentAllocation('2026-07');
+
+    expect(await hasConfirmedAnyAllocation()).toBe(false);
+  });
+
+  it('is false when no allocation row exists at all', async () => {
+    expect(await hasConfirmedAnyAllocation()).toBe(false);
+  });
+
+  it('becomes true once any month has been locked (confirmed)', async () => {
+    await getOrCreateCurrentAllocation('2026-06');
+    expect(await hasConfirmedAnyAllocation()).toBe(false);
+
+    await lockAllocation('2026-06');
+    expect(await hasConfirmedAnyAllocation()).toBe(true);
   });
 });
 

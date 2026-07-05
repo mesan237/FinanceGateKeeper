@@ -49,6 +49,14 @@ describe('IncomeDetailScreen — pending income', () => {
     expect(screen.getByTestId('income-detail-date')).toBeTruthy();
   });
 
+  it('uses a back chevron, not a "Cancel" label — it is a drill-down (VS-26 M3)', async () => {
+    render(<IncomeDetailScreen incomeId={9} />);
+
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
+    expect(screen.getByLabelText('Back')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+
   it('Save submits the patch and navigates back', async () => {
     render(<IncomeDetailScreen incomeId={9} />);
 

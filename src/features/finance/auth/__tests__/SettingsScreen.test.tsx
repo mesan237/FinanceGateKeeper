@@ -76,6 +76,7 @@ beforeEach(() => {
     reminderTime: '21:00',
     notificationsEnabled: true,
     createdAt: '2026-01-01T00:00:00.000Z',
+    onboardingComplete: true,
   });
   mockedMonth1.mockResolvedValue(false);
   mockCloud.userEmail = null;
@@ -89,19 +90,25 @@ describe('SettingsScreen', () => {
   it('renders the controls seeded from settings', async () => {
     renderSettings();
     expect(await screen.findByTestId('settings-mode-toggle')).toBeTruthy();
-    expect(screen.getByTestId('settings-reminder-input').props.value).toBe('21:00');
+    // The reminder is now a native time picker seeded from the saved HH:mm.
+    expect(screen.getByTestId('settings-reminder-time')).toBeTruthy();
     expect(screen.getByTestId('settings-notifications-switch').props.value).toBe(true);
   });
 
-  it('saves a changed reminder time and reschedules', async () => {
+  it('saves a picked reminder time and reschedules — no free-text entry', async () => {
     renderSettings();
-    fireEvent.changeText(await screen.findByTestId('settings-reminder-input'), '07:30');
+    // Open the native picker and pick 07:30.
+    fireEvent.press(await screen.findByTestId('settings-reminder-time'));
+    fireEvent(screen.getByTestId('time-picker'), 'change', { type: 'set' }, new Date(2020, 0, 1, 7, 30));
     fireEvent.press(screen.getByTestId('settings-reminder-save'));
 
     await waitFor(() => expect(mockedSetTime).toHaveBeenCalledWith('07:30'));
     expect(mockedApply).toHaveBeenCalledWith(
       expect.objectContaining({ reminderTime: '07:30', notificationsEnabled: true }),
     );
+    // The free-text field and its format-error copy are gone.
+    expect(screen.queryByTestId('settings-reminder-input')).toBeNull();
+    expect(screen.queryByText(/Invalid time/i)).toBeNull();
   });
 
   it('toggles app mode', async () => {

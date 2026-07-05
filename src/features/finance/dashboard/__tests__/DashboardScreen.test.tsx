@@ -15,6 +15,19 @@ jest.mock('@/features/finance/expenses/expenses.hooks', () => ({
   useZeroDay: jest.fn(),
 }));
 
+// Stub the sheet so this test stays focused on the dashboard wiring, not the
+// sheet's full dependency tree. Echoes visibility + the requested segment.
+jest.mock('@/features/finance/expenses/AddTransactionSheet', () => {
+  const ReactLib = require('react');
+  const { Text } = require('react-native');
+  return {
+    AddTransactionSheet: ({ visible, initialSegment }: { visible: boolean; initialSegment?: string }) =>
+      visible
+        ? ReactLib.createElement(Text, { testID: 'add-sheet-mock' }, `sheet:${initialSegment ?? 'expense'}`)
+        : null,
+  };
+});
+
 import { DashboardScreen } from '@/features/finance/dashboard/DashboardScreen';
 import { useDashboard } from '@/features/finance/dashboard/dashboard.hooks';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
@@ -142,20 +155,31 @@ describe('DashboardScreen', () => {
     expect(screen.getByText('5 000 FCFA')).toBeTruthy();
   });
 
-  it('quick action Log Expense navigates to /expenses/log', () => {
+  it('opens the add-transaction sheet on the Expense segment for Log Expense (VS-26)', () => {
     setupHooks(LEARNING_STATE);
     render(<DashboardScreen includeBudgetData={false} />);
 
+    expect(screen.queryByTestId('add-sheet-mock')).toBeNull();
     fireEvent.press(screen.getByTestId('quick-log-expense'));
-    expect(mockPush).toHaveBeenCalledWith('/expenses/log');
+    expect(screen.getByTestId('add-sheet-mock')).toHaveTextContent('sheet:expense');
   });
 
-  it('quick action Log Income navigates to /income/log', () => {
+  it('opens the add-transaction sheet on the Income segment for Log Income (VS-26)', () => {
     setupHooks(LEARNING_STATE);
     render(<DashboardScreen includeBudgetData={false} />);
 
     fireEvent.press(screen.getByTestId('quick-log-income'));
-    expect(mockPush).toHaveBeenCalledWith('/income/log');
+    expect(screen.getByTestId('add-sheet-mock')).toHaveTextContent('sheet:income');
+  });
+
+  it('never pushes the retired full-screen log routes (VS-26)', () => {
+    setupHooks(LEARNING_STATE);
+    render(<DashboardScreen includeBudgetData={false} />);
+
+    fireEvent.press(screen.getByTestId('quick-log-expense'));
+    fireEvent.press(screen.getByTestId('quick-log-income'));
+    expect(mockPush).not.toHaveBeenCalledWith('/expenses/log');
+    expect(mockPush).not.toHaveBeenCalledWith('/income/log');
   });
 
   it('hides Confirm Zero Day quick action when day has activity', () => {
@@ -170,5 +194,36 @@ describe('DashboardScreen', () => {
     render(<DashboardScreen includeBudgetData={false} />);
 
     expect(screen.getByTestId('quick-confirm-zero-day')).toBeTruthy();
+  });
+
+  describe('Control-mode nudge (H3)', () => {
+    it('shows the nudge in learning mode once the user has logged enough', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
+
+      expect(screen.getByTestId('control-mode-nudge')).toBeTruthy();
+    });
+
+    it('hides the nudge in learning mode when the signal is false', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={false} />);
+
+      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
+    });
+
+    it('hides the nudge in control mode even if the signal is true', () => {
+      setupHooks(CONTROL_STATE);
+      render(<DashboardScreen includeBudgetData={true} showControlNudge={true} />);
+
+      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
+    });
+
+    it('deep-links to Settings when the nudge is tapped', () => {
+      setupHooks(LEARNING_STATE);
+      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
+
+      fireEvent.press(screen.getByTestId('control-mode-nudge'));
+      expect(mockPush).toHaveBeenCalledWith('/settings');
+    });
   });
 });

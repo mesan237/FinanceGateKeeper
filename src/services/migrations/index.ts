@@ -23,6 +23,7 @@ import { migration as syncAccounts } from '@/services/migrations/021_sync_accoun
 import { migration as addIncomeAllocationStatus } from '@/services/migrations/022_add_income_allocation_status';
 import { migration as addProjectDeletedAt } from '@/services/migrations/023_add_project_deleted_at';
 import { migration as addPinAndProfileColumns } from '@/services/migrations/024_add_pin_and_profile_columns';
+import { migration as addOnboardingComplete } from '@/services/migrations/025_add_onboarding_complete';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -49,4 +50,5 @@ export const migrations: ReadonlyArray<Migration> = [
   addIncomeAllocationStatus,
   addProjectDeletedAt,
   addPinAndProfileColumns,
+  addOnboardingComplete,
 ];

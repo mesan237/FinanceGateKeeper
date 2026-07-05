@@ -668,6 +668,219 @@ Presentational redesign of the Reports tab from a supplied mockup — no schema,
 
 ---
 
+## UX AUDIT (Post-v1 Usability)
+
+Slices VS-23 → VS-31 come from the first-time-user usability audit in
+`docs/ux-audit/` (rationale + evidence per issue). They are grouped by theme, not
+one-per-finding; each still cuts through every layer it touches. Sequence follows
+the audit phases: **Comprehension (23–25) → Consistency (26–27) → Polish (28–30)
+→ Refinements (31)**. Audit issue IDs (H1, M4, …) are cross-referenced in each
+slice and in `docs/ux-audit/README.md`.
+
+---
+
+### VS-23: First-Run Onboarding Carousel
+
+**Priority:** High — audit H1 (root cause: the app never teaches its model)
+**Blocked by:** VS-02 (PIN), VS-08 (app mode / `users` row)
+**Plan:** `issues/ISSUE-023/implementation-plan.md`
+
+**Scope:**
+
+- SQLite migration `025_add_onboarding_complete.ts` — add `onboarding_complete INTEGER NOT NULL DEFAULT 0` to `users`; register in `migrations/index.ts`.
+- `auth.service.ts` / `auth.types.ts` — add `onboardingComplete` to the SELECT column list + `AppSettings`; `getOnboardingComplete()` / `setOnboardingComplete()`.
+- New slice `features/finance/onboarding/` — `OnboardingScreen.tsx` (3–4 skippable panels: log everything → auto-split into buckets → Learning vs Control → optional reminder), `onboarding.hooks.ts`.
+- `app/_layout.tsx` — in `AuthGate`, after unlock and before the tabs, render onboarding once when `!onboardingComplete`; persist completion on finish **or** skip.
+- Gating stays at the routing layer (mirrors VS-08 decision #2) — the onboarding feature never imports other features.
+
+**TDD Anchor:**
+
+- Test: migration adds the column with default 0; `getAppSettings` returns `onboardingComplete: false` on a fresh row.
+- Test: `setOnboardingComplete(true)` persists and survives a re-read.
+- Test: `OnboardingScreen` renders each panel, Next advances, Skip on panel 1 fires `onDone`.
+- Test: gate shows the carousel when incomplete, renders children (tabs) when complete.
+
+**Done when:** Fresh install → PIN setup → carousel → dashboard; second launch skips the carousel; Skip still marks it complete. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-24: Dashboard Comprehension — Control-Mode Nudge & Clearer Labels
+
+**Priority:** High — audit H3 + M7
+**Blocked by:** VS-08, VS-13 (Dashboard), VS-23 (onboarding sets the frame)
+**Plan:** `issues/ISSUE-024/implementation-plan.md`
+
+**Scope:**
+
+- H3: surface a "Ready for budgeting? Switch to Control mode" prompt on the Dashboard Getting-Started card once a Learning-mode user has logged enough (≥ N transactions or ≥ N days), not only in Settings after 30 days. Tapping flips the mode (confirm) or deep-links to the toggle.
+- Gating at the routing layer: `dashboard.tsx` already passes `includeBudgetData`; add a second computed prop (e.g. `showControlNudge`) so the dashboard feature keeps its no-auth-import rule.
+- M7: rename the "Zero Day" action to self-describing copy ("I spent nothing today") in `QuickActionBar` and align the matching notification/`ZeroDayGate` copy.
+
+**TDD Anchor:**
+
+- Test: dashboard renders the nudge when mode = learning AND the "logged enough" signal is true; hidden otherwise and in control mode.
+- Test: tapping the nudge invokes the mode switch / navigation.
+- Test: the zero-day action renders the new label; notification copy matches.
+
+**Done when:** A Learning-mode user who has logged a few entries sees a clear switch-to-Control prompt on the dashboard; the zero-day action reads plainly. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-25: Forgiving Allocation — Editable Split & Pre-Lock Warning
+
+**Priority:** High — audit H4
+**Blocked by:** VS-06 (Allocation), VS-19 (Deferred allocation)
+**Plan:** `issues/ISSUE-025/implementation-plan.md`
+
+**Scope:**
+
+- `AllocationScreen.tsx` — add an "Adjust split" link that opens `AllocationSettings` (`/budget/settings`) and returns to a refreshed breakdown (the allocation hook already exposes `refresh`).
+- First-ever allocation: route the user to set percentages **before** presenting a breakdown, instead of presenting seeded `DEFAULT_ALLOCATION` as final (detect via the freshly-created, never-locked row).
+- Make the month-lock consequence explicit **before** Confirm (helper text or confirm dialog: "Confirming locks this split until next month"), not only via the post-hoc locked banner.
+- No schema change; no new cross-feature edges (budget → funds/projects/income already approved).
+
+**TDD Anchor:**
+
+- Test: "Adjust split" navigates to settings; returning re-computes the breakdown from updated percentages.
+- Test: a first-ever allocation prompts for percentages before showing a breakdown.
+- Test: Confirm surfaces the lock warning before committing; Hold path unchanged.
+
+**Done when:** From the allocation screen a user can edit the split and return without losing the in-flight income, and the lock is disclosed before Confirm. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-26: Unified Add-Transaction Entry Points ✅ Done
+
+**Priority:** High — audit H2 (+ M3 header cleanup)
+**Blocked by:** VS-16 (Transaction UX / `AddTransactionSheet`)
+**Plan:** `issues/ISSUE-026/implementation-plan.md`
+
+**Scope:**
+
+- Point the Dashboard `QuickActionBar` "Log Expense" / "Log Income" at the same `AddTransactionSheet` (add an `initialSegment` prop) instead of pushing `/expenses/log` and `/income/log` full-screen routes.
+- Retire the standalone log routes for day-to-day use (keep only if a deep link/notification needs them); income still continues to the allocation flow on save.
+- Verify the sheet can be opened from the dashboard without a cross-feature violation (dashboard → expenses is approved; confirm against `docs/ARCHITECTURE.md`).
+- M3 residue: with the standalone forms gone, audit remaining `ScreenHeader` usages so "Cancel" is used only for modal/entry screens and a back chevron for drill-downs.
+
+**TDD Anchor:**
+
+- Test: dashboard "Log Income" opens the sheet on the Income segment; "Log Expense" on Expense.
+- Test: no day-to-day path pushes the old full-screen log routes.
+- Test: header left-control matches the modal-vs-drill-down rule on the audited screens.
+
+**Done when:** Both add-transaction entry points use one sheet-based pattern; headers follow one rule. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-27: Consistent App-Mode Gating (Reports)
+
+**Priority:** High — audit H5
+**Blocked by:** VS-08, VS-14 (Reports), VS-21 (Reports redesign)
+**Plan:** authored on pickup.
+
+**Scope:**
+
+- `app/(drawer)/(tabs)/reports.tsx` — read `useAppMode()` and pass `includeBudgetData` into `MonthlyReport` (mirrors the dashboard route precedent), keeping the reports feature free of the auth import.
+- `MonthlyReport.tsx` — in Learning mode show only income/expense/category analytics; hide Expense Performance, Funds, Projects, and allocation comparison.
+
+**TDD Anchor:**
+
+- Test: `MonthlyReport` with `includeBudgetData={false}` omits the budgeting sections and still renders income/expense/category.
+- Test: `includeBudgetData={true}` renders the full report (regression).
+
+**Done when:** Learning-mode Reports no longer surfaces empty budgeting sections; Control-mode Reports is unchanged. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-28: Shared Empty & Loading States
+
+**Priority:** Medium — audit M1 + M2
+**Blocked by:** VS-13, VS-14 (screens to migrate)
+**Plan:** authored on pickup.
+
+**Scope:**
+
+- New shared `components/EmptyState.tsx` (icon + title + subtitle + optional CTA) and `components/LoadingState.tsx` (single spinner treatment), root infra usable by any feature.
+- Migrate Budget, Transactions, and Reports empty cases to `EmptyState` (M1: Reports currently renders a blank scroll view when `report` is null).
+- Standardize loading on `LoadingState` (retire bare "Loading…" text on Budget/Reports).
+- Use the existing Projects empty state as the visual reference.
+
+**TDD Anchor:**
+
+- Test: `EmptyState` / `LoadingState` render their props and optional CTA.
+- Test: Reports shows the empty state (not blank) when there is no data.
+- Test: migrated screens render the shared components.
+
+**Done when:** Empty and loading states look and behave consistently across all tabs; Reports has a real empty state. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-29: Native Time Picker for Reminders ✅ Done
+
+**Priority:** Medium — audit M4
+**Blocked by:** VS-08 (Settings / reminder)
+**Plan:** `issues/ISSUE-029/implementation-plan.md`
+
+**Scope:**
+
+- New `components/TimeField.tsx` (sibling to `DateField`, wrapping `@react-native-community/datetimepicker`), persisting the same `HH:mm` string.
+- `SettingsScreen.tsx` — replace the free-text reminder `TextInput` + on-save validation with `TimeField`; `applyReminderSchedule` unchanged.
+
+**TDD Anchor:**
+
+- Test: `TimeField` emits `HH:mm` for a picked time and seeds from an `HH:mm` value.
+- Test: Settings saves the picked time and reschedules; no format-error path remains.
+
+**Done when:** Reminder time is chosen from a native picker; no free-text entry or format error state. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-30: Navigation Hygiene — Drawer Cleanup & Accounts Discoverability
+
+**Priority:** Medium — audit M5 + M6
+**Blocked by:** VS-16, VS-18 (Accounts)
+**Plan:** authored on pickup.
+
+**Scope:**
+
+- M5: hide the disabled "Soon" drawer rows (Export, Backup & Restore, Delete & Reset, Help) until they ship — or collapse to a single non-tappable "More coming soon" note. (Backup & Restore being disabled next to working cloud sync is actively confusing.)
+- M6: add an Accounts entry point from the Dashboard Wallets card; replace the Projects-header trash icon (reads as "delete this") with an overflow (⋯) menu whose item is "Recently deleted."
+
+**TDD Anchor:**
+
+- Test: the drawer renders no disabled "Soon" rows.
+- Test: the Wallets card exposes a tap → `/accounts`.
+- Test: the Projects header exposes "Recently deleted" via an overflow menu, not a bare trash icon.
+
+**Done when:** The drawer shows only actionable rows, Accounts is reachable in one tap from the dashboard, and the deleted-projects entry no longer looks destructive. Suite + `tsc` + `/check-arch` clean.
+
+---
+
+### VS-31: UX Refinements — A11y, Undo & Dedup
+
+**Priority:** Low — audit L1–L6 (each individually small)
+**Blocked by:** VS-03 (toast/log), VS-14 (month stepper), VS-06 (lock)
+**Plan:** authored on pickup. **Note:** L6 (month-lock escape hatch) is a product-design decision — confirm before building; may split into its own slice.
+
+**Scope:**
+
+- L3: add an "Undo" action to the expense success toast (delete the just-created row; `log.submit()` already returns the id) — requires the toast to accept an action + handler.
+- L1: pair ambiguous icon-only controls with a short label or clearer glyph (overlaps M6's trash icon).
+- L5: add a redundant non-color status cue ("On track" / "Over budget") beside the colored budget-pace bar.
+- L4: move `Typography` to a scalable scheme that respects OS text-scaling.
+- L2: consolidate the two month-stepper implementations (`TransactionList` inline vs reports `NavArrows`) into one shared component.
+- L6 (optional/product call): a confirm-guarded "Unlock / re-plan this month" escape hatch for locked allocations.
+
+**TDD Anchor:**
+
+- Test: the toast "Undo" deletes the logged expense.
+- Test: budget status exposes a non-color cue.
+- Test: the shared month-stepper is used by both the transactions feed and reports.
+
+**Done when:** The selected refinements ship without regressions; the full suite + `tsc` + `/check-arch` stay clean.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
@@ -715,6 +928,11 @@ These tasks can run simultaneously if using multiple agents:
 
 | Task                          | Status     | Notes |
 | ----------------------------- | ---------- | ----- |
+| VS-23: Onboarding Carousel    | ✅ Done    | First-run onboarding (audit H1, ISSUE-023): migration 025 adds `onboarding_complete` (fresh install → 0/carousel shown; existing install backfilled to 1/skipped) → auth.service `setOnboardingComplete` + `AppSettings.onboardingComplete` → `useAppSettings.completeOnboarding` → presentational `onboarding/` slice (OnboardingScreen 4-panel carousel + OnboardingGate) → gated at the routing layer in `app/_layout` inside `AuthGate`'s unlocked branch (props-injected, no feature→feature edge). code-reviewer APPROVE WITH NITS (no BLOCK). 15 new slice tests (3 migration, 3 service, 1 hook, 5 screen, 3 gate); tsc clean. Pre-existing unrelated failures untouched: MonthlyReport date-driven tests (assert "June 2026" while today is 2026-07-04) + the known-flaky auth CHECK test (passes in isolation). |
+| VS-24: Dashboard Comprehension | ✅ Done    | Control-mode nudge + clearer zero-day label (audit H3 + M7, ISSUE-024). H3: `useAppSettings` exposes `daysSinceCreated` (derived via `daysBetween`) → dashboard route computes `showControlNudge = mode === 'learning' && daysSinceCreated >= 7` and passes it as a prop (gating stays at the routing layer, dashboard feature still auth-free) → DashboardScreen renders a "Ready for budgeting? Switch to Control mode" CTA inside the learning-mode Getting-started card that deep-links to `/settings` (Design Decision #1: deep-link, not inline flip). M7: QuickActionBar "Zero Day" → "No spending"; zeroDayCheck notification body reworded to plain language + a `notifications.config` guard test against "Zero Day" jargon. code-reviewer APPROVE WITH NITS (no BLOCK; stale JSDoc + notification body addressed). 7 new tests (4 DashboardScreen nudge, 1 QuickActionBar label, 1 notifications copy guard, 1 daysSinceCreated hook); tsc clean; /check-arch PASS. Pre-existing unrelated failures untouched: MonthlyReport date-driven tests (assert "June 2026" while today is 2026-07-04) + the known-flaky auth CHECK test (passes in isolation). |
+| VS-25: Forgiving Allocation   | ✅ Done    | Editable split + first-run redirect + pre-lock disclosure (audit H4, ISSUE-025). budget.service `hasConfirmedAnyAllocation()` (COUNT of locked rows) → budget.hooks `useIsFirstEverAllocation()` → AllocationScreen: first-ever allocation (never confirmed) redirects to `/budget/settings` before showing a breakdown (ref-guarded, single hop; global "ever locked" signal replaces the plan's per-month `createdNow`, which default rows auto-materialised on read would defeat — Design Decision #1), `useFocusEffect(refresh)` recomputes the breakdown on return, "Adjust split" ghost button, persistent "Confirming locks this split until next month." disclosure under Confirm. `month` param wired through a thin `AllocationSettingsRoute` wrapper (AllocationSettings unchanged). No schema change; no new cross-feature edges (budget→funds/projects/income pre-existing). code-reviewer APPROVE WITH NITS (both nits addressed: direct `useIsFirstEverAllocation` unit test + live `month` param). 13 slice tests (3 service, 5 screen, 3 hooks, 2 route); budget folder 89/89; tsc + /check-arch clean. Pre-existing unrelated failures untouched: MonthlyReport date-driven (assert "June 2026" while today is 2026-07-04) + known-flaky auth CHECK test (passes in isolation). |
+| VS-26: Unified Add-Transaction | ✅ Done    | One sheet for both add-transaction entry points (audit H2 + M3, ISSUE-026). `AddTransactionSheet` gains an optional `initialSegment` prop (default `'expense'`; the open effect reseeds to it) → `QuickActionBar` "Log Expense"/"Log Income" swap their `router.push('/expenses/log')`/`('/income/log')` for `onLogExpense`/`onLogIncome` callbacks (drops `useRouter`) → `DashboardScreen` mounts a single `AddTransactionSheet` with local `{open,segment}` state and opens it on the matching segment; `onExpenseSaved` refreshes the dashboard aggregates in place, income-save still routes to `/income/allocate` via the sheet. Standalone `app/expenses/log.tsx` + `app/income/log.tsx` routes retained (back the ZeroDayPrompt "Let me log" + deep links); dashboard is now the only remaining `/income/log` pusher removed. M3: dropped `cancelLabel="Cancel"` on `ExpenseDetailScreen` + `IncomeDetailScreen` (drill-downs → back chevron); `AccountForm` made mode-aware (Cancel in create, back chevron in edit drill-down); genuine entry forms (ExpenseLog/IncomeLog/ProjectForm/DebtForm/TransferLog) keep "Cancel". No new cross-feature edge (dashboard→expenses pre-approved, already used for `useZeroDay`). code-reviewer APPROVE (no BLOCK/nits). Tests updated across AddTransactionSheet (8), QuickActionBar (8), DashboardScreen (15), Expense/IncomeDetailScreen (21); 862/870 suite, tsc clean, /check-arch PASS. Pre-existing unrelated failures untouched: 8 MonthlyReport date-driven tests (assert "June 2026" while today is 2026-07-04). |
+| VS-29: Native Time Picker     | ✅ Done    | Reminder time picked from a native picker instead of free text (audit M4, ISSUE-029). New shared `components/TimeField.tsx` (sibling to `DateField`, wraps `@react-native-community/datetimepicker` in `mode="time"`; reads/writes a 24h `HH:mm` string, `isHHmm` regex guard falls back to now when empty/malformed, zero-pads on emit, no-emit on dismiss) → `SettingsScreen` swaps the free-text reminder `TextInput` for `TimeField` (drops the `@/components/TextInput` import; keeps the Save button + `saveReminder`→`setReminderTime`/`applyReminderSchedule` unchanged; the format-error path is retired — the `catch` now surfaces only genuine save failures). No migration; no new cross-feature edge (TimeField is shared infra, Settings→components allowed). code-reviewer APPROVE WITH NITS (both actionable nits addressed: act()-clean picker events + seed-to-now assertion). 6 TimeField tests + 2 reworked Settings reminder tests; 870/878 suite, tsc clean, /check-arch PASS. Pre-existing unrelated failures untouched: 8 MonthlyReport date-driven tests (assert "June 2026" while today is 2026-07-04). |
 | VS-01: Project Scaffold       | ✅ Done    | Scaffold, migration runner, primitives, tab routing, notifications stub. 14/14 tests passing. |
 | VS-02: PIN Auth               | ✅ Done    | Local 4-digit PIN gate: migration 024 adds pin_salt (pin_hash already existed from 008); `utils/pinHash` (expo-crypto SHA-256 + per-install salt, deterministically mocked in jest) → auth.service hasPin/setPin/verifyPin/changePin/clearPin → AuthProvider (in-memory locked/unlocked + 3-strikes→30s cooldown) + useAuthLock → PinKeypad/AuthScreen (first-run setup enter+confirm, unlock with cooldown countdown) → AuthGate hard-gates the route tree in app/_layout (renders nothing until lock state resolves, schedulers mount only when unlocked). ChangePinScreen (current→new→confirm) + /profile/change-pin route. Forgot-PIN recovery (PinRecoveryScreen via a link on the unlock screen): re-authenticate with the cloud account password → `resetPin` (clears PIN, returns to setup) without data loss; users with no cloud backup get a confirm-guarded `resetLocalData` wipe (drops all tables + re-runs migrations to a fresh install) since erasing the protected data is the only safe reset without an identity check. `users` excluded from sync, so the PIN stays device-local. 41 PIN/profile/recovery slice tests. |
 | VS-03: Expense Logging        | ✅ Done    | Tracer bullet: migrations→service→hooks→UI→routes. 51/51 tests passing. |

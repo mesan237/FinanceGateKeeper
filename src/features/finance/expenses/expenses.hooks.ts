@@ -16,17 +16,36 @@ import type {
   RecurringExpense,
 } from './expenses.types';
 
+/** External state a caller can own so a value survives this hook unmounting. */
+export interface ControlledField {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export interface UseExpenseLogOptions {
+  /** Lift `amount` to a parent so it persists across form remounts (e.g. the
+   *  Add-transaction sheet keeping the figure when toggling Expense/Income). */
+  amount?: ControlledField;
+  /** Lift `note` to a parent, same rationale as `amount`. */
+  note?: ControlledField;
+}
+
 /**
  * Form state for the expense log screen. Exposes individual field setters
  * (rather than a form-state object) so later slices reusing this shape stay
  * consistent. Validates `amount > 0` and a chosen category before allowing
- * submit.
+ * submit. `amount`/`note` may be lifted to a parent via `options` so their
+ * values survive the form unmounting.
  */
-export function useExpenseLog() {
-  const [amount, setAmount] = useState('');
+export function useExpenseLog(options?: UseExpenseLogOptions) {
+  const internalAmount = useState('');
+  const internalNote = useState('');
+  const amount = options?.amount ? options.amount.value : internalAmount[0];
+  const setAmount = options?.amount ? options.amount.onChange : internalAmount[1];
+  const note = options?.note ? options.note.value : internalNote[0];
+  const setNote = options?.note ? options.note.onChange : internalNote[1];
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
-  const [note, setNote] = useState('');
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);

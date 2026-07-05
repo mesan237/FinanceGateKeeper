@@ -27,6 +27,12 @@ export interface AddTransactionSheetProps {
   onClose: () => void;
   /** Called after an expense or template is logged from the sheet (refresh the feed). */
   onExpenseSaved: () => void;
+  /**
+   * Segment to select each time the sheet opens. Lets a caller (e.g. the
+   * dashboard "Log Income" action) request a specific tab. Defaults to
+   * 'expense' — the most common action.
+   */
+  initialSegment?: Segment;
 }
 
 /**
@@ -35,16 +41,29 @@ export interface AddTransactionSheetProps {
  * shared panel. Expense and template logs refresh the feed in place; an income
  * log closes the sheet and continues to the allocation flow.
  */
-export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTransactionSheetProps) {
+export function AddTransactionSheet({
+  visible,
+  onClose,
+  onExpenseSaved,
+  initialSegment = 'expense',
+}: AddTransactionSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
-  const [segment, setSegment] = useState<Segment>('expense');
+  const [segment, setSegment] = useState<Segment>(initialSegment);
+  // Amount and note live here (not in each panel's hook) so they survive the
+  // Expense/Income toggle — switching tabs no longer wipes what was typed.
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
 
-  // Always reopen on the Expense tab — the most common action.
+  // Reseed the segment and clear the shared fields each time the sheet opens.
   useEffect(() => {
-    if (visible) setSegment('expense');
-  }, [visible]);
+    if (visible) {
+      setSegment(initialSegment);
+      setAmount('');
+      setNote('');
+    }
+  }, [visible, initialSegment]);
 
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="add-transaction-sheet">
@@ -62,6 +81,8 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
       <View style={styles.body}>
         {segment === 'expense' ? (
           <ExpenseEntryPanel
+            amount={{ value: amount, onChange: setAmount }}
+            note={{ value: note, onChange: setNote }}
             onSaved={() => {
               onExpenseSaved();
               onClose();
@@ -69,11 +90,13 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
           />
         ) : segment === 'income' ? (
           <IncomeEntryPanel
-            onSaved={(amount, month) => {
+            amount={{ value: amount, onChange: setAmount }}
+            note={{ value: note, onChange: setNote }}
+            onSaved={(savedAmount, month) => {
               onClose();
               router.push({
                 pathname: '/income/allocate',
-                params: { amount: String(amount), month },
+                params: { amount: String(savedAmount), month },
               });
             }}
           />
@@ -101,18 +124,18 @@ export function AddTransactionSheet({ visible, onClose, onExpenseSaved }: AddTra
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   body: {
-    marginTop: 16,
+    marginTop: 12,
   },
   transferLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 16,
-    paddingVertical: 10,
+    marginTop: 8,
+    paddingVertical: 8,
   },
   transferText: {
     color: c.PRIMARY_GREEN,

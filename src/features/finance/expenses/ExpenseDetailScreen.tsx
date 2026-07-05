@@ -76,7 +76,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Edit Expense" cancelLabel="Cancel" />
+      <ScreenHeader title="Edit Expense" />
 
       <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 

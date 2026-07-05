@@ -95,6 +95,32 @@ describe('AddTransactionSheet', () => {
     );
   });
 
+  it('keeps the typed amount when toggling between Expense and Income', () => {
+    renderSheet();
+
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+    fireEvent.press(screen.getByTestId('add-segment-income'));
+    // The income panel mounts with the amount carried over from expense.
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('1 500');
+
+    fireEvent.press(screen.getByTestId('add-segment-expense'));
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('1 500');
+  });
+
+  it('clears the shared amount when the sheet reopens', () => {
+    const props = {
+      visible: true,
+      onClose: jest.fn(),
+      onExpenseSaved: jest.fn(),
+    };
+    const { rerender } = render(<AddTransactionSheet {...props} />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+
+    rerender(<AddTransactionSheet {...props} visible={false} />);
+    rerender(<AddTransactionSheet {...props} visible={true} />);
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('');
+  });
+
   it('shows the templates grid on the Templates segment', async () => {
     renderSheet();
     fireEvent.press(screen.getByTestId('add-segment-templates'));
@@ -106,5 +132,36 @@ describe('AddTransactionSheet', () => {
     fireEvent.press(screen.getByTestId('add-transfer-link'));
     expect(props.onClose).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith('/transfers/log');
+  });
+
+  describe('initialSegment (VS-26)', () => {
+    it('opens on the Income segment when initialSegment="income"', () => {
+      renderSheet({ initialSegment: 'income' });
+      // Income panel is active without pressing the segment: its source pills render.
+      expect(screen.getByRole('button', { name: 'Salary' })).toBeTruthy();
+    });
+
+    it('defaults to the Expense segment when initialSegment is omitted', () => {
+      renderSheet();
+      expect(screen.getByLabelText('Amount in FCFA')).toBeTruthy();
+      expect(screen.queryByRole('button', { name: 'Salary' })).toBeNull();
+    });
+
+    it('reseeds to initialSegment each time the sheet reopens', () => {
+      const props = {
+        visible: true,
+        onClose: jest.fn(),
+        onExpenseSaved: jest.fn(),
+        initialSegment: 'income' as const,
+      };
+      const { rerender } = render(<AddTransactionSheet {...props} />);
+      // Switch away from the seeded segment.
+      fireEvent.press(screen.getByTestId('add-segment-expense'));
+      expect(screen.queryByRole('button', { name: 'Salary' })).toBeNull();
+      // Close then reopen — the effect reseeds to initialSegment.
+      rerender(<AddTransactionSheet {...props} visible={false} />);
+      rerender(<AddTransactionSheet {...props} visible={true} />);
+      expect(screen.getByRole('button', { name: 'Salary' })).toBeTruthy();
+    });
   });
 });

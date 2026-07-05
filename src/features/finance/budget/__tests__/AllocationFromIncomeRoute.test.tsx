@@ -10,6 +10,7 @@ const mockParams: { value: { amount?: string; month?: string; incomeId?: string 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams.value,
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useFocusEffect: jest.fn(),
 }));
 
 jest.mock('@/features/finance/budget/budget.service', () => ({
@@ -20,6 +21,7 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   lockAllocation: jest.fn(),
   getMonthlyBudget: jest.fn(),
   getExpensesMonthlyTotal: jest.fn(),
+  hasConfirmedAnyAllocation: jest.fn(),
 }));
 
 import { AllocationFromIncomeRoute } from '@/features/finance/budget/AllocationFromIncomeRoute';
@@ -41,6 +43,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   (budgetService.getOrCreateCurrentAllocation as jest.Mock).mockResolvedValue(UNLOCKED);
   (budgetService.getAllocation as jest.Mock).mockResolvedValue(UNLOCKED);
+  // The route test isn't about the first-run redirect — treat the user as
+  // having confirmed before so the breakdown renders directly.
+  (budgetService.hasConfirmedAnyAllocation as jest.Mock).mockResolvedValue(true);
 });
 
 describe('AllocationFromIncomeRoute', () => {

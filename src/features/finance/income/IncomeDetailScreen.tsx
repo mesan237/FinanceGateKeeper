@@ -97,7 +97,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Edit Income" cancelLabel="Cancel" />
+      <ScreenHeader title="Edit Income" />
 
       {edit.isAllocated ? (
         <View testID="allocated-lock" style={styles.lockedBlock}>

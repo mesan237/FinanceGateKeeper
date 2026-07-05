@@ -76,6 +76,34 @@ export function useAllocation(monthISO: string) {
 }
 
 /**
+ * Reports whether this is the user's very first allocation — i.e. they have
+ * never confirmed (locked) an allocation for any month. `null` while the check
+ * is in flight. The allocation screen uses it to route first-time users to set
+ * percentages before showing a breakdown (VS-25). On error it resolves `false`
+ * so a transient failure never traps the user on the settings redirect.
+ */
+export function useIsFirstEverAllocation(): boolean | null {
+  const [isFirst, setIsFirst] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    budgetService
+      .hasConfirmedAnyAllocation()
+      .then((confirmed) => {
+        if (active) setIsFirst(!confirmed);
+      })
+      .catch(() => {
+        if (active) setIsFirst(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return isFirst;
+}
+
+/**
  * Loads the composed `MonthlyBudget` for `monthISO`. `refresh()` is
  * caller-driven — the Budget tab calls it on focus and screens that log
  * income/expenses call it after a successful save.

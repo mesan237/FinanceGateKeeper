@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -36,14 +35,24 @@ function ActionButton({ icon, label, onPress, tint, iconColor, testID }: ActionB
 interface QuickActionBarProps {
   zeroDay: DayActivityStatus;
   onConfirmZeroDay: () => void;
+  /** Opens the shared AddTransactionSheet on the Expense segment (VS-26). */
+  onLogExpense: () => void;
+  /** Opens the shared AddTransactionSheet on the Income segment (VS-26). */
+  onLogIncome: () => void;
 }
 
 /**
  * Sticky action bar with shortcuts to the three most common actions.
- * "Confirm Zero Day" is hidden once the day has activity.
+ * "Log Expense" / "Log Income" open the same AddTransactionSheet the
+ * Transactions FAB uses (VS-26). The "No spending" action is hidden once the
+ * day has activity.
  */
-export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProps) {
-  const router = useRouter();
+export function QuickActionBar({
+  zeroDay,
+  onConfirmZeroDay,
+  onLogExpense,
+  onLogIncome,
+}: QuickActionBarProps) {
   const c = useTheme();
   const showZeroDay = !zeroDay.hasExpenses && !zeroDay.zeroDayConfirmed;
 
@@ -53,7 +62,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         testID="quick-log-expense"
         icon="expense"
         label="Log Expense"
-        onPress={() => router.push('/expenses/log')}
+        onPress={onLogExpense}
         tint={c.DANGER_LIGHT}
         iconColor={c.DANGER_TEXT}
       />
@@ -61,7 +70,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         testID="quick-log-income"
         icon="income"
         label="Log Income"
-        onPress={() => router.push('/income/log')}
+        onPress={onLogIncome}
         tint={c.PRIMARY_LIGHT}
         iconColor={c.PRIMARY_GREEN}
       />
@@ -69,7 +78,7 @@ export function QuickActionBar({ zeroDay, onConfirmZeroDay }: QuickActionBarProp
         <ActionButton
           testID="quick-confirm-zero-day"
           icon="zeroDay"
-          label="Zero Day"
+          label="No spending"
           onPress={onConfirmZeroDay}
           tint={c.SURFACE_MUTED}
           iconColor={c.TEXT_MUTED}

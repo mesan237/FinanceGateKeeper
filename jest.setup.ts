@@ -27,6 +27,28 @@ jest.mock('lucide-react-native', () => {
   );
 });
 
+// Safe-area insets require a native provider that doesn't exist under Jest.
+// Return zero insets and a full-frame so components using `useSafeAreaInsets`
+// (e.g. `BottomSheet`) render without a wrapping `<SafeAreaProvider>`.
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  const inset = { top: 0, right: 0, bottom: 0, left: 0 };
+  const frame = { x: 0, y: 0, width: 0, height: 0 };
+  // Forward props (notably `testID`/`style`) so `SafeAreaView`-wrapped screens
+  // stay queryable, exactly as the real component renders a View.
+  const Passthrough = (props: Record<string, unknown>) => React.createElement(View, props);
+  return {
+    SafeAreaProvider: Passthrough,
+    SafeAreaConsumer: ({ children }: { children: (i: typeof inset) => React.ReactNode }) =>
+      children(inset),
+    SafeAreaView: Passthrough,
+    useSafeAreaInsets: () => inset,
+    useSafeAreaFrame: () => frame,
+    initialWindowMetrics: { insets: inset, frame },
+  };
+});
+
 // The native date picker can't mount in jsdom; expose a stub that forwards its
 // props (notably `onChange` and `testID`) so tests can simulate a selection.
 jest.mock('@react-native-community/datetimepicker', () => {

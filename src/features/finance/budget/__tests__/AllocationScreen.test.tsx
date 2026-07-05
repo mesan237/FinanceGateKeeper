@@ -1,12 +1,20 @@
-﻿import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+﻿import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
 import type { Allocation } from '@/features/finance/budget/budget.types';
 
 const mockReplace = jest.fn();
+const mockPush = jest.fn();
+// Captured `useFocusEffect` callbacks. The mock does not auto-run them (the
+// mount refresh comes from `useAllocation`); a test fires the latest to
+// simulate the screen regaining focus after returning from settings.
+const mockFocusCallbacks: Array<() => void> = [];
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, push: mockPush }),
+  useFocusEffect: (cb: () => void) => {
+    mockFocusCallbacks.push(cb);
+  },
 }));
 
 // `calculateBreakdown` is a pure function the screen calls directly â€” use the
@@ -21,6 +29,7 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   redistributeEmergencyPct: jest.fn(),
   getMonthlyBudget: jest.fn(),
   getExpensesMonthlyTotal: jest.fn(),
+  hasConfirmedAnyAllocation: jest.fn(),
 }));
 
 jest.mock('@/features/finance/funds/funds.service', () => ({
@@ -62,6 +71,9 @@ const mockedFundProjects = projectsService.fundProjects as jest.MockedFunction<
 const mockedMarkAllocated = incomeService.markIncomeAllocated as jest.MockedFunction<
   typeof incomeService.markIncomeAllocated
 >;
+const mockedHasConfirmed = budgetService.hasConfirmedAnyAllocation as jest.MockedFunction<
+  typeof budgetService.hasConfirmedAnyAllocation
+>;
 
 function depositResult(targetNewlyMet: boolean) {
   return {
@@ -91,6 +103,7 @@ const UNLOCKED: Allocation = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockFocusCallbacks.length = 0;
   mockedGetOrCreate.mockResolvedValue(UNLOCKED);
   mockedGetAllocation.mockResolvedValue(UNLOCKED);
   mockedLock.mockResolvedValue(undefined);
@@ -98,6 +111,9 @@ beforeEach(() => {
   mockedDeposit.mockResolvedValue(depositResult(false));
   mockedFundProjects.mockResolvedValue(undefined);
   mockedMarkAllocated.mockResolvedValue(undefined);
+  // Default: the user has confirmed before, so the breakdown shows directly.
+  // First-ever cases override this to false.
+  mockedHasConfirmed.mockResolvedValue(true);
 });
 
 describe('AllocationScreen', () => {
@@ -244,6 +260,72 @@ describe('AllocationScreen', () => {
     expect(mockedMarkAllocated).not.toHaveBeenCalled();
     expect(mockedDeposit).not.toHaveBeenCalled();
     expect(mockedFundProjects).not.toHaveBeenCalled();
+    expect(mockedLock).not.toHaveBeenCalled();
+  });
+
+  it('renders an "Adjust split" control that opens settings for the same month', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    await screen.findByText('Emergency Fund');
+
+    fireEvent.press(screen.getByRole('button', { name: 'Adjust split' }));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/budget/settings',
+      params: { month: '2026-06' },
+    });
+  });
+
+  it('recomputes the breakdown from updated percentages after returning from settings', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    // Default split: expenses 65% → 260 000.
+    await screen.findByText('260 000 FCFA');
+
+    // The user edited the split in settings: expenses 50%, savings 25%.
+    const edited: Allocation = { ...UNLOCKED, expensesPct: 50, savingsPct: 25 };
+    mockedGetOrCreate.mockResolvedValue(edited);
+
+    // Simulate the screen regaining focus on return.
+    await act(async () => {
+      mockFocusCallbacks.at(-1)?.();
+    });
+
+    // 400 000 × 50% = 200 000 to expenses now.
+    await screen.findByText('200 000 FCFA');
+  });
+
+  it('routes a first-ever allocation to settings before showing a breakdown', async () => {
+    mockedHasConfirmed.mockResolvedValue(false); // never confirmed → very first allocation
+
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/budget/settings',
+        params: { month: '2026-06' },
+      }),
+    );
+    // The breakdown is withheld until the user has set percentages.
+    expect(screen.queryByText('Emergency Fund')).toBeNull();
+    // Redirects exactly once — no loop when the (still-unlocked) screen refocuses.
+    expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the breakdown directly for an existing/locked allocation and does not redirect', async () => {
+    mockedHasConfirmed.mockResolvedValue(true);
+    const locked: Allocation = { ...UNLOCKED, isLocked: true };
+    mockedGetOrCreate.mockResolvedValue(locked);
+
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    await screen.findByText('Emergency Fund');
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('discloses the month-lock consequence before Confirm is pressed', async () => {
+    render(<AllocationScreen amountFCFA={400000} monthISO="2026-06" incomeId={42} />);
+    await screen.findByText('Emergency Fund');
+
+    expect(screen.getByText('Confirming locks this split until next month.')).toBeTruthy();
     expect(mockedLock).not.toHaveBeenCalled();
   });
 });
