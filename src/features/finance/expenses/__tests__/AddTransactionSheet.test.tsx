@@ -95,6 +95,32 @@ describe('AddTransactionSheet', () => {
     );
   });
 
+  it('keeps the typed amount when toggling between Expense and Income', () => {
+    renderSheet();
+
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+    fireEvent.press(screen.getByTestId('add-segment-income'));
+    // The income panel mounts with the amount carried over from expense.
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('1 500');
+
+    fireEvent.press(screen.getByTestId('add-segment-expense'));
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('1 500');
+  });
+
+  it('clears the shared amount when the sheet reopens', () => {
+    const props = {
+      visible: true,
+      onClose: jest.fn(),
+      onExpenseSaved: jest.fn(),
+    };
+    const { rerender } = render(<AddTransactionSheet {...props} />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+
+    rerender(<AddTransactionSheet {...props} visible={false} />);
+    rerender(<AddTransactionSheet {...props} visible={true} />);
+    expect(screen.getByLabelText('Amount in FCFA').props.value).toBe('');
+  });
+
   it('shows the templates grid on the Templates segment', async () => {
     renderSheet();
     fireEvent.press(screen.getByTestId('add-segment-templates'));

@@ -51,10 +51,18 @@ export function AddTransactionSheet({
   const c = useTheme();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>(initialSegment);
+  // Amount and note live here (not in each panel's hook) so they survive the
+  // Expense/Income toggle — switching tabs no longer wipes what was typed.
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
 
-  // Reseed the segment each time the sheet opens (defaults to Expense).
+  // Reseed the segment and clear the shared fields each time the sheet opens.
   useEffect(() => {
-    if (visible) setSegment(initialSegment);
+    if (visible) {
+      setSegment(initialSegment);
+      setAmount('');
+      setNote('');
+    }
   }, [visible, initialSegment]);
 
   return (
@@ -73,6 +81,8 @@ export function AddTransactionSheet({
       <View style={styles.body}>
         {segment === 'expense' ? (
           <ExpenseEntryPanel
+            amount={{ value: amount, onChange: setAmount }}
+            note={{ value: note, onChange: setNote }}
             onSaved={() => {
               onExpenseSaved();
               onClose();
@@ -80,11 +90,13 @@ export function AddTransactionSheet({
           />
         ) : segment === 'income' ? (
           <IncomeEntryPanel
-            onSaved={(amount, month) => {
+            amount={{ value: amount, onChange: setAmount }}
+            note={{ value: note, onChange: setNote }}
+            onSaved={(savedAmount, month) => {
               onClose();
               router.push({
                 pathname: '/income/allocate',
-                params: { amount: String(amount), month },
+                params: { amount: String(savedAmount), month },
               });
             }}
           />
@@ -112,18 +124,18 @@ export function AddTransactionSheet({
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   body: {
-    marginTop: 16,
+    marginTop: 12,
   },
   transferLink: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    marginTop: 16,
-    paddingVertical: 10,
+    marginTop: 8,
+    paddingVertical: 8,
   },
   transferText: {
     color: c.PRIMARY_GREEN,

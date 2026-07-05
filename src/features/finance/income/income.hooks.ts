@@ -6,16 +6,35 @@ import { toISODate } from '@/utils/formatDate';
 import * as incomeService from './income.service';
 import type { Income, IncomeFilter } from './income.types';
 
+/** External state a caller can own so a value survives this hook unmounting. */
+export interface ControlledField {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export interface UseIncomeLogOptions {
+  /** Lift `amount` to a parent so it persists across form remounts (e.g. the
+   *  Add-transaction sheet keeping the figure when toggling Expense/Income). */
+  amount?: ControlledField;
+  /** Lift `note` to a parent, same rationale as `amount`. */
+  note?: ControlledField;
+}
+
 /**
  * Form state for the income log screen. Exposes individual field setters (rather
  * than a form-state object) to match `useExpenseLog`. Validates `amount > 0` and
  * a chosen source before allowing submit; clears the form on a successful save
- * so the user can log another entry without leaving the screen.
+ * so the user can log another entry without leaving the screen. `amount`/`note`
+ * may be lifted to a parent via `options` so their values survive an unmount.
  */
-export function useIncomeLog() {
-  const [amount, setAmount] = useState('');
+export function useIncomeLog(options?: UseIncomeLogOptions) {
+  const internalAmount = useState('');
+  const internalNote = useState('');
+  const amount = options?.amount ? options.amount.value : internalAmount[0];
+  const setAmount = options?.amount ? options.amount.onChange : internalAmount[1];
+  const note = options?.note ? options.note.value : internalNote[0];
+  const setNote = options?.note ? options.note.onChange : internalNote[1];
   const [source, setSource] = useState<IncomeSource | null>(null);
-  const [note, setNote] = useState('');
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
@@ -28,9 +29,14 @@ export interface CategoryPickerProps {
 
 function PickerIcon({ name }: { name: string }) {
   const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const emoji = getTransactionIcon('expense', name);
   if (emoji) {
-    return <Typography style={styles.rowEmojiIcon}>{emoji}</Typography>;
+    return (
+      <View style={[styles.rowAvatar, { backgroundColor: c.SURFACE }]}>
+        <Typography style={styles.rowEmojiIcon}>{emoji}</Typography>
+      </View>
+    );
   }
   const { color, letter } = getCategoryAvatar(name);
   return (
@@ -47,6 +53,7 @@ function PickerIcon({ name }: { name: string }) {
  */
 export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerProps) {
   const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const router = useRouter();
   const { categories, subcategoriesOf, refresh } = useCategories();
   const [parent, setParent] = useState<Category | null>(null);
@@ -74,15 +81,38 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
   return (
     <Modal visible={visible} onRequestClose={close} transparent animationType="fade">
       <View style={styles.header}>
-        <Typography variant="subheading">
-          {parent ? parent.name : 'Select category'}
-        </Typography>
-        <Pressable accessibilityRole="button" onPress={parent ? reset : close}>
-          <Typography style={styles.action}>{parent ? 'Back' : 'Close'}</Typography>
+        {parent ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            hitSlop={8}
+            style={styles.headerBtn}
+            onPress={reset}
+          >
+            <Icon name="back" size={22} color={c.TEXT_PRIMARY} />
+          </Pressable>
+        ) : (
+          <View style={styles.headerBtn} />
+        )}
+
+        <View style={styles.headerText}>
+          <Typography variant="subheading">{parent ? parent.name : 'Select category'}</Typography>
+          <Typography variant="muted" style={styles.subtitle}>
+            {parent ? 'Pick a subcategory, or use the category itself' : 'Tap a category to see its subcategories'}
+          </Typography>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={8}
+          style={[styles.headerBtn, styles.headerBtnRight]}
+          onPress={close}
+        >
+          <Typography style={styles.action}>Close</Typography>
         </Pressable>
       </View>
 
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
         {parent === null
           ? categories.map((category) => (
               <Pressable
@@ -92,20 +122,23 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 onPress={() => setParent(category)}
               >
                 <PickerIcon name={category.name} />
-                <Typography>{category.name}</Typography>
+                <Typography style={styles.rowLabel}>{category.name}</Typography>
+                <Icon name="forward" size={20} color={c.TEXT_MUTED} />
               </Pressable>
             ))
           : [
               <Pressable
                 key="parent-only"
                 accessibilityRole="button"
-                style={styles.row}
+                style={[styles.row, styles.useParentRow]}
                 onPress={() =>
                   commit({ categoryId: parent.id, subcategoryId: null, label: parent.name })
                 }
               >
-                <PickerIcon name={parent.name} />
-                <Typography style={styles.action}>{`Use ${parent.name}`}</Typography>
+                <View style={styles.useParentIcon}>
+                  <Icon name="check" size={18} color={c.PRIMARY_GREEN} />
+                </View>
+                <Typography style={[styles.rowLabel, styles.action]}>{`Use ${parent.name}`}</Typography>
               </Pressable>,
               ...subcategories.map((sub) => (
                 <Pressable
@@ -117,7 +150,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                   }
                 >
                   <PickerIcon name={sub.name} />
-                  <Typography>{sub.name}</Typography>
+                  <Typography style={styles.rowLabel}>{sub.name}</Typography>
                 </Pressable>
               )),
             ]}
@@ -132,6 +165,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
           router.push('/expenses/categories');
         }}
       >
+        <Icon name="settings" size={16} color={c.PRIMARY_GREEN} />
         <Typography style={styles.action}>Manage categories</Typography>
       </Pressable>
     </Modal>
@@ -141,36 +175,70 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  headerBtn: {
+    minWidth: 48,
+    justifyContent: 'center',
+  },
+  headerBtnRight: {
+    alignItems: 'flex-end',
+  },
+  headerText: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  subtitle: {
+    marginTop: 2,
+    textAlign: 'center',
   },
   action: {
     color: c.PRIMARY_GREEN,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   list: {
-    maxHeight: 320,
+    maxHeight: 360,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.BORDER,
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.md,
+    backgroundColor: c.BACKGROUND,
+    marginBottom: 8,
   },
-  rowEmojiIcon: { fontSize: 20, lineHeight: 24, width: 20, textAlign: 'center' },
+  rowLabel: {
+    flex: 1,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
+  },
+  useParentRow: {
+    backgroundColor: c.PRIMARY_LIGHT,
+  },
+  useParentIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: c.SURFACE,
+  },
+  rowEmojiIcon: { fontSize: 20, lineHeight: 24, textAlign: 'center' },
   rowAvatar: {
-    width: 20,
-    height: 20,
+    width: 36,
+    height: 36,
     borderRadius: RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowAvatarLetter: { color: c.TEXT_INVERSE, fontSize: 10, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  rowAvatarLetter: { color: c.TEXT_INVERSE, fontSize: 15, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   manage: {
-    paddingTop: 14,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingTop: 12,
   },
 });

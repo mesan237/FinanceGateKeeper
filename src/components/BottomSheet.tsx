@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ToastViewport } from '@/components/Toast';
 import { RADIUS } from '@/constants/layout';
@@ -43,6 +44,7 @@ export interface BottomSheetProps {
  */
 export function BottomSheet({ visible, onClose, children, testID }: BottomSheetProps) {
   const { height: windowHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
   const styles = useThemedStyles(makeStyles);
 
@@ -86,13 +88,19 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
             <Animated.View
               entering={SlideInDown.duration(240)}
               exiting={SlideOutDown.duration(EXIT_DURATION_MS)}
-              style={[styles.sheet, { maxHeight: windowHeight * 0.9 }]}
+              style={[styles.sheet, { maxHeight: windowHeight * 0.92 }]}
             >
               <View style={styles.handle} />
               <ScrollView
                 keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                  styles.scrollContent,
+                  // Clear the Android nav bar / home indicator so the last
+                  // button never sits under the system buttons.
+                  { paddingBottom: 16 + insets.bottom },
+                ]}
               >
                 {children}
               </ScrollView>
@@ -132,7 +140,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingTop: 8,
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   handle: {
     alignSelf: 'center',

@@ -19,11 +19,17 @@ import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { CategoryPicker } from './CategoryPicker';
-import { useExpenseLog } from './expenses.hooks';
+import { useExpenseLog, type ControlledField } from './expenses.hooks';
 
 export interface ExpenseEntryPanelProps {
   /** Called after the expense is successfully persisted. */
   onSaved: () => void;
+  /** Lift the amount to the parent so it survives the panel unmounting. */
+  amount?: ControlledField;
+  /** Lift the note to the parent so it survives the panel unmounting. */
+  note?: ControlledField;
+  /** Focus the amount field on mount. Default `true`. */
+  autoFocus?: boolean;
 }
 
 /**
@@ -33,10 +39,15 @@ export interface ExpenseEntryPanelProps {
  * close a sheet) via `onSaved` — used by both `ExpenseLogScreen` and the unified
  * `AddTransactionSheet`.
  */
-export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
+export function ExpenseEntryPanel({
+  onSaved,
+  amount,
+  note,
+  autoFocus = true,
+}: ExpenseEntryPanelProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
-  const log = useExpenseLog();
+  const log = useExpenseLog({ amount, note });
   const { check } = useOverBudgetCheck();
   const { show } = useToast();
   const defaultAccountId = useDefaultAccountId();
@@ -76,7 +87,7 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
 
   return (
     <View style={styles.container}>
-      <AmountInput value={log.amount} onChangeText={log.setAmount} autoFocus />
+      <AmountInput value={log.amount} onChangeText={log.setAmount} autoFocus={autoFocus} />
 
       <Button
         label={categoryLabel ?? 'Select category'}
@@ -89,6 +100,10 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
         onChangeText={log.setNote}
         placeholder="Note (optional)"
         accessibilityLabel="Note"
+        multiline
+        numberOfLines={3}
+        textAlignVertical="top"
+        style={styles.note}
       />
 
       <DateField value={log.date} onChange={log.setDate} testID="expense-date" />
@@ -135,7 +150,11 @@ export function ExpenseEntryPanel({ onSaved }: ExpenseEntryPanelProps) {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
-    gap: 12,
+    gap: 10,
+  },
+  note: {
+    minHeight: 64,
+    paddingTop: 10,
   },
   errorRow: {
     flexDirection: 'row',
