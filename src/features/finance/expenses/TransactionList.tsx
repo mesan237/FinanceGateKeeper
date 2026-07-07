@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -77,6 +77,15 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   useEffect(() => {
     if (reloadToken) void refresh();
   }, [reloadToken, refresh]);
+
+  // Re-fetch on every tab focus, so an edit or delete made on the expense
+  // detail screen (which just calls router.back(), with no reloadToken to
+  // bump) is reflected as soon as this list is back on screen.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const sections = useMemo(() => buildSections(entries), [entries]);
   const isCurrentMonth = monthISO === currentMonthISO();

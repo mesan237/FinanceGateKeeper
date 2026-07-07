@@ -16,8 +16,15 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 }));
 
 const mockPush = jest.fn();
+// Captured `useFocusEffect` callbacks. The mock does not auto-run them (the
+// mount refresh comes from `useTransactions`); a test fires the latest to
+// simulate the tab regaining focus after returning from the detail screen.
+const mockFocusCallbacks: Array<() => void> = [];
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn() }),
+  useFocusEffect: (cb: () => void) => {
+    mockFocusCallbacks.push(cb);
+  },
 }));
 
 // Freeze "today" so date-label tests are deterministic.
@@ -92,6 +99,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockGetFeed.mockResolvedValue([]);
   mockPush.mockReset();
+  mockFocusCallbacks.length = 0;
 });
 
 describe('TransactionList', () => {
@@ -311,6 +319,21 @@ describe('TransactionList', () => {
 
     await waitFor(() => expect(screen.getByTestId('tx-row-transfer-7')).toBeTruthy());
     expect(screen.getByText('Cash → MTN MoMo')).toBeTruthy();
+  });
+
+  it('re-fetches when the tab regains focus, so an edit/delete on the detail screen shows up', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+    await screen.findByTestId('tx-row-expense-1');
+
+    // Simulate the expense detail screen deleting the row, then router.back()
+    // returning focus to this list (no reloadToken bump involved).
+    mockGetFeed.mockResolvedValue([]);
+    await act(async () => {
+      mockFocusCallbacks[mockFocusCallbacks.length - 1]();
+    });
+
+    expect(await screen.findByText(/No transactions in/)).toBeTruthy();
   });
 
   it('expense rows with a non-null account_id render an account chip; legacy rows do not', async () => {
