@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Button } from '@/components/Button';
+import { DateField } from '@/components/DateField';
+import { Modal } from '@/components/Modal';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
@@ -11,6 +14,7 @@ import { RADIUS } from '@/constants/layout';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { toISODate } from '@/utils/formatDate';
 
 import { QuickAddTemplateForm } from './QuickAddTemplateForm';
 import { useCategories, useQuickAdd } from './expenses.hooks';
@@ -40,9 +44,10 @@ export interface QuickAddGridProps {
 
 /**
  * The Quick Add grid: a two-column grid of one-tap template tiles plus a
- * trailing "+" tile. Tapping a tile logs the expense instantly and flashes a
- * transient confirmation; long-pressing opens the edit modal. Shared between
- * `QuickAddScreen` and the unified `AddTransactionSheet`.
+ * trailing "+" tile. Tapping a tile opens a small confirm sheet (date only,
+ * defaulting to today) before logging the expense; long-pressing opens the
+ * edit modal. Shared between `QuickAddScreen` and the unified
+ * `AddTransactionSheet`.
  */
 export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps) {
   const styles = useThemedStyles(makeStyles);
@@ -51,26 +56,40 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   const { check } = useOverBudgetCheck();
   const { show } = useToast();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
+  // The template awaiting date confirmation before it's logged.
+  const [confirming, setConfirming] = useState<QuickAddTemplate | null>(null);
+  const [confirmDate, setConfirmDate] = useState(() => toISODate(new Date()));
   // Holds the template awaiting confirmation while the over-budget warning shows.
-  const [pending, setPending] = useState<{ template: QuickAddTemplate; overage: number } | null>(
-    null,
-  );
+  const [pending, setPending] = useState<{
+    template: QuickAddTemplate;
+    date: string;
+    overage: number;
+  } | null>(null);
 
-  const performLog = async (template: QuickAddTemplate) => {
-    const id = await log(template.id);
+  const performLog = async (template: QuickAddTemplate, dateISO: string) => {
+    const id = await log(template.id, dateISO);
     if (id !== null) {
       show(`Logged ${formatCurrency(template.amount)} · ${template.label}`);
       onLogged?.();
     }
   };
 
-  const handleLog = async (template: QuickAddTemplate) => {
+  const openConfirm = (template: QuickAddTemplate) => {
+    setConfirmDate(toISODate(new Date()));
+    setConfirming(template);
+  };
+
+  const handleConfirmLog = async () => {
+    if (!confirming) return;
+    const template = confirming;
+    const dateISO = confirmDate;
+    setConfirming(null);
     const result = await check(template.amount);
     if (result.isOver) {
-      setPending({ template, overage: result.overage });
+      setPending({ template, date: dateISO, overage: result.overage });
       return;
     }
-    await performLog(template);
+    await performLog(template, dateISO);
   };
 
   const data: GridItem[] = [...templates, ADD_TILE];
@@ -97,7 +116,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
         accessibilityRole="button"
         testID={`quick-add-tile-${item.id}`}
         style={styles.tile}
-        onPress={() => handleLog(item)}
+        onPress={() => openConfirm(item)}
         onLongPress={() => setModal({ mode: 'edit', template: item })}
       >
         {emoji ? (
@@ -130,7 +149,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
 
   return (
     <View style={styles.container}>
-      <Typography variant="muted">Tap to log instantly · long-press a tile to edit</Typography>
+      <Typography variant="muted">Tap to log · long-press a tile to edit</Typography>
 
       {scrollable ? (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -154,13 +173,33 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
         onClose={() => setModal({ mode: 'idle' })}
       />
 
+      <Modal visible={confirming !== null} onRequestClose={() => setConfirming(null)}>
+        <View style={styles.confirmForm}>
+          <Typography variant="subheading">{confirming?.label}</Typography>
+          <Typography variant="muted">
+            {confirming ? formatCurrency(confirming.amount) : ''}
+          </Typography>
+
+          <DateField value={confirmDate} onChange={setConfirmDate} testID="quick-add-confirm-date" />
+
+          <Button label="Log" onPress={handleConfirmLog} testID="quick-add-confirm-log" />
+          <Button
+            label="Cancel"
+            variant="secondary"
+            onPress={() => setConfirming(null)}
+            testID="quick-add-confirm-cancel"
+          />
+        </View>
+      </Modal>
+
       <OverBudgetAlert
         visible={pending !== null}
         overage={pending?.overage ?? 0}
         onProceed={() => {
           const template = pending?.template;
+          const date = pending?.date;
           setPending(null);
-          if (template) void performLog(template);
+          if (template && date) void performLog(template, date);
         }}
         onCancel={() => setPending(null)}
       />
@@ -172,6 +211,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
     gap: 8,
+  },
+  confirmForm: {
+    gap: 12,
   },
   grid: {
     flexDirection: 'row',

@@ -259,7 +259,8 @@ export function useCategories() {
 /**
  * Loads quick-add templates and exposes one-tap logging plus CRUD. Like the
  * other hooks here, mutations re-fetch on success rather than patching an
- * in-memory cache. `log(id)` instantly creates an expense from the template.
+ * in-memory cache. `log(id, dateISO?)` creates an expense from the template,
+ * dated `dateISO` (default: today).
  */
 export function useQuickAdd() {
   const [templates, setTemplates] = useState<QuickAddTemplate[]>([]);
@@ -282,9 +283,9 @@ export function useQuickAdd() {
     void refresh();
   }, [refresh]);
 
-  const log = useCallback(async (id: number): Promise<number | null> => {
+  const log = useCallback(async (id: number, dateISO?: string): Promise<number | null> => {
     try {
-      const expenseId = await expenseService.logFromQuickAddTemplate(id);
+      const expenseId = await expenseService.logFromQuickAddTemplate(id, dateISO);
       setError(null);
       return expenseId;
     } catch (e) {

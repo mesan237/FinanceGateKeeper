@@ -75,17 +75,36 @@ describe('QuickAddScreen', () => {
     expect(screen.getByTestId('quick-add-add-tile')).toBeTruthy();
   });
 
-  it('logs an expense once when a tile is tapped', async () => {
+  it('opens a date confirm sheet when a tile is tapped, defaulted to today', async () => {
     render(<QuickAddScreen />);
     fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
 
-    await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
-    expect(mockedLog).toHaveBeenCalledWith(1);
+    expect(await screen.findByTestId('quick-add-confirm-log')).toBeTruthy();
+    expect(mockedLog).not.toHaveBeenCalled();
   });
 
-  it('runs the over-budget check with the template amount and logs instantly when within budget', async () => {
+  it('logs an expense with the confirmed date once Log is pressed', async () => {
     render(<QuickAddScreen />);
     fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+    fireEvent.press(await screen.findByTestId('quick-add-confirm-log'));
+
+    await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
+    expect(mockedLog).toHaveBeenCalledWith(1, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
+  });
+
+  it('closes the confirm sheet without logging when Cancel is pressed', async () => {
+    render(<QuickAddScreen />);
+    fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+    fireEvent.press(await screen.findByTestId('quick-add-confirm-cancel'));
+
+    await waitFor(() => expect(screen.queryByTestId('quick-add-confirm-log')).toBeNull());
+    expect(mockedLog).not.toHaveBeenCalled();
+  });
+
+  it('runs the over-budget check with the template amount and logs when within budget', async () => {
+    render(<QuickAddScreen />);
+    fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+    fireEvent.press(await screen.findByTestId('quick-add-confirm-log'));
 
     await waitFor(() => expect(mockCheck).toHaveBeenCalledWith(TAXI.amount));
     await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
@@ -96,6 +115,7 @@ describe('QuickAddScreen', () => {
     mockCheck.mockResolvedValue(over(3000));
     render(<QuickAddScreen />);
     fireEvent.press(await screen.findByTestId('quick-add-tile-1'));
+    fireEvent.press(await screen.findByTestId('quick-add-confirm-log'));
 
     await waitFor(() => expect(screen.getByTestId('over-budget-proceed')).toBeTruthy());
     expect(mockedLog).not.toHaveBeenCalled();
@@ -103,7 +123,7 @@ describe('QuickAddScreen', () => {
     fireEvent.press(screen.getByTestId('over-budget-proceed'));
 
     await waitFor(() => expect(mockedLog).toHaveBeenCalledTimes(1));
-    expect(mockedLog).toHaveBeenCalledWith(1);
+    expect(mockedLog).toHaveBeenCalledWith(1, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
   });
 
   it('opens the create modal from the + tile and saves a new template', async () => {

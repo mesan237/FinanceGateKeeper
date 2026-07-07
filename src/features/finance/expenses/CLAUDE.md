@@ -15,7 +15,7 @@ Handles daily expense logging, quick-add templates, recurring expenses, zero-day
 - Every expense MUST have a category. Subcategory is optional.
 - Deleting a category requires reassigning its expenses to another category first.
 - Default categories cannot be deleted, only hidden.
-- Quick-add creates an expense instantly with one tap — no form, no confirmation.
+- Quick-add logs an expense from a template after a one-field confirm sheet (date only, defaulting to today) — no other fields to fill in.
 - Recurring expenses auto-log when `next_due_date <= today` on app open. After logging, advance `next_due_date` by frequency.
 - Zero-day: if no expenses exist for today AND no zero-day confirmed, the daily reminder triggers. User confirms "I spent nothing" or navigates to log.
 - Before saving any expense, call `budget.service.ts` `checkOverBudget()` to determine if alert is needed.
