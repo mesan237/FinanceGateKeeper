@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "PowerShell(npx tsc --noEmit 2>&1)"
+    ]
+  },
   "enabledPlugins": {
     "expo@claude-plugins-official": true
   }
