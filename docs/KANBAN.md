@@ -881,6 +881,16 @@ slice and in `docs/ux-audit/README.md`.
 
 ---
 
+### VS-32: Export & Import Data (Local Backup File) ✅ Done
+
+**Priority:** Medium — user-requested (not from ux-audit)
+**Blocked by:** none
+**Plan:** `issues/ISSUE-030/implementation-plan.md`
+
+Local JSON backup export/import, independent of Supabase cloud sync: `services/dataTransfer.service.ts` — `exportData()`/`importData()` dump/restore every row of every `SYNCED_TABLES` table (the existing sync scope; `users`/PIN excluded) verbatim (same `id`/`uuid`/`sync_status` — a true snapshot restore, not a re-sync). Import is destructive (delete-then-restore, not a merge) and runs inside a single SQLite transaction — a malformed row partway through rolls the whole device back to its pre-import state instead of leaving a half-wiped database (added after `code-reviewer` flagged the initial non-transactional version). Explicit-id inserts into `INTEGER PRIMARY KEY AUTOINCREMENT` columns already advance SQLite's own high-water mark, so no manual `sqlite_sequence` fix-up is needed (verified empirically against `better-sqlite3`). New `expo-file-system`/`expo-sharing`/`expo-document-picker` dependencies → `features/finance/dataTransfer/` slice (`DataTransferScreen.tsx` Export + confirm-guarded Import, `dataTransfer.hooks.ts`) → `app/data-transfer.tsx` route; drawer's disabled "Export records" row is now a live "Export & Import" row (`Backup & Restore` untouched, VS-30's scope). No cross-feature imports. code-reviewer APPROVE WITH NITS (transaction-safety nit addressed with a regression test + fix; a `.claude/settings.json` permissions bundling nit left for the commit split). 21 new slice tests; 911 total. One additional test (`importData` rollback-on-failure) joins the pre-existing "known-flaky CHECK/NOT-NULL-constraint assertion under full-suite load" category (same symptom as the documented auth CHECK flake — passes reliably in isolation, occasionally intermittent full-suite runs hit either that test or this one, never both).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

@@ -30,7 +30,7 @@ interface DrawerSection {
 }
 
 // The full intended menu. Rows with a `route` navigate to an existing screen;
-// `soon` rows are placeholders for screens not yet built (Export, Backup,
+// `soon` rows are placeholders for screens not yet built (Backup & Restore,
 // Delete & Reset, Help) and render disabled so navigation never dead-ends.
 const SECTIONS: DrawerSection[] = [
   { rows: [{ label: 'Preferences', icon: 'settings', route: '/settings' }] },
@@ -39,7 +39,7 @@ const SECTIONS: DrawerSection[] = [
     rows: [
       { label: 'Accounts', icon: 'wallet', route: '/accounts' },
       { label: 'Categories', icon: 'categories', route: '/expenses/categories' },
-      { label: 'Export records', icon: 'export', soon: true },
+      { label: 'Export & Import', icon: 'export', route: '/data-transfer' },
       { label: 'Backup & Restore', icon: 'backup', soon: true },
       { label: 'Delete & Reset', icon: 'delete', soon: true },
     ],

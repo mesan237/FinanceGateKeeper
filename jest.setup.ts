@@ -89,6 +89,61 @@ jest.mock('expo-crypto', () => {
   };
 });
 
+// expo-file-system's "new" API (`File`/`Directory`/`Paths`) wraps native disk
+// I/O that doesn't exist under Jest. The mock backs every file with an
+// in-memory string keyed by its joined uri, matching the real
+// create()-then-write() contract (write() throws if create() was never called).
+jest.mock('expo-file-system', () => {
+  const store = new Map<string, string>();
+  class MockFile {
+    uri: string;
+    constructor(...uris: Array<string | { uri: string }>) {
+      this.uri = uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/');
+    }
+    create(options?: { overwrite?: boolean }) {
+      if (store.has(this.uri) && !options?.overwrite) {
+        throw new Error(`File already exists: ${this.uri}`);
+      }
+      store.set(this.uri, '');
+    }
+    write(content: string) {
+      if (!store.has(this.uri)) throw new Error(`File not created: ${this.uri}`);
+      store.set(this.uri, content);
+    }
+    async text() {
+      const content = store.get(this.uri);
+      if (content === undefined) throw new Error(`File not found: ${this.uri}`);
+      return content;
+    }
+    get exists() {
+      return store.has(this.uri);
+    }
+  }
+  class MockDirectory {
+    uri: string;
+    constructor(...uris: Array<string | { uri: string }>) {
+      this.uri = uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/');
+    }
+  }
+  return {
+    File: MockFile,
+    Directory: MockDirectory,
+    Paths: { cache: new MockDirectory('mock-cache-dir') },
+  };
+});
+
+// expo-sharing opens a native OS share sheet that doesn't exist under Jest.
+jest.mock('expo-sharing', () => ({
+  isAvailableAsync: jest.fn().mockResolvedValue(true),
+  shareAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+// expo-document-picker opens a native file picker that doesn't exist under
+// Jest. Tests override this per-case via `(getDocumentAsync as jest.Mock)`.
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: jest.fn().mockResolvedValue({ canceled: true, assets: null }),
+}));
+
 // Jest does not load `.env`, so seed the Supabase env vars the real `supabase.ts`
 // guards on at import time. Tests run against the manual `@supabase/supabase-js`
 // mock, so these values are never used to reach a real network endpoint.
