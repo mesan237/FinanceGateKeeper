@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
   },
   heroAmount: {
     fontSize: 34,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
     letterSpacing: -0.5,
     marginTop: 4,
   },

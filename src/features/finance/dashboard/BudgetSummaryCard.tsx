@@ -83,7 +83,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   amount: {
     color: c.TEXT_PRIMARY,
     fontSize: 34,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
     letterSpacing: -0.5,
     marginTop: 4,
     marginBottom: 12,

@@ -1,4 +1,4 @@
-import { Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import { SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 import {
   WorkSans_400Regular,
   WorkSans_500Medium,
@@ -46,11 +46,11 @@ export default function RootLayout() {
   // in. No-op when signed out or offline; never blocks render.
   useBackgroundSync();
 
-  // Poppins powers headings/display; Work Sans powers body copy and numbers.
+  // Space Grotesk powers headings/display; Work Sans powers body copy and numbers.
   // Each weight is loaded as its own family — see @/constants/fonts.
   const [fontsLoaded] = useFonts({
-    Poppins_600SemiBold,
-    Poppins_700Bold,
+    SpaceGrotesk_600SemiBold,
+    SpaceGrotesk_700Bold,
     WorkSans_400Regular,
     WorkSans_500Medium,
     WorkSans_600SemiBold,

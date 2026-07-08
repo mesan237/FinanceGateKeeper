@@ -120,6 +120,6 @@ const makeStyles = (c: ThemeColors) =>
     keyLabel: {
       fontSize: 26,
       color: c.TEXT_PRIMARY,
-      fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+      fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
     },
   });

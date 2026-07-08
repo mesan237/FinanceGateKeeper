@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
   },
   labelCompact: {
     fontSize: 13,

@@ -248,7 +248,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   addLabel: {
     color: c.PRIMARY_GREEN,
     fontSize: 32,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
   },
   tileEmoji: { fontSize: 28, lineHeight: 32, marginBottom: 4 },
   tileAvatarCircle: {

@@ -69,6 +69,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   amount: {
     color: c.TEXT_PRIMARY,
     fontSize: 16,
-    fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
   },
 });

@@ -67,6 +67,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   initials: {
     color: c.TEXT_INVERSE,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
   },
 });

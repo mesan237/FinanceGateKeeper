@@ -29,18 +29,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   display: {
     color: c.TEXT_PRIMARY,
     fontSize: 28,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
     letterSpacing: -0.5,
   },
   heading: {
     color: c.TEXT_PRIMARY,
     fontSize: 22,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
   },
   subheading: {
     color: c.TEXT_PRIMARY,
     fontSize: 16,
-    fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
   },
   body: {
     color: c.TEXT_PRIMARY,

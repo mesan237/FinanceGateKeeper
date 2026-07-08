@@ -71,7 +71,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     textAlign: 'right',
     color: c.TEXT_PRIMARY,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
     fontSize: 28,
     padding: 0,
   },

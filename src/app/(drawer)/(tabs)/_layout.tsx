@@ -73,9 +73,9 @@ export default function TabsLayout() {
         },
         headerTintColor: c.TEXT_PRIMARY,
         // Match the app's heading face — the native default is the system
-        // font, which visibly clashes with Poppins everywhere else.
+        // font, which visibly clashes with Space Grotesk everywhere else.
         headerTitleStyle: {
-          fontFamily: FONT_FAMILY.POPPINS_SEMIBOLD,
+          fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
           fontSize: 17,
           color: c.TEXT_PRIMARY,
         },
