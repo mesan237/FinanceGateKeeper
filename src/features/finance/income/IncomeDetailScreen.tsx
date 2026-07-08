@@ -6,6 +6,7 @@ import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
 import { Icon } from '@/components/Icon';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
@@ -99,67 +100,75 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
     <View style={styles.container}>
       <ScreenHeader title="Edit Income" />
 
-      {edit.isAllocated ? (
-        <View testID="allocated-lock" style={styles.lockedBlock}>
-          <Typography variant="label">Amount</Typography>
-          <Typography style={styles.lockedAmount}>
-            {formatCurrency(Math.trunc(Number(edit.amount)) || 0)}
-          </Typography>
-          <Typography variant="muted">{edit.date ? formatDateShort(edit.date) : ''}</Typography>
-          <Typography variant="muted" style={styles.lockedHint}>
-            Allocated income can&apos;t change amount or date — its deposits and budget share are
-            already counted.
-          </Typography>
-        </View>
-      ) : (
-        <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
-      )}
+      <KeyboardAwareForm>
+        <View style={styles.form}>
+          {edit.isAllocated ? (
+            <View testID="allocated-lock" style={styles.lockedBlock}>
+              <Typography variant="label">Amount</Typography>
+              <Typography style={styles.lockedAmount}>
+                {formatCurrency(Math.trunc(Number(edit.amount)) || 0)}
+              </Typography>
+              <Typography variant="muted">{edit.date ? formatDateShort(edit.date) : ''}</Typography>
+              <Typography variant="muted" style={styles.lockedHint}>
+                Allocated income can&apos;t change amount or date — its deposits and budget share
+                are already counted.
+              </Typography>
+            </View>
+          ) : (
+            <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
+          )}
 
-      <IncomeSourcePicker value={edit.source} onChange={edit.setSource} />
+          <IncomeSourcePicker value={edit.source} onChange={edit.setSource} />
 
-      <TextInput
-        value={edit.note}
-        onChangeText={edit.setNote}
-        placeholder="Note (optional)"
-        accessibilityLabel="Note"
-      />
-
-      {edit.isAllocated ? null : (
-        <DateField value={edit.date} onChange={edit.setDate} testID="income-detail-date" />
-      )}
-
-      <AccountPicker
-        testID="income-detail-account"
-        label="Account"
-        value={edit.accountId}
-        onChange={edit.setAccountId}
-      />
-
-      <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
-
-      {edit.isAllocated ? null : (
-        <>
-          <Button
-            testID="allocate-now"
-            label="Allocate now"
-            variant="secondary"
-            onPress={handleAllocateNow}
+          <TextInput
+            value={edit.note}
+            onChangeText={edit.setNote}
+            placeholder="Note (optional)"
+            accessibilityLabel="Note"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            style={styles.note}
           />
-          <Button
-            testID="delete-income"
-            label="Delete income"
-            variant="danger"
-            onPress={() => setDeleteModalVisible(true)}
-          />
-        </>
-      )}
 
-      {edit.error ? (
-        <View style={styles.errorRow}>
-          <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
-          <Typography style={styles.error}>{edit.error}</Typography>
+          {edit.isAllocated ? null : (
+            <DateField value={edit.date} onChange={edit.setDate} testID="income-detail-date" />
+          )}
+
+          <AccountPicker
+            testID="income-detail-account"
+            label="Account"
+            value={edit.accountId}
+            onChange={edit.setAccountId}
+          />
+
+          <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
+
+          {edit.isAllocated ? null : (
+            <>
+              <Button
+                testID="allocate-now"
+                label="Allocate now"
+                variant="secondary"
+                onPress={handleAllocateNow}
+              />
+              <Button
+                testID="delete-income"
+                label="Delete income"
+                variant="danger"
+                onPress={() => setDeleteModalVisible(true)}
+              />
+            </>
+          )}
+
+          {edit.error ? (
+            <View style={styles.errorRow}>
+              <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
+              <Typography style={styles.error}>{edit.error}</Typography>
+            </View>
+          ) : null}
         </View>
-      ) : null}
+      </KeyboardAwareForm>
 
       <Modal visible={deleteModalVisible} onRequestClose={() => setDeleteModalVisible(false)}>
         <View style={styles.deleteModal}>
@@ -185,13 +194,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  form: {
+    gap: 12,
+  },
+  note: {
+    minHeight: 64,
+    paddingTop: 10,
+  },
   lockedBlock: {
     gap: 2,
   },
   lockedAmount: {
     color: c.TEXT_PRIMARY,
     fontSize: 28,
-    fontFamily: FONT_FAMILY.POPPINS_BOLD,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
   },
   lockedHint: {
     marginTop: 6,

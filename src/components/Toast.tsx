@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, { FadeInUp, FadeOut } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -46,6 +47,7 @@ export function useToast(): ToastApi {
 export function ToastViewport() {
   const message = useContext(ToastMessageContext);
   const styles = useThemedStyles(makeStyles);
+  const insets = useSafeAreaInsets();
   if (!message) return null;
 
   return (
@@ -54,7 +56,7 @@ export function ToastViewport() {
       exiting={FadeOut.duration(150)}
       pointerEvents="none"
       testID="app-toast"
-      style={styles.toast}
+      style={[styles.toast, { bottom: 24 + insets.bottom }]}
     >
       <Typography style={styles.text}>{message}</Typography>
     </Animated.View>

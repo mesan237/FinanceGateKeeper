@@ -69,6 +69,7 @@ export function DateField({ value, onChange, accessibilityLabel, testID }: DateF
           testID="date-picker"
           value={pickerValue}
           mode="date"
+          display="spinner"
           onChange={handleChange}
         />
       ) : null}

@@ -51,6 +51,11 @@ export function AddTransactionSheet({
   const c = useTheme();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>(initialSegment);
+  // Which segment (if any) should autofocus its amount field. Seeded to
+  // initialSegment on open, then cleared on any manual segment switch — a
+  // remounted panel from tapping Expense/Income/Templates shouldn't pop the
+  // keyboard back open, only the sheet's initial open should.
+  const [autoFocusSegment, setAutoFocusSegment] = useState<Segment | null>(initialSegment);
   // Amount and note live here (not in each panel's hook) so they survive the
   // Expense/Income toggle — switching tabs no longer wipes what was typed.
   const [amount, setAmount] = useState('');
@@ -60,6 +65,7 @@ export function AddTransactionSheet({
   useEffect(() => {
     if (visible) {
       setSegment(initialSegment);
+      setAutoFocusSegment(initialSegment);
       setAmount('');
       setNote('');
     }
@@ -75,7 +81,10 @@ export function AddTransactionSheet({
         testID="add-segment"
         segments={SEGMENTS}
         value={segment}
-        onChange={(key) => setSegment(key as Segment)}
+        onChange={(key) => {
+          setSegment(key as Segment);
+          setAutoFocusSegment(null);
+        }}
       />
 
       <View style={styles.body}>
@@ -83,6 +92,7 @@ export function AddTransactionSheet({
           <ExpenseEntryPanel
             amount={{ value: amount, onChange: setAmount }}
             note={{ value: note, onChange: setNote }}
+            autoFocus={autoFocusSegment === 'expense'}
             onSaved={() => {
               onExpenseSaved();
               onClose();
@@ -92,6 +102,7 @@ export function AddTransactionSheet({
           <IncomeEntryPanel
             amount={{ value: amount, onChange: setAmount }}
             note={{ value: note, onChange: setNote }}
+            autoFocus={autoFocusSegment === 'income'}
             onSaved={(savedAmount, month) => {
               onClose();
               router.push({

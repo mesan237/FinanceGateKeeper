@@ -127,6 +127,17 @@ describe('AddTransactionSheet', () => {
     expect(await screen.findByTestId('quick-add-add-tile')).toBeTruthy();
   });
 
+  it('only autofocuses the amount field on open, not when switching segments back and forth', () => {
+    renderSheet();
+    expect(screen.getByLabelText('Amount in FCFA').props.autoFocus).toBe(true);
+
+    fireEvent.press(screen.getByTestId('add-segment-income'));
+    expect(screen.getByLabelText('Amount in FCFA').props.autoFocus).toBe(false);
+
+    fireEvent.press(screen.getByTestId('add-segment-expense'));
+    expect(screen.getByLabelText('Amount in FCFA').props.autoFocus).toBe(false);
+  });
+
   it('routes to the transfer log and closes when the transfer link is pressed (VS-18)', () => {
     const props = renderSheet();
     fireEvent.press(screen.getByTestId('add-transfer-link'));

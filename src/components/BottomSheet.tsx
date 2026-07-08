@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { createContext, useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -18,6 +18,21 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** How long the slide-down/fade-out exit plays before the Modal unmounts. */
 const EXIT_DURATION_MS = 200;
+
+export interface SheetHost {
+  /** Registers (or replaces) the overlay content rendered under `id`. */
+  register: (id: string, node: React.ReactNode) => void;
+  /** Removes the overlay content registered under `id`, if any. */
+  unregister: (id: string) => void;
+}
+
+/**
+ * Non-null only when read from inside a `BottomSheet`. `components/Modal.tsx`
+ * uses this to render into the sheet's own top-level layer instead of opening
+ * a second native `Modal` — nesting native `Modal`s stacks their backdrops and
+ * is flaky on Android (see `Modal.tsx` for the full rationale).
+ */
+export const SheetHostContext = createContext<SheetHost | null>(null);
 
 export interface BottomSheetProps {
   visible: boolean;
@@ -47,6 +62,25 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
   const styles = useThemedStyles(makeStyles);
+
+  // Overlay content registered by any `Modal` hosted within this sheet (see
+  // `SheetHostContext`), keyed by a per-instance id. Rendered at this
+  // component's own top level so it paints above the sheet's backdrop/panel
+  // without a second native `Modal` window.
+  const [overlays, setOverlays] = useState<Record<string, React.ReactNode>>({});
+  const host = useMemo<SheetHost>(
+    () => ({
+      register: (id, node) => setOverlays((prev) => ({ ...prev, [id]: node })),
+      unregister: (id) =>
+        setOverlays((prev) => {
+          if (!(id in prev)) return prev;
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        }),
+    }),
+    [],
+  );
 
   useEffect(() => {
     if (visible) {
@@ -102,7 +136,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
                   { paddingBottom: 16 + insets.bottom },
                 ]}
               >
-                {children}
+                <SheetHostContext.Provider value={host}>{children}</SheetHostContext.Provider>
               </ScrollView>
             </Animated.View>
           </KeyboardAvoidingView>
@@ -112,6 +146,12 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
             mount their own — a toast fired while the sheet stays open (e.g.
             one-tap template logging) would otherwise be invisible. */}
         <ToastViewport />
+
+        {/* Picker/alert content hosted via `SheetHostContext`, painted last so
+            it sits above the backdrop, panel, and toast. */}
+        {Object.entries(overlays).map(([id, node]) => (
+          <React.Fragment key={id}>{node}</React.Fragment>
+        ))}
       </View>
     </Modal>
   );

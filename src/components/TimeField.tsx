@@ -69,6 +69,7 @@ export function TimeField({ value, onChange, accessibilityLabel, testID }: TimeF
           testID="time-picker"
           value={pickerValue}
           mode="time"
+          display="spinner"
           onChange={handleChange}
         />
       ) : null}

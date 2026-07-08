@@ -48,4 +48,10 @@ describe('TimeField', () => {
     fireEvent(screen.getByTestId('time-picker'), 'change', { type: 'dismissed' }, undefined);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('pins a fixed-height spinner display so the picker never resizes its host', () => {
+    render(<TimeField value="21:00" onChange={jest.fn()} testID="time-field" />);
+    fireEvent.press(screen.getByTestId('time-field'));
+    expect(screen.getByTestId('time-picker').props.display).toBe('spinner');
+  });
 });

@@ -6,6 +6,7 @@ import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
 import { Icon } from '@/components/Icon';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
@@ -78,44 +79,52 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
     <View style={styles.container}>
       <ScreenHeader title="Edit Expense" />
 
-      <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
+      <KeyboardAwareForm>
+        <View style={styles.form}>
+          <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 
-      <Button
-        label={categoryLabel ?? 'Select category'}
-        variant="secondary"
-        onPress={() => setPickerVisible(true)}
-      />
+          <Button
+            label={categoryLabel ?? 'Select category'}
+            variant="secondary"
+            onPress={() => setPickerVisible(true)}
+          />
 
-      <TextInput
-        value={edit.note}
-        onChangeText={edit.setNote}
-        placeholder="Note (optional)"
-        accessibilityLabel="Note"
-      />
+          <TextInput
+            value={edit.note}
+            onChangeText={edit.setNote}
+            placeholder="Note (optional)"
+            accessibilityLabel="Note"
+            multiline
+            numberOfLines={3}
+            textAlignVertical="top"
+            style={styles.note}
+          />
 
-      <DateField value={edit.date} onChange={edit.setDate} testID="expense-date" />
+          <DateField value={edit.date} onChange={edit.setDate} testID="expense-date" />
 
-      <AccountPicker
-        testID="expense-account"
-        label="Account"
-        value={edit.accountId}
-        onChange={edit.setAccountId}
-      />
+          <AccountPicker
+            testID="expense-account"
+            label="Account"
+            value={edit.accountId}
+            onChange={edit.setAccountId}
+          />
 
-      <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
+          <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 
-      {edit.error ? (
-        <View style={styles.errorRow}>
-          <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
-          <Typography style={styles.error}>{edit.error}</Typography>
+          {edit.error ? (
+            <View style={styles.errorRow}>
+              <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
+              <Typography style={styles.error}>{edit.error}</Typography>
+            </View>
+          ) : null}
+
+          <Button
+            label="Delete expense"
+            variant="danger"
+            onPress={() => setDeleteModalVisible(true)}
+          />
         </View>
-      ) : null}
-
-      <Button
-        label="Delete expense"
-        variant="danger"
-        onPress={() => setDeleteModalVisible(true)}
-      />
+      </KeyboardAwareForm>
 
       <CategoryPicker
         visible={pickerVisible}
@@ -161,6 +170,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
     padding: 16,
     gap: 12,
+  },
+  form: {
+    gap: 12,
+  },
+  note: {
+    minHeight: 64,
+    paddingTop: 10,
   },
   errorRow: {
     flexDirection: 'row',

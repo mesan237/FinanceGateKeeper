@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
@@ -20,6 +21,7 @@ import { TransactionList } from './TransactionList';
 export function TransactionsScreen() {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -31,7 +33,11 @@ export function TransactionsScreen() {
         testID="add-transaction-fab"
         accessibilityRole="button"
         accessibilityLabel="Add transaction"
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        style={({ pressed }) => [
+          styles.fab,
+          { bottom: 24 + insets.bottom },
+          pressed && styles.fabPressed,
+        ]}
         onPress={() => {
           hapticTap();
           setSheetOpen(true);

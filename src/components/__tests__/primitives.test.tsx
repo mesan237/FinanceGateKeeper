@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
-import { Text } from 'react-native';
+import { Modal as RNNativeModal, Text } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
 import { BottomSheet } from '@/components/BottomSheet';
@@ -8,6 +8,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { DateField } from '@/components/DateField';
 import { Icon } from '@/components/Icon';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { Modal } from '@/components/Modal';
 import { ProgressBar } from '@/components/ProgressBar';
 import { SegmentedControl } from '@/components/SegmentedControl';
@@ -126,6 +127,12 @@ describe('DateField', () => {
     fireEvent(screen.getByTestId('date-picker'), 'change', { type: 'dismissed' }, undefined);
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('pins a fixed-height spinner display so the picker never resizes its host', () => {
+    render(<DateField value="2026-06-11" onChange={() => undefined} testID="df" />);
+    fireEvent.press(screen.getByTestId('df'));
+    expect(screen.getByTestId('date-picker').props.display).toBe('spinner');
+  });
 });
 
 describe('Icon', () => {
@@ -174,5 +181,58 @@ describe('BottomSheet', () => {
     );
     fireEvent.press(screen.getByTestId('sheet-backdrop'));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('KeyboardAwareForm', () => {
+  it('renders its children inside a scrollable, keyboard-avoiding wrapper', () => {
+    render(
+      <KeyboardAwareForm>
+        <Text>form body</Text>
+      </KeyboardAwareForm>,
+    );
+    expect(screen.getByText('form body')).toBeTruthy();
+  });
+});
+
+describe('Modal hosted inside a BottomSheet', () => {
+  it('does not stack a second native Modal when opened inside a sheet', () => {
+    render(
+      <BottomSheet visible onClose={() => undefined}>
+        <Modal visible onRequestClose={() => undefined}>
+          <Text>dialog body</Text>
+        </Modal>
+      </BottomSheet>,
+    );
+    expect(screen.getByText('dialog body')).toBeTruthy();
+    expect(screen.UNSAFE_queryAllByType(RNNativeModal)).toHaveLength(1);
+  });
+
+  it('still opens its own native Modal when rendered standalone', () => {
+    render(
+      <Modal visible onRequestClose={() => undefined}>
+        <Text>standalone dialog</Text>
+      </Modal>,
+    );
+    expect(screen.getByText('standalone dialog')).toBeTruthy();
+    expect(screen.UNSAFE_queryAllByType(RNNativeModal)).toHaveLength(1);
+  });
+
+  it('unregisters the dialog content when it becomes invisible', () => {
+    const { rerender } = render(
+      <BottomSheet visible onClose={() => undefined}>
+        <Modal visible onRequestClose={() => undefined}>
+          <Text>dialog body</Text>
+        </Modal>
+      </BottomSheet>,
+    );
+    rerender(
+      <BottomSheet visible onClose={() => undefined}>
+        <Modal visible={false} onRequestClose={() => undefined}>
+          <Text>dialog body</Text>
+        </Modal>
+      </BottomSheet>,
+    );
+    expect(screen.queryByText('dialog body')).toBeNull();
   });
 });

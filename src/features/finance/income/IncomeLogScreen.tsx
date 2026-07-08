@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { ScreenHeader } from '@/components/ScreenHeader';
 
 import { IncomeEntryPanel } from './IncomeEntryPanel';
@@ -11,7 +12,8 @@ import { IncomeEntryPanel } from './IncomeEntryPanel';
  * successful save it navigates to `/income/allocate` so the user can confirm the
  * allocation breakdown — the canonical log → allocate → confirm → dashboard
  * flow. The form body lives in the panel, shared with the unified
- * `AddTransactionSheet`.
+ * `AddTransactionSheet`. Wrapped in `KeyboardAwareForm` so the account picker
+ * and Save button stay reachable once the keyboard is up.
  */
 export function IncomeLogScreen() {
   const router = useRouter();
@@ -19,14 +21,16 @@ export function IncomeLogScreen() {
   return (
     <View style={styles.container}>
       <ScreenHeader title="Log Income" cancelLabel="Cancel" />
-      <IncomeEntryPanel
-        onSaved={(amount, month, id) =>
-          router.push({
-            pathname: '/income/allocate',
-            params: { amount: String(amount), month, incomeId: String(id) },
-          })
-        }
-      />
+      <KeyboardAwareForm>
+        <IncomeEntryPanel
+          onSaved={(amount, month, id) =>
+            router.push({
+              pathname: '/income/allocate',
+              params: { amount: String(amount), month, incomeId: String(id) },
+            })
+          }
+        />
+      </KeyboardAwareForm>
     </View>
   );
 }
