@@ -4,21 +4,22 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { SegmentedControl } from '@/components/SegmentedControl';
+import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 
-import { ACCOUNT_PURPOSE_LABEL, ACCOUNT_TYPE_LABEL } from './accountIcons';
+import { ACCOUNT_PURPOSE_LABEL, ACCOUNT_TYPE_ICON, ACCOUNT_TYPE_LABEL } from './accountIcons';
 import { createAccount, getAccountById, updateAccount } from './accounts.service';
 import type { AccountPurpose, AccountType } from './accounts.types';
 
-const TYPE_SEGMENTS = (['cash', 'mobile_money', 'bank', 'card'] as AccountType[]).map((key) => ({
+const TYPE_OPTIONS = (['cash', 'mobile_money', 'bank', 'card'] as AccountType[]).map((key) => ({
   key,
   label: ACCOUNT_TYPE_LABEL[key],
+  icon: ACCOUNT_TYPE_ICON[key],
 }));
-const PURPOSE_SEGMENTS = (
+const PURPOSE_OPTIONS = (
   ['spending', 'saving', 'emergency', 'general'] as AccountPurpose[]
 ).map((key) => ({ key, label: ACCOUNT_PURPOSE_LABEL[key] }));
 
@@ -100,30 +101,34 @@ export function AccountForm() {
         accessibilityLabel="Account name"
       />
 
-      <Typography variant="muted">Type</Typography>
-      <SegmentedControl
+      <Typography variant="label">Type</Typography>
+      <Select
         testID="account-type"
-        segments={TYPE_SEGMENTS}
+        title="Type"
+        options={TYPE_OPTIONS}
         value={type}
         onChange={(key) => setType(key as AccountType)}
       />
 
-      <Typography variant="muted">Purpose</Typography>
-      <SegmentedControl
+      <Typography variant="label">Purpose</Typography>
+      <Select
         testID="account-purpose"
-        segments={PURPOSE_SEGMENTS}
+        title="Purpose"
+        options={PURPOSE_OPTIONS}
         value={purpose}
         onChange={(key) => setPurpose(key as AccountPurpose)}
       />
 
+      <Typography variant="label">Current balance</Typography>
       <TextInput
         testID="account-balance"
-        placeholder="Current balance — leave blank to start from 0"
+        placeholder="0"
         keyboardType="number-pad"
         value={balance}
         onChangeText={setBalance}
         accessibilityLabel="Opening balance"
       />
+      <Typography variant="muted">Leave blank to start from 0.</Typography>
 
       <Pressable
         accessibilityRole="switch"

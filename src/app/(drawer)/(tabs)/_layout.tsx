@@ -13,7 +13,7 @@ import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 // Compact header: the title bar's content area below the status bar. Trimmed
 // from the platform default (~56 on Android) so the header sits tighter now
 // that the screen title lives only here and not duplicated in the page body.
-const HEADER_CONTENT_HEIGHT = 48;
+const HEADER_CONTENT_HEIGHT = 40;
 
 // Lucide ships no outline/filled pair, so the focused tab reads as a heavier
 // stroke plus the active tint rather than a different glyph.

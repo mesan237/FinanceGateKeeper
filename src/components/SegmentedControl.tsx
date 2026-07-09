@@ -43,7 +43,12 @@ export function SegmentedControl({ segments, value, onChange, testID }: Segmente
             }}
             style={[styles.segment, active && styles.segmentActive]}
           >
-            <Typography style={active ? styles.labelActive : styles.label}>
+            <Typography
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              style={active ? styles.labelActive : styles.label}
+            >
               {segment.label}
             </Typography>
           </Pressable>
@@ -64,6 +69,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   segment: {
     flex: 1,
     minHeight: 44,
+    paddingHorizontal: 8,
     borderRadius: RADIUS.sm,
     alignItems: 'center',
     justifyContent: 'center',
@@ -73,10 +79,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   label: {
     color: c.TEXT_MUTED,
+    fontSize: 14,
+    textAlign: 'center',
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   labelActive: {
     color: c.TEXT_INVERSE,
+    fontSize: 14,
+    textAlign: 'center',
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

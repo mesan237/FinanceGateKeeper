@@ -46,8 +46,8 @@ describe('AccountPicker', () => {
     expect(screen.getByText('Cash')).toBeTruthy();
     expect(screen.getByText('MTN MoMo')).toBeTruthy();
     // default marker only on Cash
-    expect(screen.getByTestId('account-picker-default-marker-1')).toBeTruthy();
-    expect(screen.queryByTestId('account-picker-default-marker-2')).toBeNull();
+    expect(screen.getByTestId('account-picker-badge-1')).toBeTruthy();
+    expect(screen.queryByTestId('account-picker-badge-2')).toBeNull();
   });
 
   it('fires onChange with the selected account id', async () => {

@@ -12,6 +12,7 @@ import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { Modal } from '@/components/Modal';
 import { ProgressBar } from '@/components/ProgressBar';
 import { SegmentedControl } from '@/components/SegmentedControl';
+import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { toISODate } from '@/utils/formatDate';
@@ -159,6 +160,33 @@ describe('SegmentedControl', () => {
     render(<SegmentedControl testID="seg" segments={SEGMENTS} value="a" onChange={onChange} />);
     fireEvent.press(screen.getByTestId('seg-b'));
     expect(onChange).toHaveBeenCalledWith('b');
+  });
+});
+
+describe('Select', () => {
+  const OPTIONS = [
+    { key: 'cash', label: 'Cash' },
+    { key: 'bank', label: 'Bank' },
+  ];
+
+  it('shows the selected option label on the trigger', () => {
+    render(<Select testID="sel" options={OPTIONS} value="bank" onChange={() => undefined} />);
+    expect(screen.getByText('Bank')).toBeTruthy();
+  });
+
+  it('shows the placeholder when nothing is selected', () => {
+    render(
+      <Select testID="sel" options={OPTIONS} value={null} onChange={() => undefined} placeholder="Pick one" />,
+    );
+    expect(screen.getByText('Pick one')).toBeTruthy();
+  });
+
+  it('opens the list and fires onChange with the chosen key', () => {
+    const onChange = jest.fn();
+    render(<Select testID="sel" options={OPTIONS} value="cash" onChange={onChange} />);
+    fireEvent.press(screen.getByTestId('sel-trigger'));
+    fireEvent.press(screen.getByTestId('sel-option-bank'));
+    expect(onChange).toHaveBeenCalledWith('bank');
   });
 });
 

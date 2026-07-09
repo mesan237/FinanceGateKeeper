@@ -57,8 +57,10 @@ describe('AccountForm — create mode', () => {
   it('creates the account with the chosen type, purpose, and a 0 balance when blank', async () => {
     render(<AccountForm />);
     fireEvent.changeText(screen.getByTestId('account-name'), 'Wave');
-    fireEvent.press(screen.getByTestId('account-type-bank'));
-    fireEvent.press(screen.getByTestId('account-purpose-saving'));
+    fireEvent.press(screen.getByTestId('account-type-trigger'));
+    fireEvent.press(screen.getByTestId('account-type-option-bank'));
+    fireEvent.press(screen.getByTestId('account-purpose-trigger'));
+    fireEvent.press(screen.getByTestId('account-purpose-option-saving'));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>

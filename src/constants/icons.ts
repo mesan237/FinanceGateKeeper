@@ -87,6 +87,7 @@ export const ICONS = {
   priority: ListOrdered,
   moveUp: ChevronUp,
   moveDown: ChevronDown,
+  dropdown: ChevronDown,
   edit: Pencil,
   hide: EyeOff,
   show: Eye,

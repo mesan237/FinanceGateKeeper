@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -9,15 +9,22 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ToastViewport } from '@/components/Toast';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
-/** How long the slide-down/fade-out exit plays before the Modal unmounts. */
-const EXIT_DURATION_MS = 200;
+/** Open (slide-up/fade-in) and close (slide-down/fade-out) animation lengths. */
+const OPEN_MS = 240;
+const CLOSE_MS = 200;
 
 export interface SheetHost {
   /** Registers (or replaces) the overlay content rendered under `id`. */
@@ -43,14 +50,19 @@ export interface BottomSheetProps {
 
 /**
  * A bottom-anchored sheet built on the native `Modal`. The backdrop fades in
- * and the panel springs up from the bottom (via reanimated entering presets),
- * giving a premium slide-up without a gesture/library dependency. Tapping the
- * backdrop closes it; the panel keeps clear of the keyboard.
+ * and the panel springs up from the bottom; tapping the backdrop closes it and
+ * the panel keeps clear of the keyboard.
  *
- * The native `Modal` cannot animate its own dismissal, so closing happens in
- * two steps: when `visible` goes false the inner views unmount and play their
- * `exiting` presets inside the still-open Modal; once they have finished,
- * `mounted` goes false and tears the Modal down.
+ * The native `Modal` cannot animate its own dismissal, so the panel/backdrop
+ * are animated with an explicit reanimated shared value (`progress`, 0 closed →
+ * 1 open) rather than mount/unmount `entering`/`exiting` layout presets. Layout
+ * presets inside a native `Modal` are unreliable on Android — the entering
+ * animation races the Modal's freshly-created window and sometimes never fires,
+ * leaving the panel stuck off-screen until you close and reopen. Driving a
+ * shared value keeps a single persistent view on screen, so opening always
+ * plays and reopening mid-close simply reverses the same animation. The Modal
+ * is torn down from the close animation's own completion callback (not a timer),
+ * so it unmounts exactly when the slide-out finishes.
  *
  * The body scrolls inside a height cap tied to the live window height. On
  * Android the window resizes when the keyboard opens, shrinking the cap so a
@@ -61,6 +73,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
+  const progress = useSharedValue(visible ? 1 : 0);
   const styles = useThemedStyles(makeStyles);
 
   // Overlay content registered by any `Modal` hosted within this sheet (see
@@ -82,65 +95,70 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
     [],
   );
 
+  const handleClosed = useCallback(() => setMounted(false), []);
+
   useEffect(() => {
     if (visible) {
       setMounted(true);
+      progress.value = withTiming(1, { duration: OPEN_MS, easing: Easing.out(Easing.cubic) });
       return;
     }
-    // Small buffer past the exit duration so the last frames aren't clipped.
-    const timer = setTimeout(() => setMounted(false), EXIT_DURATION_MS + 50);
-    return () => clearTimeout(timer);
-  }, [visible]);
+    // Reversing an in-flight open cancels its callback (finished === false), so
+    // the Modal only tears down once a full close actually settles.
+    progress.value = withTiming(
+      0,
+      { duration: CLOSE_MS, easing: Easing.in(Easing.cubic) },
+      (finished) => {
+        'worklet';
+        if (finished) runOnJS(handleClosed)();
+      },
+    );
+  }, [visible, progress, handleClosed]);
 
-  if (!visible && !mounted) return null;
+  const backdropStyle = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const panelStyle = useAnimatedStyle(() => ({
+    // Anchored at the bottom edge; translating by the full window height keeps
+    // it entirely off-screen at progress 0 regardless of the panel's own height.
+    transform: [{ translateY: (1 - progress.value) * windowHeight }],
+  }));
+
+  if (!mounted) return null;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.fill} testID={testID}>
-        {visible ? (
-          <Animated.View
-            entering={FadeIn.duration(180)}
-            exiting={FadeOut.duration(EXIT_DURATION_MS)}
-            style={styles.backdrop}
-          >
-            <Pressable
-              accessibilityLabel="Close"
-              accessibilityRole="button"
-              testID={testID ? `${testID}-backdrop` : 'bottom-sheet-backdrop'}
-              style={styles.backdropPress}
-              onPress={onClose}
-            />
-          </Animated.View>
-        ) : null}
+        <Animated.View style={[styles.backdrop, backdropStyle]}>
+          <Pressable
+            accessibilityLabel="Close"
+            accessibilityRole="button"
+            testID={testID ? `${testID}-backdrop` : 'bottom-sheet-backdrop'}
+            style={styles.backdropPress}
+            onPress={onClose}
+          />
+        </Animated.View>
 
-        {visible ? (
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            style={styles.avoider}
-            pointerEvents="box-none"
-          >
-            <Animated.View
-              entering={SlideInDown.duration(240)}
-              exiting={SlideOutDown.duration(EXIT_DURATION_MS)}
-              style={[styles.sheet, { maxHeight: windowHeight * 0.92 }]}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.avoider}
+          pointerEvents="box-none"
+        >
+          <Animated.View style={[styles.sheet, { maxHeight: windowHeight * 0.92 }, panelStyle]}>
+            <View style={styles.handle} />
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={[
+                styles.scrollContent,
+                // Clear the Android nav bar / home indicator so the last
+                // button never sits under the system buttons.
+                { paddingBottom: 16 + insets.bottom },
+              ]}
             >
-              <View style={styles.handle} />
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="interactive"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={[
-                  styles.scrollContent,
-                  // Clear the Android nav bar / home indicator so the last
-                  // button never sits under the system buttons.
-                  { paddingBottom: 16 + insets.bottom },
-                ]}
-              >
-                <SheetHostContext.Provider value={host}>{children}</SheetHostContext.Provider>
-              </ScrollView>
-            </Animated.View>
-          </KeyboardAvoidingView>
-        ) : null}
+              <SheetHostContext.Provider value={host}>{children}</SheetHostContext.Provider>
+            </ScrollView>
+          </Animated.View>
+        </KeyboardAvoidingView>
 
         {/* The native Modal draws above the root toast viewport, so sheets
             mount their own — a toast fired while the sheet stays open (e.g.

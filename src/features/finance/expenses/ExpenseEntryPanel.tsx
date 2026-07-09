@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
@@ -11,6 +11,7 @@ import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
+import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
@@ -89,22 +90,40 @@ export function ExpenseEntryPanel({
     <View style={styles.container}>
       <AmountInput value={log.amount} onChangeText={log.setAmount} autoFocus={autoFocus} />
 
-      <Button
-        label={categoryLabel ?? 'Select category'}
-        variant="secondary"
+      <Pressable
+        accessibilityRole="button"
+        testID="expense-category-trigger"
+        style={styles.categoryTrigger}
         onPress={() => setPickerVisible(true)}
-      />
+      >
+        <View style={styles.categoryContent}>
+          <Icon
+            name="categories"
+            size={18}
+            color={categoryLabel ? c.TEXT_PRIMARY : c.PRIMARY_GREEN}
+          />
+          <Typography style={categoryLabel ? undefined : styles.categoryPlaceholder}>
+            {categoryLabel ?? 'Select category'}
+          </Typography>
+        </View>
+        <Icon name="forward" size={18} color={c.TEXT_MUTED} />
+      </Pressable>
 
-      <TextInput
-        value={log.note}
-        onChangeText={log.setNote}
-        placeholder="Note (optional)"
-        accessibilityLabel="Note"
-        multiline
-        numberOfLines={3}
-        textAlignVertical="top"
-        style={styles.note}
-      />
+      <View>
+        <Typography variant="muted" style={styles.noteLabel}>
+          Description
+        </Typography>
+        <TextInput
+          value={log.note}
+          onChangeText={log.setNote}
+          placeholder="Note (optional)"
+          accessibilityLabel="Note"
+          multiline
+          numberOfLines={3}
+          textAlignVertical="top"
+          style={styles.note}
+        />
+      </View>
 
       <DateField value={log.date} onChange={log.setDate} testID="expense-date" />
 
@@ -152,9 +171,24 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: 10,
   },
+  categoryTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.BORDER_STRONG,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  categoryContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  categoryPlaceholder: { color: c.PRIMARY_GREEN },
+  noteLabel: { marginBottom: 6 },
   note: {
     minHeight: 64,
     paddingTop: 10,
+    borderColor: c.BORDER_STRONG,
+    color: c.TEXT_PRIMARY,
   },
   errorRow: {
     flexDirection: 'row',
