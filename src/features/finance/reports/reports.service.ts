@@ -8,7 +8,8 @@ import { getOrCreateFunds, getFundProgress } from '@/features/finance/funds/fund
 import { getProjects } from '@/features/finance/projects/projects.service';
 import { getOutstandingTotals } from '@/features/finance/debt/debt.service';
 import type { Expense, Category } from '@/features/finance/expenses/expenses.types';
-import { toISODate, addMonths } from '@/utils/formatDate';
+import { toISODate } from '@/utils/formatDate';
+import { lastDayOfMonth, prevMonthISO } from '@/utils/monthMath';
 
 import type {
   CategorySpend,
@@ -66,18 +67,6 @@ function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return toISODate(d);
-}
-
-/** Returns the `YYYY-MM` string for the month before `monthISO`. */
-function prevMonthISO(monthISO: string): string {
-  return addMonths(`${monthISO}-01`, -1).slice(0, 7);
-}
-
-/** Returns the last day of the given `YYYY-MM` month as a `YYYY-MM-DD` string. */
-function lastDayOfMonth(monthISO: string): string {
-  const [year, month] = monthISO.split('-').map(Number);
-  // Day 0 of the next month is the last day of this month.
-  return toISODate(new Date(Date.UTC(year, month, 0)));
 }
 
 /**

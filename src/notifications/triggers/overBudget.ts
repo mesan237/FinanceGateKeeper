@@ -11,6 +11,13 @@ import { formatCurrency } from '@/utils/formatCurrency';
 export interface OverBudgetInput {
   /** Whole FCFA the prospective expense would exceed the budget by. */
   overage: number;
+  /**
+   * The category whose envelope is being exceeded. Omit for the month-wide
+   * budget. Naming the envelope is what makes the warning actionable — "over
+   * your Food budget" tells the user which decision to revisit, where "over
+   * your budget" only tells them to feel bad.
+   */
+  categoryName?: string;
 }
 
 /**
@@ -18,10 +25,14 @@ export interface OverBudgetInput {
  * over-budget modal renders this copy (the alert is in-app, never a push, per
  * `notifications/CLAUDE.md`). Does not touch the database.
  */
-export function buildOverBudgetAlert({ overage }: OverBudgetInput): NotificationPayload {
+export function buildOverBudgetAlert({
+  overage,
+  categoryName,
+}: OverBudgetInput): NotificationPayload {
+  const scope = categoryName ? `your ${categoryName} budget` : 'your monthly expense budget';
   return {
     type: 'overBudget',
     title: MESSAGES.overBudget.title,
-    body: `This expense puts you ${formatCurrency(overage)} over your monthly expense budget.`,
+    body: `This expense puts you ${formatCurrency(overage)} over ${scope}.`,
   };
 }

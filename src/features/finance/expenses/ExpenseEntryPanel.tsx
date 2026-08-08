@@ -15,6 +15,7 @@ import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
+import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -50,11 +51,14 @@ export function ExpenseEntryPanel({
   const c = useTheme();
   const log = useExpenseLog({ amount, note });
   const { check } = useOverBudgetCheck();
+  const { check: checkCategory } = useCategoryOverBudgetCheck();
   const { show } = useToast();
   const defaultAccountId = useDefaultAccountId();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
-  const [overage, setOverage] = useState<number | null>(null);
+  // The pending breach, or null when the save is clear. `categoryName` is set
+  // only for a category-envelope breach, so the alert can name it.
+  const [breach, setBreach] = useState<{ overage: number; categoryName?: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Pre-select the default wallet once it resolves, unless the user already chose one.
@@ -78,9 +82,22 @@ export function ExpenseEntryPanel({
   };
 
   const handleSave = async () => {
-    const result = await check(Math.trunc(Number(log.amount)));
+    const amountFCFA = Math.trunc(Number(log.amount));
+
+    // The category envelope is checked first: "3,000 over your Food budget"
+    // points at a specific decision, where the month-wide warning only says
+    // that something, somewhere, is too much.
+    if (log.categoryId !== null) {
+      const categoryResult = await checkCategory(log.categoryId, amountFCFA);
+      if (categoryResult.isOver) {
+        setBreach({ overage: categoryResult.overage, categoryName: categoryResult.categoryName });
+        return;
+      }
+    }
+
+    const result = await check(amountFCFA);
     if (result.isOver) {
-      setOverage(result.overage);
+      setBreach({ overage: result.overage });
       return;
     }
     await persist();
@@ -155,13 +172,14 @@ export function ExpenseEntryPanel({
       />
 
       <OverBudgetAlert
-        visible={overage !== null}
-        overage={overage ?? 0}
+        visible={breach !== null}
+        overage={breach?.overage ?? 0}
+        categoryName={breach?.categoryName}
         onProceed={() => {
-          setOverage(null);
+          setBreach(null);
           void persist();
         }}
-        onCancel={() => setOverage(null)}
+        onCancel={() => setBreach(null)}
       />
     </View>
   );

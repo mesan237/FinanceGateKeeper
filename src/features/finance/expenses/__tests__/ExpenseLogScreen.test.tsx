@@ -11,6 +11,14 @@ jest.mock('@/features/finance/budget/budget.hooks', () => ({
   useOverBudgetCheck: () => ({ check: mockCheck }),
 }));
 
+// The per-category envelope guard (VS-33) runs before the month-wide one; when
+// it reports "not over" the save falls through to `mockCheck`.
+const mockCategoryCheck = jest.fn();
+jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
+  useCategoryOverBudgetCheck: () => ({ check: mockCategoryCheck }),
+}));
+
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(1),
   getAllCategories: jest.fn().mockResolvedValue([
@@ -28,9 +36,23 @@ const mockedGetAll = getAllCategories as jest.MockedFunction<typeof getAllCatego
 const NOT_OVER = { isOver: false, overage: 0, remaining: 0, expenseBudget: 0 };
 const over = (overage: number) => ({ isOver: true, overage, remaining: 0, expenseBudget: 0 });
 
+const CATEGORY_NOT_OVER = {
+  ...NOT_OVER,
+  categoryId: 1,
+  categoryName: 'Food',
+  hasBudget: false,
+};
+const categoryOver = (overage: number) => ({
+  ...over(overage),
+  categoryId: 1,
+  categoryName: 'Food',
+  hasBudget: true,
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockCheck.mockResolvedValue(NOT_OVER);
+  mockCategoryCheck.mockResolvedValue(CATEGORY_NOT_OVER);
 });
 
 async function selectFoodRestaurant() {
@@ -112,6 +134,48 @@ describe('ExpenseLogScreen', () => {
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/transactions'));
+  });
+
+  it('checks the chosen category envelope, not just the month total', async () => {
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockCategoryCheck).toHaveBeenCalledWith(1, 1500));
+  });
+
+  it('names the category when its envelope is the one being broken', async () => {
+    mockCategoryCheck.mockResolvedValue(categoryOver(3000));
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '8000');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('This expense puts you 3 000 FCFA over your Food budget.'),
+      ).toBeTruthy(),
+    );
+    expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
+  it('prefers the category warning over the month-wide one when both would fire', async () => {
+    mockCategoryCheck.mockResolvedValue(categoryOver(3000));
+    mockCheck.mockResolvedValue(over(50_000));
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '8000');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    // The specific envelope is the actionable one, so the month-wide check is
+    // never even reached.
+    await waitFor(() => expect(screen.getByTestId('over-budget-proceed')).toBeTruthy());
+    expect(screen.getByText(/over your Food budget/)).toBeTruthy();
+    expect(mockCheck).not.toHaveBeenCalled();
   });
 
   it('Cancel on the over-budget modal saves nothing', async () => {

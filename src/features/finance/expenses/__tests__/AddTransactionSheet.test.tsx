@@ -11,6 +11,24 @@ jest.mock('@/features/finance/budget/budget.hooks', () => ({
   useOverBudgetCheck: () => ({ check: mockCheck }),
 }));
 
+// The per-category envelope guard (VS-33) runs before the month-wide one.
+// These suites exercise the month-wide path, so it always reports "not over"
+// and the save falls through to `mockCheck`.
+jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
+  useCategoryOverBudgetCheck: () => ({
+    check: jest.fn().mockResolvedValue({
+      isOver: false,
+      overage: 0,
+      remaining: 0,
+      expenseBudget: 0,
+      categoryId: 0,
+      categoryName: '',
+      hasBudget: false,
+    }),
+  }),
+}));
+
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(1),
   getQuickAddTemplates: jest.fn().mockResolvedValue([]),

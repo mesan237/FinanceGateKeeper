@@ -16,6 +16,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { ICON_SIZE } from '@/constants/icons';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
+import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
@@ -36,10 +37,13 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   const edit = useExpenseEdit(expenseId);
   const { labelFor, loading: categoriesLoading } = useCategories();
   const { check } = useOverBudgetCheck();
+  const { check: checkCategory } = useCategoryOverBudgetCheck();
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [overage, setOverage] = useState<number | null>(null);
+  // The pending breach, or null when the save is clear. `categoryName` is set
+  // only for a category-envelope breach, so the alert can name it.
+  const [breach, setBreach] = useState<{ overage: number; categoryName?: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
@@ -54,9 +58,22 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
     const newAmount = Math.trunc(Number(edit.amount));
     const amountChanged = edit.originalAmount !== null && newAmount !== edit.originalAmount;
     if (amountChanged && newAmount > (edit.originalAmount ?? 0)) {
+      // The envelope check compares against spending that already includes this
+      // expense's old amount, so it is asked about the *increase* only.
+      const increase = newAmount - (edit.originalAmount ?? 0);
+      if (edit.categoryId !== null) {
+        const categoryResult = await checkCategory(edit.categoryId, increase);
+        if (categoryResult.isOver) {
+          setBreach({
+            overage: categoryResult.overage,
+            categoryName: categoryResult.categoryName,
+          });
+          return;
+        }
+      }
       const result = await check(newAmount);
       if (result.isOver) {
-        setOverage(result.overage);
+        setBreach({ overage: result.overage });
         return;
       }
     }
@@ -152,14 +169,15 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
       </Modal>
 
       <OverBudgetAlert
-        visible={overage !== null}
-        overage={overage ?? 0}
+        visible={breach !== null}
+        overage={breach?.overage ?? 0}
+        categoryName={breach?.categoryName}
         onProceed={async () => {
-          setOverage(null);
+          setBreach(null);
           const ok = await edit.update();
           if (ok) router.back();
         }}
-        onCancel={() => setOverage(null)}
+        onCancel={() => setBreach(null)}
       />
     </View>
   );

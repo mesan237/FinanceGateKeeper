@@ -20,9 +20,9 @@ jest.mock('@/services/database', () => {
 });
 
 import { DEFAULT_ALLOCATION } from '@/constants/allocation';
+import { checkOverBudget } from '@/features/finance/budget/budget.plan';
 import {
   calculateBreakdown,
-  checkOverBudget,
   getAllocation,
   getExpensesMonthlyTotal,
   getMonthlyBudget,

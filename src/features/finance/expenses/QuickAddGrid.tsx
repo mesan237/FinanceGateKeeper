@@ -12,6 +12,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
+import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { toISODate } from '@/utils/formatDate';
@@ -54,6 +55,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   const { templates, add, update, remove, log } = useQuickAdd();
   const { labelFor } = useCategories();
   const { check } = useOverBudgetCheck();
+  const { check: checkCategory } = useCategoryOverBudgetCheck();
   const { show } = useToast();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
   // The template awaiting date confirmation before it's logged.
@@ -64,6 +66,8 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
     template: QuickAddTemplate;
     date: string;
     overage: number;
+    /** Set only for a category-envelope breach, so the alert can name it. */
+    categoryName?: string;
   } | null>(null);
 
   const performLog = async (template: QuickAddTemplate, dateISO: string) => {
@@ -84,6 +88,20 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
     const template = confirming;
     const dateISO = confirmDate;
     setConfirming(null);
+
+    // The category envelope is checked first — it names the budget being
+    // broken, which the month-wide warning cannot.
+    const categoryResult = await checkCategory(template.categoryId, template.amount);
+    if (categoryResult.isOver) {
+      setPending({
+        template,
+        date: dateISO,
+        overage: categoryResult.overage,
+        categoryName: categoryResult.categoryName,
+      });
+      return;
+    }
+
     const result = await check(template.amount);
     if (result.isOver) {
       setPending({ template, date: dateISO, overage: result.overage });
@@ -195,6 +213,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
       <OverBudgetAlert
         visible={pending !== null}
         overage={pending?.overage ?? 0}
+        categoryName={pending?.categoryName}
         onProceed={() => {
           const template = pending?.template;
           const date = pending?.date;

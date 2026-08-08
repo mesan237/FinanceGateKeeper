@@ -37,4 +37,26 @@ describe('OverBudgetAlert', () => {
     );
     expect(screen.queryByTestId('over-budget-proceed')).toBeNull();
   });
+
+  it('names the category envelope being exceeded', () => {
+    render(
+      <OverBudgetAlert
+        visible
+        overage={3000}
+        categoryName="Food"
+        onProceed={jest.fn()}
+        onCancel={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('This expense puts you 3 000 FCFA over your Food budget.')).toBeTruthy();
+  });
+
+  it('falls back to the monthly budget when no category is named', () => {
+    render(
+      <OverBudgetAlert visible overage={3000} onProceed={jest.fn()} onCancel={jest.fn()} />,
+    );
+    expect(
+      screen.getByText('This expense puts you 3 000 FCFA over your monthly expense budget.'),
+    ).toBeTruthy();
+  });
 });

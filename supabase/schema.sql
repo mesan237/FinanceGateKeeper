@@ -35,8 +35,8 @@
 -- ----------------------------------------------------------------
 drop table if exists
   categories, funds, projects, expenses, income, allocations,
-  fund_transactions, project_transactions, quick_add_templates,
-  recurring_expenses, zero_days, debts, users
+  category_budgets, fund_transactions, project_transactions,
+  quick_add_templates, recurring_expenses, zero_days, debts, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -114,8 +114,22 @@ create table allocations (
   expenses_pct       integer not null,
   priority_order     text not null,
   is_locked          integer not null default 0,
+  -- Explicit spendable total for the month. NULL = derive from the income split
+  -- (allocated income x expenses_pct), which is what every pre-VS-33 month does.
+  total_budget       integer,
   created_at         text not null,
   updated_at         text not null
+);
+
+create table category_budgets (
+  uuid             text primary key,
+  user_id          uuid not null default auth.uid(),
+  month            text not null,
+  category_id      text not null,   -- uuid of the category
+  allocated_amount integer not null,
+  rollover_enabled integer not null default 0,
+  created_at       text not null,
+  updated_at       text not null
 );
 
 create table fund_transactions (
@@ -199,8 +213,8 @@ declare t text;
 begin
   foreach t in array array[
     'categories','funds','projects','expenses','income','allocations',
-    'fund_transactions','project_transactions','quick_add_templates',
-    'recurring_expenses','zero_days','debts'
+    'category_budgets','fund_transactions','project_transactions',
+    'quick_add_templates','recurring_expenses','zero_days','debts'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

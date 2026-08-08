@@ -37,4 +37,26 @@ describe('ProgressBar', () => {
     const track = StyleSheet.flatten(screen.getByTestId('bar').props.style);
     expect(track.backgroundColor).toBe(BORDER);
   });
+
+  it('renders no pace marker when marker is omitted', () => {
+    render(<ProgressBar value={40} testID="bar" />);
+    expect(screen.queryByTestId('bar-marker')).toBeNull();
+  });
+
+  it('positions the pace marker at its percentage', () => {
+    render(<ProgressBar value={40} marker={25} testID="bar" />);
+    const marker = StyleSheet.flatten(screen.getByTestId('bar-marker').props.style);
+    expect(marker.left).toBe('25%');
+  });
+
+  it('clamps a marker past the end of the track', () => {
+    render(<ProgressBar value={40} marker={140} testID="bar" />);
+    const marker = StyleSheet.flatten(screen.getByTestId('bar-marker').props.style);
+    expect(marker.left).toBe('100%');
+  });
+
+  it('renders the pace marker on an animated bar too', () => {
+    render(<ProgressBar value={40} marker={60} animated testID="bar" />);
+    expect(screen.getByTestId('bar-marker')).toBeTruthy();
+  });
 });
