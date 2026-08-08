@@ -27,12 +27,12 @@ Three layers — never violate these:
 
 ## Approved Cross-Feature Dependencies
 - `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`, `accounts` (Wallets summary)
-- `budget` → reads from `expenses` (categories), `funds` (redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated for the unallocated-pool screen, VS-19)
+- `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33), `funds` (redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated for the unallocated-pool screen, VS-19)
 - `reports` → reads from `expenses`, `income`, `budget`, `funds`, `projects`, `debt`
 - `income` → calls `budget` (triggers allocation after income log); reads `accounts` (AccountPicker on income log)
 - `funds` → reads `budget` (allocation percentages); reads `accounts` (reserved — service-level `accountId` on deposits; manual-deposit picker UI deferred)
 - `projects` → reads `budget` (allocation percentages); reads `accounts` (AccountPicker on manual contribution)
-- `expenses` → reads `budget` (pre-save over-budget check on the log/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
+- `expenses` → reads `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the log/detail/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
 All other cross-feature imports are forbidden.
 
 ## Naming Conventions
