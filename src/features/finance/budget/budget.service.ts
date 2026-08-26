@@ -15,7 +15,9 @@ import type {
 } from './budget.types';
 
 // Redistribution lives in its own module (decoupled, no cross-import) but is
-// re-exported here so callers keep a single budget-service entry point.
+// re-exported here so callers keep a single budget-service entry point. The
+// VS-33 envelope modules are not re-exported — `budget.plan.ts` imports
+// `getMonthlyBudget` from here, so re-exporting it back would close a cycle.
 export { redistributeEmergencyPct } from './budget.redistribution';
 
 interface AllocationRow {
@@ -281,28 +283,6 @@ export async function getMonthlyBudget(monthISO: string): Promise<MonthlyBudget>
   };
 }
 
-/**
- * Decides whether logging `newExpenseAmount` this month would push total
- * expenses past the month's confirmed expense allocation.
- *
- * The guard is only active once the allocation is **locked** (the user has
- * confirmed it on the allocation screen). Until then — learning mode, or a
- * control-mode month not yet set up — the auto-materialised default allocation
- * stays unlocked and this always reports "not over", so expense logging is
- * never interrupted before a budget exists. Lands-exactly-on-budget is not over
- * (`>`, not `>=`).
- */
-export async function checkOverBudget(
-  monthISO: string,
-  newExpenseAmount: number,
-): Promise<OverBudgetCheck> {
-  const budget = await getMonthlyBudget(monthISO);
-  const expenseBudget = budget.breakdown.expenses;
-  const remaining = budget.expensesRemaining;
-  if (!budget.allocation.isLocked) {
-    return { isOver: false, overage: 0, remaining, expenseBudget };
-  }
-  const after = budget.expensesLogged + newExpenseAmount;
-  const isOver = after > expenseBudget;
-  return { isOver, overage: isOver ? after - expenseBudget : 0, remaining, expenseBudget };
-}
+// `checkOverBudget` (the month-wide guard) lives in `budget.plan.ts` alongside
+// the per-category guard added in VS-33 — one home for "would this expense
+// break something?", and it keeps this file inside the 300-line ceiling.

@@ -3,6 +3,7 @@ import * as expensesService from '@/features/finance/expenses/expenses.service';
 import * as fundsService from '@/features/finance/funds/funds.service';
 import * as projectsService from '@/features/finance/projects/projects.service';
 import { toISODate } from '@/utils/formatDate';
+import { daysInMonth, daysRemainingInMonth } from '@/utils/monthMath';
 
 import type {
   BudgetSummary,
@@ -58,29 +59,11 @@ export function buildSpendingTrend(
   );
 }
 
-/**
- * Returns the number of whole days remaining in `monthISO` after `todayISO`,
- * inclusive of `todayISO` being the current day (so the last day of the month
- * gives 0, not 1). Returns 0 if `todayISO` is not in `monthISO`. Pure.
- */
-export function daysRemainingInMonth(monthISO: string, todayISO: string): number {
-  const [y, m] = monthISO.split('-').map(Number);
-  // Date.UTC(y, m, 0) — day 0 of month `m` (0-indexed) = last day of month `m-1` (0-indexed)
-  //   = last day of month `m` (1-indexed, as stored in monthISO). So this gives the last
-  //   calendar day of the month in `monthISO`.
-  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  const todayDate = new Date(`${todayISO}T00:00:00Z`);
-  const todayMonthISO = `${todayDate.getUTCFullYear()}-${String(todayDate.getUTCMonth() + 1).padStart(2, '0')}`;
-  if (todayMonthISO !== monthISO) return 0;
-  return Math.max(0, lastDay - todayDate.getUTCDate());
-}
-
-/** Number of calendar days in `monthISO` (e.g. `'2026-06'` → 30). Pure. */
-export function daysInMonth(monthISO: string): number {
-  const [y, m] = monthISO.split('-').map(Number);
-  // Date.UTC(y, m, 0) is the last day of month `m` (1-indexed) — see daysRemainingInMonth.
-  return new Date(Date.UTC(y, m, 0)).getUTCDate();
-}
+// Calendar arithmetic lives in `@/utils/monthMath` so the budget slice can share
+// it (features may not import each other's services outside the approved list).
+// Re-exported here because the dashboard's own tests and callers address these
+// through `dashboard.service`.
+export { daysInMonth, daysRemainingInMonth } from '@/utils/monthMath';
 
 /**
  * Share of the expense budget already spent, as a whole percentage clamped to

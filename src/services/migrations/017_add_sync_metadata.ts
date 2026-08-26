@@ -15,6 +15,7 @@ export const SYNCED_TABLES = [
   'expenses',
   'income',
   'allocations',
+  'category_budgets',
   'fund_transactions',
   'project_transactions',
   'quick_add_templates',
@@ -26,11 +27,14 @@ export const SYNCED_TABLES = [
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
 
-// `accounts` and `transfers` are created by later migrations (018/020), so this
-// migration cannot provision their sync columns — migration 021 does that. This
-// migration only touches the tables that already exist when it runs.
+// `accounts`, `transfers`, and `category_budgets` are created by later
+// migrations (018/020/026), so this migration cannot provision their sync
+// columns — migrations 021 and 028 do that. This migration only touches the
+// tables that already exist when it runs.
+const PROVISIONED_LATER: ReadonlyArray<string> = ['accounts', 'transfers', 'category_budgets'];
+
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
-  (t) => t !== 'accounts' && t !== 'transfers',
+  (t) => !PROVISIONED_LATER.includes(t),
 );
 
 /**
@@ -67,6 +71,9 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'created_at',
   ],
   income: ['amount', 'source', 'note', 'date', 'created_at'],
+  // `total_budget` is deliberately absent: migration 027 adds the column, so
+  // this migration's trigger cannot reference it. Migration 028 recreates the
+  // trigger with it appended (the `account_id` precedent above).
   allocations: [
     'month',
     'emergency_fund_pct',
@@ -75,6 +82,13 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'expenses_pct',
     'priority_order',
     'is_locked',
+    'created_at',
+  ],
+  category_budgets: [
+    'month',
+    'category_id',
+    'allocated_amount',
+    'rollover_enabled',
     'created_at',
   ],
   fund_transactions: ['fund_id', 'amount', 'direction', 'reason', 'date', 'created_at'],

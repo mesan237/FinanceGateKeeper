@@ -24,6 +24,9 @@ import { migration as addIncomeAllocationStatus } from '@/services/migrations/02
 import { migration as addProjectDeletedAt } from '@/services/migrations/023_add_project_deleted_at';
 import { migration as addPinAndProfileColumns } from '@/services/migrations/024_add_pin_and_profile_columns';
 import { migration as addOnboardingComplete } from '@/services/migrations/025_add_onboarding_complete';
+import { migration as createCategoryBudgetsTable } from '@/services/migrations/026_create_category_budgets_table';
+import { migration as addAllocationTotalBudget } from '@/services/migrations/027_add_allocation_total_budget';
+import { migration as syncCategoryBudgets } from '@/services/migrations/028_sync_category_budgets';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -51,4 +54,7 @@ export const migrations: ReadonlyArray<Migration> = [
   addProjectDeletedAt,
   addPinAndProfileColumns,
   addOnboardingComplete,
+  createCategoryBudgetsTable,
+  addAllocationTotalBudget,
+  syncCategoryBudgets,
 ];

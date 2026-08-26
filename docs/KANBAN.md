@@ -891,6 +891,69 @@ Local JSON backup export/import, independent of Supabase cloud sync: `services/d
 
 ---
 
+### VS-33: Monthly Budgeting Redesign — Envelopes, Pacing & Insights
+
+**Priority:** High — user-requested
+**Blocked by:** VS-06 (Allocation), VS-12 (Over-budget), VS-14 (Reports patterns)
+**Plan:** `issues/ISSUE-031/implementation-plan.md`
+
+**Scope:**
+
+Turn the Budget tab from a record of income allocation into a place a month is
+actually planned.
+
+- **Data model.** Migration 026 `category_budgets` (month, category_id,
+  allocated_amount, rollover_enabled, `UNIQUE(month, category_id)`); 027 adds a
+  nullable `allocations.total_budget` (NULL = derive from the income split, so no
+  backfill); 028 wires both into cloud sync.
+- **Hybrid total.** Explicit per-month budget when set, the derived income-split
+  figure otherwise. The split still drives funds/projects untouched.
+- **Per-category envelopes**, never month-locked — the lock governs money that has
+  already moved, not a spending plan.
+- **Per-category opt-in rollover.** Leftover *and* overspend carry cumulatively;
+  gated on the receiving month's flag; the chain is replayed from history rather
+  than stored, so correcting an old month propagates forward.
+- **Pacing over thresholds.** `budgetHealth` projects the run-rate rather than
+  only testing a percentage, so 45% consumed on the 6th reads as at-risk.
+- **Planner** (`/budget/plan`) built around a sticky Unassigned figure that the
+  user drives to zero, with income-split / last-month / my-averages shortcuts and
+  a "+ rest" control for the final remainder.
+- **Budget tab redesign**: month stepper, hero (remaining, paced meter, status
+  *word*, days left / safe daily spend / projection), unassigned strip, envelope
+  rows, collapsible insights, demoted income-split card as one stacked
+  composition bar (the old per-bucket bars plotted share-of-income and always
+  summed to 100% across rows — they read as progress toward a goal that did not
+  exist).
+- **Fixes a live staleness bug**: the tab never refreshed on focus, so figures
+  went stale the moment an expense was logged elsewhere.
+- **Per-category over-budget guard** finally delivers VS-12's promised copy
+  ("3,000 over your Food budget"), and overspending offers to cover from another
+  envelope rather than only warning.
+- Shared infra: `utils/monthMath` (moved out of `dashboard.service`, which
+  `budget` may not import), `EmptyState`/`LoadingState`/`Skeleton` (closes VS-28),
+  `MonthStepper` (closes audit L2), `ProgressBar` pace marker; status words close
+  audit L5.
+
+**TDD Anchor:**
+
+- Test: `monthMath` — elapsed/remaining/progress across month boundaries, leap February.
+- Test: `budget.progress` — health is at-risk when the projection overshoots even at low
+  consumption; carry chain accumulates, resets when the flag is off, carries negative overspend.
+- Test: `budget.envelopes` — set is idempotent per (month, category); `moveBudget` conserves
+  the total; carry reflects a corrected past month rather than a stale stored balance.
+- Test: `budget.plan` — explicit total wins, NULL falls back to derived; unbudgeted spend
+  surfaces as a zero-budget envelope and still counts in the month total;
+  `checkCategoryBudget` binds regardless of the allocation lock.
+- Test: screens — planner drives Unassigned to zero and warns on over-allocation; the tab
+  renders the pace marker, the status word, the empty-state CTA, and skeletons.
+
+**Done when:** A user opens Budget on a fresh month, taps one CTA, sets a total,
+distributes it watching Unassigned fall to zero, and then sees — per category and
+overall — spent, remaining, % consumed, daily average, projected end-of-month, and
+an on-track/at-risk/over verdict paced against today.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

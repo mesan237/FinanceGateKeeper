@@ -11,6 +11,11 @@ export interface OverBudgetAlertProps {
   visible: boolean;
   /** Whole FCFA the prospective expense would exceed the expense budget by. */
   overage: number;
+  /**
+   * The category envelope being exceeded, when the breach is a category one.
+   * Omit for the month-wide budget.
+   */
+  categoryName?: string;
   /** Save the expense anyway. */
   onProceed: () => void;
   /** Dismiss without saving. */
@@ -18,13 +23,19 @@ export interface OverBudgetAlertProps {
 }
 
 /**
- * In-app warning shown before an expense that would exceed the month's expense
- * budget is saved. Copy comes from the over-budget trigger (single source);
- * "Proceed anyway" commits the expense, "Cancel" returns to the form. This is a
- * modal, never a push notification (see `notifications/CLAUDE.md`).
+ * In-app warning shown before an expense that would exceed a budget is saved.
+ * Copy comes from the over-budget trigger (single source); "Proceed anyway"
+ * commits the expense, "Cancel" returns to the form. This is a modal, never a
+ * push notification (see `notifications/CLAUDE.md`).
  */
-export function OverBudgetAlert({ visible, overage, onProceed, onCancel }: OverBudgetAlertProps) {
-  const payload = buildOverBudgetAlert({ overage });
+export function OverBudgetAlert({
+  visible,
+  overage,
+  categoryName,
+  onProceed,
+  onCancel,
+}: OverBudgetAlertProps) {
+  const payload = buildOverBudgetAlert({ overage, categoryName });
 
   // A cautionary buzz when the warning appears — the modal interrupts a save,
   // so it should feel different from a success.

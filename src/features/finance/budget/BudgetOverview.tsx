@@ -1,242 +1,284 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { Icon } from '@/components/Icon';
-import { ProgressBar } from '@/components/ProgressBar';
+import { EmptyState } from '@/components/EmptyState';
+import { MonthStepper } from '@/components/MonthStepper';
+import { Skeleton, SkeletonRows } from '@/components/Skeleton';
 import { Typography } from '@/components/Typography';
-import { BUCKET_LABELS, type Bucket } from '@/constants/allocation';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
-
-import type { IconName } from '@/constants/icons';
-import { RADIUS } from '@/constants/layout';
+import { FONT_FAMILY } from '@/constants/fonts';
+import { RADIUS, SPACING } from '@/constants/layout';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { currentMonthISO } from '@/utils/formatDate';
+import { monthLabel, nextMonthISO, prevMonthISO } from '@/utils/monthMath';
 
-import { useBudgetStatus, useUnallocatedPool } from './budget.hooks';
-import type { AllocationBreakdown, MonthlyBudget } from './budget.types';
+import { BudgetHeroCard } from './BudgetHeroCard';
+import { BudgetInsights } from './BudgetInsights';
+import { CategoryEnvelopeRow } from './CategoryEnvelopeRow';
+import { EnvelopeEditSheet } from './EnvelopeEditSheet';
+import { IncomeSplitCard } from './IncomeSplitCard';
+import { useBudgetOverview, useEnvelopeActions } from './budget.envelope.hooks';
+import { useUnallocatedPool } from './budget.hooks';
+import type { CategoryBudgetProgress } from './budget.types';
 
 export interface BudgetOverviewProps {
   /** Defaults to the current month (`YYYY-MM`). Override in tests. */
   monthISO?: string;
 }
 
-/** Leading glyph for each allocation bucket row. */
-const BUCKET_ICONS: Record<Bucket, IconName> = {
-  emergency_fund: 'alert',
-  savings: 'wallet',
-  projects: 'projects',
-  expenses: 'expense',
-};
-
 /**
- * The Budget tab body. Renders the monthly breakdown when income exists, an
- * empty state when it doesn't. A hero card surfaces the remaining expense
- * budget with a spent-vs-allocated progress bar; a second card lists the four
- * allocation buckets. The "Edit allocation" button routes to settings
- * regardless of state. Lock status surfaces as an inline pill.
+ * The Budget tab.
+ *
+ * Reads top-down as a month: what is left and whether that is on pace, what
+ * still needs assigning, where each category stands, then the analytics, and
+ * finally the income split that funds it all. The split used to lead the screen
+ * — but it describes where money *went*, not what the user can spend, so it now
+ * sits last.
+ *
+ * A month stepper scopes the whole screen, so past months are reviewable and a
+ * new month can be planned before it starts.
  */
 export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const { budget, loading, error } = useBudgetStatus(monthISO);
+  const [month, setMonth] = useState(monthISO);
+  const [editing, setEditing] = useState<CategoryBudgetProgress | null>(null);
+
+  const { overview, loading, error, refresh } = useBudgetOverview(month);
+  const { setBudget, remove, coverFrom, error: writeError } = useEnvelopeActions(month);
   const { total: heldTotal } = useUnallocatedPool();
 
-  return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      {/* The tab header already titles the screen — no in-body heading. */}
-      {loading || !budget ? (
-        <Typography variant="muted">Loading…</Typography>
-      ) : budget.incomeTotal === 0 ? (
-        <Typography variant="muted">Log income to start tracking your budget.</Typography>
-      ) : (
-        <>
-          <HeroCard budget={budget} />
-          <AllocationCard budget={budget} />
-        </>
-      )}
-
-      {heldTotal > 0 ? (
-        <Card>
-          <Pressable
-            testID="unallocated-pool-link"
-            style={styles.poolRow}
-            onPress={() => router.push('/budget/unallocated')}
-          >
-            <View style={styles.poolBody}>
-              <Typography variant="label">Unallocated income</Typography>
-              <Typography variant="muted">Held — tap to decide where it goes</Typography>
-            </View>
-            <Typography variant="subheading">{formatCurrency(heldTotal)}</Typography>
-          </Pressable>
-        </Card>
-      ) : null}
-
-      <Button label="Edit allocation" onPress={() => router.push('/budget/settings')} />
-      <Button label="Funds" variant="secondary" onPress={() => router.push('/funds')} />
-
-      {error ? <Typography style={styles.error}>{error}</Typography> : null}
-    </ScrollView>
+  // Expenses are logged from other screens entirely, so the tab re-reads every
+  // time it regains focus. Without this the figures silently go stale the moment
+  // the user logs something and comes back — the pre-VS-33 behaviour.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
   );
-}
 
-/** Remaining-budget hero with a spent-vs-allocated progress bar and lock pill. */
-function HeroCard({ budget }: { budget: MonthlyBudget }) {
-  const styles = useThemedStyles(makeStyles);
-  const c = useTheme();
-  const expenseBudget = budget.breakdown.expenses;
-  const spentPct = expenseBudget > 0 ? Math.round((budget.expensesLogged / expenseBudget) * 100) : 0;
-  const isOver = budget.expensesRemaining < 0;
-  const barColor = isOver ? c.DANGER : spentPct >= 80 ? c.WARNING : c.SUCCESS;
+  const openPlanner = () => router.push({ pathname: '/budget/plan', params: { month } });
 
-  return (
-    <Card>
-      {budget.allocation.isLocked ? (
-        <View style={styles.pill}>
-          <Typography style={styles.pillText}>🔒 Locked for this month</Typography>
-        </View>
-      ) : null}
-
-      <Typography variant="label">Expenses remaining</Typography>
-      <Typography variant="display" style={isOver ? styles.overAmount : undefined}>
-        {formatCurrency(budget.expensesRemaining)}
-      </Typography>
-
-      <ProgressBar
-        testID="expense-progress"
-        value={spentPct}
-        color={barColor}
-        style={styles.heroBar}
-      />
-      <Typography variant="muted">
-        {formatCurrency(budget.expensesLogged)} of {formatCurrency(expenseBudget)} spent
-      </Typography>
-    </Card>
+  /** Envelopes with spare budget, offered as sources when covering an overspend. */
+  const coverSources = (overview?.categories ?? []).filter(
+    (c) => c.categoryId !== editing?.categoryId && c.remaining > 0 && c.allocated > 0,
   );
-}
 
-/** Card listing the four allocation buckets in priority order. */
-function AllocationCard({ budget }: { budget: MonthlyBudget }) {
+  const handleEnvelopeWrite = async (write: Promise<boolean>): Promise<boolean> => {
+    const ok = await write;
+    if (ok) await refresh();
+    return ok;
+  };
+
   return (
-    <Card>
-      <Typography variant="label">This month's allocation</Typography>
-      {budget.allocation.priorityOrder.map((bucket, index) => (
-        <BucketRow
-          key={bucket}
-          bucket={bucket}
-          amount={amountFor(bucket, budget.breakdown)}
-          income={budget.incomeTotal}
-          first={index === 0}
+    <View style={styles.screen}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+        <MonthStepper
+          label={monthLabel(month)}
+          onPrev={() => setMonth(prevMonthISO(month))}
+          onNext={() => setMonth(nextMonthISO(month))}
+          nextDisabled={month >= currentMonthISO()}
+          testIDPrefix="budget-month"
         />
-      ))}
-    </Card>
+
+        {loading && !overview ? (
+          <BudgetSkeleton />
+        ) : !overview ? null : overview.isUnplanned ? (
+          <EmptyState
+            testID="budget-empty"
+            icon="budget"
+            title={`No plan for ${monthLabel(month)} yet`}
+            subtitle="Set what you can spend this month, then share it out across your categories. You will see exactly where each one stands as the month goes."
+            actionLabel="Plan this month"
+            onAction={openPlanner}
+          />
+        ) : (
+          <>
+            <BudgetHeroCard overview={overview} />
+
+            {overview.plan.unassigned !== 0 ? (
+              <Pressable
+                testID="budget-unassigned-strip"
+                accessibilityRole="button"
+                onPress={openPlanner}
+                style={[
+                  styles.strip,
+                  overview.plan.isOverAllocated ? styles.stripDanger : styles.stripInfo,
+                ]}
+              >
+                <View style={styles.stripBody}>
+                  <Typography style={styles.stripTitle}>
+                    {overview.plan.isOverAllocated
+                      ? `${formatCurrency(-overview.plan.unassigned)} over-allocated`
+                      : `${formatCurrency(overview.plan.unassigned)} unassigned`}
+                  </Typography>
+                  <Typography variant="muted">
+                    {overview.plan.isOverAllocated
+                      ? 'Your categories promise more than your budget.'
+                      : 'Give it a job before you spend it.'}
+                  </Typography>
+                </View>
+                <Typography style={styles.stripAction}>Assign</Typography>
+              </Pressable>
+            ) : null}
+
+            <Card>
+              <View style={styles.sectionHeader}>
+                <Typography variant="label">Categories</Typography>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={openPlanner}
+                  hitSlop={8}
+                  testID="budget-edit-plan"
+                >
+                  <Typography style={styles.sectionAction}>Edit plan</Typography>
+                </Pressable>
+              </View>
+
+              {overview.categories.length === 0 ? (
+                <Typography variant="muted" testID="budget-no-categories">
+                  No category budgets yet. Tap “Edit plan” to share your budget
+                  out.
+                </Typography>
+              ) : (
+                overview.categories.map((envelope, index) => (
+                  <CategoryEnvelopeRow
+                    key={envelope.categoryId}
+                    envelope={envelope}
+                    first={index === 0}
+                    onPress={() => setEditing(envelope)}
+                  />
+                ))
+              )}
+            </Card>
+
+            <BudgetInsights overview={overview} />
+          </>
+        )}
+
+        {heldTotal > 0 ? (
+          <Card>
+            <Pressable
+              testID="unallocated-pool-link"
+              style={styles.poolRow}
+              onPress={() => router.push('/budget/unallocated')}
+            >
+              <View style={styles.poolBody}>
+                <Typography variant="label">Unallocated income</Typography>
+                <Typography variant="muted">Held — tap to decide where it goes</Typography>
+              </View>
+              <Typography variant="subheading">{formatCurrency(heldTotal)}</Typography>
+            </Pressable>
+          </Card>
+        ) : null}
+
+        {overview ? <IncomeSplitCard month={month} /> : null}
+
+        <Button label="Funds" variant="secondary" onPress={() => router.push('/funds')} />
+
+        {error ? (
+          <Typography style={styles.error} testID="budget-error">
+            {error}
+          </Typography>
+        ) : null}
+      </ScrollView>
+
+      <EnvelopeEditSheet
+        envelope={editing}
+        coverSources={coverSources}
+        error={writeError}
+        onClose={() => setEditing(null)}
+        onSave={(categoryId, amount, rollover) =>
+          handleEnvelopeWrite(setBudget(categoryId, amount, rollover))
+        }
+        onCoverFrom={(fromId, toId, amount) => handleEnvelopeWrite(coverFrom(fromId, toId, amount))}
+        onRemove={(categoryId) => handleEnvelopeWrite(remove(categoryId))}
+      />
+    </View>
   );
 }
 
-function amountFor(bucket: Bucket, breakdown: AllocationBreakdown): number {
-  switch (bucket) {
-    case 'emergency_fund':
-      return breakdown.emergencyFund;
-    case 'savings':
-      return breakdown.savings;
-    case 'projects':
-      return breakdown.projects;
-    case 'expenses':
-      return breakdown.expenses;
-  }
-}
-
-interface BucketRowProps {
-  bucket: Bucket;
-  amount: number;
-  income: number;
-  first: boolean;
-}
-
-function BucketRow({ bucket, amount, income, first }: BucketRowProps) {
+/** Placeholder shaped like the loaded screen, so nothing jumps when data lands. */
+function BudgetSkeleton() {
   const styles = useThemedStyles(makeStyles);
-  const c = useTheme();
-  const sharePct = income > 0 ? Math.round((amount / income) * 100) : 0;
-
   return (
-    <View testID={`bucket-row-${bucket}`} style={[styles.row, first && styles.rowFirst]}>
-      <View style={styles.rowIcon}>
-        <Icon name={BUCKET_ICONS[bucket]} size={18} color={c.TEXT_MUTED} />
-      </View>
-      <View style={styles.rowBody}>
-        <View style={styles.rowHeader}>
-          <Typography>{BUCKET_LABELS[bucket]}</Typography>
-          <Typography variant="subheading">{formatCurrency(amount)}</Typography>
-        </View>
-        <ProgressBar value={sharePct} color={c.PRIMARY_GREEN} style={styles.shareBar} />
-      </View>
+    <View style={styles.skeleton} testID="budget-skeleton">
+      <Card>
+        <Skeleton width="40%" height={11} />
+        <Skeleton width="65%" height={34} style={styles.skeletonGap} />
+        <Skeleton height={8} style={styles.skeletonGap} />
+      </Card>
+      <Card>
+        <SkeletonRows count={4} />
+      </Card>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
   container: {
-    padding: 16,
-    gap: 12,
+    padding: SPACING.lg,
+    gap: SPACING.md,
+    paddingBottom: SPACING.xxl,
   },
-  pill: {
-    alignSelf: 'flex-start',
-    backgroundColor: c.WARNING_LIGHT,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginBottom: 8,
+  skeleton: {
+    gap: SPACING.md,
   },
-  pillText: {
-    color: c.WARNING_TEXT,
-    fontSize: 12,
+  skeletonGap: {
+    marginTop: SPACING.md,
   },
-  heroBar: {
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  overAmount: {
-    color: c.DANGER,
-  },
-  row: {
+  strip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingTop: 14,
-    marginTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.BORDER,
+    gap: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
-  rowFirst: {
-    borderTopWidth: 0,
-    marginTop: 8,
+  stripInfo: {
+    backgroundColor: c.PRIMARY_LIGHT,
+    borderColor: c.PRIMARY_GREEN,
   },
-  rowIcon: {
-    width: 28,
-    alignItems: 'center',
+  stripDanger: {
+    backgroundColor: c.DANGER_LIGHT,
+    borderColor: c.DANGER,
   },
-  rowBody: {
+  stripBody: {
     flex: 1,
-    gap: 8,
   },
-  rowHeader: {
+  stripTitle: {
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
+  },
+  stripAction: {
+    color: c.PRIMARY_GREEN,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
+  },
+  sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
   },
-  shareBar: {
-    height: 6,
+  sectionAction: {
+    color: c.PRIMARY_GREEN,
+    fontSize: 13,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   poolRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: SPACING.md,
   },
   poolBody: {
     flex: 1,

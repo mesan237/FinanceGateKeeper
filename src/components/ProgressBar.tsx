@@ -16,6 +16,15 @@ export interface ProgressBarProps extends ViewProps {
   trackColor?: string;
   /** When true, the fill grows from empty to `value` on mount/changes. Default false. */
   animated?: boolean;
+  /**
+   * Draws a reference tick at this 0–100 position — "where the fill *should* be
+   * by now". A budget bar without one answers "how much have I used?"; with one
+   * it answers the question that actually drives a decision: "am I ahead or
+   * behind?". Omit for bars that track progress toward a goal rather than pace.
+   */
+  marker?: number;
+  /** Tick colour. Defaults to the theme's strong border. */
+  markerColor?: string;
 }
 
 export function ProgressBar({
@@ -23,6 +32,8 @@ export function ProgressBar({
   color,
   trackColor,
   animated = false,
+  marker,
+  markerColor,
   testID,
   style,
   ...rest
@@ -31,7 +42,20 @@ export function ProgressBar({
   const c = useTheme();
   const fillColor = color ?? c.PRIMARY_GREEN;
   const trackStyle = trackColor ? { backgroundColor: trackColor } : undefined;
-  const clamped = Math.min(100, Math.max(0, value));
+  const clamped = clamp(value);
+
+  const tick =
+    marker == null ? null : (
+      <View
+        testID={testID ? `${testID}-marker` : undefined}
+        accessibilityValue={{ now: clamp(marker), min: 0, max: 100 }}
+        pointerEvents="none"
+        style={[
+          styles.marker,
+          { left: `${clamp(marker)}%`, backgroundColor: markerColor ?? c.BORDER_STRONG },
+        ]}
+      />
+    );
 
   if (animated) {
     return (
@@ -41,7 +65,9 @@ export function ProgressBar({
         testID={testID}
         style={[trackStyle, style]}
         {...rest}
-      />
+      >
+        {tick}
+      </AnimatedFill>
     );
   }
 
@@ -57,8 +83,14 @@ export function ProgressBar({
         accessibilityValue={{ now: clamped, min: 0, max: 100 }}
         style={[styles.fill, { width: `${clamped}%`, backgroundColor: fillColor }]}
       />
+      {tick}
     </View>
   );
+}
+
+/** Constrains a raw percentage to the drawable 0–100 range. */
+function clamp(value: number): number {
+  return Math.min(100, Math.max(0, value));
 }
 
 interface AnimatedFillProps extends ViewProps {
@@ -67,7 +99,7 @@ interface AnimatedFillProps extends ViewProps {
 }
 
 /** Track + fill whose width eases from empty to `clamped` whenever the target moves. */
-function AnimatedFill({ clamped, color, testID, style, ...rest }: AnimatedFillProps) {
+function AnimatedFill({ clamped, color, testID, style, children, ...rest }: AnimatedFillProps) {
   const styles = useThemedStyles(makeStyles);
   const width = useSharedValue(0);
   useEffect(() => {
@@ -88,6 +120,7 @@ function AnimatedFill({ clamped, color, testID, style, ...rest }: AnimatedFillPr
         accessibilityValue={{ now: clamped, min: 0, max: 100 }}
         style={[styles.fill, { backgroundColor: color }, fillStyle]}
       />
+      {children}
     </View>
   );
 }
@@ -101,5 +134,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   fill: {
     height: '100%',
+  },
+  marker: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 2,
+    // Centres the 2px tick on its percentage rather than starting at it.
+    marginLeft: -1,
+    borderRadius: RADIUS.full,
   },
 });

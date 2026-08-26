@@ -14,9 +14,15 @@ jest.mock('@/features/finance/budget/budget.service', () => ({
   updateAllocation: jest.fn(),
   lockAllocation: jest.fn(),
   getMonthlyBudget: jest.fn(),
-  checkOverBudget: jest.fn(),
   redistributeEmergencyPct: jest.fn(),
   hasConfirmedAnyAllocation: jest.fn(),
+}));
+
+// The over-budget guards (month-wide and per-category) live in `budget.plan`.
+jest.mock('@/features/finance/budget/budget.plan', () => ({
+  checkOverBudget: jest.fn(),
+  checkCategoryBudget: jest.fn(),
+  getBudgetOverview: jest.fn(),
 }));
 
 jest.mock('@/features/finance/funds/funds.service', () => ({
@@ -41,6 +47,7 @@ import {
   useOverBudgetCheck,
   useUnallocatedPool,
 } from '@/features/finance/budget/budget.hooks';
+import * as budgetPlan from '@/features/finance/budget/budget.plan';
 import * as budgetService from '@/features/finance/budget/budget.service';
 import { depositToFund, getOrCreateFunds } from '@/features/finance/funds/funds.service';
 import * as incomeService from '@/features/finance/income/income.service';
@@ -62,8 +69,8 @@ const mockedLock = budgetService.lockAllocation as jest.MockedFunction<
 const mockedGetBudget = budgetService.getMonthlyBudget as jest.MockedFunction<
   typeof budgetService.getMonthlyBudget
 >;
-const mockedCheckOverBudget = budgetService.checkOverBudget as jest.MockedFunction<
-  typeof budgetService.checkOverBudget
+const mockedCheckOverBudget = budgetPlan.checkOverBudget as jest.MockedFunction<
+  typeof budgetPlan.checkOverBudget
 >;
 const mockedRedistribute = budgetService.redistributeEmergencyPct as jest.MockedFunction<
   typeof budgetService.redistributeEmergencyPct

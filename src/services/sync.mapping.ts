@@ -14,6 +14,7 @@ export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
   categories: { parent_id: 'categories' },
   expenses: { category_id: 'categories', subcategory_id: 'categories', account_id: 'accounts' },
   income: { account_id: 'accounts' },
+  category_budgets: { category_id: 'categories' },
   quick_add_templates: { category_id: 'categories', subcategory_id: 'categories' },
   recurring_expenses: { category_id: 'categories', subcategory_id: 'categories' },
   fund_transactions: { fund_id: 'funds', account_id: 'accounts' },

@@ -9,6 +9,7 @@ import type { Income } from '@/features/finance/income/income.types';
 import { contributeManually, getProjects } from '@/features/finance/projects/projects.service';
 import type { Project } from '@/features/finance/projects/projects.types';
 
+import { checkOverBudget } from './budget.plan';
 import * as budgetService from './budget.service';
 import { redistributeEmergencyPct } from './budget.service';
 import type {
@@ -211,7 +212,7 @@ export function useOverBudgetCheck(monthISO?: string) {
   const month = monthISO ?? currentMonthISO();
 
   const check = useCallback(
-    (amount: number): Promise<OverBudgetCheck> => budgetService.checkOverBudget(month, amount),
+    (amount: number): Promise<OverBudgetCheck> => checkOverBudget(month, amount),
     [month],
   );
 
