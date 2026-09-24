@@ -15,6 +15,8 @@ const mockedGetSnapshot = dashboardService.getDashboardSnapshot as jest.MockedFu
 >;
 
 const MOCK_STATE: DashboardState = {
+  monthISO: '2026-09',
+  daysRemaining: 6,
   todaySpending: 5000,
   spendingTrend: [0, 0, 0, 0, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },

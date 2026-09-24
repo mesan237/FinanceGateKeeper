@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,8 +17,7 @@ import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionS
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
 
-import { BudgetSummaryCard } from './BudgetSummaryCard';
-import { CashflowCard } from './CashflowCard';
+import { MonthOverviewCard } from './MonthOverviewCard';
 import { QuickActionBar } from './QuickActionBar';
 import { TodaySpendingCard } from './TodaySpendingCard';
 import { WalletsCard } from './WalletsCard';
@@ -30,6 +29,7 @@ import { useDashboard } from './dashboard.hooks';
  */
 export function DashboardScreen() {
   const { state, loading, error, refresh } = useDashboard();
+  const router = useRouter();
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
@@ -64,6 +64,7 @@ export function DashboardScreen() {
   return (
     <View style={styles.root}>
       <ScrollView
+        testID="dashboard-scroll"
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -84,13 +85,28 @@ export function DashboardScreen() {
           </Card>
         ) : null}
 
-        {/* Budget hero with the 7-day spending trend */}
-        {state?.budget ? (
-          <BudgetSummaryCard summary={state.budget} trend={state.spendingTrend} />
+        {/* The month at a glance: days left, what is left to spend against the
+            budget, and the in/out/net of what has been logged. */}
+        {state?.budget && state.cashflow ? (
+          <MonthOverviewCard
+            monthISO={state.monthISO}
+            daysRemaining={state.daysRemaining}
+            summary={state.budget}
+            cashflow={state.cashflow}
+            onSetBudget={() =>
+              router.push({ pathname: '/budget/plan', params: { month: state.monthISO } })
+            }
+          />
         ) : null}
 
-        {/* Month cashflow — income in vs expenses out */}
-        {state?.cashflow ? <CashflowCard cashflow={state.cashflow} /> : null}
+        {/* Quick log — the daily loop's entry point, directly under the budget
+            hero so it is the first thing in reach after reading the pace. */}
+        <QuickActionBar
+          zeroDay={zeroDayStatus ?? { hasExpenses: false, zeroDayConfirmed: false }}
+          onConfirmZeroDay={confirmZeroDay}
+          onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
+          onLogIncome={() => setSheet({ open: true, segment: 'income' })}
+        />
 
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />
@@ -106,16 +122,6 @@ export function DashboardScreen() {
           today={today}
         />
       </ScrollView>
-
-      {/* Sticky action bar — sits outside ScrollView so it never scrolls away */}
-      <View style={styles.actionBarWrapper}>
-        <QuickActionBar
-          zeroDay={zeroDayStatus ?? { hasExpenses: false, zeroDayConfirmed: false }}
-          onConfirmZeroDay={confirmZeroDay}
-          onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
-          onLogIncome={() => setSheet({ open: true, segment: 'income' })}
-        />
-      </View>
 
       {/* Unified add-transaction sheet — shared with the Transactions FAB (VS-26).
           An expense/template log refreshes the aggregates in place; an income log
@@ -140,7 +146,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 24,
     gap: 12,
   },
   loadingContainer: {
@@ -179,13 +185,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.SURFACE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 13,
-  },
-  actionBarWrapper: {
-    backgroundColor: c.SURFACE,
-    borderTopWidth: 1,
-    borderTopColor: c.BORDER,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
   },
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import React from 'react';
 
 const mockPush = jest.fn();
@@ -45,6 +45,8 @@ const MOCK_BUDGET = {
 };
 
 const FULL_STATE: DashboardState = {
+  monthISO: '2026-09',
+  daysRemaining: 6,
   todaySpending: 5000,
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
@@ -54,6 +56,8 @@ const FULL_STATE: DashboardState = {
 };
 
 const BARE_STATE: DashboardState = {
+  monthISO: '2026-09',
+  daysRemaining: 6,
   todaySpending: 5000,
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
@@ -83,22 +87,44 @@ beforeEach(() => {
 
 describe('DashboardScreen', () => {
   describe('with a full snapshot', () => {
-    it('renders the budget summary and today spending', () => {
+    it('renders the month overview and today spending', () => {
       setupHooks(FULL_STATE);
       render(<DashboardScreen />);
 
-      expect(screen.getByTestId('budget-summary-card')).toBeTruthy();
+      expect(screen.getByTestId('month-overview-card')).toBeTruthy();
       expect(screen.getByTestId('today-spending')).toBeTruthy();
+    });
+
+    it('heads the overview with the month and its remaining days', () => {
+      setupHooks(FULL_STATE);
+      render(<DashboardScreen />);
+
+      expect(screen.getByText('SEPTEMBER')).toBeTruthy();
+      expect(screen.getByText('6 days left')).toBeTruthy();
+    });
+
+    it('opens the budget planner for the shown month from the no-budget prompt', () => {
+      setupHooks({
+        ...FULL_STATE,
+        budget: { ...MOCK_BUDGET, expenseBudget: 0, expensesRemaining: 0, spentPct: 0 },
+      });
+      render(<DashboardScreen />);
+
+      fireEvent.press(screen.getByTestId('month-overview-set-budget'));
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/budget/plan',
+        params: { month: '2026-09' },
+      });
     });
 
   });
 
   describe('with a snapshot carrying no budget data', () => {
-    it('shows today spending and the action bar, but hides the budget card', () => {
+    it('shows today spending and the action bar, but hides the month overview', () => {
       setupHooks(BARE_STATE);
       render(<DashboardScreen />);
 
-      expect(screen.queryByTestId('budget-summary-card')).toBeNull();
+      expect(screen.queryByTestId('month-overview-card')).toBeNull();
       expect(screen.getByTestId('today-spending')).toBeTruthy();
       expect(screen.getByTestId('quick-log-expense')).toBeTruthy();
     });
@@ -162,5 +188,29 @@ describe('DashboardScreen', () => {
     render(<DashboardScreen />);
 
     expect(screen.getByTestId('quick-confirm-zero-day')).toBeTruthy();
+  });
+
+  it('scrolls the quick-log block with the page instead of pinning it to the bottom', () => {
+    setupHooks(BARE_STATE);
+    render(<DashboardScreen />);
+
+    // Inside the ScrollView is the whole point: a sibling of it would be the
+    // sticky bar this replaced.
+    const scroll = within(screen.getByTestId('dashboard-scroll'));
+    expect(scroll.getByTestId('quick-log-expense')).toBeTruthy();
+    expect(scroll.getByTestId('quick-log-income')).toBeTruthy();
+    expect(scroll.getByTestId('quick-confirm-zero-day')).toBeTruthy();
+  });
+
+  it('leads with the month overview and puts the quick-log block directly under it', () => {
+    setupHooks(FULL_STATE);
+    render(<DashboardScreen />);
+
+    // The serialised tree is in document order, so an earlier index is an
+    // earlier card on the page. The cashflow figures moved into the overview
+    // hero, so they now sit above the quick-log block rather than below it.
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('month-overview-card')).toBeLessThan(tree.indexOf('quick-log-expense'));
+    expect(tree.indexOf('quick-log-expense')).toBeLessThan(tree.indexOf('today-spending'));
   });
 });

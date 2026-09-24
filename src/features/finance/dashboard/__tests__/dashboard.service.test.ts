@@ -285,4 +285,16 @@ describe('getDashboardSnapshot', () => {
     expect(state.zeroDay.hasExpenses).toBe(false);
     expect(state.zeroDay.zeroDayConfirmed).toBe(false);
   });
+
+  it('carries the month and its remaining days, so the dashboard header need not recompute them', async () => {
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+    expect(state.monthISO).toBe(MONTH);
+    // June has 30 days; the 8th leaves 22 after today.
+    expect(state.daysRemaining).toBe(22);
+  });
+
+  it('reports zero days remaining on the last day of the month', async () => {
+    const state = await getDashboardSnapshot(MONTH, '2026-06-30');
+    expect(state.daysRemaining).toBe(0);
+  });
 });

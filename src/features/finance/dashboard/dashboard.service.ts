@@ -128,5 +128,14 @@ export async function getDashboardSnapshot(
 
   const dailyPace = dailyBudgetPace(expenseBudget, monthISO);
 
-  return { todaySpending, spendingTrend, zeroDay, budget, cashflow, dailyPace };
+  return {
+    monthISO,
+    daysRemaining,
+    todaySpending,
+    spendingTrend,
+    zeroDay,
+    budget,
+    cashflow,
+    dailyPace,
+  };
 }

@@ -22,6 +22,10 @@ export interface Cashflow {
 }
 
 export interface DashboardState {
+  /** The month this snapshot covers, `YYYY-MM`. */
+  monthISO: string;
+  /** Whole days left in `monthISO` after today — the header's "6 days left". */
+  daysRemaining: number;
   todaySpending: number;
   /** Per-day spending totals for the last 7 calendar days, oldest first
    * (the final entry is today). */
