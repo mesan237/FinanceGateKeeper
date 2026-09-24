@@ -162,7 +162,7 @@ Automated allocation deposits carry no account tag and do not affect balances â€
 
 **Accounts:** Accessible via a compact Wallets section on the Dashboard. Shows live balance per account. Tap to open AccountsOverview, then tap an account card for its full transaction history and monthly analytics.
 
-**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Expense Detail/Edit, Accounts Overview, Account Detail, Transfer Log, Settings (app mode, reminder time, notifications, action bar style, backup).
+**Key screens:** Income Allocation (on income entry), Quick-Add grid, Category Management, Project Detail (progress + priority), People Ledger, Expense Detail/Edit, Accounts Overview, Account Detail, Transfer Log, Settings (reminder time, notifications, action bar style, backup).
 
 ---
 

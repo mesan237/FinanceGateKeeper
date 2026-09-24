@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,28 +26,13 @@ import { TopProjectCard } from './TopProjectCard';
 import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
-interface DashboardScreenProps {
-  /** True in control mode (budget/funds/project cards shown); false in learning mode. */
-  includeBudgetData: boolean;
-  /**
-   * True when a learning-mode user has logged enough to be nudged toward
-   * Control mode. Computed at the routing layer (the dashboard never reads
-   * app mode itself). Ignored in control mode.
-   */
-  showControlNudge?: boolean;
-}
-
 /**
  * Home screen. Shows budget pace, fund balances, top active project, and
  * today's spending. Refreshes on every tab focus so numbers stay current.
  */
-export function DashboardScreen({
-  includeBudgetData,
-  showControlNudge = false,
-}: DashboardScreenProps) {
-  const { state, loading, error, refresh } = useDashboard({ includeBudgetData });
+export function DashboardScreen() {
+  const { state, loading, error, refresh } = useDashboard();
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
-  const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
 
@@ -101,12 +86,12 @@ export function DashboardScreen({
           </Card>
         ) : null}
 
-        {/* Budget hero with the 7-day spending trend (control mode only) */}
+        {/* Budget hero with the 7-day spending trend */}
         {state?.budget ? (
           <BudgetSummaryCard summary={state.budget} trend={state.spendingTrend} />
         ) : null}
 
-        {/* Month cashflow — income in vs expenses out (control mode only) */}
+        {/* Month cashflow — income in vs expenses out */}
         {state?.cashflow ? <CashflowCard cashflow={state.cashflow} /> : null}
 
         {/* Wallets — live balance per account (VS-18) */}
@@ -116,43 +101,14 @@ export function DashboardScreen({
 
         {state?.topProject ? <TopProjectCard topProject={state.topProject} /> : null}
 
-        {/* Today's spending — the hero in learning mode (with the trend),
-            a compact supporting row in control mode (the budget hero leads). */}
+        {/* Today's spending — a compact supporting row beneath the budget hero,
+            carrying the 7-day trend. */}
         <TodaySpendingCard
-          includeBudgetData={includeBudgetData}
           todaySpending={state?.todaySpending ?? 0}
           dailyPace={state?.dailyPace ?? null}
           spendingTrend={state?.spendingTrend ?? []}
           today={today}
         />
-
-        {/* Learning-mode empty state */}
-        {!includeBudgetData ? (
-          <Card style={styles.emptyCard}>
-            <Typography variant="subheading" style={styles.emptyTitle}>
-              Getting started
-            </Typography>
-            <Typography variant="muted">
-              Log your first expense or income using the buttons below. Budget tracking unlocks in
-              Control mode once you set your allocation.
-            </Typography>
-
-            {/* Control-mode nudge — surfaces the hidden budgeting feature once
-                the user has logged enough (gating computed at the route). */}
-            {showControlNudge ? (
-              <Pressable
-                testID="control-mode-nudge"
-                accessibilityRole="button"
-                onPress={() => router.push('/settings')}
-                style={({ pressed }) => [styles.nudge, pressed && styles.nudgePressed]}
-              >
-                <Typography style={styles.nudgeText}>
-                  Ready for budgeting? Switch to Control mode
-                </Typography>
-              </Pressable>
-            ) : null}
-          </Card>
-        ) : null}
       </ScrollView>
 
       {/* Sticky action bar — sits outside ScrollView so it never scrolls away */}
@@ -227,34 +183,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.SURFACE,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     fontSize: 13,
-  },
-  emptyCard: {
-    borderWidth: 1,
-    borderColor: c.BORDER,
-    borderStyle: 'dashed',
-    backgroundColor: 'transparent',
-    shadowOpacity: 0,
-    elevation: 0,
-    gap: 6,
-  },
-  emptyTitle: {
-    marginBottom: 2,
-  },
-  nudge: {
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: RADIUS.md,
-    backgroundColor: c.PRIMARY_LIGHT,
-  },
-  nudgePressed: {
-    opacity: 0.75,
-  },
-  nudgeText: {
-    color: c.PRIMARY_GREEN,
-    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
-    fontSize: 14,
-    textAlign: 'center',
   },
   actionBarWrapper: {
     backgroundColor: c.SURFACE,

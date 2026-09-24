@@ -203,7 +203,7 @@ rebuilding. Parked slices stay on this board as history, not as backlog.
 
 ---
 
-### VS-08: Daily Reminder, Zero-Day Confirmation & App Mode
+### VS-08: Daily Reminder, Zero-Day Confirmation & App Mode ⏸ App-mode half removed (VS-34)
 
 **Priority:** High
 **Blocked by:** VS-03
@@ -994,6 +994,13 @@ deleting it.
   real money into funds and projects. Defaulting new income to `allocated` would
   make every entry permanently uneditable, so the guards are deleted, not
   satisfied — with no allocation there is no downstream deposit to desync.
+- **Learning mode is gone** (not just the gate). With budgeting ungated, `appMode`
+  gated nothing but its own Settings toggle, whose copy still claimed budgeting
+  was hidden. The type, provider, service writer, settings card, the
+  `isMonth1Complete` / `daysSinceCreated` signals that fed the nudge, and the
+  `includeBudgetData` branch through dashboard hook, service and screen are all
+  removed; the app behaves as Control mode always did. The `users.app_mode`
+  column stays — unread, defaulted, and outside the sync/export set.
 - **Debt stays.** It tracks money actually lent and borrowed.
 - Parks VS-06, VS-09, VS-10, VS-19 and VS-25 along with the code.
 

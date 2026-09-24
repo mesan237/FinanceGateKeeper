@@ -17,7 +17,6 @@ const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
 const mockedApply = applyReminderSchedule as jest.MockedFunction<typeof applyReminderSchedule>;
 
 const SETTINGS = {
-  appMode: 'learning' as const,
   reminderTime: '21:00',
   notificationsEnabled: true,
   createdAt: '2026-01-01T00:00:00.000Z',

@@ -54,7 +54,7 @@ src/
 │       │   ├── PinRecoveryScreen.tsx         # Forgot-PIN recovery (cloud verify / wipe)
 │       │   ├── ProfileScreen.tsx             # Display name + avatar editor
 │       │   ├── ProfileAvatar.tsx             # Initials/emoji avatar (no image upload)
-│       │   ├── SettingsScreen.tsx            # App mode, reminder, appearance, cloud
+│       │   ├── SettingsScreen.tsx            # Reminder, appearance, cloud
 │       │   ├── CloudAccountCard.tsx          # Shared cloud sign-in/out card
 │       │   ├── auth.service.ts               # PIN hash/verify (expo-crypto), app settings
 │       │   ├── auth.profile.ts               # Profile get/set

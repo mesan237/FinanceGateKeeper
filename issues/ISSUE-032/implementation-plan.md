@@ -226,13 +226,32 @@ written only where behaviour genuinely changes.
 - Test: screens — the Budget tab renders for a `learning`-mode user; Dashboard
   and Monthly Report render with no fund or project sections.
 
-## Open Questions
+## Resolved: `appMode` does not survive
 
-- **Does `appMode` survive?** Once budgeting is the default and the split is
-  gone, `learning`/`control` gates nothing but Reports. The recommendation is to
-  keep the column and the Settings toggle for now and remove only the gates —
-  widening this slice into an auth cleanup risks it. Revisit once the daily loop
-  has been lived in for a month.
+The plan originally proposed keeping the mode and removing only its gates.
+That was wrong, and shipping Phase 4 showed why: once the Budget tab was
+ungated, `appMode` gated nothing except its own Settings toggle, whose copy
+still told the user that budgeting was hidden. A control that changes nothing
+and describes the app incorrectly is worse than either keeping or removing the
+feature outright.
+
+So learning mode is removed entirely, in the same slice:
+
+- `AppMode`, `AppModeProvider`, `setAppMode`, and `AppSettings.appMode` are gone.
+- `isMonth1Complete` and `daysSinceCreated` go with them — both existed only to
+  time the "switch to Control mode" nudge.
+- `includeBudgetData` is collapsed through `dashboard.hooks`, `dashboard.service`,
+  `DashboardScreen` and `TodaySpendingCard`. The app behaves as Control mode did.
+- `users.app_mode` **stays in the schema**, unread and defaulted, consistent with
+  decision 1. `dataTransfer` excludes `users` from export and `sync.mapping` never
+  referenced it, so nothing downstream notices.
+
+One deliberate departure from a literal reading. `TodaySpendingCard` switched
+layouts on the mode: a hero figure with a 7-day sparkline in learning mode, a
+compact pace row in control mode. Collapsing to the control layout would have
+silently deleted the sparkline — and `budget/CLAUDE.md` assigns the daily
+sparkline to the Dashboard on purpose. The two layouts are merged instead: the
+compact row keeps the pace caption and carries the sparkline beneath it.
 
 ## Done When
 

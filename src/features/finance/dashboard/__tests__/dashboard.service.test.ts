@@ -182,27 +182,6 @@ describe('getDashboardSnapshot', () => {
   const MONTH = '2026-06';
   const TODAY = '2026-06-08';
 
-  it('returns todaySpending and zeroDay with nulls for budget/funds/topProject when includeBudgetData is false', async () => {
-    await createExpense({
-      amount: 3000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: TODAY,
-      isRecurring: false,
-    });
-
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: false }, TODAY);
-
-    expect(state.todaySpending).toBe(3000);
-    expect(state.zeroDay.hasExpenses).toBe(true);
-    expect(state.budget).toBeNull();
-    expect(state.funds).toBeNull();
-    expect(state.topProject).toBeNull();
-    expect(state.cashflow).toBeNull();
-    expect(state.dailyPace).toBeNull();
-  });
-
   it("sums only today's expenses, not the whole month's", async () => {
     await createExpense({
       amount: 2000,
@@ -221,13 +200,13 @@ describe('getDashboardSnapshot', () => {
       isRecurring: false,
     });
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: false }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.todaySpending).toBe(5000);
     // The 7-day trend covers 2026-06-02 → 2026-06-08, oldest first.
     expect(state.spendingTrend).toEqual([0, 0, 0, 0, 0, 2000, 5000]);
   });
 
-  it('populates budget, funds, and topProject when includeBudgetData is true', async () => {
+  it('populates budget, funds, and topProject', async () => {
     await createIncome({
       amount: 100000,
       source: 'salary',
@@ -247,7 +226,7 @@ describe('getDashboardSnapshot', () => {
     });
     await createProject({ name: 'E-commerce Launch', targetAmount: 500000 });
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: true }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
 
     // budget — 100 000 × 65% = 65 000 expense allocation
     expect(state.budget).not.toBeNull();
@@ -294,7 +273,7 @@ describe('getDashboardSnapshot', () => {
       isRecurring: false,
     });
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: true }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.budget!.pace).toBe('yellow');
   });
 
@@ -318,7 +297,7 @@ describe('getDashboardSnapshot', () => {
       isRecurring: false,
     });
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: true }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.budget!.pace).toBe('red');
   });
 
@@ -333,7 +312,7 @@ describe('getDashboardSnapshot', () => {
     await getOrCreateCurrentAllocation(MONTH);
     await lockAllocation(MONTH);
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: true }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.topProject).toBeNull();
   });
 
@@ -350,12 +329,12 @@ describe('getDashboardSnapshot', () => {
     await createProject({ name: 'Priority One', targetAmount: 100000 });
     await createProject({ name: 'Priority Two', targetAmount: 200000 });
 
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: true }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.topProject!.project.name).toBe('Priority One');
   });
 
   it('returns zeroDay with no activity when nothing is logged', async () => {
-    const state = await getDashboardSnapshot(MONTH, { includeBudgetData: false }, TODAY);
+    const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.zeroDay.hasExpenses).toBe(false);
     expect(state.zeroDay.zeroDayConfirmed).toBe(false);
   });

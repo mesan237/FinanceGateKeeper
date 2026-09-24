@@ -6,12 +6,10 @@ import * as dashboardService from './dashboard.service';
 import type { DashboardState } from './dashboard.types';
 
 /**
- * Loads the dashboard snapshot for the current month. Re-fetches when
- * `includeBudgetData` changes (mode toggle). Exposes `refresh` so the screen
- * can re-fetch on focus after activity elsewhere.
+ * Loads the dashboard snapshot for the current month. Exposes `refresh` so the
+ * screen can re-fetch on focus after activity elsewhere.
  */
-export function useDashboard(opts: { includeBudgetData: boolean }) {
-  const { includeBudgetData } = opts;
+export function useDashboard() {
   const [state, setState] = useState<DashboardState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,9 +17,7 @@ export function useDashboard(opts: { includeBudgetData: boolean }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const snapshot = await dashboardService.getDashboardSnapshot(currentMonthISO(), {
-        includeBudgetData,
-      });
+      const snapshot = await dashboardService.getDashboardSnapshot(currentMonthISO());
       setState(snapshot);
       setError(null);
     } catch (e) {
@@ -30,7 +26,7 @@ export function useDashboard(opts: { includeBudgetData: boolean }) {
     } finally {
       setLoading(false);
     }
-  }, [includeBudgetData]);
+  }, []);
 
   useEffect(() => {
     void refresh();

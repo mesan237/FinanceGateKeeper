@@ -61,7 +61,7 @@ const MOCK_TOP_PROJECT = {
   pct: 22,
 };
 
-const CONTROL_STATE: DashboardState = {
+const FULL_STATE: DashboardState = {
   todaySpending: 5000,
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
@@ -72,7 +72,7 @@ const CONTROL_STATE: DashboardState = {
   topProject: MOCK_TOP_PROJECT,
 };
 
-const LEARNING_STATE: DashboardState = {
+const BARE_STATE: DashboardState = {
   todaySpending: 5000,
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
@@ -103,10 +103,10 @@ beforeEach(() => {
 });
 
 describe('DashboardScreen', () => {
-  describe('control mode (includeBudgetData=true)', () => {
+  describe('with a full snapshot', () => {
     it('renders BudgetSummaryCard, FundStatusCard, top-project card, and today spending', () => {
-      setupHooks(CONTROL_STATE);
-      render(<DashboardScreen includeBudgetData={true} />);
+      setupHooks(FULL_STATE);
+      render(<DashboardScreen />);
 
       expect(screen.getByTestId('budget-summary-card')).toBeTruthy();
       expect(screen.getByTestId('fund-status-card')).toBeTruthy();
@@ -115,18 +115,18 @@ describe('DashboardScreen', () => {
     });
 
     it('shows the project name and funding percentage', () => {
-      setupHooks(CONTROL_STATE);
-      render(<DashboardScreen includeBudgetData={true} />);
+      setupHooks(FULL_STATE);
+      render(<DashboardScreen />);
 
       expect(screen.getByText('E-commerce Launch')).toBeTruthy();
       expect(screen.getByText(/22%/)).toBeTruthy();
     });
   });
 
-  describe('learning mode (includeBudgetData=false)', () => {
+  describe('with a snapshot carrying no budget, fund or project data', () => {
     it('shows today spending and action bar, but hides budget/fund/project cards', () => {
-      setupHooks(LEARNING_STATE);
-      render(<DashboardScreen includeBudgetData={false} />);
+      setupHooks(BARE_STATE);
+      render(<DashboardScreen />);
 
       expect(screen.queryByTestId('budget-summary-card')).toBeNull();
       expect(screen.queryByTestId('fund-status-card')).toBeNull();
@@ -138,26 +138,26 @@ describe('DashboardScreen', () => {
 
   it('shows loading indicator while loading', () => {
     setupHooks(null, true);
-    render(<DashboardScreen includeBudgetData={false} />);
+    render(<DashboardScreen />);
 
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
   it('renders without crash when state is null (empty DB)', () => {
     setupHooks(null, false);
-    expect(() => render(<DashboardScreen includeBudgetData={false} />)).not.toThrow();
+    expect(() => render(<DashboardScreen />)).not.toThrow();
   });
 
   it('displays today spending formatted as FCFA', () => {
-    setupHooks(LEARNING_STATE);
-    render(<DashboardScreen includeBudgetData={false} />);
+    setupHooks(BARE_STATE);
+    render(<DashboardScreen />);
 
     expect(screen.getByText('5 000 FCFA')).toBeTruthy();
   });
 
   it('opens the add-transaction sheet on the Expense segment for Log Expense (VS-26)', () => {
-    setupHooks(LEARNING_STATE);
-    render(<DashboardScreen includeBudgetData={false} />);
+    setupHooks(BARE_STATE);
+    render(<DashboardScreen />);
 
     expect(screen.queryByTestId('add-sheet-mock')).toBeNull();
     fireEvent.press(screen.getByTestId('quick-log-expense'));
@@ -165,16 +165,16 @@ describe('DashboardScreen', () => {
   });
 
   it('opens the add-transaction sheet on the Income segment for Log Income (VS-26)', () => {
-    setupHooks(LEARNING_STATE);
-    render(<DashboardScreen includeBudgetData={false} />);
+    setupHooks(BARE_STATE);
+    render(<DashboardScreen />);
 
     fireEvent.press(screen.getByTestId('quick-log-income'));
     expect(screen.getByTestId('add-sheet-mock')).toHaveTextContent('sheet:income');
   });
 
   it('never pushes the retired full-screen log routes (VS-26)', () => {
-    setupHooks(LEARNING_STATE);
-    render(<DashboardScreen includeBudgetData={false} />);
+    setupHooks(BARE_STATE);
+    render(<DashboardScreen />);
 
     fireEvent.press(screen.getByTestId('quick-log-expense'));
     fireEvent.press(screen.getByTestId('quick-log-income'));
@@ -183,47 +183,16 @@ describe('DashboardScreen', () => {
   });
 
   it('hides Confirm Zero Day quick action when day has activity', () => {
-    setupHooks(CONTROL_STATE); // zeroDay.hasExpenses = true
-    render(<DashboardScreen includeBudgetData={true} />);
+    setupHooks(FULL_STATE); // zeroDay.hasExpenses = true
+    render(<DashboardScreen />);
 
     expect(screen.queryByTestId('quick-confirm-zero-day')).toBeNull();
   });
 
   it('shows Confirm Zero Day quick action when day has no activity', () => {
-    setupHooks(LEARNING_STATE); // zeroDay all false
-    render(<DashboardScreen includeBudgetData={false} />);
+    setupHooks(BARE_STATE); // zeroDay all false
+    render(<DashboardScreen />);
 
     expect(screen.getByTestId('quick-confirm-zero-day')).toBeTruthy();
-  });
-
-  describe('Control-mode nudge (H3)', () => {
-    it('shows the nudge in learning mode once the user has logged enough', () => {
-      setupHooks(LEARNING_STATE);
-      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
-
-      expect(screen.getByTestId('control-mode-nudge')).toBeTruthy();
-    });
-
-    it('hides the nudge in learning mode when the signal is false', () => {
-      setupHooks(LEARNING_STATE);
-      render(<DashboardScreen includeBudgetData={false} showControlNudge={false} />);
-
-      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
-    });
-
-    it('hides the nudge in control mode even if the signal is true', () => {
-      setupHooks(CONTROL_STATE);
-      render(<DashboardScreen includeBudgetData={true} showControlNudge={true} />);
-
-      expect(screen.queryByTestId('control-mode-nudge')).toBeNull();
-    });
-
-    it('deep-links to Settings when the nudge is tapped', () => {
-      setupHooks(LEARNING_STATE);
-      render(<DashboardScreen includeBudgetData={false} showControlNudge={true} />);
-
-      fireEvent.press(screen.getByTestId('control-mode-nudge'));
-      expect(mockPush).toHaveBeenCalledWith('/settings');
-    });
   });
 });

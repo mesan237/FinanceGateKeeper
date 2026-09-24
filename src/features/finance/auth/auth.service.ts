@@ -1,13 +1,12 @@
 import { execute, query } from '@/services/database';
 import { generateSalt, hashPin } from '@/utils/pinHash';
 
-import type { ActionBarStyle, AppMode, AppSettings } from './auth.types';
+import type { ActionBarStyle, AppSettings } from './auth.types';
 
 export interface UserRow {
   id: number;
   pin_hash: string | null;
   pin_salt: string | null;
-  app_mode: AppMode;
   reminder_time: string;
   notifications_enabled: number;
   action_bar_style: ActionBarStyle;
@@ -19,15 +18,13 @@ export interface UserRow {
 }
 
 const USER_COLUMNS =
-  'id, pin_hash, pin_salt, app_mode, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at, onboarding_complete';
+  'id, pin_hash, pin_salt, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at, onboarding_complete';
 const VALID_ACTION_BAR_STYLES: ReadonlySet<string> = new Set(['explicit', 'speed_dial']);
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const PIN_PATTERN = /^\d{4}$/;
-const MONTH_1_MS = 30 * 24 * 60 * 60 * 1000;
 
 function mapSettings(row: UserRow): AppSettings {
   return {
-    appMode: row.app_mode,
     reminderTime: row.reminder_time,
     notificationsEnabled: row.notifications_enabled === 1,
     createdAt: row.created_at,
@@ -54,12 +51,6 @@ export async function getAppSettings(): Promise<AppSettings> {
   return mapSettings(await getOrCreateUserRow());
 }
 
-/** Switches the app between learning and control mode. */
-export async function setAppMode(mode: AppMode): Promise<void> {
-  const row = await getOrCreateUserRow();
-  await execute('UPDATE users SET app_mode = ? WHERE id = ?', [mode, row.id]);
-}
-
 /**
  * Sets the daily reminder time.
  *
@@ -81,18 +72,6 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
     enabled ? 1 : 0,
     row.id,
   ]);
-}
-
-/**
- * Whether the user has used the app for at least 30 days since first run — the
- * cue to suggest switching from learning to control mode.
- *
- * @param nowISO Reference "now" (default: current time). Injectable for tests.
- */
-export async function isMonth1Complete(nowISO: string = new Date().toISOString()): Promise<boolean> {
-  const row = await getOrCreateUserRow();
-  const elapsed = new Date(nowISO).getTime() - new Date(row.created_at).getTime();
-  return elapsed >= MONTH_1_MS;
 }
 
 /**

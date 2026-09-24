@@ -85,16 +85,16 @@ export function dailyBudgetPace(expenseBudget: number, monthISO: string): number
 }
 
 /**
- * Aggregates the dashboard state for `monthISO`. Always loads today's spending
- * and zero-day status. Loads budget, funds, and project data only when
- * `includeBudgetData` is true (control mode); in learning mode those three
- * fields are `null`.
+ * Aggregates the dashboard state for `monthISO` — today's spending, zero-day
+ * status, and the budget, fund, and project figures.
+ *
+ * Budget data used to be conditional on control mode; with learning mode gone
+ * (VS-34) it always loads.
  *
  * @param todayISO Defaults to today (UTC). Explicit for testability.
  */
 export async function getDashboardSnapshot(
   monthISO: string,
-  opts: { includeBudgetData: boolean },
   todayISO: string = toISODate(new Date()),
 ): Promise<DashboardState> {
   // One range query covers both the 7-day trend and today's total (its last bucket).
@@ -105,19 +105,6 @@ export async function getDashboardSnapshot(
 
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
   const todaySpending = spendingTrend[spendingTrend.length - 1];
-
-  if (!opts.includeBudgetData) {
-    return {
-      todaySpending,
-      spendingTrend,
-      zeroDay,
-      budget: null,
-      cashflow: null,
-      dailyPace: null,
-      funds: null,
-      topProject: null,
-    };
-  }
 
   const [monthlyBudget, allFunds, projects] = await Promise.all([
     budgetService.getMonthlyBudget(monthISO),

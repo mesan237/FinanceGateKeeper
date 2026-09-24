@@ -22,9 +22,7 @@ import {
   getActionBarStyle,
   getAppSettings,
   hasPin,
-  isMonth1Complete,
   setActionBarStyle,
-  setAppMode,
   setNotificationsEnabled,
   setOnboardingComplete,
   setPin,
@@ -50,7 +48,6 @@ afterEach(() => {
 describe('getAppSettings', () => {
   it('creates and returns a default row on first call', async () => {
     const settings = await getAppSettings();
-    expect(settings.appMode).toBe('learning');
     expect(settings.reminderTime).toBe('21:00');
     expect(settings.notificationsEnabled).toBe(true);
     expect(settings.createdAt).toBeTruthy();
@@ -63,17 +60,6 @@ describe('getAppSettings', () => {
       count: number;
     }[];
     expect(count).toBe(1);
-  });
-});
-
-describe('setAppMode', () => {
-  it('persists the mode and survives a re-read', async () => {
-    await setAppMode('control');
-    expect((await getAppSettings()).appMode).toBe('control');
-  });
-
-  it('rejects an invalid mode at the DB CHECK constraint', async () => {
-    await expect(setAppMode('chaos' as never)).rejects.toThrow();
   });
 });
 
@@ -184,19 +170,5 @@ describe('onboarding', () => {
     await setOnboardingComplete(true);
     await setOnboardingComplete(false);
     expect((await getAppSettings()).onboardingComplete).toBe(false);
-  });
-});
-
-describe('isMonth1Complete', () => {
-  it('is false within the first 30 days', async () => {
-    await getAppSettings(); // seed the row (created_at = now)
-    const tenDaysLater = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
-    expect(await isMonth1Complete(tenDaysLater)).toBe(false);
-  });
-
-  it('is true after 30 days', async () => {
-    await getAppSettings();
-    const thirtyOneDaysLater = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000).toISOString();
-    expect(await isMonth1Complete(thirtyOneDaysLater)).toBe(true);
   });
 });

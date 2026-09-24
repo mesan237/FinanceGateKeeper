@@ -34,37 +34,25 @@ describe('useDashboard', () => {
     jest.clearAllMocks();
   });
 
-  it('fetches snapshot on mount with currentMonthISO and the supplied opts', async () => {
-    const { result } = renderHook(() => useDashboard({ includeBudgetData: false }));
+  it('fetches snapshot on mount with currentMonthISO', async () => {
+    const { result } = renderHook(() => useDashboard());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(mockedGetSnapshot).toHaveBeenCalledWith(currentMonthISO(), {
-      includeBudgetData: false,
-    });
+    expect(mockedGetSnapshot).toHaveBeenCalledWith(currentMonthISO());
     expect(result.current.state).toEqual(MOCK_STATE);
     expect(result.current.error).toBeNull();
   });
 
-  it('passes includeBudgetData: true when in control mode', async () => {
-    const { result } = renderHook(() => useDashboard({ includeBudgetData: true }));
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    expect(mockedGetSnapshot).toHaveBeenCalledWith(currentMonthISO(), {
-      includeBudgetData: true,
-    });
-  });
-
   it('starts in loading state and clears it once resolved', async () => {
-    const { result } = renderHook(() => useDashboard({ includeBudgetData: false }));
+    const { result } = renderHook(() => useDashboard());
 
     expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.loading).toBe(false));
   });
 
   it('exposes refresh which re-invokes getDashboardSnapshot', async () => {
-    const { result } = renderHook(() => useDashboard({ includeBudgetData: false }));
+    const { result } = renderHook(() => useDashboard());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(mockedGetSnapshot).toHaveBeenCalledTimes(1);
@@ -78,27 +66,11 @@ describe('useDashboard', () => {
 
   it('surfaces errors into error state without throwing', async () => {
     mockedGetSnapshot.mockRejectedValueOnce(new Error('DB failure'));
-    const { result } = renderHook(() => useDashboard({ includeBudgetData: false }));
+    const { result } = renderHook(() => useDashboard());
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.error).toBe('DB failure');
     expect(result.current.state).toBeNull();
-  });
-
-  it('re-fetches when includeBudgetData changes', async () => {
-    const { result, rerender } = renderHook(
-      ({ include }: { include: boolean }) => useDashboard({ includeBudgetData: include }),
-      { initialProps: { include: false } },
-    );
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(mockedGetSnapshot).toHaveBeenCalledTimes(1);
-
-    rerender({ include: true });
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(mockedGetSnapshot).toHaveBeenCalledTimes(2);
-    expect(mockedGetSnapshot).toHaveBeenLastCalledWith(currentMonthISO(), {
-      includeBudgetData: true,
-    });
   });
 });
