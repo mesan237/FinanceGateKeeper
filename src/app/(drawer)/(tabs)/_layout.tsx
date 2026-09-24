@@ -8,7 +8,6 @@ import { Icon } from '@/components/Icon';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { useTheme } from '@/theme';
-import { useAppMode } from '@/features/finance/auth/AppModeProvider';
 
 // Compact header: the title bar's content area below the status bar. Trimmed
 // from the platform default (~56 on Android) so the header sits tighter now
@@ -54,8 +53,6 @@ function DeletedProjectsLink() {
 }
 
 export default function TabsLayout() {
-  const appMode = useAppMode();
-  const showBudget = appMode === 'control';
   const c = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -113,7 +110,6 @@ export default function TabsLayout() {
         name="budget"
         options={{
           title: 'Budget',
-          href: showBudget ? undefined : null,
           tabBarIcon: ({ color, focused }) => tabIcon('budget', focused, color),
         }}
       />
