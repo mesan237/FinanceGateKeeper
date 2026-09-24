@@ -129,6 +129,35 @@ beforeEach(() => {
   mockedSetBudget.mockResolvedValue();
 });
 
+// This suite asserts on calendar labels and on "the current month", so it pins
+// the clock rather than inheriting the wall clock — which is what silently
+// turned it red once real time moved past the month the fixtures assume.
+// Only `Date` is faked; every timer stays real so RNTL's `waitFor` is unaffected.
+const DO_NOT_FAKE = [
+  'hrtime',
+  'nextTick',
+  'performance',
+  'queueMicrotask',
+  'requestAnimationFrame',
+  'cancelAnimationFrame',
+  'requestIdleCallback',
+  'cancelIdleCallback',
+  'setImmediate',
+  'clearImmediate',
+  'setInterval',
+  'clearInterval',
+  'setTimeout',
+  'clearTimeout',
+] as const;
+
+beforeAll(() => {
+  jest.useFakeTimers({ now: new Date('2026-08-15T12:00:00.000Z'), doNotFake: [...DO_NOT_FAKE] });
+});
+
+afterAll(() => {
+  jest.useRealTimers();
+});
+
 describe('BudgetOverview — loading and empty states', () => {
   it('shows a skeleton shaped like the loaded screen while data arrives', async () => {
     render(<BudgetOverview monthISO="2026-08" />);
