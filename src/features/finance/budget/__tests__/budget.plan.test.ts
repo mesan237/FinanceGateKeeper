@@ -23,13 +23,9 @@ import {
   getBudgetOverview,
   suggestFromHistory,
 } from '@/features/finance/budget/budget.plan';
-import {
-  getOrCreateCurrentAllocation,
-  lockAllocation,
-} from '@/features/finance/budget/budget.service';
+import { ensureMonthRow } from '@/features/finance/budget/budget.service';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
-import { markIncomeAllocated } from '@/features/finance/income/income.service';
 
 let sqlite: Database.Database;
 
@@ -49,15 +45,14 @@ afterEach(() => {
   mockState.driver = null;
 });
 
-/** Logs allocated income so the derived expense budget is non-zero (65% of it). */
-async function logAllocatedIncome(month: string, amount: number): Promise<void> {
-  const id = await createIncome({
+/** Logs income — since VS-34 the month's income *is* the derived budget. */
+async function logIncome(month: string, amount: number): Promise<void> {
+  await createIncome({
     amount,
     source: 'salary',
     note: null,
     date: `${month}-01`,
   });
-  await markIncomeAllocated(id);
 }
 
 async function spend(
@@ -78,7 +73,7 @@ async function spend(
 
 describe('buildMonthlyPlan', () => {
   it('falls back to the derived total when none is set', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
 
     const plan = await buildMonthlyPlan('2026-08', 260_000);
 
@@ -88,7 +83,7 @@ describe('buildMonthlyPlan', () => {
   });
 
   it('lets an explicit total win over the derived one', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 200_000);
 
     const plan = await buildMonthlyPlan('2026-08', 260_000);
@@ -100,7 +95,7 @@ describe('buildMonthlyPlan', () => {
   });
 
   it('tracks how much of the total is still unassigned', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 200_000);
     await setCategoryBudget('2026-08', FOOD, 60_000);
     await setCategoryBudget('2026-08', TRANSPORT, 40_000);
@@ -113,7 +108,7 @@ describe('buildMonthlyPlan', () => {
   });
 
   it('flags an over-allocated month with a negative unassigned figure', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 100_000);
     await setCategoryBudget('2026-08', FOOD, 80_000);
     await setCategoryBudget('2026-08', TRANSPORT, 50_000);
@@ -132,14 +127,14 @@ describe('getBudgetOverview', () => {
   });
 
   it('is no longer unplanned once an envelope exists', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setCategoryBudget('2026-08', FOOD, 60_000);
 
     expect((await getBudgetOverview('2026-08', '2026-08-10')).isUnplanned).toBe(false);
   });
 
   it('composes plan, envelopes and pace for the month', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 300_000);
     await setCategoryBudget('2026-08', FOOD, 60_000);
     await spend('2026-08', '05', 30_000, FOOD);
@@ -160,7 +155,7 @@ describe('getBudgetOverview', () => {
   });
 
   it('surfaces unbudgeted spending as a zero-budget envelope', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 300_000);
     await spend('2026-08', '05', 9_000, TRANSPORT);
 
@@ -174,7 +169,7 @@ describe('getBudgetOverview', () => {
   });
 
   it('omits categories with neither a budget nor spending', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setCategoryBudget('2026-08', FOOD, 60_000);
 
     const overview = await getBudgetOverview('2026-08', '2026-08-10');
@@ -183,7 +178,7 @@ describe('getBudgetOverview', () => {
   });
 
   it('counts unbudgeted spend in the month total, not just budgeted spend', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 100_000);
     await setCategoryBudget('2026-08', FOOD, 60_000);
     await spend('2026-08', '05', 10_000, FOOD);
@@ -195,8 +190,8 @@ describe('getBudgetOverview', () => {
   });
 
   it('folds rollover carry into the month available figure', async () => {
-    await getOrCreateCurrentAllocation('2026-07');
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-07');
+    await ensureMonthRow('2026-08');
     await setCategoryBudget('2026-07', FOOD, 40_000, true);
     await spend('2026-07', '10', 25_000, FOOD);
     await setTotalBudget('2026-08', 100_000);
@@ -208,14 +203,16 @@ describe('getBudgetOverview', () => {
     expect(overview.available).toBe(115_000);
   });
 
-  it('derives the total from allocated income when none is set explicitly', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
-    await logAllocatedIncome('2026-08', 400_000); // 65% expenses bucket
+  it("derives the total from the month's income when none is set explicitly", async () => {
+    await ensureMonthRow('2026-08');
+    await logIncome('2026-08', 400_000);
 
     const overview = await getBudgetOverview('2026-08', '2026-08-10');
 
+    // Before VS-34 this was income x expenses_pct; with no split the whole
+    // month's income is the derived budget.
     expect(overview.plan.isExplicit).toBe(false);
-    expect(overview.plan.totalBudget).toBe(260_000);
+    expect(overview.plan.totalBudget).toBe(400_000);
   });
 });
 
@@ -283,15 +280,13 @@ describe('checkCategoryBudget', () => {
     expect((await checkCategoryBudget('2026-08', FOOD, 5_000)).isOver).toBe(false);
   });
 
-  it('applies regardless of the allocation month-lock', async () => {
-    // The month-wide guard stays inert until the split is locked; an envelope is
-    // a number the user typed on purpose, so it binds immediately.
-    await getOrCreateCurrentAllocation('2026-08');
+  it('binds as soon as the envelope exists, with no month income at all', async () => {
+    // An envelope is a number the user typed on purpose, so it binds
+    // immediately — it never depended on the (now removed) month lock, and it
+    // does not wait for income either.
+    await ensureMonthRow('2026-08');
     await setCategoryBudget('2026-08', FOOD, 10_000);
 
-    expect((await checkCategoryBudget('2026-08', FOOD, 50_000)).isOver).toBe(true);
-
-    await lockAllocation('2026-08');
     expect((await checkCategoryBudget('2026-08', FOOD, 50_000)).isOver).toBe(true);
   });
 

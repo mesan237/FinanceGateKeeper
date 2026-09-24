@@ -61,10 +61,8 @@ function setup(options: { isExplicit?: boolean; totalBudget?: number } = {}) {
   mockedMonthly.mockResolvedValue({
     month: '2026-08',
     incomeTotal: 400_000,
-    allocation: {} as never,
-    breakdown: { emergencyFund: 40_000, savings: 40_000, projects: 60_000, expenses: 260_000 },
     expensesLogged: 0,
-    expensesRemaining: 260_000,
+    expensesRemaining: 400_000,
   });
   mockedBuildPlan.mockResolvedValue({
     month: '2026-08',

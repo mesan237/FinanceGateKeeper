@@ -34,17 +34,6 @@ jest.mock('@/features/finance/budget/budget.insights', () => ({
   rankByBudgetShare: jest.fn().mockReturnValue([]),
 }));
 
-// The income-split card and the held-income pool reach into other slices;
-// neither is what these tests are about.
-jest.mock('@/features/finance/budget/IncomeSplitCard', () => ({
-  IncomeSplitCard: () => null,
-}));
-
-const mockUnallocatedPool = jest.fn();
-jest.mock('@/features/finance/budget/budget.hooks', () => ({
-  useUnallocatedPool: () => mockUnallocatedPool(),
-}));
-
 import { BudgetOverview } from '@/features/finance/budget/BudgetOverview';
 import * as envelopes from '@/features/finance/budget/budget.envelopes';
 import * as plan from '@/features/finance/budget/budget.plan';
@@ -124,7 +113,6 @@ async function renderTab() {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockUnallocatedPool.mockReturnValue({ total: 0 });
   mockedGetOverview.mockResolvedValue(overviewData());
   mockedSetBudget.mockResolvedValue();
 });
@@ -408,14 +396,3 @@ describe('BudgetOverview — month navigation', () => {
   });
 });
 
-describe('BudgetOverview — held income', () => {
-  it('links to the unallocated pool only when income is held', async () => {
-    await renderTab();
-    expect(screen.queryByTestId('unallocated-pool-link')).toBeNull();
-
-    mockUnallocatedPool.mockReturnValue({ total: 50_000 });
-    await renderTab();
-
-    expect(screen.getByTestId('unallocated-pool-link')).toBeTruthy();
-  });
-});

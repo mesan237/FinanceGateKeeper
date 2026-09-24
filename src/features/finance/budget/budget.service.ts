@@ -1,106 +1,39 @@
-import {
-  BUCKET_SET,
-  BUCKET_VALUES,
-  DEFAULT_ALLOCATION,
-  type Bucket,
-} from '@/constants/allocation';
 import { execute, query } from '@/services/database';
 
-import type {
-  Allocation,
-  AllocationBreakdown,
-  AllocationDraft,
-  MonthlyBudget,
-  OverBudgetCheck,
-} from './budget.types';
-
-// Redistribution lives in its own module (decoupled, no cross-import) but is
-// re-exported here so callers keep a single budget-service entry point. The
-// VS-33 envelope modules are not re-exported — `budget.plan.ts` imports
-// `getMonthlyBudget` from here, so re-exporting it back would close a cycle.
-export { redistributeEmergencyPct } from './budget.redistribution';
-
-interface AllocationRow {
-  id: number;
-  month: string;
-  emergency_fund_pct: number;
-  savings_pct: number;
-  projects_pct: number;
-  expenses_pct: number;
-  priority_order: string;
-  is_locked: number;
-  created_at: string;
-}
-
-const ALLOCATION_COLUMNS =
-  'id, month, emergency_fund_pct, savings_pct, projects_pct, expenses_pct, priority_order, is_locked, created_at';
-
-function parsePriorityOrder(serialized: string): Bucket[] {
-  const parsed = JSON.parse(serialized) as unknown;
-  if (!Array.isArray(parsed) || !parsed.every((b) => BUCKET_SET.has(b as string))) {
-    // A persisted row should always be valid (write-side guard in `updateAllocation`).
-    // Defending the read path keeps a corrupted manual edit from crashing the UI.
-    return [...DEFAULT_ALLOCATION.priorityOrder];
-  }
-  return parsed as Bucket[];
-}
-
-function mapAllocation(row: AllocationRow): Allocation {
-  return {
-    id: row.id,
-    month: row.month,
-    emergencyFundPct: row.emergency_fund_pct,
-    savingsPct: row.savings_pct,
-    projectsPct: row.projects_pct,
-    expensesPct: row.expenses_pct,
-    priorityOrder: parsePriorityOrder(row.priority_order),
-    isLocked: row.is_locked === 1,
-    createdAt: row.created_at,
-  };
-}
-
-function assertValidPercentages(draft: AllocationDraft): void {
-  const values = [
-    draft.emergencyFundPct,
-    draft.savingsPct,
-    draft.projectsPct,
-    draft.expensesPct,
-  ];
-  for (const pct of values) {
-    if (!Number.isInteger(pct) || pct < 0 || pct > 100) {
-      throw new Error('Allocation percentages must be integers in the range 0–100.');
-    }
-  }
-  const total = values.reduce((acc, v) => acc + v, 0);
-  if (total !== 100) {
-    throw new Error(`Allocation percentages must sum to 100 (got ${total}).`);
-  }
-}
-
-function assertValidPriorityOrder(order: ReadonlyArray<Bucket>): void {
-  if (order.length !== BUCKET_VALUES.length) {
-    throw new Error('Priority order must include all four buckets exactly once.');
-  }
-  const seen = new Set<string>();
-  for (const bucket of order) {
-    if (!BUCKET_SET.has(bucket as string)) {
-      throw new Error(`Priority order contains an unknown bucket: ${bucket}.`);
-    }
-    if (seen.has(bucket as string)) {
-      throw new Error(`Priority order contains a duplicate bucket: ${bucket}.`);
-    }
-    seen.add(bucket as string);
-  }
-}
+import type { MonthlyBudget } from './budget.types';
 
 /**
- * Returns the allocation row for `monthISO`, creating it with
- * `DEFAULT_ALLOCATION` if absent. Idempotent: a second call for the same month
- * returns the same row instead of inserting a duplicate. Uses
- * `INSERT OR IGNORE` + `SELECT`, which is race-safe thanks to the
- * `UNIQUE(month)` constraint.
+ * Month-level budget figures: the income the month brought in, what has been
+ * spent against it, and the row that carries the explicit total.
+ *
+ * The four-bucket income split this module used to own (percentages, the month
+ * lock, `calculateBreakdown`, emergency redistribution) was parked in VS-34.
+ * What survives is the part the daily loop needs: how much came in, how much
+ * went out. The per-category envelopes live in `budget.envelopes.ts`, and
+ * `budget.plan.ts` composes the two.
  */
-export async function getOrCreateCurrentAllocation(monthISO: string): Promise<Allocation> {
+
+/**
+ * `allocations` still has four NOT NULL percentage columns from the parked
+ * split. Nothing reads them; they are filled once on insert so the row carrying
+ * `total_budget` can exist at all. Keeping the columns instead of migrating them
+ * away is deliberate — a schema change would invalidate every existing export
+ * file, and an unread column costs nothing.
+ */
+const VESTIGIAL_SPLIT = {
+  emergencyFundPct: 0,
+  savingsPct: 0,
+  projectsPct: 0,
+  expensesPct: 100,
+  priorityOrder: '[]',
+};
+
+/**
+ * Ensures the `allocations` row for `monthISO` exists, so `setTotalBudget` has
+ * something to UPDATE. Idempotent: `INSERT OR IGNORE` against the
+ * `UNIQUE(month)` constraint makes a second call a no-op, and race-safe.
+ */
+export async function ensureMonthRow(monthISO: string): Promise<void> {
   await execute(
     `INSERT OR IGNORE INTO allocations
        (month, emergency_fund_pct, savings_pct, projects_pct, expenses_pct,
@@ -108,125 +41,14 @@ export async function getOrCreateCurrentAllocation(monthISO: string): Promise<Al
      VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
     [
       monthISO,
-      DEFAULT_ALLOCATION.emergencyFundPct,
-      DEFAULT_ALLOCATION.savingsPct,
-      DEFAULT_ALLOCATION.projectsPct,
-      DEFAULT_ALLOCATION.expensesPct,
-      JSON.stringify(DEFAULT_ALLOCATION.priorityOrder),
+      VESTIGIAL_SPLIT.emergencyFundPct,
+      VESTIGIAL_SPLIT.savingsPct,
+      VESTIGIAL_SPLIT.projectsPct,
+      VESTIGIAL_SPLIT.expensesPct,
+      VESTIGIAL_SPLIT.priorityOrder,
       new Date().toISOString(),
     ],
   );
-  const allocation = await getAllocation(monthISO);
-  if (!allocation) {
-    // INSERT OR IGNORE followed by SELECT should always find the row.
-    // If it doesn't, something is wrong with the connection — fail loudly.
-    throw new Error(`Allocation row for ${monthISO} could not be retrieved after upsert.`);
-  }
-  return allocation;
-}
-
-/** Reads the allocation row for `monthISO` without creating one if absent. */
-export async function getAllocation(monthISO: string): Promise<Allocation | null> {
-  const rows = await query<AllocationRow>(
-    `SELECT ${ALLOCATION_COLUMNS} FROM allocations WHERE month = ?`,
-    [monthISO],
-  );
-  return rows[0] ? mapAllocation(rows[0]) : null;
-}
-
-/**
- * Writes a validated allocation draft. Throws on:
- *  - any percentage out of `[0, 100]` or not an integer;
- *  - percentages not summing to exactly 100;
- *  - a priority order that is not a permutation of the four buckets;
- *  - any save attempt against a locked month.
- *
- * No DB write occurs on any validation failure.
- */
-export async function updateAllocation(
-  monthISO: string,
-  draft: AllocationDraft,
-): Promise<void> {
-  assertValidPercentages(draft);
-  assertValidPriorityOrder(draft.priorityOrder);
-
-  const existing = await getAllocation(monthISO);
-  if (existing?.isLocked) {
-    throw new Error(`Allocation for ${monthISO} is locked for this month.`);
-  }
-
-  if (existing) {
-    await execute(
-      `UPDATE allocations
-         SET emergency_fund_pct = ?, savings_pct = ?, projects_pct = ?, expenses_pct = ?,
-             priority_order = ?
-       WHERE month = ?`,
-      [
-        draft.emergencyFundPct,
-        draft.savingsPct,
-        draft.projectsPct,
-        draft.expensesPct,
-        JSON.stringify(draft.priorityOrder),
-        monthISO,
-      ],
-    );
-  } else {
-    await execute(
-      `INSERT INTO allocations
-         (month, emergency_fund_pct, savings_pct, projects_pct, expenses_pct,
-          priority_order, is_locked, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, 0, ?)`,
-      [
-        monthISO,
-        draft.emergencyFundPct,
-        draft.savingsPct,
-        draft.projectsPct,
-        draft.expensesPct,
-        JSON.stringify(draft.priorityOrder),
-        new Date().toISOString(),
-      ],
-    );
-  }
-}
-
-/**
- * Marks `monthISO` as locked. Locked allocations cannot be edited by
- * `updateAllocation` until the next month rolls over. Calling twice is a no-op.
- */
-export async function lockAllocation(monthISO: string): Promise<void> {
-  await execute('UPDATE allocations SET is_locked = 1 WHERE month = ?', [monthISO]);
-}
-
-/**
- * Reports whether the user has ever *confirmed* (locked) an allocation for any
- * month. Locking only happens on the allocation screen's Confirm, so a locked
- * row is a deliberate choice — unlike the default rows that auto-materialise on
- * read (`getOrCreateCurrentAllocation`). The allocation screen uses this to
- * detect the very first allocation and route the user to set percentages before
- * presenting a breakdown, instead of showing the seeded default as final (VS-25).
- */
-export async function hasConfirmedAnyAllocation(): Promise<boolean> {
-  const [row] = await query<{ n: number }>(
-    'SELECT COUNT(*) AS n FROM allocations WHERE is_locked = 1',
-  );
-  return row.n > 0;
-}
-
-/**
- * Splits `incomeAmount` across the four buckets per the allocation's
- * percentages, using integer-floor division. Any rounding remainder is added
- * to `expenses` (the residual bucket by PRD convention) so the four amounts
- * always sum to `incomeAmount` exactly. Pure — no DB access, no async.
- */
-export function calculateBreakdown(
-  incomeAmount: number,
-  allocation: Allocation,
-): AllocationBreakdown {
-  const emergencyFund = Math.floor((incomeAmount * allocation.emergencyFundPct) / 100);
-  const savings = Math.floor((incomeAmount * allocation.savingsPct) / 100);
-  const projects = Math.floor((incomeAmount * allocation.projectsPct) / 100);
-  const expenses = incomeAmount - emergencyFund - savings - projects;
-  return { emergencyFund, savings, projects, expenses };
 }
 
 /**
@@ -245,44 +67,44 @@ export async function getExpensesMonthlyTotal(monthISO: string): Promise<number>
 }
 
 /**
- * Sums `amount` across every **allocated** income row whose `date` falls in
- * `monthISO`. Pending income (held in the unallocated pool, VS-19) is excluded
- * so it does not inflate the derived expense budget until the user deliberately
- * allocates it. The query reads the income table directly (rather than importing
- * `income.service`) to keep `budget` from cross-importing `income` as a module —
- * mirrors how `getExpensesMonthlyTotal` reads the expenses table directly.
+ * Sums `amount` across every income row whose `date` falls in `monthISO`.
+ *
+ * This used to count only `allocated` rows, excluding income held in the VS-19
+ * unallocated pool. With the pool gone (VS-34) nothing holds a row back, so the
+ * filter is dropped — and dropping it also stops legacy `pending` rows from
+ * silently under-reporting a past month. The query reads the income table
+ * directly rather than importing `income.service`, so `budget` does not
+ * cross-import `income` as a module — mirroring `getExpensesMonthlyTotal`.
  */
-async function getIncomeMonthlyTotal(monthISO: string): Promise<number> {
+export async function getIncomeMonthlyTotal(monthISO: string): Promise<number> {
   const [row] = await query<{ total: number }>(
-    `SELECT COALESCE(SUM(amount), 0) AS total FROM income
-      WHERE date LIKE ? AND allocation_status = 'allocated'`,
+    `SELECT COALESCE(SUM(amount), 0) AS total FROM income WHERE date LIKE ?`,
     [`${monthISO}-%`],
   );
   return row.total;
 }
 
 /**
- * Composes the monthly budget view: income total, the (auto-materialised)
- * allocation, its breakdown against that income, the total expenses logged so
- * far, and the remaining expense budget.
+ * Composes the month's headline figures: income in, expenses out, and what is
+ * left of the income.
+ *
+ * `incomeTotal` is also the month's **derived** budget — the figure used when
+ * the user has not set an explicit total. Before VS-34 the derived figure was
+ * `income × expenses_pct`; with no split there is no percentage to apply, so the
+ * whole month's income is the honest default. An explicit `allocations.total_budget`
+ * still overrides it, resolved in `budget.plan.buildMonthlyPlan`.
  */
 export async function getMonthlyBudget(monthISO: string): Promise<MonthlyBudget> {
-  const [incomeTotal, allocation, expensesLogged] = await Promise.all([
+  const [incomeTotal, expensesLogged] = await Promise.all([
     getIncomeMonthlyTotal(monthISO),
-    getOrCreateCurrentAllocation(monthISO),
     getExpensesMonthlyTotal(monthISO),
   ]);
-  const breakdown = calculateBreakdown(incomeTotal, allocation);
+  await ensureMonthRow(monthISO);
+
   return {
     month: monthISO,
     incomeTotal,
-    allocation,
-    breakdown,
     expensesLogged,
-    expensesRemaining: breakdown.expenses - expensesLogged,
+    expensesRemaining: incomeTotal - expensesLogged,
   };
 }
-
-// `checkOverBudget` (the month-wide guard) lives in `budget.plan.ts` alongside
-// the per-category guard added in VS-33 — one home for "would this expense
-// break something?", and it keeps this file inside the 300-line ceiling.

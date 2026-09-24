@@ -960,7 +960,7 @@ an on-track/at-risk/over verdict paced against today.
 
 ---
 
-### VS-34: Refocus on the Daily Loop — Park Projects, Funds & the Income Split
+### VS-34: Refocus on the Daily Loop — Park Projects, Funds & the Income Split ✅ Done
 
 **Priority:** High — user-requested, reorients the product
 **Blocked by:** VS-33 (Envelopes — the budget feature this slice promotes to default)

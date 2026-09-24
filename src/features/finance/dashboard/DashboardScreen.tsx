@@ -19,10 +19,8 @@ import { formatDateLong } from '@/utils/formatDate';
 
 import { BudgetSummaryCard } from './BudgetSummaryCard';
 import { CashflowCard } from './CashflowCard';
-import { FundStatusCard } from './FundStatusCard';
 import { QuickActionBar } from './QuickActionBar';
 import { TodaySpendingCard } from './TodaySpendingCard';
-import { TopProjectCard } from './TopProjectCard';
 import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
@@ -97,9 +95,7 @@ export function DashboardScreen() {
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />
 
-        {state?.funds ? <FundStatusCard funds={state.funds} /> : null}
 
-        {state?.topProject ? <TopProjectCard topProject={state.topProject} /> : null}
 
         {/* Today's spending — a compact supporting row beneath the budget hero,
             carrying the 7-day trend. */}
@@ -128,7 +124,7 @@ export function DashboardScreen() {
         visible={sheet.open}
         initialSegment={sheet.segment}
         onClose={() => setSheet((s) => ({ ...s, open: false }))}
-        onExpenseSaved={() => void refresh()}
+        onSaved={() => void refresh()}
       />
     </View>
   );

@@ -16,13 +16,8 @@ jest.mock('@/services/database', () => {
   };
 });
 
-import {
-  getOrCreateCurrentAllocation,
-  lockAllocation,
-} from '@/features/finance/budget/budget.service';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
-import { createProject } from '@/features/finance/projects/projects.service';
 import {
   buildSpendingTrend,
   dailyBudgetPace,
@@ -206,7 +201,7 @@ describe('getDashboardSnapshot', () => {
     expect(state.spendingTrend).toEqual([0, 0, 0, 0, 0, 2000, 5000]);
   });
 
-  it('populates budget, funds, and topProject', async () => {
+  it('populates budget and cashflow', async () => {
     await createIncome({
       amount: 100000,
       source: 'salary',
@@ -214,8 +209,6 @@ describe('getDashboardSnapshot', () => {
       date: TODAY,
       allocationStatus: 'allocated',
     });
-    await getOrCreateCurrentAllocation(MONTH);
-    await lockAllocation(MONTH);
     await createExpense({
       amount: 5000,
       categoryId: 1,
@@ -224,33 +217,23 @@ describe('getDashboardSnapshot', () => {
       date: TODAY,
       isRecurring: false,
     });
-    await createProject({ name: 'E-commerce Launch', targetAmount: 500000 });
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
 
-    // budget — 100 000 × 65% = 65 000 expense allocation
+    // budget — the whole 100 000 income is the derived budget (VS-34)
     expect(state.budget).not.toBeNull();
-    expect(state.budget!.expenseBudget).toBe(65000);
+    expect(state.budget!.expenseBudget).toBe(100000);
     expect(state.budget!.expensesLogged).toBe(5000);
-    expect(state.budget!.expensesRemaining).toBe(60000);
-    expect(state.budget!.spentPct).toBe(8); // 5 000 / 65 000 ≈ 7.7% → 8
-    expect(state.budget!.pace).toBe('green'); // 5 000 / 65 000 ≈ 7.7%
+    expect(state.budget!.expensesRemaining).toBe(95000);
+    expect(state.budget!.spentPct).toBe(5);
+    expect(state.budget!.pace).toBe('green');
 
     // cashflow — income 100 000 in, 5 000 out, net 95 000
     expect(state.cashflow).toEqual({ income: 100000, expenses: 5000, net: 95000 });
 
-    // dailyPace — 65 000 / 30 days in June
-    expect(state.dailyPace).toBeCloseTo(65000 / 30);
+    // dailyPace — 100 000 / 30 days in June
+    expect(state.dailyPace).toBeCloseTo(100000 / 30);
 
-    // funds — seeds emergency + savings on first call
-    expect(state.funds).not.toBeNull();
-    expect(state.funds!.emergency.type).toBe('emergency');
-    expect(state.funds!.savings.type).toBe('savings');
-
-    // topProject
-    expect(state.topProject).not.toBeNull();
-    expect(state.topProject!.project.name).toBe('E-commerce Launch');
-    expect(state.topProject!.pct).toBe(0);
   });
 
   it('returns yellow pace when >= 75% of expense budget spent with days remaining', async () => {
@@ -261,11 +244,9 @@ describe('getDashboardSnapshot', () => {
       date: TODAY,
       allocationStatus: 'allocated',
     });
-    await getOrCreateCurrentAllocation(MONTH);
-    await lockAllocation(MONTH);
-    // 50 000 / 65 000 ≈ 76.9% — above the 75% threshold
+    // 80 000 / 100 000 = 80% — above the 75% threshold
     await createExpense({
-      amount: 50000,
+      amount: 80000,
       categoryId: 1,
       subcategoryId: null,
       note: null,
@@ -285,11 +266,9 @@ describe('getDashboardSnapshot', () => {
       date: TODAY,
       allocationStatus: 'allocated',
     });
-    await getOrCreateCurrentAllocation(MONTH);
-    await lockAllocation(MONTH);
-    // 70 000 > 65 000
+    // 110 000 > 100 000
     await createExpense({
-      amount: 70000,
+      amount: 110000,
       categoryId: 1,
       subcategoryId: null,
       note: null,
@@ -299,38 +278,6 @@ describe('getDashboardSnapshot', () => {
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.budget!.pace).toBe('red');
-  });
-
-  it('returns topProject null when no active projects exist', async () => {
-    await createIncome({
-      amount: 100000,
-      source: 'salary',
-      note: null,
-      date: TODAY,
-      allocationStatus: 'allocated',
-    });
-    await getOrCreateCurrentAllocation(MONTH);
-    await lockAllocation(MONTH);
-
-    const state = await getDashboardSnapshot(MONTH, TODAY);
-    expect(state.topProject).toBeNull();
-  });
-
-  it('selects the lowest priority_rank active project as top project', async () => {
-    await createIncome({
-      amount: 100000,
-      source: 'salary',
-      note: null,
-      date: TODAY,
-      allocationStatus: 'allocated',
-    });
-    await getOrCreateCurrentAllocation(MONTH);
-    await lockAllocation(MONTH);
-    await createProject({ name: 'Priority One', targetAmount: 100000 });
-    await createProject({ name: 'Priority Two', targetAmount: 200000 });
-
-    const state = await getDashboardSnapshot(MONTH, TODAY);
-    expect(state.topProject!.project.name).toBe('Priority One');
   });
 
   it('returns zeroDay with no activity when nothing is logged', async () => {

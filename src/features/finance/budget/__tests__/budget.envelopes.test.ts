@@ -29,7 +29,7 @@ import {
   setCategoryBudget,
   setTotalBudget,
 } from '@/features/finance/budget/budget.envelopes';
-import { getOrCreateCurrentAllocation } from '@/features/finance/budget/budget.service';
+import { ensureMonthRow } from '@/features/finance/budget/budget.service';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
 
 let sqlite: Database.Database;
@@ -155,19 +155,19 @@ describe('moveBudget', () => {
 
 describe('setTotalBudget / getTotalBudget', () => {
   it('is null before the user sets one, so the derived total applies', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     expect(await getTotalBudget('2026-08')).toBeNull();
   });
 
   it('persists an explicit total', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 250_000);
 
     expect(await getTotalBudget('2026-08')).toBe(250_000);
   });
 
   it('clears back to the derived total', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await setTotalBudget('2026-08', 250_000);
     await setTotalBudget('2026-08', null);
 
@@ -175,7 +175,7 @@ describe('setTotalBudget / getTotalBudget', () => {
   });
 
   it('rejects a negative total', async () => {
-    await getOrCreateCurrentAllocation('2026-08');
+    await ensureMonthRow('2026-08');
     await expect(setTotalBudget('2026-08', -5)).rejects.toThrow(/whole number/i);
   });
 });

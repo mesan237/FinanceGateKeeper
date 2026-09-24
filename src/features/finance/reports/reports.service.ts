@@ -3,9 +3,8 @@ import {
   getAllCategories,
 } from '@/features/finance/expenses/expenses.service';
 import { getIncomeByDateRange } from '@/features/finance/income/income.service';
+import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
 import { getMonthlyBudget } from '@/features/finance/budget/budget.service';
-import { getOrCreateFunds, getFundProgress } from '@/features/finance/funds/funds.service';
-import { getProjects } from '@/features/finance/projects/projects.service';
 import { getOutstandingTotals } from '@/features/finance/debt/debt.service';
 import type { Expense, Category } from '@/features/finance/expenses/expenses.types';
 import { toISODate } from '@/utils/formatDate';
@@ -177,7 +176,7 @@ export function generateSuggestions(
 
 /**
  * Builds the full monthly report: income vs expenses, allocation performance,
- * category breakdown, fund/project progress, debt summary, month-over-month
+ * category breakdown, debt summary, month-over-month
  * comparison, and optimization suggestions. The comparison (and its
  * suggestions) is omitted when neither month had any spending.
  */
@@ -185,14 +184,15 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
   const firstDay = `${monthISO}-01`;
   const lastDay = lastDayOfMonth(monthISO);
 
-  const [budget, expenses, categories, funds, projects, debt] = await Promise.all([
+  const [budget, expenses, categories, debt] = await Promise.all([
     getMonthlyBudget(monthISO),
     getExpensesByDateRange(firstDay, lastDay),
     getAllCategories(),
-    getOrCreateFunds(),
-    getProjects(),
     getOutstandingTotals(),
   ]);
+  // The same resolution the Budget tab uses: the explicit total when the user
+  // set one, the month's income otherwise.
+  const planned = (await buildMonthlyPlan(monthISO, budget.incomeTotal)).totalBudget;
 
   const labelOf = categoryLabelResolver(categories);
   const actual = sumAmounts(expenses);
@@ -209,27 +209,11 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
     month: monthISO,
     incomeTotal: budget.incomeTotal,
     expensePerformance: {
-      planned: budget.breakdown.expenses,
+      planned,
       actual,
-      remaining: budget.breakdown.expenses - actual,
+      remaining: planned - actual,
     },
-    allocatedBreakdown: { ...budget.breakdown },
     categoryBreakdown: rankedCategories(expenses, labelOf, actual, Number.POSITIVE_INFINITY),
-    fundProgress: funds.map(getFundProgress).map((p) => ({
-      type: p.type,
-      current: p.current,
-      target: p.target,
-      pct: p.pct,
-    })),
-    projectProgress: projects
-      .filter((p) => p.status !== 'completed')
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        funded: p.fundedAmount,
-        target: p.targetAmount,
-        pct: p.targetAmount > 0 ? (p.fundedAmount / p.targetAmount) * 100 : 0,
-      })),
     debtSummary: { totalLent: debt.lent, totalOwed: debt.owed },
     comparison,
     suggestions: generateSuggestions(comparison),

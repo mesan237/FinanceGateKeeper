@@ -43,23 +43,6 @@ const MOCK_BUDGET = {
   spentPct: 31,
   pace: 'green' as const,
 };
-const MOCK_FUNDS = {
-  emergency: { fundId: 1, type: 'emergency' as const, current: 320000, target: 500000, pct: 64 },
-  savings: { fundId: 2, type: 'savings' as const, current: 80000, target: null, pct: null },
-};
-const MOCK_TOP_PROJECT = {
-  project: {
-    id: 1,
-    name: 'E-commerce Launch',
-    targetAmount: 500000,
-    fundedAmount: 110000,
-    priorityRank: 1,
-    deadline: null,
-    status: 'active' as const,
-    createdAt: '2026-06-01',
-  },
-  pct: 22,
-};
 
 const FULL_STATE: DashboardState = {
   todaySpending: 5000,
@@ -68,8 +51,6 @@ const FULL_STATE: DashboardState = {
   budget: MOCK_BUDGET,
   cashflow: { income: 100000, expenses: 20000, net: 80000 },
   dailyPace: 2167,
-  funds: MOCK_FUNDS,
-  topProject: MOCK_TOP_PROJECT,
 };
 
 const BARE_STATE: DashboardState = {
@@ -79,8 +60,6 @@ const BARE_STATE: DashboardState = {
   budget: null,
   cashflow: null,
   dailyPace: null,
-  funds: null,
-  topProject: null,
 };
 
 function setupHooks(state: DashboardState | null, loading = false) {
@@ -104,33 +83,22 @@ beforeEach(() => {
 
 describe('DashboardScreen', () => {
   describe('with a full snapshot', () => {
-    it('renders BudgetSummaryCard, FundStatusCard, top-project card, and today spending', () => {
+    it('renders the budget summary and today spending', () => {
       setupHooks(FULL_STATE);
       render(<DashboardScreen />);
 
       expect(screen.getByTestId('budget-summary-card')).toBeTruthy();
-      expect(screen.getByTestId('fund-status-card')).toBeTruthy();
-      expect(screen.getByTestId('top-project-card')).toBeTruthy();
       expect(screen.getByTestId('today-spending')).toBeTruthy();
     });
 
-    it('shows the project name and funding percentage', () => {
-      setupHooks(FULL_STATE);
-      render(<DashboardScreen />);
-
-      expect(screen.getByText('E-commerce Launch')).toBeTruthy();
-      expect(screen.getByText(/22%/)).toBeTruthy();
-    });
   });
 
-  describe('with a snapshot carrying no budget, fund or project data', () => {
-    it('shows today spending and action bar, but hides budget/fund/project cards', () => {
+  describe('with a snapshot carrying no budget data', () => {
+    it('shows today spending and the action bar, but hides the budget card', () => {
       setupHooks(BARE_STATE);
       render(<DashboardScreen />);
 
       expect(screen.queryByTestId('budget-summary-card')).toBeNull();
-      expect(screen.queryByTestId('fund-status-card')).toBeNull();
-      expect(screen.queryByTestId('top-project-card')).toBeNull();
       expect(screen.getByTestId('today-spending')).toBeTruthy();
       expect(screen.getByTestId('quick-log-expense')).toBeTruthy();
     });

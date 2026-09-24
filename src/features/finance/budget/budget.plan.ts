@@ -29,8 +29,8 @@ import type {
  * handed out.
  *
  * `derivedTotal` is always carried alongside `totalBudget` so the planner can
- * offer the income-split figure as a one-tap suggestion even when the user has
- * set an explicit total.
+ * offer the month's income as a one-tap suggestion even when the user has set
+ * an explicit total.
  */
 export async function buildMonthlyPlan(
   monthISO: string,
@@ -117,7 +117,7 @@ export async function getBudgetOverview(
 ): Promise<BudgetOverview> {
   const monthly = await getMonthlyBudget(monthISO);
   const [plan, categories] = await Promise.all([
-    buildMonthlyPlan(monthISO, monthly.breakdown.expenses),
+    buildMonthlyPlan(monthISO, monthly.incomeTotal),
     buildCategoryProgressList(monthISO, todayISO),
   ]);
 
@@ -186,23 +186,23 @@ export async function getBudgetableCategories() {
 
 /**
  * Decides whether logging `newExpenseAmount` this month would push total
- * expenses past the month's confirmed expense allocation.
+ * expenses past the month's spending budget.
  *
- * The guard is only active once the allocation is **locked** (the user has
- * confirmed it on the allocation screen). Until then — learning mode, or a
- * control-mode month not yet set up — the auto-materialised default allocation
- * stays unlocked and this always reports "not over", so expense logging is
- * never interrupted before a budget exists. Lands-exactly-on-budget is not over
- * (`>`, not `>=`).
+ * The month lock that used to gate this is gone (VS-34) — nothing locks a month
+ * any more. What replaces it is the budget itself: the guard stays silent while
+ * the month has **no** budget to exceed (no explicit total and no income yet),
+ * so expense logging is never interrupted before there is a figure to be over.
+ * Lands-exactly-on-budget is not over (`>`, not `>=`).
  */
 export async function checkOverBudget(
   monthISO: string,
   newExpenseAmount: number,
 ): Promise<OverBudgetCheck> {
   const budget = await getMonthlyBudget(monthISO);
-  const expenseBudget = budget.breakdown.expenses;
-  const remaining = budget.expensesRemaining;
-  if (!budget.allocation.isLocked) {
+  const plan = await buildMonthlyPlan(monthISO, budget.incomeTotal);
+  const expenseBudget = plan.totalBudget;
+  const remaining = expenseBudget - budget.expensesLogged;
+  if (expenseBudget <= 0) {
     return { isOver: false, overage: 0, remaining, expenseBudget };
   }
   const after = budget.expensesLogged + newExpenseAmount;

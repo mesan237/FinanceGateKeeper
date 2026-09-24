@@ -49,7 +49,7 @@ export function TransactionsScreen() {
       <AddTransactionSheet
         visible={sheetOpen}
         onClose={() => setSheetOpen(false)}
-        onExpenseSaved={() => setReloadToken((t) => t + 1)}
+        onSaved={() => setReloadToken((t) => t + 1)}
       />
     </View>
   );

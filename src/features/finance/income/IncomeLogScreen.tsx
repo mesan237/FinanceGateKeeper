@@ -9,11 +9,11 @@ import { IncomeEntryPanel } from './IncomeEntryPanel';
 
 /**
  * Income entry route: a header plus the shared `IncomeEntryPanel`. On a
- * successful save it navigates to `/income/allocate` so the user can confirm the
- * allocation breakdown — the canonical log → allocate → confirm → dashboard
- * flow. The form body lives in the panel, shared with the unified
- * `AddTransactionSheet`. Wrapped in `KeyboardAwareForm` so the account picker
- * and Save button stay reachable once the keyboard is up.
+ * successful save it returns to Transactions — since VS-34 there is no
+ * allocation step between logging income and it being recorded. The form body
+ * lives in the panel, shared with the unified `AddTransactionSheet`. Wrapped in
+ * `KeyboardAwareForm` so the account picker and Save button stay reachable once
+ * the keyboard is up.
  */
 export function IncomeLogScreen() {
   const router = useRouter();
@@ -22,14 +22,7 @@ export function IncomeLogScreen() {
     <View style={styles.container}>
       <ScreenHeader title="Log Income" cancelLabel="Cancel" />
       <KeyboardAwareForm>
-        <IncomeEntryPanel
-          onSaved={(amount, month, id) =>
-            router.push({
-              pathname: '/income/allocate',
-              params: { amount: String(amount), month, incomeId: String(id) },
-            })
-          }
-        />
+        <IncomeEntryPanel onSaved={() => router.replace('/transactions')} />
       </KeyboardAwareForm>
     </View>
   );

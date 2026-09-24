@@ -21,8 +21,6 @@ const MOCK_STATE: DashboardState = {
   budget: null,
   cashflow: null,
   dailyPace: null,
-  funds: null,
-  topProject: null,
 };
 
 describe('useDashboard', () => {

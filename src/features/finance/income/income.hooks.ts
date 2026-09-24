@@ -92,9 +92,8 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
 
 /**
  * Form state for the income detail/edit screen (VS-20). Loads the row, exposes
- * pre-filled field state plus the `isAllocated` lock (the screen disables
- * amount/date when set — the service enforces the same rule), and boolean
- * `update`/`remove` results so the caller can navigate on success. Mirrors
+ * pre-filled field state and boolean `update`/`remove` results so the caller
+ * can navigate on success. Mirrors
  * `useExpenseEdit`, minus the original-value diffing (no over-budget check on
  * income).
  */
@@ -104,7 +103,6 @@ export function useIncomeEdit(id: number) {
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
   const [accountId, setAccountId] = useState<number | null>(null);
-  const [isAllocated, setIsAllocated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,7 +124,6 @@ export function useIncomeEdit(id: number) {
         setNote(income.note ?? '');
         setDate(income.date);
         setAccountId(income.accountId);
-        setIsAllocated(income.allocationStatus === 'allocated');
         setError(null);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load income.');
@@ -187,7 +184,6 @@ export function useIncomeEdit(id: number) {
     setDate,
     accountId,
     setAccountId,
-    isAllocated,
     loading,
     notFound,
     canSubmit,

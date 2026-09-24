@@ -62,7 +62,7 @@ function renderSheet(overrides: Partial<React.ComponentProps<typeof AddTransacti
   const props = {
     visible: true,
     onClose: jest.fn(),
-    onExpenseSaved: jest.fn(),
+    onSaved: jest.fn(),
     ...overrides,
   };
   render(<AddTransactionSheet {...props} />);
@@ -94,11 +94,11 @@ describe('AddTransactionSheet', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(mockedCreateExpense).toHaveBeenCalledTimes(1));
-    expect(props.onExpenseSaved).toHaveBeenCalledTimes(1);
+    expect(props.onSaved).toHaveBeenCalledTimes(1);
     expect(props.onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('switches to Income and routes to allocation after saving', async () => {
+  it('switches to Income, saves, and closes without an allocation detour (VS-34)', async () => {
     const props = renderSheet();
 
     fireEvent.press(screen.getByTestId('add-segment-income'));
@@ -107,8 +107,9 @@ describe('AddTransactionSheet', () => {
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(mockedCreateIncome).toHaveBeenCalledTimes(1));
+    expect(props.onSaved).toHaveBeenCalledTimes(1);
     expect(props.onClose).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith(
+    expect(mockPush).not.toHaveBeenCalledWith(
       expect.objectContaining({ pathname: '/income/allocate' }),
     );
   });
@@ -129,7 +130,7 @@ describe('AddTransactionSheet', () => {
     const props = {
       visible: true,
       onClose: jest.fn(),
-      onExpenseSaved: jest.fn(),
+      onSaved: jest.fn(),
     };
     const { rerender } = render(<AddTransactionSheet {...props} />);
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
@@ -180,7 +181,7 @@ describe('AddTransactionSheet', () => {
       const props = {
         visible: true,
         onClose: jest.fn(),
-        onExpenseSaved: jest.fn(),
+        onSaved: jest.fn(),
         initialSegment: 'income' as const,
       };
       const { rerender } = render(<AddTransactionSheet {...props} />);

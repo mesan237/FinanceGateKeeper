@@ -18,12 +18,11 @@ import { useIncomeLog, type ControlledField } from './income.hooks';
 
 export interface IncomeEntryPanelProps {
   /**
-   * Called after the income is saved, with the persisted amount, its month
-   * (`YYYY-MM`), and the new row id — captured before the hook resets the form.
-   * The caller routes to the allocation flow (passing the id so Confirm can mark
-   * the row allocated) or closes a sheet.
+   * Called after the income is saved. The caller returns to Transactions or
+   * closes a sheet — since VS-34 nothing downstream needs the saved row, so no
+   * amount/month/id is passed.
    */
-  onSaved: (amount: number, month: string, id: number) => void;
+  onSaved: () => void;
   /** Lift the amount to the parent so it survives the panel unmounting. */
   amount?: ControlledField;
   /** Lift the note to the parent so it survives the panel unmounting. */
@@ -54,14 +53,10 @@ export function IncomeEntryPanel({
   }, [defaultAccountId, log.accountId]);
 
   const handleSave = async () => {
-    // Capture before submit() — the hook resets the form on success.
-    const persistedAmount = Math.trunc(Number(log.amount));
-    const persistedMonth = log.date.slice(0, 7);
-
     setSaving(true);
     try {
       const id = await log.submit();
-      if (id !== null) onSaved(persistedAmount, persistedMonth, id);
+      if (id !== null) onSaved();
     } finally {
       setSaving(false);
     }

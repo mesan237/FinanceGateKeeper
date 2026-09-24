@@ -38,16 +38,10 @@ function buildReport(overrides: Partial<MonthlyReportData> = {}): MonthlyReportD
     month: '2026-06',
     incomeTotal: 400000,
     expensePerformance: { planned: 260000, actual: 53000, remaining: 207000 },
-    allocatedBreakdown: { emergencyFund: 40000, savings: 35000, projects: 60000, expenses: 260000 },
     categoryBreakdown: [
       { categoryId: 1, categoryLabel: 'Food', amount: 33000, pct: 62.3 },
       { categoryId: 2, categoryLabel: 'Transport', amount: 20000, pct: 37.7 },
     ],
-    fundProgress: [
-      { type: 'emergency', current: 40000, target: 100000, pct: 40 },
-      { type: 'savings', current: 25000, target: null, pct: null },
-    ],
-    projectProgress: [{ id: 1, name: 'Laptop', funded: 250000, target: 500000, pct: 50 }],
     debtSummary: { totalLent: 30000, totalOwed: 12000 },
     comparison: null,
     suggestions: [],
@@ -118,13 +112,6 @@ describe('MonthlyReport', () => {
     // 62.3% rounds to 62; the row shows the "% of total" sub-label.
     expect(screen.getByText('62% of total')).toBeTruthy();
     expect(screen.getByTestId('report-category-icon-1')).toBeTruthy();
-  });
-
-  it('renders fund progress with a funded percentage and target', async () => {
-    render(<MonthlyReport />);
-    await screen.findByText('June 2026');
-    expect(screen.getByText('40% funded')).toBeTruthy();
-    expect(screen.getByText('of 100 000 FCFA')).toBeTruthy();
   });
 
   it('renders the optimization suggestions empty state', async () => {

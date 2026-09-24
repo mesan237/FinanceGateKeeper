@@ -2,8 +2,7 @@ export type NotificationType =
   | 'dailyReminder'
   | 'zeroDayCheck'
   | 'overBudget'
-  | 'debtDueDate'
-  | 'projectTimeline';
+  | 'debtDueDate';
 
 /**
  * A repeating calendar trigger — fires every day at `hour`:`minute` local time.

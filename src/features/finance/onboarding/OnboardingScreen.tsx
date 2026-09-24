@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Typography } from '@/components/Typography';
-import { BUCKET_LABELS } from '@/constants/allocation';
 import { useThemeMode, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface OnboardingScreenProps {
@@ -16,32 +15,26 @@ export interface OnboardingScreenProps {
 interface Panel {
   title: string;
   body: string;
-  /** Optional chip row (used to preview the allocation buckets). */
+  /** Optional chip row (used to preview what the app tracks). */
   chips?: string[];
 }
 
-const BUCKET_CHIPS = [
-  BUCKET_LABELS.emergency_fund,
-  BUCKET_LABELS.savings,
-  BUCKET_LABELS.projects,
-  BUCKET_LABELS.expenses,
-];
+const TRACK_CHIPS = ['Expenses', 'Income', 'Budgets', 'Debts'];
 
-// The intro panels. Copy is deliberately jargon-light — the terms it introduces
-// (buckets, Learning/Control mode) are the ones the rest of the app assumes.
+// The intro panels. Copy is deliberately jargon-light.
 const PANELS: Panel[] = [
   {
     title: 'Track every franc',
-    body: 'Log each income and expense as it happens. That daily habit is the whole game — every budget, fund, and goal builds on it.',
+    body: 'Log each income and expense as it happens. That daily habit is the whole game — everything else builds on it.',
+    chips: TRACK_CHIPS,
   },
   {
-    title: 'Income splits itself',
-    body: 'Every time you add income, Finance Gatekeeper divides it across four buckets automatically, so money is set aside before you can spend it.',
-    chips: BUCKET_CHIPS,
+    title: 'Budget by category',
+    body: 'Give each category a monthly envelope. Finance Gatekeeper paces it against the day of the month, so you know whether you are ahead or behind before the month ends.',
   },
   {
-    title: 'Start in Learning mode',
-    body: "You'll begin with just logging — no budgets to set up. When you're ready for allocation and budget tracking, switch to Control mode in Settings.",
+    title: 'See where it went',
+    body: 'Reports break the month down by category and compare it with the one before, so the pattern shows up on its own.',
   },
   {
     title: "You're all set",

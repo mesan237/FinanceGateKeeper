@@ -1,7 +1,6 @@
 // Types for the reports slice. Reports is a read-only aggregation layer over the
 // other features, so these shapes are self-contained — no cross-feature type
-// imports (a structurally identical `AllocatedBreakdown` is declared locally
-// rather than importing `AllocationBreakdown` from budget).
+// imports.
 
 /** A single category's contribution to a spending total. */
 export interface CategorySpend {
@@ -31,37 +30,13 @@ export interface WeeklyReport {
   peakDay: DaySpend | null;
 }
 
-/** Planned amounts per allocation bucket for the month. */
-export interface AllocatedBreakdown {
-  emergencyFund: number;
-  savings: number;
-  projects: number;
-  expenses: number;
-}
-
 export interface ExpensePerformance {
-  /** breakdown.expenses — allocated for expenses this month. */
+  /** The month's spending budget: explicit total when set, else income. */
   planned: number;
   /** Total expenses logged. */
   actual: number;
   /** planned − actual (may be negative). */
   remaining: number;
-}
-
-export interface FundSummary {
-  type: string; // 'emergency' | 'savings'
-  current: number;
-  target: number | null;
-  /** null when the fund has no target. */
-  pct: number | null;
-}
-
-export interface ProjectSummary {
-  id: number;
-  name: string;
-  funded: number;
-  target: number;
-  pct: number; // 0–100
 }
 
 export interface DebtSummaryData {
@@ -95,10 +70,7 @@ export interface MonthlyReport {
   month: string;
   incomeTotal: number;
   expensePerformance: ExpensePerformance;
-  allocatedBreakdown: AllocatedBreakdown;
   categoryBreakdown: CategorySpend[];
-  fundProgress: FundSummary[];
-  projectProgress: ProjectSummary[];
   debtSummary: DebtSummaryData;
   /** null when there is no income/expense data for the previous month. */
   comparison: MonthComparison | null;

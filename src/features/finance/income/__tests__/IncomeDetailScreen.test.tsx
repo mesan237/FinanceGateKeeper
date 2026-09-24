@@ -94,97 +94,45 @@ describe('IncomeDetailScreen — pending income', () => {
     expect(mockBack).not.toHaveBeenCalled();
   });
 
-  it('Allocate now pushes the allocation route with amount, month, and income id', async () => {
-    render(<IncomeDetailScreen incomeId={9} />);
-
-    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
-    fireEvent.press(screen.getByTestId('allocate-now'));
-
-    await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/income/allocate',
-        params: { amount: '350000', month: '2026-06', incomeId: '9' },
-      }),
-    );
-  });
-
-  it('Allocate now persists in-form edits before navigating', async () => {
-    render(<IncomeDetailScreen incomeId={9} />);
-
-    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
-    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '400000');
-    fireEvent.press(screen.getByTestId('allocate-now'));
-
-    // The edited amount must be saved to the row before the allocation flow
-    // deposits from it — otherwise deposits and the stored row desynchronise.
-    await waitFor(() =>
-      expect(mockUpdateIncome).toHaveBeenCalledWith(9, expect.objectContaining({ amount: 400000 })),
-    );
-    await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/income/allocate',
-        params: { amount: '400000', month: '2026-06', incomeId: '9' },
-      }),
-    );
-  });
-
-  it('Allocate now does not navigate when the pre-allocation save fails', async () => {
-    mockUpdateIncome.mockRejectedValue(new Error('Income amount must be a positive integer (FCFA).'));
-    render(<IncomeDetailScreen incomeId={9} />);
-
-    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
-    fireEvent.press(screen.getByTestId('allocate-now'));
-
-    expect(
-      await screen.findByText('Income amount must be a positive integer (FCFA).'),
-    ).toBeTruthy();
-    expect(mockPush).not.toHaveBeenCalled();
-  });
 });
 
-describe('IncomeDetailScreen — allocated income', () => {
+describe('IncomeDetailScreen — a row logged earlier', () => {
   beforeEach(() => {
     mockGetIncomeById.mockResolvedValue(ALLOCATED_INCOME);
   });
 
-  it('renders amount/date read-only and hides Delete and Allocate-now', async () => {
+  it('keeps amount and date editable, and still offers Delete (VS-34)', async () => {
+    // These used to render read-only behind an 'allocated-lock' block, because
+    // allocation had moved money into funds and projects. Nothing does now.
     render(<IncomeDetailScreen incomeId={9} />);
 
-    await waitFor(() => expect(screen.getByTestId('allocated-lock')).toBeTruthy());
-    expect(screen.queryByLabelText('Amount in FCFA')).toBeNull();
-    expect(screen.queryByTestId('income-detail-date')).toBeNull();
-    expect(screen.queryByTestId('delete-income')).toBeNull();
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
+    expect(screen.getByTestId('income-detail-date')).toBeTruthy();
+    expect(screen.getByTestId('delete-income')).toBeTruthy();
+    expect(screen.queryByTestId('allocated-lock')).toBeNull();
     expect(screen.queryByTestId('allocate-now')).toBeNull();
-    expect(screen.getByText('350 000 FCFA')).toBeTruthy();
   });
 
-  it('still saves a metadata patch (same amount and date)', async () => {
+  it('saves an amount change', async () => {
     render(<IncomeDetailScreen incomeId={9} />);
 
-    await waitFor(() => expect(screen.getByTestId('allocated-lock')).toBeTruthy());
-    fireEvent.changeText(screen.getByLabelText('Note'), 'recategorised');
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '420000');
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>
-      expect(mockUpdateIncome).toHaveBeenCalledWith(
-        9,
-        expect.objectContaining({ amount: 350000, date: '2026-06-10', note: 'recategorised' }),
-      ),
+      expect(mockUpdateIncome).toHaveBeenCalledWith(9, expect.objectContaining({ amount: 420000 })),
     );
   });
 
   it('surfaces a service rejection inline without navigating', async () => {
-    mockUpdateIncome.mockRejectedValue(
-      new Error('Allocated income cannot change amount or date.'),
-    );
+    mockUpdateIncome.mockRejectedValueOnce(new Error('Database is locked.'));
     render(<IncomeDetailScreen incomeId={9} />);
 
-    await waitFor(() => expect(screen.getByTestId('allocated-lock')).toBeTruthy());
+    await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
-    expect(
-      await screen.findByText('Allocated income cannot change amount or date.'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Database is locked.')).toBeTruthy();
     expect(mockBack).not.toHaveBeenCalled();
   });
 });

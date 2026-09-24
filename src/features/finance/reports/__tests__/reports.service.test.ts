@@ -2,8 +2,6 @@ import type { Expense } from '@/features/finance/expenses/expenses.types';
 import type { Income } from '@/features/finance/income/income.types';
 import type { Category } from '@/features/finance/expenses/expenses.types';
 import type { MonthlyBudget } from '@/features/finance/budget/budget.types';
-import type { Fund } from '@/features/finance/funds/funds.types';
-import type { Project } from '@/features/finance/projects/projects.types';
 import type { OutstandingTotals } from '@/features/finance/debt/debt.types';
 
 // All upstream service modules are mocked — reports.service is pure aggregation.
@@ -17,14 +15,8 @@ jest.mock('@/features/finance/income/income.service', () => ({
 jest.mock('@/features/finance/budget/budget.service', () => ({
   getMonthlyBudget: jest.fn(),
 }));
-jest.mock('@/features/finance/funds/funds.service', () => ({
-  getOrCreateFunds: jest.fn(),
-  getFundProgress: jest.requireActual<typeof import('@/features/finance/funds/funds.service')>(
-    '@/features/finance/funds/funds.service',
-  ).getFundProgress,
-}));
-jest.mock('@/features/finance/projects/projects.service', () => ({
-  getProjects: jest.fn(),
+jest.mock('@/features/finance/budget/budget.plan', () => ({
+  buildMonthlyPlan: jest.fn(),
 }));
 jest.mock('@/features/finance/debt/debt.service', () => ({
   getOutstandingTotals: jest.fn(),
@@ -40,8 +32,7 @@ import {
 import * as expensesService from '@/features/finance/expenses/expenses.service';
 import * as incomeService from '@/features/finance/income/income.service';
 import * as budgetService from '@/features/finance/budget/budget.service';
-import * as fundsService from '@/features/finance/funds/funds.service';
-import * as projectsService from '@/features/finance/projects/projects.service';
+import * as budgetPlan from '@/features/finance/budget/budget.plan';
 import * as debtService from '@/features/finance/debt/debt.service';
 
 const mockExpensesByRange = expensesService.getExpensesByDateRange as jest.MockedFunction<
@@ -56,11 +47,8 @@ const mockIncomeByRange = incomeService.getIncomeByDateRange as jest.MockedFunct
 const mockMonthlyBudget = budgetService.getMonthlyBudget as jest.MockedFunction<
   typeof budgetService.getMonthlyBudget
 >;
-const mockFunds = fundsService.getOrCreateFunds as jest.MockedFunction<
-  typeof fundsService.getOrCreateFunds
->;
-const mockProjects = projectsService.getProjects as jest.MockedFunction<
-  typeof projectsService.getProjects
+const mockBuildPlan = budgetPlan.buildMonthlyPlan as jest.MockedFunction<
+  typeof budgetPlan.buildMonthlyPlan
 >;
 const mockDebt = debtService.getOutstandingTotals as jest.MockedFunction<
   typeof debtService.getOutstandingTotals
@@ -158,71 +146,24 @@ describe('getWeeklyReport', () => {
 const BUDGET: MonthlyBudget = {
   month: '2026-06',
   incomeTotal: 400000,
-  allocation: {
-    id: 1,
-    month: '2026-06',
-    emergencyFundPct: 10,
-    savingsPct: 10,
-    projectsPct: 15,
-    expensesPct: 65,
-    priorityOrder: ['emergency_fund', 'savings', 'projects', 'expenses'],
-    isLocked: true,
-    createdAt: '2026-06-01T00:00:00.000Z',
-  },
-  breakdown: { emergencyFund: 40000, savings: 40000, projects: 60000, expenses: 260000 },
   expensesLogged: 50000,
-  expensesRemaining: 210000,
+  expensesRemaining: 350000,
 };
-
-const FUNDS: Fund[] = [
-  {
-    id: 1,
-    type: 'emergency',
-    targetAmount: 100000,
-    currentAmount: 40000,
-    isTargetMet: false,
-    createdAt: '2026-06-01T00:00:00.000Z',
-  },
-  {
-    id: 2,
-    type: 'savings',
-    targetAmount: null,
-    currentAmount: 25000,
-    isTargetMet: false,
-    createdAt: '2026-06-01T00:00:00.000Z',
-  },
-];
-
-const PROJECTS: Project[] = [
-  {
-    id: 1,
-    name: 'Laptop',
-    targetAmount: 500000,
-    fundedAmount: 250000,
-    priorityRank: 1,
-    deadline: null,
-    status: 'active',
-    createdAt: '2026-06-01T00:00:00.000Z',
-  },
-  {
-    id: 2,
-    name: 'Done thing',
-    targetAmount: 10000,
-    fundedAmount: 10000,
-    priorityRank: 2,
-    deadline: null,
-    status: 'completed',
-    createdAt: '2026-06-01T00:00:00.000Z',
-  },
-];
 
 const DEBT: OutstandingTotals = { lent: 30000, owed: 12000 };
 
 describe('getMonthlyReport', () => {
   beforeEach(() => {
     mockMonthlyBudget.mockResolvedValue(BUDGET);
-    mockFunds.mockResolvedValue(FUNDS);
-    mockProjects.mockResolvedValue(PROJECTS);
+    mockBuildPlan.mockResolvedValue({
+      month: '2026-06',
+      totalBudget: 260000,
+      isExplicit: true,
+      derivedTotal: 400000,
+      assigned: 260000,
+      unassigned: 0,
+      isOverAllocated: false,
+    });
     mockDebt.mockResolvedValue(DEBT);
   });
 
@@ -253,11 +194,10 @@ describe('getMonthlyReport', () => {
     expect(pctSum).toBeCloseTo(100, 5);
   });
 
-  it('excludes completed projects from projectProgress', async () => {
+  it('plans against the resolved budget, not raw income', async () => {
     mockExpensesByRange.mockResolvedValue([]);
     const report = await getMonthlyReport('2026-06');
-    expect(report.projectProgress.map((p) => p.id)).toEqual([1]);
-    expect(report.projectProgress[0].pct).toBe(50);
+    expect(report.expensePerformance.planned).toBe(260000);
   });
 });
 

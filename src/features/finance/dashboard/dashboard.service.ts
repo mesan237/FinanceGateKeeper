@@ -1,7 +1,6 @@
+import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
 import * as budgetService from '@/features/finance/budget/budget.service';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
-import * as fundsService from '@/features/finance/funds/funds.service';
-import * as projectsService from '@/features/finance/projects/projects.service';
 import { toISODate } from '@/utils/formatDate';
 import { daysInMonth, daysRemainingInMonth } from '@/utils/monthMath';
 
@@ -9,9 +8,7 @@ import type {
   BudgetSummary,
   Cashflow,
   DashboardState,
-  FundsSummary,
   PaceLevel,
-  TopProject,
 } from './dashboard.types';
 
 /**
@@ -106,24 +103,21 @@ export async function getDashboardSnapshot(
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
   const todaySpending = spendingTrend[spendingTrend.length - 1];
 
-  const [monthlyBudget, allFunds, projects] = await Promise.all([
-    budgetService.getMonthlyBudget(monthISO),
-    fundsService.getOrCreateFunds(),
-    projectsService.getProjects(),
-  ]);
+  const monthlyBudget = await budgetService.getMonthlyBudget(monthISO);
+  // The same resolution the Budget tab uses — an explicit total when the user
+  // set one, the month's income otherwise. Reading `incomeTotal` directly here
+  // would make the dashboard hero disagree with the tab it summarises.
+  const plan = await buildMonthlyPlan(monthISO, monthlyBudget.incomeTotal);
+  const expenseBudget = plan.totalBudget;
 
   const daysRemaining = daysRemainingInMonth(monthISO, todayISO);
 
   const budget: BudgetSummary = {
-    expenseBudget: monthlyBudget.breakdown.expenses,
+    expenseBudget,
     expensesLogged: monthlyBudget.expensesLogged,
-    expensesRemaining: monthlyBudget.expensesRemaining,
-    spentPct: spentPct(monthlyBudget.expensesLogged, monthlyBudget.breakdown.expenses),
-    pace: paceIndicator(
-      monthlyBudget.expensesLogged,
-      monthlyBudget.breakdown.expenses,
-      daysRemaining,
-    ),
+    expensesRemaining: expenseBudget - monthlyBudget.expensesLogged,
+    spentPct: spentPct(monthlyBudget.expensesLogged, expenseBudget),
+    pace: paceIndicator(monthlyBudget.expensesLogged, expenseBudget, daysRemaining),
   };
 
   const cashflow: Cashflow = {
@@ -132,23 +126,7 @@ export async function getDashboardSnapshot(
     net: monthlyBudget.incomeTotal - monthlyBudget.expensesLogged,
   };
 
-  const dailyPace = dailyBudgetPace(monthlyBudget.breakdown.expenses, monthISO);
+  const dailyPace = dailyBudgetPace(expenseBudget, monthISO);
 
-  const fundProgressList = allFunds.map(fundsService.getFundProgress);
-  const emergencyProgress = fundProgressList.find((f) => f.type === 'emergency');
-  const savingsProgress = fundProgressList.find((f) => f.type === 'savings');
-  if (!emergencyProgress || !savingsProgress) {
-    throw new Error('Expected both fund types to exist after getOrCreateFunds');
-  }
-  const funds: FundsSummary = { emergency: emergencyProgress, savings: savingsProgress };
-
-  const activeProject = projects.find((p) => p.status === 'active');
-  const topProject: TopProject | null = activeProject
-    ? {
-        project: activeProject,
-        pct: Math.round((activeProject.fundedAmount / activeProject.targetAmount) * 100),
-      }
-    : null;
-
-  return { todaySpending, spendingTrend, zeroDay, budget, cashflow, dailyPace, funds, topProject };
+  return { todaySpending, spendingTrend, zeroDay, budget, cashflow, dailyPace };
 }

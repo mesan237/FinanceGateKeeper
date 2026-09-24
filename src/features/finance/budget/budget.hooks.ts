@@ -2,107 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { currentMonthISO } from '@/utils/formatDate';
 
-import { depositToFund, getOrCreateFunds } from '@/features/finance/funds/funds.service';
-import type { Fund } from '@/features/finance/funds/funds.types';
-import * as incomeService from '@/features/finance/income/income.service';
-import type { Income } from '@/features/finance/income/income.types';
-import { contributeManually, getProjects } from '@/features/finance/projects/projects.service';
-import type { Project } from '@/features/finance/projects/projects.types';
-
 import { checkOverBudget } from './budget.plan';
 import * as budgetService from './budget.service';
-import { redistributeEmergencyPct } from './budget.service';
-import type {
-  Allocation,
-  AllocationDestination,
-  AllocationDraft,
-  MonthlyBudget,
-  OverBudgetCheck,
-} from './budget.types';
-
-/**
- * Loads (and auto-creates on first call) the allocation for `monthISO` and
- * exposes save/lock/refresh actions. `save` and `lock` swallow service errors
- * into the `error` field rather than re-throwing into the UI, mirroring how
- * `useIncomeLog` handles `createIncome` failures.
- */
-export function useAllocation(monthISO: string) {
-  const [allocation, setAllocation] = useState<Allocation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const row = await budgetService.getOrCreateCurrentAllocation(monthISO);
-      setAllocation(row);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load allocation.');
-    } finally {
-      setLoading(false);
-    }
-  }, [monthISO]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const save = useCallback(
-    async (draft: AllocationDraft): Promise<void> => {
-      try {
-        await budgetService.updateAllocation(monthISO, draft);
-        const fresh = await budgetService.getAllocation(monthISO);
-        if (fresh) setAllocation(fresh);
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to save allocation.');
-      }
-    },
-    [monthISO],
-  );
-
-  const lock = useCallback(async (): Promise<void> => {
-    try {
-      await budgetService.lockAllocation(monthISO);
-      const fresh = await budgetService.getAllocation(monthISO);
-      if (fresh) setAllocation(fresh);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to lock allocation.');
-    }
-  }, [monthISO]);
-
-  return { allocation, loading, error, save, lock, refresh };
-}
-
-/**
- * Reports whether this is the user's very first allocation — i.e. they have
- * never confirmed (locked) an allocation for any month. `null` while the check
- * is in flight. The allocation screen uses it to route first-time users to set
- * percentages before showing a breakdown (VS-25). On error it resolves `false`
- * so a transient failure never traps the user on the settings redirect.
- */
-export function useIsFirstEverAllocation(): boolean | null {
-  const [isFirst, setIsFirst] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    budgetService
-      .hasConfirmedAnyAllocation()
-      .then((confirmed) => {
-        if (active) setIsFirst(!confirmed);
-      })
-      .catch(() => {
-        if (active) setIsFirst(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return isFirst;
-}
+import type { MonthlyBudget, OverBudgetCheck } from './budget.types';
 
 /**
  * Loads the composed `MonthlyBudget` for `monthISO`. `refresh()` is
@@ -135,76 +37,9 @@ export function useBudgetStatus(monthISO: string) {
 }
 
 /**
- * Loads the unallocated income pool (VS-19) and exposes `allocate`, which sends
- * one held income to a chosen destination and flips it to `allocated`. A `fund`
- * destination deposits and, when an emergency deposit first meets the target,
- * triggers redistribution once (mirrors the allocation-screen Confirm flow). A
- * `project` destination records a manual contribution. An `expense` destination
- * deposits nothing — marking the income allocated is what lets it count toward
- * the expense budget. Service errors land in `error` rather than throwing.
- */
-export function useUnallocatedPool() {
-  const [pending, setPending] = useState<Income[]>([]);
-  const [funds, setFunds] = useState<Fund[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [pendingRows, fundRows, projectRows] = await Promise.all([
-        incomeService.getPendingIncome(),
-        getOrCreateFunds(),
-        getProjects(),
-      ]);
-      setPending(pendingRows);
-      setFunds(fundRows);
-      // Only active projects can receive a contribution.
-      setProjects(projectRows.filter((p) => p.status === 'active'));
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load the pool.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const allocate = useCallback(
-    async (income: Income, destination: AllocationDestination): Promise<void> => {
-      try {
-        const reason = `Held income ${income.date}`;
-        if (destination.kind === 'fund') {
-          const result = await depositToFund(destination.fundType, income.amount, reason);
-          if (destination.fundType === 'emergency' && result.targetNewlyMet) {
-            await redistributeEmergencyPct(currentMonthISO());
-          }
-        } else if (destination.kind === 'project') {
-          await contributeManually(destination.projectId, income.amount);
-        }
-        await incomeService.markIncomeAllocated(income.id);
-        await refresh();
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to allocate.');
-      }
-    },
-    [refresh],
-  );
-
-  const total = pending.reduce((sum, i) => sum + i.amount, 0);
-
-  return { pending, total, funds, projects, loading, error, allocate, refresh };
-}
-
-/**
  * Imperative pre-save guard for the expense screens. Exposes `check(amount)`,
  * which asks the budget service whether logging `amount` this month would
- * exceed the confirmed expense allocation. Not a mount-loading hook — callers
+ * exceed the month's spending budget. Not a mount-loading hook — callers
  * run it on demand at save time, with the typed amount. `monthISO` defaults to
  * the current month.
  */

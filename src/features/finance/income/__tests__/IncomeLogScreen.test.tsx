@@ -2,8 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import React from 'react';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, replace: jest.fn() }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 jest.mock('@/features/finance/income/income.service', () => ({
@@ -60,24 +61,17 @@ describe('IncomeLogScreen', () => {
     );
   });
 
-  it('navigates to /income/allocate with amount, month and incomeId after a successful save', async () => {
+  it('returns to Transactions after a successful save — no allocation step (VS-34)', async () => {
     render(<IncomeLogScreen />);
 
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
-    // Pick a fixed date through the DateField's picker so the derived month is
-    // deterministic regardless of when the suite runs.
     fireEvent.press(screen.getByTestId('income-date'));
     fireEvent(screen.getByTestId('date-picker'), 'change', { type: 'set' }, new Date(2026, 5, 12));
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
-    await waitFor(() =>
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: '/income/allocate',
-        // createIncome mock resolves to id 1.
-        params: { amount: '350000', month: '2026-06', incomeId: '1' },
-      }),
-    );
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/transactions'));
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it('does not navigate when the save fails', async () => {
