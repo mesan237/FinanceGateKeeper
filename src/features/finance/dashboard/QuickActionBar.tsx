@@ -4,30 +4,50 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { RADIUS } from '@/constants/layout';
+import { RADIUS, SPACING } from '@/constants/layout';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
-import { useTheme } from '@/theme';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
 
-interface ActionButtonProps {
+interface LogTileProps {
   icon: IconName;
-  label: string;
+  title: string;
+  subtitle: string;
+  accessibilityLabel: string;
   onPress: () => void;
   tint: string;
-  iconColor: string;
-  testID?: string;
+  accent: string;
+  testID: string;
 }
 
-function ActionButton({ icon, label, onPress, tint, iconColor, testID }: ActionButtonProps) {
+/**
+ * One half of the quick-log pair: a tinted tile carrying the direction arrow,
+ * what it records, and where the money goes. Sized for a thumb rather than the
+ * toolbar pill it replaced.
+ */
+function LogTile({
+  icon,
+  title,
+  subtitle,
+  accessibilityLabel,
+  onPress,
+  tint,
+  accent,
+  testID,
+}: LogTileProps) {
+  const styles = useThemedStyles(makeStyles);
+
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, { backgroundColor: tint }, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.tile, { backgroundColor: tint }, pressed && styles.pressed]}
     >
-      <Icon name={icon} size={ICON_SIZE.md} color={iconColor} />
-      <Typography style={[styles.buttonLabel, { color: iconColor }]}>{label}</Typography>
+      <Icon name={icon} size={ICON_SIZE.lg} color={accent} />
+      <Typography style={[styles.tileTitle, { color: accent }]}>{title}</Typography>
+      <Typography style={[styles.tileSubtitle, { color: accent }]}>{subtitle}</Typography>
     </Pressable>
   );
 }
@@ -42,10 +62,13 @@ interface QuickActionBarProps {
 }
 
 /**
- * Sticky action bar with shortcuts to the three most common actions.
- * "Log Expense" / "Log Income" open the same AddTransactionSheet the
- * Transactions FAB uses (VS-26). The "No spending" action is hidden once the
- * day has activity.
+ * The dashboard's quick-log section: the two log tiles side by side with the
+ * zero-day confirmation beneath them. Scrolls with the rest of the dashboard —
+ * it is a section of the page, not a bar pinned above the tab strip, which left
+ * the actions crowded against the system nav buttons.
+ *
+ * The tiles open the same AddTransactionSheet the Transactions FAB uses
+ * (VS-26). The zero-day action is hidden once the day has activity.
  */
 export function QuickActionBar({
   zeroDay,
@@ -53,61 +76,96 @@ export function QuickActionBar({
   onLogExpense,
   onLogIncome,
 }: QuickActionBarProps) {
+  const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const showZeroDay = !zeroDay.hasExpenses && !zeroDay.zeroDayConfirmed;
 
   return (
-    <View style={styles.bar}>
-      <ActionButton
-        testID="quick-log-expense"
-        icon="expense"
-        label="Log Expense"
-        onPress={onLogExpense}
-        tint={c.DANGER_LIGHT}
-        iconColor={c.DANGER_TEXT}
-      />
-      <ActionButton
-        testID="quick-log-income"
-        icon="income"
-        label="Log Income"
-        onPress={onLogIncome}
-        tint={c.PRIMARY_LIGHT}
-        iconColor={c.PRIMARY_GREEN}
-      />
-      {showZeroDay && (
-        <ActionButton
-          testID="quick-confirm-zero-day"
-          icon="zeroDay"
-          label="No spending"
-          onPress={onConfirmZeroDay}
-          tint={c.SURFACE_MUTED}
-          iconColor={c.TEXT_MUTED}
+    <View style={styles.section}>
+      <Typography variant="label">Quick log</Typography>
+
+      <View style={styles.tiles}>
+        <LogTile
+          testID="quick-log-expense"
+          icon="expense"
+          title="Expense"
+          subtitle="Money out"
+          accessibilityLabel="Log an expense"
+          onPress={onLogExpense}
+          tint={c.DANGER_LIGHT}
+          accent={c.DANGER_TEXT}
         />
+        <LogTile
+          testID="quick-log-income"
+          icon="income"
+          title="Income"
+          subtitle="Money in"
+          accessibilityLabel="Log income"
+          onPress={onLogIncome}
+          tint={c.PRIMARY_LIGHT}
+          accent={c.PRIMARY_GREEN}
+        />
+      </View>
+
+      {showZeroDay && (
+        <Pressable
+          testID="quick-confirm-zero-day"
+          accessibilityRole="button"
+          accessibilityLabel="Confirm I spent nothing today"
+          onPress={onConfirmZeroDay}
+          style={({ pressed }) => [styles.zeroDay, pressed && styles.pressed]}
+        >
+          <Icon name="zeroDay" size={ICON_SIZE.md} color={c.TEXT_MUTED} />
+          <Typography style={styles.zeroDayLabel}>I spent nothing today</Typography>
+        </Pressable>
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    gap: 10,
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  section: {
+    gap: SPACING.sm,
   },
-  button: {
-    flex: 1,
+  tiles: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    paddingHorizontal: 8,
+    gap: SPACING.md,
+  },
+  tile: {
+    flex: 1,
+    gap: SPACING.xs,
+    padding: SPACING.md,
     borderRadius: RADIUS.md,
   },
   pressed: {
     opacity: 0.75,
   },
-  buttonLabel: {
-    fontSize: 13,
+  tileTitle: {
+    fontSize: 16,
+    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
+    marginTop: SPACING.xs,
+  },
+  tileSubtitle: {
+    fontSize: 12,
+    fontFamily: FONT_FAMILY.WORK_SANS_REGULAR,
+    // The subtitle shares the tile's accent so the pair reads as one colour,
+    // dimmed enough that the title still leads.
+    opacity: 0.75,
+  },
+  zeroDay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: c.BORDER_STRONG,
+  },
+  zeroDayLabel: {
+    color: c.TEXT_SECONDARY,
+    fontSize: 14,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

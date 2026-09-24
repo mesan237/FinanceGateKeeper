@@ -33,6 +33,19 @@ describe('QuickActionBar', () => {
     expect(screen.getByTestId('quick-log-income')).toBeTruthy();
   });
 
+  it('titles the block so it reads as a section of the page, not a toolbar', () => {
+    renderBar();
+    expect(screen.getByText('Quick log')).toBeTruthy();
+  });
+
+  it('names each tile by what it records, with the direction as the subtitle', () => {
+    renderBar();
+    expect(screen.getByText('Expense')).toBeTruthy();
+    expect(screen.getByText('Money out')).toBeTruthy();
+    expect(screen.getByText('Income')).toBeTruthy();
+    expect(screen.getByText('Money in')).toBeTruthy();
+  });
+
   it('fires onLogExpense (no route push) when Log Expense is pressed', () => {
     const props = renderBar();
     fireEvent.press(screen.getByTestId('quick-log-expense'));
@@ -54,7 +67,7 @@ describe('QuickActionBar', () => {
 
   it('labels the zero-day action in plain language, not "Zero Day" jargon', () => {
     renderBar();
-    expect(screen.getByText('No spending')).toBeTruthy();
+    expect(screen.getByText('I spent nothing today')).toBeTruthy();
     expect(screen.queryByText('Zero Day')).toBeNull();
   });
 
@@ -72,5 +85,11 @@ describe('QuickActionBar', () => {
   it('hides Confirm Zero Day when zero day is already confirmed', () => {
     renderBar({ zeroDay: ZERO_DAY_DONE });
     expect(screen.queryByTestId('quick-confirm-zero-day')).toBeNull();
+  });
+
+  it('keeps the two log tiles once the zero-day action is gone', () => {
+    renderBar({ zeroDay: HAS_EXPENSES });
+    expect(screen.getByTestId('quick-log-expense')).toBeTruthy();
+    expect(screen.getByTestId('quick-log-income')).toBeTruthy();
   });
 });
