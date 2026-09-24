@@ -180,6 +180,16 @@ describe('importData', () => {
     // sits before `expenses` in SYNCED_TABLES order; the `expenses` row below
     // omits the NOT NULL `amount` column, so its insert throws. Without a
     // transaction, `accounts` would be left permanently empty.
+    //
+    // The rejection is matched on its message, not with `.rejects.toThrow()` or
+    // `instanceof Error`. better-sqlite3 is a native module cached for the whole
+    // Jest worker, so the `SqliteError` it throws can carry the prototype of a
+    // different sandbox realm than this file's `Error` global — `instanceof`
+    // then returns false and `toThrow()` reports "did not throw" even though the
+    // insert failed exactly as intended. That made it fail about one full-suite
+    // run in three while never failing with this file run alone. Matching the
+    // message is realm-independent, and pins *which* failure rolled the import
+    // back rather than merely that something did.
     const badPayload = {
       version: 1,
       exportedAt: '2026-07-08T00:00:00.000Z',
@@ -188,7 +198,12 @@ describe('importData', () => {
       },
     } as unknown as ExportPayload;
 
-    await expect(importData(badPayload)).rejects.toThrow();
+    const outcome = await importData(badPayload).then(
+      () => null,
+      (e: unknown) => e,
+    );
+    expect(outcome).not.toBeNull();
+    expect(String((outcome as { message?: string }).message)).toMatch(/NOT NULL/i);
 
     const [{ n: accountsAfter }] = await target.driver.query<{ n: number }>(
       `SELECT COUNT(*) AS n FROM accounts`,

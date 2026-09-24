@@ -145,6 +145,52 @@ describe('getAccountBalance', () => {
   });
 });
 
+describe('getAccountBalance — the parked funds/projects tables (VS-34)', () => {
+  // VS-34 removed the funds and projects slices from the app but deliberately
+  // left their tables in the schema, because a migration would invalidate every
+  // existing export file. These tests pin the consequence that made that choice
+  // safe: a wallet whose history includes fund deposits and manual project
+  // contributions still reports the same balance, even though no slice code
+  // reads those tables any more. If a future change drops the tables, these
+  // fail before anyone's balance silently shifts.
+
+  it('still subtracts historical fund deposits and manual project contributions', async () => {
+    await insertIncome(100_000, 1);
+    await insertFundTx(30_000, 'deposit', 1);
+    await insertProjectTx(20_000, 'manual', 1);
+
+    expect(await getAccountBalance(1)).toBe(50_000);
+  });
+
+  it('keeps both tables in the schema after every migration has run', async () => {
+    const tables = sqlite
+      .prepare(
+        `SELECT name FROM sqlite_master
+          WHERE type = 'table' AND name IN ('funds', 'fund_transactions', 'projects', 'project_transactions')
+          ORDER BY name`,
+      )
+      .all() as { name: string }[];
+
+    expect(tables.map((t) => t.name)).toEqual([
+      'fund_transactions',
+      'funds',
+      'project_transactions',
+      'projects',
+    ]);
+  });
+
+  it('is unaffected by a withdrawal or an allocation-sourced row', async () => {
+    // Only manual, wallet-attributed outflows ever moved real money out of a
+    // wallet. A withdrawal returns money to no wallet, and an allocation-sourced
+    // contribution was funded by the split, not by spending from an account.
+    await insertIncome(100_000, 1);
+    await insertFundTx(30_000, 'withdrawal', 1);
+    await insertProjectTx(20_000, 'allocation', 1);
+
+    expect(await getAccountBalance(1)).toBe(100_000);
+  });
+});
+
 describe('logTransfer / getTransfers', () => {
   it('creates a transfer row', async () => {
     const t = await logTransfer(1, 2, 2500, '2026-06-09', 'top up');
