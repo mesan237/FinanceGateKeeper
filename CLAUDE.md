@@ -1,7 +1,9 @@
 # Finance Gatekeeper — Root Context
 
 ## Project Overview
-Personal finance app for tracking income, expenses, budgets, savings, and project funding. Built for a single user in Central/West Africa. Currency: FCFA only.
+Personal finance app built around one daily loop: log every transaction, budget by
+category, and read the reports to see where the money went. Built for a single user
+in Central/West Africa. Currency: FCFA only.
 
 ## Tech Stack
 - **Framework:** React Native with Expo (Expo Router for navigation)
@@ -26,14 +28,22 @@ Three layers — never violate these:
 - Shared infra NEVER imports from features or routes.
 
 ## Approved Cross-Feature Dependencies
-- `dashboard` → reads from `expenses`, `budget`, `funds`, `projects`, `debt`, `accounts` (Wallets summary)
-- `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33), `funds` (redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated for the unallocated-pool screen, VS-19)
-- `reports` → reads from `expenses`, `income`, `budget`, `funds`, `projects`, `debt`
-- `income` → calls `budget` (triggers allocation after income log); reads `accounts` (AccountPicker on income log)
-- `funds` → reads `budget` (allocation percentages); reads `accounts` (reserved — service-level `accountId` on deposits; manual-deposit picker UI deferred)
-- `projects` → reads `budget` (allocation percentages); reads `accounts` (AccountPicker on manual contribution)
+- `dashboard` → reads from `expenses`, `budget` (monthly figures and the resolved plan total), `accounts` (Wallets summary)
+- `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33)
+- `reports` → reads from `expenses`, `income`, `budget`, `debt`
+- `income` → reads `accounts` (AccountPicker on income log)
 - `expenses` → reads `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the log/detail/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
 All other cross-feature imports are forbidden.
+
+The list covers **source** imports. Service tests that seed an in-memory database may
+import another slice's `create*` helper to build fixtures (`budget` and `dashboard`
+tests call `income.service.createIncome`); that is fixture setup, not a runtime
+dependency, and does not widen the graph.
+
+`funds` and `projects` were parked in VS-34 and no longer exist on this branch;
+their code lives on `feat/parked-projects-funds-allocation`. The income split that
+connected them (`income → budget`, `budget → funds`, `budget → projects`) went with
+them, which is why `income` now only touches `accounts`.
 
 ## Naming Conventions
 - Feature screens: `PascalCase` + Screen suffix → `ExpenseLogScreen.tsx`

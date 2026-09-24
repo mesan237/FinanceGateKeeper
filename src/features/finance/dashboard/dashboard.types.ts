@@ -1,10 +1,9 @@
 import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
-import type { FundProgress } from '@/features/finance/funds/funds.types';
-import type { Project } from '@/features/finance/projects/projects.types';
 
 export type PaceLevel = 'green' | 'yellow' | 'red';
 
 export interface BudgetSummary {
+  /** The month's spending budget — explicit total when set, else the income. */
   expenseBudget: number;
   /** Total expenses logged this month (the spent side of the budget). */
   expensesLogged: number;
@@ -22,31 +21,17 @@ export interface Cashflow {
   net: number;
 }
 
-export interface FundsSummary {
-  emergency: FundProgress;
-  savings: FundProgress;
-}
-
-export interface TopProject {
-  project: Project;
-  pct: number;
-}
-
 export interface DashboardState {
   todaySpending: number;
   /** Per-day spending totals for the last 7 calendar days, oldest first
-   * (the final entry is today). Present in both modes. */
+   * (the final entry is today). */
   spendingTrend: number[];
   zeroDay: DayActivityStatus;
-  /** null in learning mode or before budget data is available */
+  /** null before budget data is available */
   budget: BudgetSummary | null;
-  /** Month-to-date income vs expenses. null in learning mode. */
+  /** Month-to-date income vs expenses. */
   cashflow: Cashflow | null;
-  /** Recommended daily expense spend (expense budget ÷ days in month). null in
-   * learning mode or when no expense budget is set. */
+  /** Recommended daily expense spend (expense budget ÷ days in month). null
+   * when no expense budget is set. */
   dailyPace: number | null;
-  /** null in learning mode */
-  funds: FundsSummary | null;
-  /** null in learning mode or when no active projects exist */
-  topProject: TopProject | null;
 }

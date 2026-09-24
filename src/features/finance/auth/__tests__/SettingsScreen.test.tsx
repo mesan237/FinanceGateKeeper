@@ -3,8 +3,6 @@ import React from 'react';
 
 jest.mock('@/features/finance/auth/auth.service', () => ({
   getAppSettings: jest.fn(),
-  isMonth1Complete: jest.fn(),
-  setAppMode: jest.fn().mockResolvedValue(undefined),
   setReminderTime: jest.fn().mockResolvedValue(undefined),
   setNotificationsEnabled: jest.fn().mockResolvedValue(undefined),
   getActionBarStyle: jest.fn().mockResolvedValue('explicit'),
@@ -45,40 +43,29 @@ jest.mock('expo-router', () => ({ useRouter: () => ({ push: jest.fn(), back: jes
 import * as SecureStore from 'expo-secure-store';
 
 import { ThemeProvider } from '@/theme';
-import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
   getAppSettings,
-  isMonth1Complete,
-  setAppMode,
   setReminderTime,
 } from '@/features/finance/auth/auth.service';
 import { applyReminderSchedule } from '@/features/finance/auth/reminder';
 
 const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
-const mockedMonth1 = isMonth1Complete as jest.MockedFunction<typeof isMonth1Complete>;
-const mockedSetMode = setAppMode as jest.MockedFunction<typeof setAppMode>;
 const mockedSetTime = setReminderTime as jest.MockedFunction<typeof setReminderTime>;
 const mockedApply = applyReminderSchedule as jest.MockedFunction<typeof applyReminderSchedule>;
 
 function renderSettings() {
-  return render(
-    <AppModeProvider>
-      <SettingsScreen />
-    </AppModeProvider>,
-  );
+  return render(<SettingsScreen />);
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockedGet.mockResolvedValue({
-    appMode: 'learning',
     reminderTime: '21:00',
     notificationsEnabled: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     onboardingComplete: true,
   });
-  mockedMonth1.mockResolvedValue(false);
   mockCloud.userEmail = null;
   mockCloud.signedIn = false;
   mockCloud.status = 'idle';
@@ -89,9 +76,8 @@ beforeEach(() => {
 describe('SettingsScreen', () => {
   it('renders the controls seeded from settings', async () => {
     renderSettings();
-    expect(await screen.findByTestId('settings-mode-toggle')).toBeTruthy();
-    // The reminder is now a native time picker seeded from the saved HH:mm.
-    expect(screen.getByTestId('settings-reminder-time')).toBeTruthy();
+    // The reminder is a native time picker seeded from the saved HH:mm.
+    expect(await screen.findByTestId('settings-reminder-time')).toBeTruthy();
     expect(screen.getByTestId('settings-notifications-switch').props.value).toBe(true);
   });
 
@@ -111,12 +97,6 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText(/Invalid time/i)).toBeNull();
   });
 
-  it('toggles app mode', async () => {
-    renderSettings();
-    fireEvent.press(await screen.findByTestId('settings-mode-toggle'));
-    await waitFor(() => expect(mockedSetMode).toHaveBeenCalledWith('control'));
-  });
-
   it('renders the appearance control', async () => {
     renderSettings();
     expect(await screen.findByTestId('settings-theme-control')).toBeTruthy();
@@ -125,28 +105,13 @@ describe('SettingsScreen', () => {
   it('persists the chosen theme when a segment is tapped', async () => {
     render(
       <ThemeProvider>
-        <AppModeProvider>
-          <SettingsScreen />
-        </AppModeProvider>
+        <SettingsScreen />
       </ThemeProvider>,
     );
     fireEvent.press(await screen.findByTestId('settings-theme-control-dark'));
     await waitFor(() =>
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('theme-mode', 'dark'),
     );
-  });
-
-  it('shows the control-mode suggestion only after month 1 in learning mode', async () => {
-    mockedMonth1.mockResolvedValue(true);
-    renderSettings();
-    expect(await screen.findByTestId('settings-control-suggestion')).toBeTruthy();
-  });
-
-  it('hides the suggestion within month 1', async () => {
-    mockedMonth1.mockResolvedValue(false);
-    renderSettings();
-    await screen.findByTestId('settings-mode-toggle');
-    expect(screen.queryByTestId('settings-control-suggestion')).toBeNull();
   });
 });
 

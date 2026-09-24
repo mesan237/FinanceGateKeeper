@@ -6,11 +6,10 @@ import { TodaySpendingCard } from '@/features/finance/dashboard/TodaySpendingCar
 const TREND = [0, 1000, 0, 2500, 0, 0, 5000];
 
 describe('TodaySpendingCard', () => {
-  describe('control mode', () => {
+  describe('the pace row', () => {
     it("shows today's spending and date", () => {
       render(
         <TodaySpendingCard
-          includeBudgetData
           todaySpending={5000}
           dailyPace={2000}
           spendingTrend={TREND}
@@ -25,7 +24,6 @@ describe('TodaySpendingCard', () => {
     it('flags spending over the daily pace', () => {
       render(
         <TodaySpendingCard
-          includeBudgetData
           todaySpending={5000}
           dailyPace={2000}
           spendingTrend={TREND}
@@ -38,7 +36,6 @@ describe('TodaySpendingCard', () => {
     it('reassures when spending is within the daily pace', () => {
       render(
         <TodaySpendingCard
-          includeBudgetData
           todaySpending={1000}
           dailyPace={2000}
           spendingTrend={TREND}
@@ -51,7 +48,6 @@ describe('TodaySpendingCard', () => {
     it('omits the pace caption when no pace is available', () => {
       render(
         <TodaySpendingCard
-          includeBudgetData
           todaySpending={1000}
           dailyPace={null}
           spendingTrend={TREND}
@@ -62,11 +58,10 @@ describe('TodaySpendingCard', () => {
     });
   });
 
-  describe('learning mode', () => {
+  describe('the 7-day trend', () => {
     it('shows the hero amount and sparkline', () => {
       render(
         <TodaySpendingCard
-          includeBudgetData={false}
           todaySpending={5000}
           dailyPace={null}
           spendingTrend={TREND}
@@ -81,7 +76,6 @@ describe('TodaySpendingCard', () => {
     it('omits the sparkline when there is no spending', () => {
       render(
         <TodaySpendingCard
-          includeBudgetData={false}
           todaySpending={0}
           dailyPace={null}
           spendingTrend={[0, 0, 0, 0, 0, 0, 0]}

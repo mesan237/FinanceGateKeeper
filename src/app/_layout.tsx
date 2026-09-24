@@ -20,7 +20,6 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ToastProvider } from '@/components/Toast';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
-import { AppModeProvider } from '@/features/finance/auth/AppModeProvider';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
 import { AuthScreen } from '@/features/finance/auth/AuthScreen';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
@@ -79,24 +78,22 @@ export default function RootLayout() {
               complete={settings?.onboardingComplete ?? false}
               onDone={() => void completeOnboarding()}
             >
-              <AppModeProvider>
-                <RecurringAutoLogger>
-                  <DebtReminderScheduler>
-                    <DailyReminderScheduler>
-                      <ZeroDayGate
-                        reminderTime={settings?.reminderTime ?? '21:00'}
-                        notificationsEnabled={settings?.notificationsEnabled ?? false}
-                      >
-                        <ThemedShell>
-                          <ToastProvider>
-                            <Stack screenOptions={{ headerShown: false }} />
-                          </ToastProvider>
-                        </ThemedShell>
-                      </ZeroDayGate>
-                    </DailyReminderScheduler>
-                  </DebtReminderScheduler>
-                </RecurringAutoLogger>
-              </AppModeProvider>
+              <RecurringAutoLogger>
+                <DebtReminderScheduler>
+                  <DailyReminderScheduler>
+                    <ZeroDayGate
+                      reminderTime={settings?.reminderTime ?? '21:00'}
+                      notificationsEnabled={settings?.notificationsEnabled ?? false}
+                    >
+                      <ThemedShell>
+                        <ToastProvider>
+                          <Stack screenOptions={{ headerShown: false }} />
+                        </ToastProvider>
+                      </ThemedShell>
+                    </ZeroDayGate>
+                  </DailyReminderScheduler>
+                </DebtReminderScheduler>
+              </RecurringAutoLogger>
             </OnboardingGate>
           </AuthGate>
         </AuthProvider>

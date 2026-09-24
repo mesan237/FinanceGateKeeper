@@ -154,7 +154,7 @@ export async function setTotalBudget(monthISO: string, amount: number | null): P
   await execute('UPDATE allocations SET total_budget = ? WHERE month = ?', [amount, monthISO]);
 }
 
-/** The month's explicit total, or `null` when it is derived from the income split. */
+/** The month's explicit total, or `null` when it falls back to the month's income. */
 export async function getTotalBudget(monthISO: string): Promise<number | null> {
   const rows = await query<{ total_budget: number | null }>(
     'SELECT total_budget FROM allocations WHERE month = ?',

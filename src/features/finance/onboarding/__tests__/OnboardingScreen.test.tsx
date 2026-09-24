@@ -12,7 +12,7 @@ describe('OnboardingScreen', () => {
   it('advances to the next panel when Next is pressed', () => {
     render(<OnboardingScreen onDone={jest.fn()} />);
     fireEvent.press(screen.getByTestId('onboarding-next'));
-    expect(screen.getByText('Income splits itself')).toBeTruthy();
+    expect(screen.getByText('Budget by category')).toBeTruthy();
   });
 
   it('calls onDone once the final panel CTA is pressed', () => {

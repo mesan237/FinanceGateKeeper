@@ -13,27 +13,17 @@ import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
-import { useAppModeContext } from './AppModeProvider';
 import { CloudAccountCard } from './CloudAccountCard';
 import { useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
 /**
- * App settings: switch between learning and control mode, set the daily
- * reminder time, and toggle notifications. Reminder/notification changes
- * reconcile the scheduled notification via `applyReminderSchedule` (shared
- * notifications infra). After a mode change it refreshes the app-mode context
- * so the tab bar updates immediately.
+ * App settings: set the daily reminder time and toggle notifications.
+ * Reminder/notification changes reconcile the scheduled notification via
+ * `applyReminderSchedule` (shared notifications infra).
  */
 export function SettingsScreen() {
-  const {
-    settings,
-    monthOneComplete,
-    setMode,
-    setReminderTime,
-    setNotificationsEnabled,
-  } = useAppSettings();
-  const { refresh: refreshMode } = useAppModeContext();
+  const { settings, setReminderTime, setNotificationsEnabled } = useAppSettings();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
   const router = useRouter();
   const c = useTheme();
@@ -54,13 +44,6 @@ export function SettingsScreen() {
       </View>
     );
   }
-
-  const isControl = settings.appMode === 'control';
-
-  const toggleMode = async () => {
-    await setMode(isControl ? 'learning' : 'control');
-    await refreshMode();
-  };
 
   const saveReminder = async () => {
     try {
@@ -98,29 +81,6 @@ export function SettingsScreen() {
           right={<Icon name="forward" color={c.TEXT_MUTED} />}
         />
       </Pressable>
-
-      <SectionCard
-        icon="appMode"
-        title="App mode"
-        subtitle={
-          isControl
-            ? 'Control mode — full budgeting features.'
-            : 'Learning mode — logging only. Budgeting is hidden.'
-        }
-        right={<Pill label={isControl ? 'Control' : 'Learning'} />}
-      >
-        {monthOneComplete && !isControl ? (
-          <Typography testID="settings-control-suggestion" style={styles.suggestion}>
-            You&apos;ve used the app for a month — switch to Control mode?
-          </Typography>
-        ) : null}
-        <Button
-          testID="settings-mode-toggle"
-          label={isControl ? 'Switch to Learning mode' : 'Switch to Control mode'}
-          variant="secondary"
-          onPress={toggleMode}
-        />
-      </SectionCard>
 
       <SectionCard
         icon="appearance"

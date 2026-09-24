@@ -27,8 +27,6 @@ import {
   getIncomeById,
   getIncomeBySource,
   getMonthlyTotal,
-  getPendingIncome,
-  markIncomeAllocated,
   updateIncome,
 } from '@/features/finance/income/income.service';
 import type { NewIncome, UpdateIncome } from '@/features/finance/income/income.types';
@@ -174,46 +172,25 @@ describe('getMonthlyTotal', () => {
     expect(await getMonthlyTotal('2026-01')).toBe(0);
   });
 
-  it('counts both pending and allocated income (status-agnostic)', async () => {
-    await createIncome(newIncome({ amount: 100000, date: '2026-06-01' })); // pending
-    const allocated = await createIncome(newIncome({ amount: 50000, date: '2026-06-02' }));
-    await markIncomeAllocated(allocated);
+  it('counts every income row in the month, whatever its status', async () => {
+    await createIncome(newIncome({ amount: 100000, date: '2026-06-01' }));
+    await createIncome(newIncome({ amount: 50000, date: '2026-06-02', allocationStatus: 'pending' }));
 
     expect(await getMonthlyTotal('2026-06')).toBe(150000);
   });
 });
 
-describe('allocation status (VS-19)', () => {
-  it('creates new income as pending by default', async () => {
+describe('allocation status', () => {
+  it('creates new income as allocated — nothing holds a row pending (VS-34)', async () => {
     const id = await createIncome(newIncome({ amount: 1000 }));
+    const all = await getAllIncome();
+    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
+  });
+
+  it('still honours an explicit status on create, for legacy/import rows', async () => {
+    const id = await createIncome(newIncome({ amount: 1000, allocationStatus: 'pending' }));
     const all = await getAllIncome();
     expect(all.find((i) => i.id === id)?.allocationStatus).toBe('pending');
-  });
-
-  it('honours an explicit allocated status on create', async () => {
-    const id = await createIncome(newIncome({ amount: 1000, allocationStatus: 'allocated' }));
-    const all = await getAllIncome();
-    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
-  });
-
-  it('getPendingIncome returns only pending rows, newest-first', async () => {
-    const a = await createIncome(newIncome({ amount: 1000, date: '2026-06-01' }));
-    await createIncome(newIncome({ amount: 2000, date: '2026-06-20' }));
-    await markIncomeAllocated(a);
-
-    const pending = await getPendingIncome();
-    expect(pending).toHaveLength(1);
-    expect(pending[0].amount).toBe(2000);
-    expect(pending.every((i) => i.allocationStatus === 'pending')).toBe(true);
-  });
-
-  it('markIncomeAllocated flips a pending row to allocated', async () => {
-    const id = await createIncome(newIncome({ amount: 1000 }));
-    await markIncomeAllocated(id);
-
-    const all = await getAllIncome();
-    expect(all.find((i) => i.id === id)?.allocationStatus).toBe('allocated');
-    expect(await getPendingIncome()).toEqual([]);
   });
 });
 
@@ -241,7 +218,7 @@ describe('getIncomeById (VS-20)', () => {
       source: 'freelance',
       date: '2026-06-12',
       accountId: 1,
-      allocationStatus: 'pending',
+      allocationStatus: 'allocated',
     });
   });
 
@@ -290,28 +267,27 @@ describe('updateIncome (VS-20)', () => {
     await expect(updateIncome(99999, patchFrom())).rejects.toThrow('Income not found.');
   });
 
-  it('rejects an amount change on an allocated row', async () => {
+  it('allows an amount change after logging', async () => {
+    // Before VS-34 an allocated row froze its amount, because allocation had
+    // moved money into funds and projects. With no allocation there is no
+    // deposit to desync, so a typo stays correctable.
     const id = await createIncome(newIncome({ amount: 1000 }));
-    await markIncomeAllocated(id);
 
-    await expect(updateIncome(id, patchFrom({ amount: 2000 }))).rejects.toThrow(
-      'Allocated income cannot change amount or date.',
-    );
-    expect((await getIncomeById(id))?.amount).toBe(1000);
+    await updateIncome(id, patchFrom({ amount: 2000 }));
+
+    expect((await getIncomeById(id))?.amount).toBe(2000);
   });
 
-  it('rejects a date change on an allocated row', async () => {
+  it('allows a date change after logging', async () => {
     const id = await createIncome(newIncome({ amount: 1000, date: '2026-06-12' }));
-    await markIncomeAllocated(id);
 
-    await expect(updateIncome(id, patchFrom({ amount: 1000, date: '2026-06-13' }))).rejects.toThrow(
-      'Allocated income cannot change amount or date.',
-    );
+    await updateIncome(id, patchFrom({ amount: 1000, date: '2026-06-13' }));
+
+    expect((await getIncomeById(id))?.date).toBe('2026-06-13');
   });
 
-  it('accepts a metadata-only patch on an allocated row', async () => {
+  it('accepts a metadata-only patch', async () => {
     const id = await createIncome(newIncome({ amount: 1000, source: 'salary' }));
-    await markIncomeAllocated(id);
 
     await updateIncome(
       id,
@@ -323,13 +299,12 @@ describe('updateIncome (VS-20)', () => {
       source: 'freelance',
       note: 'recategorised',
       accountId: 1,
-      allocationStatus: 'allocated',
     });
   });
 });
 
 describe('deleteIncome (VS-20)', () => {
-  it('removes a pending row', async () => {
+  it('removes a row', async () => {
     const id = await createIncome(newIncome({ amount: 1000 }));
 
     await deleteIncome(id);
@@ -338,12 +313,13 @@ describe('deleteIncome (VS-20)', () => {
     expect(await getAllIncome()).toHaveLength(0);
   });
 
-  it('rejects deleting an allocated row', async () => {
+  it('deletes a row that was logged earlier', async () => {
+    // The allocated-rows-are-permanent rule went with the allocation step.
     const id = await createIncome(newIncome({ amount: 1000 }));
-    await markIncomeAllocated(id);
 
-    await expect(deleteIncome(id)).rejects.toThrow('Allocated income cannot be deleted.');
-    expect(await getIncomeById(id)).not.toBeNull();
+    await deleteIncome(id);
+
+    expect(await getIncomeById(id)).toBeNull();
   });
 
   it('throws for an unknown id', async () => {

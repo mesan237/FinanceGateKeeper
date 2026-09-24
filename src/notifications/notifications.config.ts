@@ -33,8 +33,4 @@ export const MESSAGES: Record<NotificationType, { title: string; body: string }>
     title: 'Debt due soon',
     body: 'A debt is approaching its due date.',
   },
-  projectTimeline: {
-    title: 'Project timeline changed',
-    body: 'One of your project timelines has shifted.',
-  },
 };

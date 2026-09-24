@@ -31,15 +31,10 @@ function monthLabel(monthISO: string): string {
   return `${MONTH_NAMES[month - 1]} ${year}`;
 }
 
-/** Capitalises a fund type for display ("emergency" → "Emergency"). */
-function fundLabel(type: string): string {
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
- * allocation/expense performance, a category pie chart and breakdown, fund and
- * project progress, debt totals, an optional month-over-month comparison, and
+ * expense performance, a category pie chart and breakdown, debt totals, an
+ * optional month-over-month comparison, and
  * rule-based suggestions. Prev/next arrows browse months; "next" is disabled on
  * the current month. A link navigates to the weekly report.
  */
@@ -131,46 +126,6 @@ export function MonthlyReport() {
               );
             })}
           </View>
-
-          <View style={styles.section}>
-            <Typography variant="subheading">Funds</Typography>
-            {report.fundProgress.map((f) => (
-              <View key={f.type} style={styles.progressBlock} testID={`fund-${f.type}`}>
-                <View style={styles.progressLabel}>
-                  <View>
-                    <Typography variant="body">{fundLabel(f.type)}</Typography>
-                    {f.pct !== null ? (
-                      <Typography variant="muted">{Math.round(f.pct)}% funded</Typography>
-                    ) : null}
-                  </View>
-                  <View style={styles.alignEnd}>
-                    <Typography variant="body">{formatCurrency(f.current)}</Typography>
-                    {f.target !== null ? (
-                      <Typography variant="muted">of {formatCurrency(f.target)}</Typography>
-                    ) : null}
-                  </View>
-                </View>
-                <ProgressBar value={f.pct ?? 0} color={c.SUCCESS} />
-              </View>
-            ))}
-          </View>
-
-          {report.projectProgress.length > 0 ? (
-            <View style={styles.section}>
-              <Typography variant="subheading">Projects</Typography>
-              {report.projectProgress.map((p) => (
-                <View key={p.id} style={styles.progressBlock} testID={`project-${p.id}`}>
-                  <View style={styles.progressLabel}>
-                    <Typography variant="body">{p.name}</Typography>
-                    <Typography variant="muted">
-                      {formatCurrency(p.funded)} / {formatCurrency(p.target)}
-                    </Typography>
-                  </View>
-                  <ProgressBar value={p.pct} />
-                </View>
-              ))}
-            </View>
-          ) : null}
 
           <View style={styles.section}>
             <Typography variant="subheading">Debt</Typography>

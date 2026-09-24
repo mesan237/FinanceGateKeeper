@@ -12,6 +12,12 @@ Every task follows TDD:
 
 Dependencies are explicit. A task cannot start until its blockers are complete. Tasks with no blockers can run in parallel.
 
+A slice marked **⏸ Parked** shipped and then left `main` — the feature was built
+for a need the user does not yet have. Its code is preserved in full on the
+branch named in the parking slice, and the schema it created is still in the
+database, so parking is reversed by merging that branch back rather than by
+rebuilding. Parked slices stay on this board as history, not as backlog.
+
 ---
 
 ## BACKLOG
@@ -145,7 +151,7 @@ Dependencies are explicit. A task cannot start until its blockers are complete. 
 
 ---
 
-### VS-06: Budget Allocation System
+### VS-06: Budget Allocation System ⏸ Parked (VS-34)
 
 **Priority:** Critical
 **Blocked by:** VS-03, VS-05
@@ -197,7 +203,7 @@ Dependencies are explicit. A task cannot start until its blockers are complete. 
 
 ---
 
-### VS-08: Daily Reminder, Zero-Day Confirmation & App Mode
+### VS-08: Daily Reminder, Zero-Day Confirmation & App Mode ⏸ App-mode half removed (VS-34)
 
 **Priority:** High
 **Blocked by:** VS-03
@@ -226,7 +232,7 @@ Dependencies are explicit. A task cannot start until its blockers are complete. 
 
 ---
 
-### VS-09: Funds — Emergency Fund & Savings
+### VS-09: Funds — Emergency Fund & Savings ⏸ Parked (VS-34)
 
 **Priority:** High
 **Blocked by:** VS-06
@@ -254,7 +260,7 @@ Dependencies are explicit. A task cannot start until its blockers are complete. 
 
 ---
 
-### VS-10: Project Funding with Timeline
+### VS-10: Project Funding with Timeline ⏸ Parked (VS-34)
 
 **Priority:** High
 **Blocked by:** VS-06
@@ -579,7 +585,7 @@ Approved cross-feature edges to add (ARCHITECTURE.md + CLAUDE.md):
 
 ---
 
-### VS-19: Deferred Income Allocation (Hold & Unallocated Pool)
+### VS-19: Deferred Income Allocation (Hold & Unallocated Pool) ⏸ Parked (VS-34)
 
 **Priority:** High
 **Blocked by:** VS-06, VS-09, VS-10
@@ -726,7 +732,7 @@ slice and in `docs/ux-audit/README.md`.
 
 ---
 
-### VS-25: Forgiving Allocation — Editable Split & Pre-Lock Warning
+### VS-25: Forgiving Allocation — Editable Split & Pre-Lock Warning ⏸ Parked (VS-34)
 
 **Priority:** High — audit H4
 **Blocked by:** VS-06 (Allocation), VS-19 (Deferred allocation)
@@ -951,6 +957,71 @@ actually planned.
 distributes it watching Unassigned fall to zero, and then sees — per category and
 overall — spent, remaining, % consumed, daily average, projected end-of-month, and
 an on-track/at-risk/over verdict paced against today.
+
+---
+
+### VS-34: Refocus on the Daily Loop — Park Projects, Funds & the Income Split ✅ Done
+
+**Priority:** High — user-requested, reorients the product
+**Blocked by:** VS-33 (Envelopes — the budget feature this slice promotes to default)
+**Plan:** `issues/ISSUE-032/implementation-plan.md`
+**Preserved on:** `feat/parked-projects-funds-allocation`
+
+**Scope:**
+
+Cut the app down to what is actually used every day — log a transaction, budget
+by category, read the reports — and park the rest on a branch rather than
+deleting it.
+
+- **Level B extraction.** Routes, screens, shared-read sections, and the
+  `projects` and `funds` slice folders leave `main`. **Migrations, DB tables and
+  `sync.mapping.ts` are untouched** — an unread `projects_pct` column costs
+  nothing, while a schema migration would invalidate every existing export file
+  and is the one part of this change that cannot be walked back.
+- **The income split is parked with them**: the post-income allocation screen,
+  the percentage settings, the month lock, the held-income pool, and emergency
+  redistribution. Income now logs straight through in two taps.
+- **The Budget tab is ungated.** VS-33's envelopes shipped behind
+  `appMode === 'control'` while every install defaults to `'learning'`, so
+  category budgeting has been invisible since it landed. It becomes the default
+  experience.
+- **The budget total is rebased.** `getMonthlyBudget` derived the month from
+  `income × expenses_pct`; with no split, NULL `total_budget` now means "the
+  month's total income", with an explicit total still winning. VS-33's hybrid
+  design and its tests survive intact — no migration.
+- **Removes a trap rather than working around it.** `updateIncome` and
+  `deleteIncome` refuse to touch an allocated row, because allocation had moved
+  real money into funds and projects. Defaulting new income to `allocated` would
+  make every entry permanently uneditable, so the guards are deleted, not
+  satisfied — with no allocation there is no downstream deposit to desync.
+- **Learning mode is gone** (not just the gate). With budgeting ungated, `appMode`
+  gated nothing but its own Settings toggle, whose copy still claimed budgeting
+  was hidden. The type, provider, service writer, settings card, the
+  `isMonth1Complete` / `daysSinceCreated` signals that fed the nudge, and the
+  `includeBudgetData` branch through dashboard hook, service and screen are all
+  removed; the app behaves as Control mode always did. The `users.app_mode`
+  column stays — unread, defaulted, and outside the sync/export set.
+- **Debt stays.** It tracks money actually lent and borrowed.
+- Parks VS-06, VS-09, VS-10, VS-19 and VS-25 along with the code.
+
+**TDD Anchor:**
+
+- Test: `income.service` — amount and date can be edited after logging, and a row
+  can be deleted; both would have thrown under the old allocation guards.
+- Test: `budget.service` — the total derives from the month's income when
+  `total_budget` is NULL; an explicit total still wins.
+- Test: `budget.plan` — every VS-33 envelope, carry-chain and pacing test passes
+  **unmodified**; `checkOverBudget` fires without a locked allocation.
+- Test: `accounts.balance` — a wallet holding historical fund deposits and manual
+  project contributions reports the same balance after the slice as before it.
+  This is the regression that proves Level B was safe to take.
+- Test: screens — Budget renders for a `learning`-mode user; Dashboard and
+  Monthly Report render with no fund or project sections.
+
+**Done when:** Income logs in two taps with no allocation screen in between,
+Budget opens to this month's category envelopes without touching a setting,
+Reports shows a category breakdown uninterrupted by funds or projects, and every
+wallet balance matches what it showed before the slice.
 
 ---
 

@@ -25,8 +25,8 @@ const SEGMENTS = [
 export interface AddTransactionSheetProps {
   visible: boolean;
   onClose: () => void;
-  /** Called after an expense or template is logged from the sheet (refresh the feed). */
-  onExpenseSaved: () => void;
+  /** Called after anything is logged from the sheet (refresh the feed). */
+  onSaved: () => void;
   /**
    * Segment to select each time the sheet opens. Lets a caller (e.g. the
    * dashboard "Log Income" action) request a specific tab. Defaults to
@@ -38,13 +38,13 @@ export interface AddTransactionSheetProps {
 /**
  * The unified add-transaction sheet: a single surface with an Expense / Income /
  * Templates toggle, opened by the Transactions-tab FAB. Each segment renders a
- * shared panel. Expense and template logs refresh the feed in place; an income
- * log closes the sheet and continues to the allocation flow.
+ * shared panel. Every log refreshes the feed in place — since VS-34 an income
+ * log no longer detours through an allocation screen.
  */
 export function AddTransactionSheet({
   visible,
   onClose,
-  onExpenseSaved,
+  onSaved,
   initialSegment = 'expense',
 }: AddTransactionSheetProps) {
   const styles = useThemedStyles(makeStyles);
@@ -94,7 +94,7 @@ export function AddTransactionSheet({
             note={{ value: note, onChange: setNote }}
             autoFocus={autoFocusSegment === 'expense'}
             onSaved={() => {
-              onExpenseSaved();
+              onSaved();
               onClose();
             }}
           />
@@ -103,16 +103,13 @@ export function AddTransactionSheet({
             amount={{ value: amount, onChange: setAmount }}
             note={{ value: note, onChange: setNote }}
             autoFocus={autoFocusSegment === 'income'}
-            onSaved={(savedAmount, month) => {
+            onSaved={() => {
+              onSaved();
               onClose();
-              router.push({
-                pathname: '/income/allocate',
-                params: { amount: String(savedAmount), month },
-              });
             }}
           />
         ) : (
-          <QuickAddGrid scrollable={false} onLogged={onExpenseSaved} />
+          <QuickAddGrid scrollable={false} onLogged={onSaved} />
         )}
       </View>
 

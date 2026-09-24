@@ -1,59 +1,19 @@
-import type { Bucket } from '@/constants/allocation';
-
-// Re-exported so this slice's types have their documented home here, while the
-// enum's single source of truth stays in `@/constants/allocation` (mirrors the
-// `IncomeSource` pattern from VS-05).
-export type { Bucket };
-
-/** A persisted allocation row — one per `YYYY-MM` month. */
-export interface Allocation {
-  id: number;
-  month: string;
-  emergencyFundPct: number;
-  savingsPct: number;
-  projectsPct: number;
-  expensesPct: number;
-  priorityOrder: Bucket[];
-  isLocked: boolean;
-  createdAt: string;
-}
-
-/** What the settings screen edits — id, createdAt, and isLocked are server-managed. */
-export type AllocationDraft = Omit<Allocation, 'id' | 'createdAt' | 'isLocked'>;
-
 /**
- * Where a held (pending) income amount is sent when the user allocates it from
- * the unallocated pool (VS-19). `expense` adds nothing extra — flipping the
- * income to `allocated` is what lets it count toward the expense budget.
+ * The month's headline figures. `incomeTotal` doubles as the month's derived
+ * budget — what the plan falls back to when no explicit total is set (VS-34).
  */
-export type AllocationDestination =
-  | { kind: 'expense' }
-  | { kind: 'fund'; fundType: 'emergency' | 'savings' }
-  | { kind: 'project'; projectId: number };
-
-/** Result of splitting an income amount across the four buckets. Whole FCFA only. */
-export interface AllocationBreakdown {
-  emergencyFund: number;
-  savings: number;
-  projects: number;
-  expenses: number;
-}
-
-/** Composed monthly view: income, allocation, breakdown, and expense progress. */
 export interface MonthlyBudget {
   month: string;
   incomeTotal: number;
-  allocation: Allocation;
-  breakdown: AllocationBreakdown;
   expensesLogged: number;
   expensesRemaining: number;
 }
 
 /**
  * Result of a pre-save over-budget check for one prospective expense.
- * `overage` is 0 when not over; `remaining` is the expense budget left before
- * the prospective expense; `expenseBudget` is the month's allocated expense
- * bucket. `isOver` is only ever true once the month's allocation is locked.
+ * `overage` is 0 when not over; `remaining` is the budget left before the
+ * prospective expense; `expenseBudget` is the month's spending budget —
+ * the explicit total when set, otherwise the month's income.
  */
 export interface OverBudgetCheck {
   isOver: boolean;

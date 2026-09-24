@@ -28,11 +28,10 @@ export interface IncomeDetailScreenProps {
 }
 
 /**
- * Detail/edit form for an existing income row (VS-20). While the row is held
- * (`pending`) every field is editable, it can be deleted, and "Allocate now"
- * jumps into the VS-19 allocation flow. Once allocated, amount and date render
- * read-only (the service enforces the same lock) and only metadata — source,
- * note, account — can still be corrected.
+ * Detail/edit form for an existing income row (VS-20). Every field is editable
+ * and the row can be deleted. The read-only amount/date lock for allocated rows
+ * is gone (VS-34): it guarded deposits that allocation used to make into funds
+ * and projects, and with no allocation step there is nothing left to desync.
  */
 export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
   const styles = useThemedStyles(makeStyles);
@@ -65,28 +64,6 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
     }
   };
 
-  const handleAllocateNow = async () => {
-    // Persist any in-form edits first: the allocation flow deposits from the
-    // amount it is handed and Confirm locks the row, so navigating with
-    // unsaved values would desynchronise deposits from the stored row —
-    // past the point the service-layer lock can protect.
-    setSaving(true);
-    try {
-      const ok = await edit.update();
-      if (!ok) return;
-      router.push({
-        pathname: '/income/allocate',
-        params: {
-          amount: String(Math.trunc(Number(edit.amount))),
-          month: edit.date.slice(0, 7),
-          incomeId: String(incomeId),
-        },
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (edit.notFound) {
     return (
       <View style={styles.container}>
@@ -102,21 +79,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
       <KeyboardAwareForm>
         <View style={styles.form}>
-          {edit.isAllocated ? (
-            <View testID="allocated-lock" style={styles.lockedBlock}>
-              <Typography variant="label">Amount</Typography>
-              <Typography style={styles.lockedAmount}>
-                {formatCurrency(Math.trunc(Number(edit.amount)) || 0)}
-              </Typography>
-              <Typography variant="muted">{edit.date ? formatDateShort(edit.date) : ''}</Typography>
-              <Typography variant="muted" style={styles.lockedHint}>
-                Allocated income can&apos;t change amount or date — its deposits and budget share
-                are already counted.
-              </Typography>
-            </View>
-          ) : (
-            <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
-          )}
+          <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 
           <IncomeSourcePicker value={edit.source} onChange={edit.setSource} />
 
@@ -131,9 +94,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
             style={styles.note}
           />
 
-          {edit.isAllocated ? null : (
-            <DateField value={edit.date} onChange={edit.setDate} testID="income-detail-date" />
-          )}
+          <DateField value={edit.date} onChange={edit.setDate} testID="income-detail-date" />
 
           <AccountPicker
             testID="income-detail-account"
@@ -144,22 +105,12 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
           <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 
-          {edit.isAllocated ? null : (
-            <>
-              <Button
-                testID="allocate-now"
-                label="Allocate now"
-                variant="secondary"
-                onPress={handleAllocateNow}
-              />
-              <Button
-                testID="delete-income"
-                label="Delete income"
-                variant="danger"
-                onPress={() => setDeleteModalVisible(true)}
-              />
-            </>
-          )}
+          <Button
+            testID="delete-income"
+            label="Delete income"
+            variant="danger"
+            onPress={() => setDeleteModalVisible(true)}
+          />
 
           {edit.error ? (
             <View style={styles.errorRow}>
@@ -174,7 +125,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
         <View style={styles.deleteModal}>
           <Typography variant="subheading">Delete income?</Typography>
           <Typography variant="muted">
-            This held income will be removed before allocation. This cannot be undone.
+            This income will be removed from your records. This cannot be undone.
           </Typography>
           <Button label="Delete" onPress={handleDeleteConfirm} variant="danger" />
           <Button

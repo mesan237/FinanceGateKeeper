@@ -160,17 +160,9 @@ describe('useIncomeEdit (VS-20)', () => {
     expect(result.current.date).toBe('2026-06-12');
     expect(result.current.note).toBe('');
     expect(result.current.accountId).toBeNull();
-    expect(result.current.isAllocated).toBe(false);
     expect(result.current.canSubmit).toBe(true);
   });
 
-  it('exposes the allocated lock for an allocated row', async () => {
-    mockedById.mockResolvedValue({ ...ROW, allocationStatus: 'allocated' });
-    const { result } = renderHook(() => useIncomeEdit(1));
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.isAllocated).toBe(true);
-  });
 
   it('surfaces an error for an unknown id', async () => {
     mockedById.mockResolvedValue(null);

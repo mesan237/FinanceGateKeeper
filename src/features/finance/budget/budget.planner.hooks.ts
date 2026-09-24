@@ -91,7 +91,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
         const [cats, budgets, plan, suggested] = await Promise.all([
           getBudgetableCategories(),
           getCategoryBudgets(monthISO),
-          buildMonthlyPlan(monthISO, monthly.breakdown.expenses),
+          buildMonthlyPlan(monthISO, monthly.incomeTotal),
           suggestFromHistory(monthISO),
         ]);
         if (!active) return;

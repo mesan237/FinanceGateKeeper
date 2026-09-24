@@ -19,21 +19,16 @@ jest.mock('@/services/database', () => {
   };
 });
 
-import { DEFAULT_ALLOCATION } from '@/constants/allocation';
+import { setTotalBudget } from '@/features/finance/budget/budget.envelopes';
 import { checkOverBudget } from '@/features/finance/budget/budget.plan';
 import {
-  calculateBreakdown,
-  getAllocation,
+  ensureMonthRow,
   getExpensesMonthlyTotal,
+  getIncomeMonthlyTotal,
   getMonthlyBudget,
-  getOrCreateCurrentAllocation,
-  hasConfirmedAnyAllocation,
-  lockAllocation,
-  redistributeEmergencyPct,
-  updateAllocation,
 } from '@/features/finance/budget/budget.service';
-import { createIncome } from '@/features/finance/income/income.service';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
+import { createIncome } from '@/features/finance/income/income.service';
 
 let sqlite: Database.Database;
 
@@ -50,223 +45,16 @@ afterEach(() => {
   mockState.driver = null;
 });
 
-describe('getOrCreateCurrentAllocation', () => {
-  it('creates a row with DEFAULT_ALLOCATION when none exists for the month', async () => {
-    const allocation = await getOrCreateCurrentAllocation('2026-06');
-
-    expect(allocation.month).toBe('2026-06');
-    expect(allocation.emergencyFundPct).toBe(DEFAULT_ALLOCATION.emergencyFundPct);
-    expect(allocation.savingsPct).toBe(DEFAULT_ALLOCATION.savingsPct);
-    expect(allocation.projectsPct).toBe(DEFAULT_ALLOCATION.projectsPct);
-    expect(allocation.expensesPct).toBe(DEFAULT_ALLOCATION.expensesPct);
-    expect(allocation.priorityOrder).toEqual([...DEFAULT_ALLOCATION.priorityOrder]);
-    expect(allocation.isLocked).toBe(false);
+async function spend(date: string, amount: number): Promise<void> {
+  await createExpense({
+    amount,
+    categoryId: 1,
+    subcategoryId: null,
+    note: null,
+    date,
+    isRecurring: false,
   });
-
-  it('is idempotent — calling twice returns the same row, not a duplicate', async () => {
-    const first = await getOrCreateCurrentAllocation('2026-06');
-    const second = await getOrCreateCurrentAllocation('2026-06');
-
-    expect(second.id).toBe(first.id);
-    const rows = sqlite.prepare('SELECT id FROM allocations WHERE month = ?').all('2026-06');
-    expect(rows).toHaveLength(1);
-  });
-});
-
-describe('getAllocation', () => {
-  it('returns null when no row exists for the month', async () => {
-    expect(await getAllocation('2026-07')).toBeNull();
-  });
-
-  it('returns the row when one exists', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    const allocation = await getAllocation('2026-06');
-    expect(allocation).not.toBeNull();
-    expect(allocation?.month).toBe('2026-06');
-  });
-});
-
-describe('updateAllocation validation', () => {
-  beforeEach(async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-  });
-
-  it('rejects a draft whose percentages do not sum to 100', async () => {
-    await expect(
-      updateAllocation('2026-06', {
-        month: '2026-06',
-        emergencyFundPct: 10,
-        savingsPct: 10,
-        projectsPct: 15,
-        expensesPct: 60, // sum = 95
-        priorityOrder: [...DEFAULT_ALLOCATION.priorityOrder],
-      }),
-    ).rejects.toThrow(/sum to 100/);
-    // Row is unchanged.
-    const allocation = await getAllocation('2026-06');
-    expect(allocation?.expensesPct).toBe(DEFAULT_ALLOCATION.expensesPct);
-  });
-
-  it('rejects a negative percentage', async () => {
-    await expect(
-      updateAllocation('2026-06', {
-        month: '2026-06',
-        emergencyFundPct: -5,
-        savingsPct: 20,
-        projectsPct: 20,
-        expensesPct: 65,
-        priorityOrder: [...DEFAULT_ALLOCATION.priorityOrder],
-      }),
-    ).rejects.toThrow(/negative|0–100|0-100/i);
-  });
-
-  it('rejects a priority order with a missing bucket', async () => {
-    await expect(
-      updateAllocation('2026-06', {
-        month: '2026-06',
-        emergencyFundPct: 10,
-        savingsPct: 10,
-        projectsPct: 15,
-        expensesPct: 65,
-        priorityOrder: ['savings', 'projects', 'expenses'] as never,
-      }),
-    ).rejects.toThrow(/priority/i);
-  });
-
-  it('rejects a priority order with a duplicate bucket', async () => {
-    await expect(
-      updateAllocation('2026-06', {
-        month: '2026-06',
-        emergencyFundPct: 10,
-        savingsPct: 10,
-        projectsPct: 15,
-        expensesPct: 65,
-        priorityOrder: ['emergency_fund', 'savings', 'savings', 'expenses'] as never,
-      }),
-    ).rejects.toThrow(/priority/i);
-  });
-
-  it('rejects any save once the month is locked', async () => {
-    await lockAllocation('2026-06');
-    await expect(
-      updateAllocation('2026-06', {
-        month: '2026-06',
-        emergencyFundPct: 10,
-        savingsPct: 10,
-        projectsPct: 15,
-        expensesPct: 65,
-        priorityOrder: [...DEFAULT_ALLOCATION.priorityOrder],
-      }),
-    ).rejects.toThrow(/locked/i);
-  });
-
-  it('writes a valid draft and a subsequent getAllocation reflects it', async () => {
-    await updateAllocation('2026-06', {
-      month: '2026-06',
-      emergencyFundPct: 15,
-      savingsPct: 20,
-      projectsPct: 25,
-      expensesPct: 40,
-      priorityOrder: ['expenses', 'projects', 'savings', 'emergency_fund'],
-    });
-
-    const after = await getAllocation('2026-06');
-    expect(after).toMatchObject({
-      emergencyFundPct: 15,
-      savingsPct: 20,
-      projectsPct: 25,
-      expensesPct: 40,
-      priorityOrder: ['expenses', 'projects', 'savings', 'emergency_fund'],
-    });
-  });
-});
-
-describe('lockAllocation', () => {
-  it('flips is_locked to true', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    await lockAllocation('2026-06');
-
-    const after = await getAllocation('2026-06');
-    expect(after?.isLocked).toBe(true);
-  });
-
-  it('is idempotent — locking twice is a no-op', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    await lockAllocation('2026-06');
-    await expect(lockAllocation('2026-06')).resolves.toBeUndefined();
-  });
-});
-
-describe('hasConfirmedAnyAllocation', () => {
-  it('is false when only unlocked (default-seeded) allocation rows exist', async () => {
-    // A default row auto-materialises on read but is never a deliberate choice.
-    await getOrCreateCurrentAllocation('2026-06');
-    await getOrCreateCurrentAllocation('2026-07');
-
-    expect(await hasConfirmedAnyAllocation()).toBe(false);
-  });
-
-  it('is false when no allocation row exists at all', async () => {
-    expect(await hasConfirmedAnyAllocation()).toBe(false);
-  });
-
-  it('becomes true once any month has been locked (confirmed)', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    expect(await hasConfirmedAnyAllocation()).toBe(false);
-
-    await lockAllocation('2026-06');
-    expect(await hasConfirmedAnyAllocation()).toBe(true);
-  });
-});
-
-describe('calculateBreakdown', () => {
-  const defaultAllocation = {
-    id: 1,
-    month: '2026-06',
-    emergencyFundPct: DEFAULT_ALLOCATION.emergencyFundPct,
-    savingsPct: DEFAULT_ALLOCATION.savingsPct,
-    projectsPct: DEFAULT_ALLOCATION.projectsPct,
-    expensesPct: DEFAULT_ALLOCATION.expensesPct,
-    priorityOrder: [...DEFAULT_ALLOCATION.priorityOrder],
-    isLocked: false,
-    createdAt: '2026-06-01T00:00:00.000Z',
-  };
-
-  it('splits 400000 FCFA correctly under the defaults', () => {
-    const breakdown = calculateBreakdown(400000, defaultAllocation);
-    expect(breakdown).toEqual({
-      emergencyFund: 40000,
-      savings: 40000,
-      projects: 60000,
-      expenses: 260000,
-    });
-  });
-
-  it('assigns the rounding remainder to the expenses bucket', () => {
-    // 100001 × 10% = 10000.1 (truncates to 10000); same for savings; projects 15001 → 15000;
-    // expenses bucket absorbs the residual so the four sum to 100001.
-    const breakdown = calculateBreakdown(100001, defaultAllocation);
-    const sum =
-      breakdown.emergencyFund +
-      breakdown.savings +
-      breakdown.projects +
-      breakdown.expenses;
-    expect(sum).toBe(100001);
-    expect(breakdown.emergencyFund).toBe(10000);
-    expect(breakdown.savings).toBe(10000);
-    expect(breakdown.projects).toBe(15000);
-    expect(breakdown.expenses).toBe(65001);
-  });
-
-  it('returns all zeros when amount is 0', () => {
-    expect(calculateBreakdown(0, defaultAllocation)).toEqual({
-      emergencyFund: 0,
-      savings: 0,
-      projects: 0,
-      expenses: 0,
-    });
-  });
-});
+}
 
 describe('getExpensesMonthlyTotal', () => {
   it('sums only expenses whose date is in the target month', async () => {
@@ -304,207 +92,132 @@ describe('getExpensesMonthlyTotal', () => {
   });
 });
 
-describe('getMonthlyBudget', () => {
-  it('composes income total, allocation, breakdown, and remaining expense budget', async () => {
-    await createIncome({
-      amount: 350000,
-      source: 'salary',
-      note: null,
-      date: '2026-06-12',
-      allocationStatus: 'allocated',
-    });
-    await createIncome({
-      amount: 75000,
-      source: 'freelance',
-      note: null,
-      date: '2026-06-20',
-      allocationStatus: 'allocated',
-    });
-    await createExpense({
-      amount: 5000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: '2026-06-10',
-      isRecurring: false,
-    });
-    await createExpense({
-      amount: 12000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: '2026-06-15',
-      isRecurring: false,
-    });
+describe('ensureMonthRow', () => {
+  it('creates the row that carries the explicit total', async () => {
+    await ensureMonthRow('2026-06');
+    await setTotalBudget('2026-06', 250_000);
 
     const budget = await getMonthlyBudget('2026-06');
-    expect(budget.incomeTotal).toBe(425000);
-    // 425000 × 65% = 276250 exactly (no remainder).
-    expect(budget.breakdown.expenses).toBe(276250);
-    expect(budget.expensesLogged).toBe(17000);
-    expect(budget.expensesRemaining).toBe(276250 - 17000);
-    expect(budget.allocation.month).toBe('2026-06');
+    expect(budget.month).toBe('2026-06');
   });
 
-  it('excludes pending (held) income from the budget, counting only allocated income', async () => {
-    // 100000 allocated counts; 300000 held in the pool does not (VS-19).
+  it('is idempotent — a second call does not insert a duplicate', async () => {
+    await ensureMonthRow('2026-06');
+    await ensureMonthRow('2026-06');
+
+    const rows = sqlite
+      .prepare('SELECT COUNT(*) AS n FROM allocations WHERE month = ?')
+      .all('2026-06') as { n: number }[];
+    expect(rows[0].n).toBe(1);
+  });
+});
+
+describe('getIncomeMonthlyTotal', () => {
+  it('sums only income whose date is in the target month', async () => {
+    await createIncome({ amount: 350_000, source: 'salary', note: null, date: '2026-06-12' });
+    await createIncome({ amount: 75_000, source: 'freelance', note: null, date: '2026-06-20' });
+    await createIncome({ amount: 900_000, source: 'salary', note: null, date: '2026-07-01' });
+
+    expect(await getIncomeMonthlyTotal('2026-06')).toBe(425_000);
+  });
+
+  it('counts legacy pending rows too', async () => {
+    // Before VS-34 this filtered on allocation_status = 'allocated', so income
+    // left in the unallocated pool vanished from the month. Nothing holds a row
+    // pending any more, and a real franc earned should never go unreported.
     await createIncome({
-      amount: 100000,
-      source: 'salary',
-      note: null,
-      date: '2026-06-12',
-      allocationStatus: 'allocated',
-    });
-    await createIncome({
-      amount: 300000,
+      amount: 300_000,
       source: 'freelance',
       note: null,
       date: '2026-06-20',
       allocationStatus: 'pending',
     });
 
-    const budget = await getMonthlyBudget('2026-06');
-    expect(budget.incomeTotal).toBe(100000);
-    // 100000 × 65% = 65000 expense budget — the held 300000 is ignored.
-    expect(budget.breakdown.expenses).toBe(65000);
+    expect(await getIncomeMonthlyTotal('2026-06')).toBe(300_000);
   });
 
-  it('returns a coherent zero-income view when no income is logged yet', async () => {
+  it('returns 0 when no income matches the month', async () => {
+    expect(await getIncomeMonthlyTotal('2026-06')).toBe(0);
+  });
+});
+
+describe('getMonthlyBudget', () => {
+  it('composes income in, expenses out, and what is left', async () => {
+    await createIncome({ amount: 350_000, source: 'salary', note: null, date: '2026-06-12' });
+    await createIncome({ amount: 75_000, source: 'freelance', note: null, date: '2026-06-20' });
+    await spend('2026-06-10', 5_000);
+    await spend('2026-06-15', 12_000);
+
     const budget = await getMonthlyBudget('2026-06');
-    expect(budget.incomeTotal).toBe(0);
-    expect(budget.breakdown).toEqual({
-      emergencyFund: 0,
-      savings: 0,
-      projects: 0,
-      expenses: 0,
+
+    expect(budget.incomeTotal).toBe(425_000);
+    expect(budget.expensesLogged).toBe(17_000);
+    expect(budget.expensesRemaining).toBe(408_000);
+  });
+
+  it('returns a coherent zero view when nothing is logged yet', async () => {
+    const budget = await getMonthlyBudget('2026-06');
+
+    expect(budget).toEqual({
+      month: '2026-06',
+      incomeTotal: 0,
+      expensesLogged: 0,
+      expensesRemaining: 0,
     });
-    expect(budget.expensesLogged).toBe(0);
-    expect(budget.expensesRemaining).toBe(0);
   });
 });
 
 describe('checkOverBudget', () => {
-  // 400000 income under the defaults (65% expenses) → expense budget = 260000.
-  async function seedLockedJune(): Promise<void> {
-    await createIncome({
-      amount: 400000,
-      source: 'salary',
-      note: null,
-      date: '2026-06-12',
-      allocationStatus: 'allocated',
-    });
-    await getOrCreateCurrentAllocation('2026-06');
-    await lockAllocation('2026-06');
+  /** 400,000 income and no explicit total — so the derived budget is 400,000. */
+  async function seedJune(): Promise<void> {
+    await createIncome({ amount: 400_000, source: 'salary', note: null, date: '2026-06-12' });
+    await ensureMonthRow('2026-06');
   }
 
   it('reports not over when the expense stays within the budget', async () => {
-    await seedLockedJune();
-    await createExpense({
-      amount: 250000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: '2026-06-10',
-      isRecurring: false,
-    });
+    await seedJune();
+    await spend('2026-06-10', 100_000);
 
-    const result = await checkOverBudget('2026-06', 5000); // 255000 ≤ 260000
-    expect(result.isOver).toBe(false);
-    expect(result.overage).toBe(0);
-    expect(result.expenseBudget).toBe(260000);
-    expect(result.remaining).toBe(10000);
+    const check = await checkOverBudget('2026-06', 50_000);
+
+    expect(check.expenseBudget).toBe(400_000);
+    expect(check.isOver).toBe(false);
+    expect(check.overage).toBe(0);
   });
 
   it('reports over with the exact overage when the expense exceeds the budget', async () => {
-    await seedLockedJune();
-    await createExpense({
-      amount: 250000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: '2026-06-10',
-      isRecurring: false,
-    });
+    await seedJune();
+    await spend('2026-06-10', 380_000);
 
-    const result = await checkOverBudget('2026-06', 15000); // 265000 > 260000
-    expect(result.isOver).toBe(true);
-    expect(result.overage).toBe(5000);
+    const check = await checkOverBudget('2026-06', 30_000);
+
+    expect(check.isOver).toBe(true);
+    expect(check.overage).toBe(10_000);
   });
 
   it('treats an expense landing exactly on the budget as not over', async () => {
-    await seedLockedJune();
-    await createExpense({
-      amount: 250000,
-      categoryId: 1,
-      subcategoryId: null,
-      note: null,
-      date: '2026-06-10',
-      isRecurring: false,
-    });
+    await seedJune();
+    await spend('2026-06-10', 350_000);
 
-    const result = await checkOverBudget('2026-06', 10000); // 260000 == budget
-    expect(result.isOver).toBe(false);
-    expect(result.overage).toBe(0);
+    expect((await checkOverBudget('2026-06', 50_000)).isOver).toBe(false);
   });
 
-  it('never reports over while the allocation is unlocked (learning / unconfirmed month)', async () => {
-    // Income exists and the auto-created allocation has a non-zero expense
-    // budget, but the month is not locked, so the guard stays inert.
-    await createIncome({
-      amount: 400000,
-      source: 'salary',
-      note: null,
-      date: '2026-07-12',
-      allocationStatus: 'allocated',
-    });
+  it('honours an explicit total over the derived income figure', async () => {
+    await seedJune();
+    await setTotalBudget('2026-06', 120_000);
 
-    const result = await checkOverBudget('2026-07', 999999);
-    expect(result.isOver).toBe(false);
-    expect(result.overage).toBe(0);
-  });
-});
+    const check = await checkOverBudget('2026-06', 130_000);
 
-describe('redistributeEmergencyPct', () => {
-  it('zeroes emergency and splits its pct proportionally, still summing to 100', async () => {
-    // Default: emergency 10, savings 10, projects 15, expenses 65 (others = 90).
-    await getOrCreateCurrentAllocation('2026-06');
-
-    await redistributeEmergencyPct('2026-06');
-
-    const a = await getAllocation('2026-06');
-    expect(a?.emergencyFundPct).toBe(0);
-    // floor(10*10/90)=1 → savings 11; floor(10*15/90)=1 → projects 16;
-    // expenses takes the remainder → 65 + (10 - 1 - 1) = 73.
-    expect(a?.savingsPct).toBe(11);
-    expect(a?.projectsPct).toBe(16);
-    expect(a?.expensesPct).toBe(73);
-    expect(
-      (a?.emergencyFundPct ?? 0) +
-        (a?.savingsPct ?? 0) +
-        (a?.projectsPct ?? 0) +
-        (a?.expensesPct ?? 0),
-    ).toBe(100);
+    expect(check.expenseBudget).toBe(120_000);
+    expect(check.isOver).toBe(true);
   });
 
-  it('is a no-op when the emergency percentage is already 0', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    await redistributeEmergencyPct('2026-06');
-    const once = await getAllocation('2026-06');
+  it('stays silent while the month has no budget to exceed', async () => {
+    // No income, no explicit total. The month lock used to keep the guard quiet
+    // here; now the absence of any budget does. Either way, logging an expense
+    // into an unplanned month is never interrupted.
+    await ensureMonthRow('2026-06');
 
-    await redistributeEmergencyPct('2026-06');
-    const twice = await getAllocation('2026-06');
-
-    expect(twice).toEqual(once);
-  });
-
-  it('writes through a locked allocation (the documented lock exception)', async () => {
-    await getOrCreateCurrentAllocation('2026-06');
-    await lockAllocation('2026-06');
-
-    await redistributeEmergencyPct('2026-06');
-
-    const a = await getAllocation('2026-06');
-    expect(a?.isLocked).toBe(true);
-    expect(a?.emergencyFundPct).toBe(0);
+    expect((await checkOverBudget('2026-06', 999_999)).isOver).toBe(false);
   });
 });

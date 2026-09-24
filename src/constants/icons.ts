@@ -78,7 +78,6 @@ export const ICONS = {
   help: HelpCircle,
   feedback: MessageSquareText,
   categories: Tag,
-  appMode: SlidersHorizontal,
   appearance: Palette,
   reminder: Clock,
   notifications: Bell,

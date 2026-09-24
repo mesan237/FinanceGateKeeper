@@ -19,9 +19,7 @@ import { BudgetHeroCard } from './BudgetHeroCard';
 import { BudgetInsights } from './BudgetInsights';
 import { CategoryEnvelopeRow } from './CategoryEnvelopeRow';
 import { EnvelopeEditSheet } from './EnvelopeEditSheet';
-import { IncomeSplitCard } from './IncomeSplitCard';
 import { useBudgetOverview, useEnvelopeActions } from './budget.envelope.hooks';
-import { useUnallocatedPool } from './budget.hooks';
 import type { CategoryBudgetProgress } from './budget.types';
 
 export interface BudgetOverviewProps {
@@ -33,10 +31,7 @@ export interface BudgetOverviewProps {
  * The Budget tab.
  *
  * Reads top-down as a month: what is left and whether that is on pace, what
- * still needs assigning, where each category stands, then the analytics, and
- * finally the income split that funds it all. The split used to lead the screen
- * — but it describes where money *went*, not what the user can spend, so it now
- * sits last.
+ * still needs assigning, where each category stands, and then the analytics.
  *
  * A month stepper scopes the whole screen, so past months are reviewable and a
  * new month can be planned before it starts.
@@ -49,7 +44,6 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
   const { overview, loading, error, refresh } = useBudgetOverview(month);
   const { setBudget, remove, coverFrom, error: writeError } = useEnvelopeActions(month);
-  const { total: heldTotal } = useUnallocatedPool();
 
   // Expenses are logged from other screens entirely, so the tab re-reads every
   // time it regains focus. Without this the figures silently go stale the moment
@@ -159,26 +153,6 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
           </>
         )}
 
-        {heldTotal > 0 ? (
-          <Card>
-            <Pressable
-              testID="unallocated-pool-link"
-              style={styles.poolRow}
-              onPress={() => router.push('/budget/unallocated')}
-            >
-              <View style={styles.poolBody}>
-                <Typography variant="label">Unallocated income</Typography>
-                <Typography variant="muted">Held — tap to decide where it goes</Typography>
-              </View>
-              <Typography variant="subheading">{formatCurrency(heldTotal)}</Typography>
-            </Pressable>
-          </Card>
-        ) : null}
-
-        {overview ? <IncomeSplitCard month={month} /> : null}
-
-        <Button label="Funds" variant="secondary" onPress={() => router.push('/funds')} />
-
         {error ? (
           <Typography style={styles.error} testID="budget-error">
             {error}
@@ -273,15 +247,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.PRIMARY_GREEN,
     fontSize: 13,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
-  },
-  poolRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING.md,
-  },
-  poolBody: {
-    flex: 1,
   },
   error: {
     color: c.DANGER,
