@@ -22,6 +22,7 @@ export const expenses = {
   },
   detail: {
     title: 'Edit Expense',
+    invalidId: 'Invalid expense id.',
     delete: 'Delete expense',
     deleteTitle: 'Delete expense?',
     deleteBody: 'Delete this expense? This cannot be undone.',

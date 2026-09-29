@@ -84,7 +84,7 @@ export function SpendingDonutChart({ data, size = SIZE }: SpendingDonutChartProp
       </Svg>
       <View style={[styles.center, { transform: [{ scale }] }]} pointerEvents="none">
         <Typography variant="muted" style={styles.totalLabel}>
-          TOTAL
+          {t('totalCaps')}
         </Typography>
         <Typography variant="subheading">{groupDigits(Math.trunc(total).toString())}</Typography>
         <Typography variant="muted" style={styles.totalUnit}>

@@ -136,7 +136,7 @@ export function useIncomeEdit(id: number) {
         if (cancelled) return;
         if (!income) {
           setNotFound(true);
-          setError('Income not found.');
+          setError(i18n.t('detail.notFound', { ns: 'income' }));
           return;
         }
         setAmount(String(income.amount));
@@ -163,7 +163,7 @@ export function useIncomeEdit(id: number) {
   /** Persists the full patch. Returns true on success so the screen can navigate. */
   const update = useCallback(async (): Promise<boolean> => {
     if (!canSubmit || source === null) {
-      setError('Enter an amount greater than 0 and pick a source.');
+      setError(i18n.t('detail.invalidEdit', { ns: 'income' }));
       return false;
     }
     try {

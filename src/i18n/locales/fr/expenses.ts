@@ -25,6 +25,7 @@ export const expenses: Translation<typeof en> = {
   },
   detail: {
     title: 'Modifier la dépense',
+    invalidId: 'Identifiant de dépense invalide.',
     delete: 'Supprimer la dépense',
     deleteTitle: 'Supprimer la dépense ?',
     deleteBody: 'Supprimer cette dépense ? Cette action est irréversible.',

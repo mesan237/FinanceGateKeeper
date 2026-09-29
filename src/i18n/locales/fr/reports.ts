@@ -8,6 +8,7 @@ export const reports: Translation<typeof en> = {
   previousPeriod: 'Période précédente',
   nextPeriod: 'Période suivante',
   noData: 'Aucune donnée pour cette période.',
+  totalCaps: 'TOTAL',
   monthly: {
     incomeCaps: 'REVENUS',
     expensesCaps: 'DÉPENSES',

@@ -5,6 +5,7 @@ export const reports = {
   previousPeriod: 'Previous period',
   nextPeriod: 'Next period',
   noData: 'No data for this period.',
+  totalCaps: 'TOTAL',
   monthly: {
     incomeCaps: 'INCOME',
     expensesCaps: 'EXPENSES',

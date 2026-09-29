@@ -8,6 +8,8 @@ export const income = {
   },
   detail: {
     title: 'Edit Income',
+    invalidId: 'Invalid income id.',
+    invalidEdit: 'Enter an amount greater than 0 and pick a source.',
     notFoundTitle: 'Income',
     notFound: 'Income not found.',
     updated: 'Income updated',

@@ -466,7 +466,7 @@ export function useExpenseEdit(id: number): {
     try {
       const expense = await expenseService.getExpenseById(id);
       if (!expense) {
-        setError('Expense not found.');
+        setError(i18n.t('errors.expenseNotFound', { ns: 'expenses' }));
         return;
       }
       setAmount(String(expense.amount));

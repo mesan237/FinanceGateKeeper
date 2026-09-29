@@ -11,6 +11,8 @@ export const income: Translation<typeof en> = {
   },
   detail: {
     title: 'Modifier le revenu',
+    invalidId: 'Identifiant de revenu invalide.',
+    invalidEdit: 'Saisissez un montant supérieur à 0 et choisissez une source.',
     notFoundTitle: 'Revenu',
     notFound: 'Revenu introuvable.',
     updated: 'Revenu modifié',
