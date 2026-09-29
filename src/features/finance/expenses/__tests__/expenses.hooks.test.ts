@@ -79,15 +79,30 @@ describe('useExpenseLog', () => {
     );
   });
 
-  it('sets an error and does not call the service when invalid', async () => {
+  it('flags the missing amount and category, and does not call the service when invalid', async () => {
     const { result } = renderHook(() => useExpenseLog());
+    expect(result.current.fieldErrors).toEqual({}); // hidden before the first attempt
     let id: number | null = 99;
     await act(async () => {
       id = await result.current.submit();
     });
     expect(id).toBeNull();
     expect(mocked.createExpense).not.toHaveBeenCalled();
-    expect(result.current.error).toBeTruthy();
+    expect(result.current.fieldErrors).toEqual({
+      amount: 'Enter an amount greater than 0.',
+      category: 'Pick a category.',
+    });
+  });
+
+  it('validate() reveals field errors and reports validity without saving', () => {
+    const { result } = renderHook(() => useExpenseLog());
+    let valid = true;
+    act(() => {
+      valid = result.current.validate();
+    });
+    expect(valid).toBe(false);
+    expect(result.current.fieldErrors.category).toBe('Pick a category.');
+    expect(mocked.createExpense).not.toHaveBeenCalled();
   });
 });
 

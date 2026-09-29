@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
+import { FieldError } from '@/components/FieldError';
 import { Icon } from '@/components/Icon';
 import { TextInput } from '@/components/TextInput';
 import { useToast } from '@/components/Toast';
@@ -92,6 +93,9 @@ export function ExpenseEntryPanel({
   };
 
   const handleSave = async () => {
+    Keyboard.dismiss();
+    // Surface every missing field inline instead of silently ignoring the tap.
+    if (!log.validate()) return;
     const amountFCFA = Math.trunc(Number(log.amount));
 
     // The category envelope is checked first: "3,000 over your Food budget"
@@ -115,13 +119,22 @@ export function ExpenseEntryPanel({
 
   return (
     <View style={styles.container}>
-      <AmountInput value={log.amount} onChangeText={log.setAmount} autoFocus={autoFocus} />
+      <AmountInput
+        value={log.amount}
+        onChangeText={log.setAmount}
+        autoFocus={autoFocus}
+        invalid={log.fieldErrors.amount !== undefined}
+      />
+      <FieldError message={log.fieldErrors.amount} testID="expense-amount-error" />
 
       <Pressable
         accessibilityRole="button"
         testID="expense-category-trigger"
-        style={styles.categoryTrigger}
-        onPress={() => setPickerVisible(true)}
+        style={[styles.categoryTrigger, log.fieldErrors.category && styles.invalid]}
+        onPress={() => {
+          Keyboard.dismiss();
+          setPickerVisible(true);
+        }}
       >
         <View style={styles.categoryContent}>
           <Icon
@@ -135,6 +148,7 @@ export function ExpenseEntryPanel({
         </View>
         <Icon name="forward" size={18} color={c.TEXT_MUTED} />
       </Pressable>
+      <FieldError message={log.fieldErrors.category} testID="expense-category-error" />
 
       <View>
         <Typography variant="muted" style={styles.noteLabel}>
@@ -148,6 +162,10 @@ export function ExpenseEntryPanel({
           multiline
           numberOfLines={3}
           textAlignVertical="top"
+          // A multiline field has no built-in way to close the keyboard; make
+          // the return key a "Done" that dismisses it (notes are one-liners).
+          returnKeyType="done"
+          submitBehavior="blurAndSubmit"
           style={styles.note}
         />
       </View>
@@ -161,7 +179,7 @@ export function ExpenseEntryPanel({
         onChange={log.setAccountId}
       />
 
-      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
+      <Button label={t('common:actions.save')} onPress={handleSave} loading={saving} />
 
       {log.error ? (
         <View style={styles.errorRow}>
@@ -211,6 +229,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   categoryContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   categoryPlaceholder: { color: c.PRIMARY_GREEN },
+  invalid: { borderColor: c.DANGER, borderWidth: 1 },
   noteLabel: { marginBottom: 6 },
   note: {
     minHeight: 64,

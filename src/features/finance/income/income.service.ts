@@ -1,7 +1,14 @@
+import i18n from 'i18next';
+
 import { INCOME_SOURCE_VALUES } from '@/constants/incomeSources';
 import { execute, query } from '@/services/database';
 
 import type { Income, NewIncome, UpdateIncome } from './income.types';
+
+/** A validation message in the active UI language — thrown errors reach the screen as-is. */
+function err(key: 'amountPositive' | 'unknownSource' | 'notFound', params?: Record<string, string>): string {
+  return i18n.t(`errors.${key}`, { ns: 'income', ...params });
+}
 
 interface IncomeRow {
   id: number;
@@ -42,10 +49,10 @@ function mapIncome(row: IncomeRow): Income {
  */
 export async function createIncome(input: NewIncome): Promise<number> {
   if (!Number.isInteger(input.amount) || input.amount <= 0) {
-    throw new Error('Income amount must be a positive integer (FCFA).');
+    throw new Error(err('amountPositive'));
   }
   if (!INCOME_SOURCE_VALUES.has(input.source)) {
-    throw new Error(`Unknown income source: ${input.source}.`);
+    throw new Error(err('unknownSource', { source: String(input.source) }));
   }
 
   await execute(
@@ -91,14 +98,14 @@ export async function getIncomeById(id: number): Promise<Income | null> {
  */
 export async function updateIncome(id: number, patch: UpdateIncome): Promise<void> {
   if (!Number.isInteger(patch.amount) || patch.amount <= 0) {
-    throw new Error('Income amount must be a positive integer (FCFA).');
+    throw new Error(err('amountPositive'));
   }
   if (!INCOME_SOURCE_VALUES.has(patch.source)) {
-    throw new Error(`Unknown income source: ${patch.source}.`);
+    throw new Error(err('unknownSource', { source: String(patch.source) }));
   }
 
   const existing = await getIncomeById(id);
-  if (!existing) throw new Error('Income not found.');
+  if (!existing) throw new Error(err('notFound'));
 
   await execute(
     `UPDATE income SET amount = ?, source = ?, date = ?, note = ?, account_id = ? WHERE id = ?`,
@@ -117,7 +124,7 @@ export async function updateIncome(id: number, patch: UpdateIncome): Promise<voi
  */
 export async function deleteIncome(id: number): Promise<void> {
   const existing = await getIncomeById(id);
-  if (!existing) throw new Error('Income not found.');
+  if (!existing) throw new Error(err('notFound'));
   await execute('DELETE FROM income WHERE id = ?', [id]);
 }
 

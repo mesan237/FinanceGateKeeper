@@ -115,6 +115,10 @@ export const expenses: Translation<typeof en> = {
     confirm: "Oui, je n'ai rien dépensé",
     log: 'Je note mes dépenses',
   },
+  validation: {
+    amountRequired: 'Saisissez un montant supérieur à 0.',
+    categoryRequired: 'Choisissez une catégorie.',
+  },
   errors: {
     saveFailed: "Impossible d'enregistrer la dépense.",
     loadTransactions: 'Impossible de charger les transactions.',

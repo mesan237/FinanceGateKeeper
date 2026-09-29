@@ -3,6 +3,7 @@ import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
 import { dataTransfer as enDataTransfer } from '@/i18n/locales/en/dataTransfer';
 import { expenses as enExpenses } from '@/i18n/locales/en/expenses';
+import { income as enIncome } from '@/i18n/locales/en/income';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
 import { notifications as enNotifications } from '@/i18n/locales/en/notifications';
 import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
@@ -11,6 +12,7 @@ import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
 import { dataTransfer as frDataTransfer } from '@/i18n/locales/fr/dataTransfer';
 import { expenses as frExpenses } from '@/i18n/locales/fr/expenses';
+import { income as frIncome } from '@/i18n/locales/fr/income';
 import { navigation as frNavigation } from '@/i18n/locales/fr/navigation';
 import { notifications as frNotifications } from '@/i18n/locales/fr/notifications';
 import { onboarding as frOnboarding } from '@/i18n/locales/fr/onboarding';
@@ -30,6 +32,7 @@ export const resources = {
     onboarding: enOnboarding,
     dataTransfer: enDataTransfer,
     expenses: enExpenses,
+    income: enIncome,
   },
   fr: {
     common: frCommon,
@@ -40,6 +43,7 @@ export const resources = {
     onboarding: frOnboarding,
     dataTransfer: frDataTransfer,
     expenses: frExpenses,
+    income: frIncome,
   },
 };
 

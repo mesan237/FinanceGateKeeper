@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { IncomeSource } from '@/constants/incomeSources';
@@ -10,6 +11,12 @@ import type { Income, IncomeFilter } from './income.types';
 export interface ControlledField {
   value: string;
   onChange: (value: string) => void;
+}
+
+/** Per-field validation messages; a key is set only while that field is invalid. */
+export interface IncomeFieldErrors {
+  amount?: string;
+  source?: string;
 }
 
 export interface UseIncomeLogOptions {
@@ -38,22 +45,34 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
 
   const numericAmount = Number(amount);
-  const canSubmit = Number.isFinite(numericAmount) && numericAmount > 0 && source !== null;
+  const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
+  const canSubmit = amountValid && source !== null;
+
+  // Hidden until the first submit attempt, then live so each clears once fixed.
+  const fieldErrors: IncomeFieldErrors = {};
+  if (attempted && !amountValid) {
+    fieldErrors.amount = i18n.t('validation.amountRequired', { ns: 'income' });
+  }
+  if (attempted && source === null) {
+    fieldErrors.source = i18n.t('validation.sourceRequired', { ns: 'income' });
+  }
 
   const reset = useCallback(() => {
     setAmount('');
     setSource(null);
     setNote('');
     setDate(toISODate(new Date()));
+    setAttempted(false);
     // account is intentionally NOT reset — the user usually logs into the same wallet.
   }, []);
 
   /** Persists the income. Returns the new id, or null if invalid / failed. */
   const submit = useCallback(async (): Promise<number | null> => {
     if (!canSubmit || source === null) {
-      setError('Enter an amount greater than 0 and pick a source.');
+      setAttempted(true);
       return null;
     }
     try {
@@ -68,7 +87,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
       reset();
       return id;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save income.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'income' }));
       return null;
     }
   }, [canSubmit, source, numericAmount, note, date, accountId, reset]);
@@ -86,6 +105,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
     setAccountId,
     submit,
     canSubmit,
+    fieldErrors,
     error,
   };
 }
@@ -126,7 +146,7 @@ export function useIncomeEdit(id: number) {
         setAccountId(income.accountId);
         setError(null);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load income.');
+        if (!cancelled) setError(e instanceof Error ? e.message : i18n.t('errors.loadFailed', { ns: 'income' }));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -157,7 +177,7 @@ export function useIncomeEdit(id: number) {
       setError(null);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update income.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.updateFailed', { ns: 'income' }));
       return false;
     }
   }, [id, canSubmit, source, numericAmount, note, date, accountId]);
@@ -168,7 +188,7 @@ export function useIncomeEdit(id: number) {
       await incomeService.deleteIncome(id);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete income.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'income' }));
       return false;
     }
   }, [id]);
@@ -221,7 +241,7 @@ export function useIncomeHistory(filter?: IncomeFilter) {
       setIncome(result);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load income.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadFailed', { ns: 'income' }));
     } finally {
       setLoading(false);
     }

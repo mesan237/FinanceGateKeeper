@@ -28,6 +28,12 @@ export interface ControlledField {
   onChange: (value: string) => void;
 }
 
+/** Per-field validation messages; a key is set only while that field is invalid. */
+export interface ExpenseFieldErrors {
+  amount?: string;
+  category?: string;
+}
+
 export interface UseExpenseLogOptions {
   /** Lift `amount` to a parent so it persists across form remounts (e.g. the
    *  Add-transaction sheet keeping the figure when toggling Expense/Income). */
@@ -41,7 +47,9 @@ export interface UseExpenseLogOptions {
  * (rather than a form-state object) so later slices reusing this shape stay
  * consistent. Validates `amount > 0` and a chosen category before allowing
  * submit. `amount`/`note` may be lifted to a parent via `options` so their
- * values survive the form unmounting.
+ * values survive the form unmounting. `fieldErrors` stays empty until the first
+ * `validate`/`submit` attempt, then tracks each field live so a message clears
+ * the moment the user fixes it.
  */
 export function useExpenseLog(options?: UseExpenseLogOptions) {
   const internalAmount = useState('');
@@ -55,15 +63,30 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
 
   const numericAmount = Number(amount);
-  const canSubmit =
-    Number.isFinite(numericAmount) && numericAmount > 0 && categoryId !== null;
+  const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
+  const canSubmit = amountValid && categoryId !== null;
+
+  const fieldErrors: ExpenseFieldErrors = {};
+  if (attempted && !amountValid) {
+    fieldErrors.amount = i18n.t('validation.amountRequired', { ns: 'expenses' });
+  }
+  if (attempted && categoryId === null) {
+    fieldErrors.category = i18n.t('validation.categoryRequired', { ns: 'expenses' });
+  }
+
+  /** Marks the form as attempted (revealing field errors) and returns whether it is valid. */
+  const validate = useCallback((): boolean => {
+    setAttempted(true);
+    return canSubmit;
+  }, [canSubmit]);
 
   /** Persists the expense. Returns the new id, or null if invalid / failed. */
   const submit = useCallback(async (): Promise<number | null> => {
     if (!canSubmit || categoryId === null) {
-      setError('Enter an amount greater than 0 and pick a category.');
+      setAttempted(true);
       return null;
     }
     try {
@@ -98,7 +121,9 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
     accountId,
     setAccountId,
     submit,
+    validate,
     canSubmit,
+    fieldErrors,
     error,
   };
 }

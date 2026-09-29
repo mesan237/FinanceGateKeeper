@@ -15,6 +15,8 @@ export interface AmountInputProps {
   onChangeText: (value: string) => void;
   accessibilityLabel?: string;
   autoFocus?: boolean;
+  /** Draws the border in the danger colour when the field failed validation. */
+  invalid?: boolean;
   testID?: string;
 }
 
@@ -29,6 +31,7 @@ export function AmountInput({
   onChangeText,
   accessibilityLabel,
   autoFocus,
+  invalid = false,
   testID,
 }: AmountInputProps) {
   const styles = useThemedStyles(makeStyles);
@@ -39,13 +42,14 @@ export function AmountInput({
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, invalid && { borderColor: c.DANGER }]}>
       <RNTextInput
         value={value ? groupDigits(value) : ''}
         onChangeText={handleChange}
         placeholder="0"
         placeholderTextColor={c.TEXT_MUTED}
         keyboardType="numeric"
+        returnKeyType="done"
         accessibilityLabel={accessibilityLabel ?? t('fields.amountInFcfa')}
         autoFocus={autoFocus}
         testID={testID}

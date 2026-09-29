@@ -111,6 +111,10 @@ export const expenses = {
     confirm: 'Yes, I spent nothing',
     log: 'Let me log',
   },
+  validation: {
+    amountRequired: 'Enter an amount greater than 0.',
+    categoryRequired: 'Pick a category.',
+  },
   errors: {
     saveFailed: 'Failed to save expense.',
     loadTransactions: 'Failed to load transactions.',

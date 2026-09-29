@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -39,6 +40,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
   const router = useRouter();
   const edit = useIncomeEdit(incomeId);
   const { show } = useToast();
+  const { t } = useTranslation(['income', 'common']);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -47,7 +49,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
     try {
       const ok = await edit.update();
       if (ok) {
-        show('Income updated');
+        show(t('detail.updated'));
         router.back();
       }
     } finally {
@@ -59,7 +61,7 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
     setDeleteModalVisible(false);
     const ok = await edit.remove();
     if (ok) {
-      show('Income deleted');
+      show(t('detail.deleted'));
       router.back();
     }
   };
@@ -67,15 +69,15 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
   if (edit.notFound) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title="Income" />
-        <Typography variant="muted">Income not found.</Typography>
+        <ScreenHeader title={t('detail.notFoundTitle')} />
+        <Typography variant="muted">{t('detail.notFound')}</Typography>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Edit Income" />
+      <ScreenHeader title={t('detail.title')} />
 
       <KeyboardAwareForm>
         <View style={styles.form}>
@@ -86,8 +88,8 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
           <TextInput
             value={edit.note}
             onChangeText={edit.setNote}
-            placeholder="Note (optional)"
-            accessibilityLabel="Note"
+            placeholder={t('notePlaceholder')}
+            accessibilityLabel={t('noteLabel')}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -98,16 +100,16 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
           <AccountPicker
             testID="income-detail-account"
-            label="Account"
+            label={t('account')}
             value={edit.accountId}
             onChange={edit.setAccountId}
           />
 
-          <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
+          <Button label={t('common:actions.save')} onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 
           <Button
             testID="delete-income"
-            label="Delete income"
+            label={t('detail.delete')}
             variant="danger"
             onPress={() => setDeleteModalVisible(true)}
           />
@@ -123,14 +125,12 @@ export function IncomeDetailScreen({ incomeId }: IncomeDetailScreenProps) {
 
       <Modal visible={deleteModalVisible} onRequestClose={() => setDeleteModalVisible(false)}>
         <View style={styles.deleteModal}>
-          <Typography variant="subheading">Delete income?</Typography>
-          <Typography variant="muted">
-            This income will be removed from your records. This cannot be undone.
-          </Typography>
-          <Button label="Delete" onPress={handleDeleteConfirm} variant="danger" />
+          <Typography variant="subheading">{t('detail.deleteTitle')}</Typography>
+          <Typography variant="muted">{t('detail.deleteBody')}</Typography>
+          <Button label={t('common:actions.delete')} onPress={handleDeleteConfirm} variant="danger" />
           <Button
             testID="delete-modal-cancel"
-            label="Cancel"
+            label={t('common:actions.cancel')}
             onPress={() => setDeleteModalVisible(false)}
           />
         </View>
