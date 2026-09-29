@@ -1,9 +1,11 @@
+import i18n from '@/i18n';
 import {
   addMonths,
   currentMonthISO,
   daysBetween,
   formatDateLong,
   formatDateShort,
+  formatSectionDate,
   toISODate,
 } from '@/utils/formatDate';
 
@@ -103,5 +105,32 @@ describe('currentMonthISO', () => {
   it('pads single-digit months to two digits', () => {
     jest.setSystemTime(new Date('2026-01-05T00:00:00Z'));
     expect(currentMonthISO()).toBe('2026-01');
+  });
+});
+
+describe('localized date labels', () => {
+  it('writes French month names when asked for French', () => {
+    expect(formatDateShort('2026-06-12', 'fr')).toBe('12 juin');
+    expect(formatDateLong('2026-02-03', 'fr')).toBe('3 février 2026');
+  });
+
+  it('writes French weekday section headers', () => {
+    expect(formatSectionDate('2026-06-08', '2026-06-12', 'fr')).toBe('lun. 8 juin');
+    expect(formatSectionDate('2026-06-12', '2026-06-12', 'fr')).toBe("Aujourd'hui");
+    expect(formatSectionDate('2026-06-11', '2026-06-12', 'fr')).toBe('Hier');
+  });
+
+  it('keeps the English labels by default', () => {
+    expect(formatSectionDate('2026-06-08', '2026-06-12')).toBe('Mon 8 Jun');
+    expect(formatSectionDate('2026-06-12', '2026-06-12')).toBe('Today');
+  });
+
+  it('follows the active app language when no language is passed', async () => {
+    await i18n.changeLanguage('fr');
+    try {
+      expect(formatDateShort('2026-08-01')).toBe('1 août');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });

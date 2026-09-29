@@ -172,6 +172,14 @@ src/
 │       ├── debtDueDate.ts            # Debt reminder trigger
 │       └── projectTimeline.ts        # Project timeline change trigger
 │
+├── i18n/                             # Translations (VS-35) — leaf layer
+│   ├── index.ts                      # i18next init, applyLanguagePreference
+│   ├── resources.ts                  # Every catalogue, by language then namespace
+│   ├── resolveLanguage.ts            # Saved override / device tag → 'fr' | 'en'
+│   ├── dateNames.ts                  # Month & weekday names per language
+│   ├── categoryNames.ts              # Seeded default category → translated name
+│   └── locales/{en,fr}/<ns>.ts       # One namespace per slice; fr typed against en
+│
 ├── constants/
 │   ├── categories.ts                 # Default categories and subcategories
 │   ├── colors.ts                     # App color palette
@@ -202,6 +210,9 @@ app/ ──────────► features/finance/*
                notifications/
                constants/
                types/
+                      │
+                      ▼
+                    i18n/
 ```
 
 ### Rules enforced
@@ -213,8 +224,15 @@ app/ ──────────► features/finance/*
 | `components/`        | `utils/`, `constants/`, `types/`                | Features, Routes       |
 | `services/`          | `utils/`, `constants/`, `types/`                | Features, Routes       |
 | `hooks/`             | `utils/`, `services/`                           | Features, Routes       |
-| `utils/`             | `constants/`, `types/` only                     | Everything else        |
-| `notifications/`     | `utils/`, `constants/`, `types/`                | Features, Routes       |
+| `utils/`             | `constants/`, `types/`, `i18n/` only            | Everything else        |
+| `notifications/`     | `utils/`, `constants/`, `types/`, `i18n/`       | Features, Routes       |
+| `i18n/`              | External packages only (`i18next`, `expo-localization`) | Every other `src/` folder |
+
+`i18n/` is the bottom layer: any folder may import it, and it imports nothing
+from `src/` outside itself. Its namespaces mirror the feature slices, but the
+catalogues live here rather than inside each feature, so that initialisation can
+load them all without shared infra importing a feature. `components/`,
+`services/` and `hooks/` may import `i18n/` as well.
 
 ### Cross-feature imports
 

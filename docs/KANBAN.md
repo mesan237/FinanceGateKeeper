@@ -1023,6 +1023,35 @@ Budget opens to this month's category envelopes without touching a setting,
 Reports shows a category breakdown uninterrupted by funds or projects, and every
 wallet balance matches what it showed before the slice.
 
+### VS-35: French Localization
+
+**Priority:** High — user-requested; French is the target user's working language
+**Plan:** `issues/ISSUE-033/implementation-plan.md`
+
+**Scope:**
+
+- i18next + react-i18next + expo-localization behind a new shared `src/i18n/`
+  folder. Resources are typed TypeScript per namespace, and a missing French key
+  fails `tsc`.
+- The device language is the default. Settings "Language" row: System /
+  Français / English, stored in `users.language` (migration 029, device-local).
+- Every screen, shared component, route title and notification reads from the
+  catalogue. `formatDate` gets French month and day names.
+- Seeded default categories are translated when displayed. User-created names
+  display verbatim, and nothing in the database is rewritten.
+
+**TDD Anchor:**
+
+- Test: `resolveLanguage` — override wins; `fr-*` device → fr; unsupported → en.
+- Test: `formatDate` — French month/day names; English unchanged.
+- Test: `displayCategoryName` — seeded default translated, custom name verbatim.
+- Test: fr/en key parity.
+- Test: Settings language row persists and switches the rendered language.
+
+**Done when:** A phone set to French opens the whole app in French, the Settings
+override switches language without a restart, and every existing English test
+still passes.
+
 ---
 
 ## DEPENDENCY GRAPH

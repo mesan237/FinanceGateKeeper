@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -19,10 +20,11 @@ export interface IncomeSourcePickerProps {
  */
 export function IncomeSourcePicker({ value, onChange }: IncomeSourcePickerProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
   return (
     <View style={styles.row}>
-      {INCOME_SOURCES.map(({ value: source, label }) => {
-
+      {INCOME_SOURCES.map(({ value: source }) => {
+        const label = t(`incomeSources.${source}`);
         const active = value === source;
         return (
           <Pressable

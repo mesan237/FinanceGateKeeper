@@ -1,11 +1,6 @@
+import { labelForSource } from '@/constants/incomeSources';
 import { query } from '@/services/database';
 import type { TransactionEntry } from '@/types/transactions';
-
-const SOURCE_LABELS: Record<string, string> = {
-  salary: 'Salary',
-  freelance: 'Freelance',
-  ecommerce: 'E-commerce',
-};
 
 interface UnifiedRow {
   type: 'expense' | 'income';
@@ -114,7 +109,7 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
       amount: row.amount,
       date: row.date,
       source,
-      sourceLabel: SOURCE_LABELS[source] ?? source,
+      sourceLabel: labelForSource(source),
       note: row.note,
       accountId: row.account_id,
       accountLabel: row.account_label,

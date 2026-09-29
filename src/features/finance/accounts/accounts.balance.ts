@@ -1,12 +1,7 @@
+import { labelForSource } from '@/constants/incomeSources';
 import { query } from '@/services/database';
 
 import type { AccountHistoryEntry, AccountStats } from './accounts.types';
-
-const SOURCE_LABELS: Record<string, string> = {
-  salary: 'Salary',
-  freelance: 'Freelance',
-  ecommerce: 'E-commerce',
-};
 
 /**
  * Computes a wallet's live balance from its transaction history — never stored.
@@ -117,7 +112,7 @@ export async function getAccountHistory(id: number): Promise<AccountHistoryEntry
 function labelFor(row: HistoryRow): string {
   switch (row.kind) {
     case 'income':
-      return SOURCE_LABELS[row.label ?? ''] ?? 'Income';
+      return row.label ? labelForSource(row.label) : 'Income';
     case 'expense':
       return row.label ?? 'Expense';
     case 'transfer_out':

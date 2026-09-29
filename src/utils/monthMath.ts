@@ -11,20 +11,8 @@
  * `formatDate.ts`: a month boundary must not shift with the device timezone.
  */
 
-const MONTHS_LONG = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const;
+import { dateNames } from '@/i18n/dateNames';
+import type { AppLanguage } from '@/i18n/resolveLanguage';
 
 /** Days grouped into one trend bucket. Buckets are day-of-month based, not ISO weeks. */
 const DAYS_PER_WEEK = 7;
@@ -112,11 +100,14 @@ export function nextMonthISO(monthISO: string): string {
 /**
  * A month key as a human label for headers and steppers.
  *
- * @returns e.g. `monthLabel('2026-08')` -> "August 2026".
+ * @param lang Language of the label (default: the active UI language).
+ * @returns e.g. `monthLabel('2026-08')` -> "August 2026" / "Août 2026".
  */
-export function monthLabel(monthISO: string): string {
+export function monthLabel(monthISO: string, lang?: AppLanguage): string {
   const { year, month } = parseMonth(monthISO);
-  return `${MONTHS_LONG[month - 1]} ${year}`;
+  const name = dateNames(lang).monthsLong[month - 1];
+  // French month names are lowercase mid-sentence; a header starts capitalised.
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${year}`;
 }
 
 /**

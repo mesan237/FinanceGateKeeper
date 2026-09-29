@@ -1,15 +1,27 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
-import { INCOME_SOURCES } from '@/constants/incomeSources';
+import { INCOME_SOURCES, labelForSource } from '@/constants/incomeSources';
 import { IncomeSourcePicker } from '@/features/finance/income/IncomeSourcePicker';
+import i18n from '@/i18n';
 
 describe('IncomeSourcePicker', () => {
   it('renders one pill per INCOME_SOURCES entry', () => {
     render(<IncomeSourcePicker value={null} onChange={jest.fn()} />);
-    for (const { label } of INCOME_SOURCES) {
-      expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    for (const { value } of INCOME_SOURCES) {
+      expect(screen.getByRole('button', { name: labelForSource(value) })).toBeTruthy();
     }
+  });
+
+  it('labels the pills in French when the app is in French', async () => {
+    render(<IncomeSourcePicker value={null} onChange={jest.fn()} />);
+    await act(async () => {
+      await i18n.changeLanguage('fr');
+    });
+    expect(screen.getByRole('button', { name: 'Salaire' })).toBeTruthy();
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
   });
 
   it('calls onChange with the source value when a pill is tapped', () => {

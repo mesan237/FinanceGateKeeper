@@ -149,3 +149,18 @@ jest.mock('expo-document-picker', () => ({
 // mock, so these values are never used to reach a real network endpoint.
 process.env.EXPO_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??= 'test-anon-key';
+
+// Pin the device to English so every suite renders the English catalogue —
+// existing screen tests assert English copy. French is exercised per test via
+// `i18n.changeLanguage('fr')`, and the language is reset after each test so a
+// French test can never leak into the next one.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageTag: 'en-US', languageCode: 'en' }],
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const i18n = require('@/i18n').default as typeof import('@/i18n').default;
+
+afterEach(async () => {
+  if (i18n.language !== 'en') await i18n.changeLanguage('en');
+});

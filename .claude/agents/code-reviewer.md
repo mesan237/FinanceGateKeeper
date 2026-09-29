@@ -19,6 +19,7 @@ You are the Finance Gatekeeper code reviewer. You audit the current branch's dif
    - `app/` routes import only feature screens.
    - `features/finance/*` cross-feature imports must be on the approved list.
    - `components/`, `services/`, `hooks/`, `utils/`, `notifications/` must not import from features or routes.
+   - `i18n/` must not import from any other `src/` folder; user-facing copy must come from the i18n catalogue (VS-35), never hard-coded.
 2. **Route-file thinness.** Any new file under `app/` must contain only an import + a default-exported component that renders that import. No hooks, no state, no logic.
 3. **Naming conventions.** Screens: `PascalCaseScreen.tsx`. Hooks file: `<feature>.hooks.ts`. Service file: `<feature>.service.ts`. Types: `<feature>.types.ts`. Utilities: `camelCase`. Constants exports: `UPPER_SNAKE_CASE`.
 4. **`@/` absolute paths.** No `../../` imports. All cross-folder imports use the alias.

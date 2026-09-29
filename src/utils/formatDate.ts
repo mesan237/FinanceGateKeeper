@@ -1,34 +1,5 @@
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
-const MONTHS_SHORT = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-] as const;
-
-const MONTHS_LONG = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const;
+import { dateNames } from '@/i18n/dateNames';
+import type { AppLanguage } from '@/i18n/resolveLanguage';
 
 /**
  * Coerces a `Date` or an ISO date string into a `Date`. Bare `YYYY-MM-DD`
@@ -108,38 +79,43 @@ export function daysBetween(a: Date | string, b: Date | string): number {
  *
  * @param dateISO YYYY-MM-DD string.
  * @param todayISO Reference "today" (default: current UTC date).
+ * @param lang Language of the label (default: the active UI language).
  */
-export function formatSectionDate(dateISO: string, todayISO?: string): string {
+export function formatSectionDate(dateISO: string, todayISO?: string, lang?: AppLanguage): string {
+  const names = dateNames(lang);
   const ref = todayISO ?? toISODate(new Date());
-  if (dateISO === ref) return 'Today';
+  if (dateISO === ref) return names.today;
 
   const refDate = asDate(ref);
   refDate.setUTCDate(refDate.getUTCDate() - 1);
-  if (dateISO === toISODate(refDate)) return 'Yesterday';
+  if (dateISO === toISODate(refDate)) return names.yesterday;
 
   const d = asDate(dateISO);
-  const day = DAYS_SHORT[d.getUTCDay()];
-  return `${day} ${d.getUTCDate()} ${MONTHS_SHORT[d.getUTCMonth()]}`;
+  const day = names.daysShort[d.getUTCDay()];
+  return `${day} ${d.getUTCDate()} ${names.monthsShort[d.getUTCMonth()]}`;
 }
 
 /**
  * Formats a date as a short, day-and-month label for transaction rows.
  *
  * @param d A `Date` or `YYYY-MM-DD` string.
- * @returns e.g. "12 Jun".
+ * @param lang Language of the label (default: the active UI language).
+ * @returns e.g. "12 Jun" / "12 juin".
  */
-export function formatDateShort(d: Date | string): string {
+export function formatDateShort(d: Date | string, lang?: AppLanguage): string {
   const date = asDate(d);
-  return `${date.getUTCDate()} ${MONTHS_SHORT[date.getUTCMonth()]}`;
+  return `${date.getUTCDate()} ${dateNames(lang).monthsShort[date.getUTCMonth()]}`;
 }
 
 /**
  * Formats a date as a full day-month-year label.
  *
  * @param d A `Date` or `YYYY-MM-DD` string.
- * @returns e.g. "12 June 2026".
+ * @param lang Language of the label (default: the active UI language).
+ * @returns e.g. "12 June 2026" / "12 juin 2026".
  */
-export function formatDateLong(d: Date | string): string {
+export function formatDateLong(d: Date | string, lang?: AppLanguage): string {
   const date = asDate(d);
-  return `${date.getUTCDate()} ${MONTHS_LONG[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+  const month = dateNames(lang).monthsLong[date.getUTCMonth()];
+  return `${date.getUTCDate()} ${month} ${date.getUTCFullYear()}`;
 }
