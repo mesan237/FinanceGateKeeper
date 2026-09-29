@@ -11,6 +11,10 @@ export const common = {
     back: 'Back',
     retry: 'Try again',
   },
+  languages: {
+    en: 'English',
+    fr: 'Français',
+  },
   incomeSources: {
     salary: 'Salary',
     freelance: 'Freelance',

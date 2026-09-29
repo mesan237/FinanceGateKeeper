@@ -14,6 +14,11 @@ export const common: Translation<typeof en> = {
     back: 'Retour',
     retry: 'Réessayer',
   },
+  // Each language is named in itself, so it stays findable whatever the UI is in.
+  languages: {
+    en: 'English',
+    fr: 'Français',
+  },
   incomeSources: {
     salary: 'Salaire',
     freelance: 'Freelance',

@@ -1,3 +1,5 @@
+import type { LanguagePreference } from '@/i18n/resolveLanguage';
+
 /**
  * The single-row app/user settings record. VS-08 owns the reminder
  * fields; VS-02 will later add PIN state to the same `users` row.
@@ -10,7 +12,11 @@ export interface AppSettings {
   createdAt: string;
   /** Whether the first-run onboarding carousel has been finished or skipped (VS-23). */
   onboardingComplete: boolean;
+  /** Settings language override (VS-35); `null` follows the device language. */
+  language: LanguagePreference;
 }
+
+export type { LanguagePreference } from '@/i18n/resolveLanguage';
 
 export type { ActionBarStyle } from '@/types/settings';
 

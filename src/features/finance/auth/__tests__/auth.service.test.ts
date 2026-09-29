@@ -23,6 +23,7 @@ import {
   getAppSettings,
   hasPin,
   setActionBarStyle,
+  setLanguage,
   setNotificationsEnabled,
   setOnboardingComplete,
   setPin,
@@ -170,5 +171,22 @@ describe('onboarding', () => {
     await setOnboardingComplete(true);
     await setOnboardingComplete(false);
     expect((await getAppSettings()).onboardingComplete).toBe(false);
+  });
+});
+
+describe('language', () => {
+  it('follows the device language (null) on a fresh row', async () => {
+    expect((await getAppSettings()).language).toBeNull();
+  });
+
+  it('persists an explicit language across a re-read', async () => {
+    await setLanguage('fr');
+    expect((await getAppSettings()).language).toBe('fr');
+  });
+
+  it('can go back to following the device', async () => {
+    await setLanguage('en');
+    await setLanguage(null);
+    expect((await getAppSettings()).language).toBeNull();
   });
 });

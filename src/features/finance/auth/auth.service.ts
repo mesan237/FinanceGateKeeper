@@ -1,7 +1,8 @@
+import { isAppLanguage } from '@/i18n/resolveLanguage';
 import { execute, query } from '@/services/database';
 import { generateSalt, hashPin } from '@/utils/pinHash';
 
-import type { ActionBarStyle, AppSettings } from './auth.types';
+import type { ActionBarStyle, AppSettings, LanguagePreference } from './auth.types';
 
 export interface UserRow {
   id: number;
@@ -15,10 +16,11 @@ export interface UserRow {
   avatar_emoji: string | null;
   created_at: string;
   onboarding_complete: number;
+  language: string | null;
 }
 
 const USER_COLUMNS =
-  'id, pin_hash, pin_salt, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at, onboarding_complete';
+  'id, pin_hash, pin_salt, reminder_time, notifications_enabled, action_bar_style, display_name, avatar_color, avatar_emoji, created_at, onboarding_complete, language';
 const VALID_ACTION_BAR_STYLES: ReadonlySet<string> = new Set(['explicit', 'speed_dial']);
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 const PIN_PATTERN = /^\d{4}$/;
@@ -29,6 +31,7 @@ function mapSettings(row: UserRow): AppSettings {
     notificationsEnabled: row.notifications_enabled === 1,
     createdAt: row.created_at,
     onboardingComplete: row.onboarding_complete === 1,
+    language: isAppLanguage(row.language) ? row.language : null,
   };
 }
 
@@ -82,6 +85,15 @@ export async function setNotificationsEnabled(enabled: boolean): Promise<void> {
 export async function setOnboardingComplete(value: boolean): Promise<void> {
   const row = await getOrCreateUserRow();
   await execute('UPDATE users SET onboarding_complete = ? WHERE id = ?', [value ? 1 : 0, row.id]);
+}
+
+/**
+ * Saves the Settings language override (VS-35). `null` clears it, so the app
+ * follows the device language again. Device-local: `users` is never synced.
+ */
+export async function setLanguage(language: LanguagePreference): Promise<void> {
+  const row = await getOrCreateUserRow();
+  await execute('UPDATE users SET language = ? WHERE id = ?', [language, row.id]);
 }
 
 /** Whether a local PIN has been configured (the unlock gate is active). */

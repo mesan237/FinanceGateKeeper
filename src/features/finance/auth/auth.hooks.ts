@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { applyLanguagePreference } from '@/i18n';
+
 import * as authService from './auth.service';
 import { getProfile, setProfile } from './auth.profile';
-import type { ActionBarStyle, AppSettings, Profile } from './auth.types';
+import type { ActionBarStyle, AppSettings, LanguagePreference, Profile } from './auth.types';
 
 /**
- * Loads the app/user settings and exposes setters for the reminder time and the
- * notifications toggle. Mutations re-fetch on success (cheap for a single local
- * row).
+ * Loads the app/user settings and exposes setters for the reminder time, the
+ * notifications toggle and the language override. Mutations re-fetch on
+ * success (cheap for a single local row).
  */
 export function useAppSettings() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -44,6 +46,16 @@ export function useAppSettings() {
     await refresh();
   }, [refresh]);
 
+  // Saves the choice and switches the UI immediately — no restart needed.
+  const setLanguage = useCallback(
+    async (language: LanguagePreference) => {
+      await authService.setLanguage(language);
+      await applyLanguagePreference(language);
+      await refresh();
+    },
+    [refresh],
+  );
+
   return {
     settings,
     loading,
@@ -51,6 +63,7 @@ export function useAppSettings() {
     setReminderTime,
     setNotificationsEnabled,
     completeOnboarding,
+    setLanguage,
   };
 }
 

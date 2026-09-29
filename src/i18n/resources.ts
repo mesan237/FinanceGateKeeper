@@ -1,5 +1,7 @@
+import { auth as enAuth } from '@/i18n/locales/en/auth';
 import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
+import { auth as frAuth } from '@/i18n/locales/fr/auth';
 import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
 
@@ -12,10 +14,12 @@ export const resources = {
   en: {
     common: enCommon,
     categories: enCategories,
+    auth: enAuth,
   },
   fr: {
     common: frCommon,
     categories: frCategories,
+    auth: frAuth,
   },
 };
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 jest.mock('@/features/finance/auth/auth.service', () => ({
@@ -7,6 +7,7 @@ jest.mock('@/features/finance/auth/auth.service', () => ({
   setNotificationsEnabled: jest.fn().mockResolvedValue(undefined),
   getActionBarStyle: jest.fn().mockResolvedValue('explicit'),
   setActionBarStyle: jest.fn().mockResolvedValue(undefined),
+  setLanguage: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),
@@ -46,12 +47,15 @@ import { ThemeProvider } from '@/theme';
 import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
   getAppSettings,
+  setLanguage,
   setReminderTime,
 } from '@/features/finance/auth/auth.service';
 import { applyReminderSchedule } from '@/features/finance/auth/reminder';
+import i18n from '@/i18n';
 
 const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
 const mockedSetTime = setReminderTime as jest.MockedFunction<typeof setReminderTime>;
+const mockedSetLanguage = setLanguage as jest.MockedFunction<typeof setLanguage>;
 const mockedApply = applyReminderSchedule as jest.MockedFunction<typeof applyReminderSchedule>;
 
 function renderSettings() {
@@ -65,6 +69,7 @@ beforeEach(() => {
     notificationsEnabled: true,
     createdAt: '2026-01-01T00:00:00.000Z',
     onboardingComplete: true,
+    language: null,
   });
   mockCloud.userEmail = null;
   mockCloud.signedIn = false;
@@ -112,6 +117,47 @@ describe('SettingsScreen', () => {
     await waitFor(() =>
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('theme-mode', 'dark'),
     );
+  });
+});
+
+describe('SettingsScreen — Language', () => {
+  afterEach(async () => {
+    await act(async () => {
+      await i18n.changeLanguage('en');
+    });
+  });
+
+  it('follows the device language by default', async () => {
+    renderSettings();
+    const system = await screen.findByTestId('settings-language-control-system');
+    expect(system.props.accessibilityState.selected).toBe(true);
+  });
+
+  it('switches the app to French, saves the choice and re-words the reminder', async () => {
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-language-control-fr'));
+
+    await waitFor(() => expect(mockedSetLanguage).toHaveBeenCalledWith('fr'));
+    expect(await screen.findByText('Paramètres')).toBeTruthy();
+    expect(mockedApply).toHaveBeenCalledWith(
+      expect.objectContaining({ reminderTime: '21:00', notificationsEnabled: true }),
+    );
+  });
+
+  it('goes back to following the device when System is chosen', async () => {
+    mockedGet.mockResolvedValue({
+      reminderTime: '21:00',
+      notificationsEnabled: true,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      onboardingComplete: true,
+      language: 'fr',
+    });
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-language-control-system'));
+
+    await waitFor(() => expect(mockedSetLanguage).toHaveBeenCalledWith(null));
+    // The Jest device is English, so following it lands on English.
+    expect(await screen.findByText('Settings')).toBeTruthy();
   });
 });
 
