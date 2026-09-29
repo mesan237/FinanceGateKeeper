@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -12,11 +13,11 @@ import { changePin, verifyPin } from './auth.service';
 const PIN_LENGTH = 4;
 type Step = 'current' | 'new' | 'confirm';
 
-const COPY: Record<Step, { title: string; subtitle: string }> = {
-  current: { title: 'Enter current PIN', subtitle: 'Confirm it’s you before changing the PIN.' },
-  new: { title: 'Choose a new PIN', subtitle: 'Pick a new 4-digit PIN.' },
-  confirm: { title: 'Confirm new PIN', subtitle: 'Enter the new PIN again.' },
-};
+const COPY = {
+  current: { title: 'changePin.currentTitle', subtitle: 'changePin.currentSubtitle' },
+  new: { title: 'changePin.newTitle', subtitle: 'changePin.newSubtitle' },
+  confirm: { title: 'changePin.confirmTitle', subtitle: 'changePin.confirmSubtitle' },
+} as const satisfies Record<Step, { title: string; subtitle: string }>;
 
 /**
  * Three-step PIN change: verify the current PIN, choose a new one, then confirm
@@ -27,6 +28,7 @@ const COPY: Record<Step, { title: string; subtitle: string }> = {
 export function ChangePinScreen() {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
 
   const [step, setStep] = useState<Step>('current');
   const [current, setCurrent] = useState('');
@@ -45,7 +47,7 @@ export function ChangePinScreen() {
         setCurrent(value);
         setStep('new');
       } else {
-        setError('Wrong PIN.');
+        setError(t('pin.wrong'));
       }
       setEntry('');
       return;
@@ -64,18 +66,19 @@ export function ChangePinScreen() {
       setDone(true);
       router.back();
     } else {
-      setError('PINs do not match. Try again.');
+      setError(t('pin.mismatch'));
       setStep('new');
       setNext('');
     }
     setEntry('');
   };
 
-  const { title, subtitle } = COPY[step];
+  const title = t(COPY[step].title);
+  const subtitle = t(COPY[step].subtitle);
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Change PIN" />
+      <ScreenHeader title={t('changePin.title')} />
       <View style={styles.header}>
         <Typography variant="display" style={styles.center}>
           {title}

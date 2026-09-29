@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -27,6 +28,7 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
   const cloud = useCloudSync();
   const { resetPin } = useAuthLock();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
 
   const [phase, setPhase] = useState<'verify' | 'wipe'>('verify');
   const [email, setEmail] = useState(cloud.userEmail ?? '');
@@ -44,7 +46,7 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
       onClose();
       return;
     }
-    setError(cloud.error ?? "Couldn't verify your account. Check your details.");
+    setError(cloud.error ?? t('recovery.verifyFailed'));
     setBusy(false);
   };
 
@@ -60,11 +62,10 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
       <View style={styles.container}>
         <View style={styles.header}>
           <Typography variant="display" style={styles.center}>
-            Erase this device?
+            {t('recovery.wipeTitle')}
           </Typography>
           <Typography variant="muted" style={styles.center}>
-            This permanently deletes all data on this device and removes the PIN. This cannot be
-            undone. Cloud backups, if any, are not affected.
+            {t('recovery.wipeBody')}
           </Typography>
         </View>
         <View style={styles.body}>
@@ -75,14 +76,14 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
           ) : null}
           <Button
             testID="recovery-wipe-confirm"
-            label="Erase everything"
+            label={t('recovery.wipeConfirm')}
             variant="danger"
             loading={busy}
             onPress={() => void wipeAndReset()}
           />
           <Button
             testID="recovery-wipe-cancel"
-            label="Go back"
+            label={t('recovery.wipeCancel')}
             variant="ghost"
             onPress={() => setPhase('verify')}
           />
@@ -95,12 +96,14 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Typography variant="display" style={styles.center}>
-          Reset your PIN
+          {t('recovery.title')}
         </Typography>
         <Typography variant="muted" style={styles.center}>
           {cloud.signedIn
-            ? `Confirm the password for ${cloud.userEmail ?? 'your cloud account'} to reset your PIN.`
-            : 'Sign in to your cloud account to verify it’s you and reset your PIN.'}
+            ? t('recovery.subtitleSignedIn', {
+                email: cloud.userEmail ?? t('recovery.yourCloudAccount'),
+              })
+            : t('recovery.subtitleSignedOut')}
         </Typography>
       </View>
 
@@ -110,19 +113,19 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
             testID="recovery-email"
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
+            placeholder={t('cloud.email')}
             autoCapitalize="none"
             keyboardType="email-address"
-            accessibilityLabel="Cloud account email"
+            accessibilityLabel={t('cloud.emailLabel')}
           />
         ) : null}
         <TextInput
           testID="recovery-password"
           value={password}
           onChangeText={setPassword}
-          placeholder="Password"
+          placeholder={t('cloud.password')}
           secureTextEntry
-          accessibilityLabel="Cloud account password"
+          accessibilityLabel={t('cloud.passwordLabel')}
         />
         {error ? (
           <Typography testID="recovery-error" style={styles.error}>
@@ -131,18 +134,18 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
         ) : null}
         <Button
           testID="recovery-submit"
-          label={cloud.signedIn ? 'Verify & reset PIN' : 'Sign in & reset PIN'}
+          label={cloud.signedIn ? t('recovery.submitSignedIn') : t('recovery.submitSignedOut')}
           loading={busy}
           onPress={() => void verifyAndReset()}
         />
         <Button
           testID="recovery-wipe-start"
-          label="No cloud account? Erase & start over"
+          label={t('recovery.wipeStart')}
           variant="ghost"
           compact
           onPress={() => setPhase('wipe')}
         />
-        <Button testID="recovery-cancel" label="Back to unlock" variant="ghost" onPress={onClose} />
+        <Button testID="recovery-cancel" label={t('recovery.backToUnlock')} variant="ghost" onPress={onClose} />
       </View>
     </View>
   );

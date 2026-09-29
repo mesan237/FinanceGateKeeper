@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -27,6 +28,7 @@ export function ProfileScreen() {
   const { profile, save } = useProfile();
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
 
   const [name, setName] = useState('');
   const [color, setColor] = useState<string | null>(null);
@@ -54,26 +56,26 @@ export function ProfileScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <ScreenHeader title="Profile" />
+      <ScreenHeader title={t('profile.title')} />
 
       <View style={styles.avatarWrap}>
         <ProfileAvatar displayName={displayName} avatarColor={color} avatarEmoji={emoji} />
       </View>
 
-      <SectionCard icon="profile" title="Display name">
+      <SectionCard icon="profile" title={t('profile.nameTitle')}>
         <TextInput
           testID="profile-name-input"
           value={name}
-          onChangeText={(t) => {
-            setName(t);
+          onChangeText={(text) => {
+            setName(text);
             setSaved(false);
           }}
-          placeholder="Your name"
-          accessibilityLabel="Display name"
+          placeholder={t('profile.namePlaceholder')}
+          accessibilityLabel={t('profile.nameTitle')}
         />
       </SectionCard>
 
-      <SectionCard icon="appearance" title="Avatar color">
+      <SectionCard icon="appearance" title={t('profile.colorTitle')}>
         <View style={styles.swatchRow}>
           {AVATAR_PALETTE.map((swatch) => (
             <Pressable
@@ -94,7 +96,11 @@ export function ProfileScreen() {
         </View>
       </SectionCard>
 
-      <SectionCard icon="reports" title="Avatar emoji" subtitle="Or leave it off to show your initials.">
+      <SectionCard
+        icon="reports"
+        title={t('profile.emojiTitle')}
+        subtitle={t('profile.emojiSubtitle')}
+      >
         <View style={styles.emojiRow}>
           <Pressable
             testID="profile-emoji-none"
@@ -124,12 +130,16 @@ export function ProfileScreen() {
         </View>
       </SectionCard>
 
-      <Button testID="profile-save" label={saved ? 'Saved' : 'Save profile'} onPress={onSave} />
+      <Button testID="profile-save" label={saved ? t('profile.saved') : t('profile.save')} onPress={onSave} />
 
-      <SectionCard icon="lock" title="Security" subtitle="Lock the app with a 4-digit PIN.">
+      <SectionCard
+        icon="lock"
+        title={t('profile.securityTitle')}
+        subtitle={t('profile.securitySubtitle')}
+      >
         <Button
           testID="profile-change-pin"
-          label="Change PIN"
+          label={t('profile.changePin')}
           variant="secondary"
           onPress={() => router.push('/profile/change-pin')}
         />

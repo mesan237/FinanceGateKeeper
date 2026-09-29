@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -24,6 +25,7 @@ function secondsLeft(cooldownUntil: number | null): number {
 export function AuthScreen() {
   const { pinState, attemptsLeft, cooldownUntil, setupPin, unlock } = useAuthLock();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
 
   const isSetup = pinState === 'unset';
   const [entry, setEntry] = useState('');
@@ -58,7 +60,7 @@ export function AuthScreen() {
       if (next === firstEntry) {
         await setupPin(next);
       } else {
-        setError('PINs do not match. Try again.');
+        setError(t('pin.mismatch'));
         setFirstEntry(null);
         setEntry('');
       }
@@ -66,7 +68,7 @@ export function AuthScreen() {
     }
 
     const ok = await unlock(next);
-    if (!ok) setError('Wrong PIN.');
+    if (!ok) setError(t('pin.wrong'));
     setEntry('');
   };
 
@@ -80,13 +82,11 @@ export function AuthScreen() {
   let title: string;
   let subtitle: string;
   if (isSetup) {
-    title = confirming ? 'Confirm your PIN' : 'Create a PIN';
-    subtitle = confirming
-      ? 'Enter it again to confirm.'
-      : 'Pick a 4-digit PIN to lock the app on this device.';
+    title = confirming ? t('pin.confirmTitle') : t('pin.createTitle');
+    subtitle = confirming ? t('pin.confirmSubtitle') : t('pin.createSubtitle');
   } else {
-    title = 'Enter your PIN';
-    subtitle = 'Unlock Finance Gatekeeper.';
+    title = t('pin.unlockTitle');
+    subtitle = t('pin.unlockSubtitle');
   }
 
   return (
@@ -106,12 +106,12 @@ export function AuthScreen() {
         <View style={styles.status}>
           {inCooldown ? (
             <Typography testID="auth-cooldown" style={styles.error}>
-              Too many attempts. Try again in {cooldown}s.
+              {t('pin.cooldown', { seconds: cooldown })}
             </Typography>
           ) : error ? (
             <Typography testID="auth-error" style={styles.error}>
               {error}
-              {!isSetup && attemptsLeft < 3 ? ` ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} left.` : ''}
+              {!isSetup && attemptsLeft < 3 ? ` ${t('pin.attemptsLeft', { count: attemptsLeft })}` : ''}
             </Typography>
           ) : null}
         </View>
@@ -124,7 +124,7 @@ export function AuthScreen() {
             style={styles.forgot}
           >
             <Typography variant="muted" style={styles.forgotText}>
-              Forgot PIN?
+              {t('pin.forgot')}
             </Typography>
           </Pressable>
         ) : null}

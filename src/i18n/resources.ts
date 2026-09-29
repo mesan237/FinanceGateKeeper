@@ -1,13 +1,17 @@
 import { auth as enAuth } from '@/i18n/locales/en/auth';
 import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
+import { dataTransfer as enDataTransfer } from '@/i18n/locales/en/dataTransfer';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
 import { notifications as enNotifications } from '@/i18n/locales/en/notifications';
+import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
 import { auth as frAuth } from '@/i18n/locales/fr/auth';
 import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
+import { dataTransfer as frDataTransfer } from '@/i18n/locales/fr/dataTransfer';
 import { navigation as frNavigation } from '@/i18n/locales/fr/navigation';
 import { notifications as frNotifications } from '@/i18n/locales/fr/notifications';
+import { onboarding as frOnboarding } from '@/i18n/locales/fr/onboarding';
 
 /**
  * Every translation catalogue, by language then namespace. English is the
@@ -21,6 +25,8 @@ export const resources = {
     navigation: enNavigation,
     notifications: enNotifications,
     auth: enAuth,
+    onboarding: enOnboarding,
+    dataTransfer: enDataTransfer,
   },
   fr: {
     common: frCommon,
@@ -28,6 +34,8 @@ export const resources = {
     navigation: frNavigation,
     notifications: frNotifications,
     auth: frAuth,
+    onboarding: frOnboarding,
+    dataTransfer: frDataTransfer,
   },
 };
 

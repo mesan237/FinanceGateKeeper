@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { OnboardingScreen } from '@/features/finance/onboarding/OnboardingScreen';
+import i18n from '@/i18n';
 
 describe('OnboardingScreen', () => {
   it('shows the first panel initially', () => {
@@ -40,5 +41,14 @@ describe('OnboardingScreen', () => {
     fireEvent.press(screen.getByTestId('onboarding-next'));
     fireEvent.press(screen.getByTestId('onboarding-next'));
     expect(screen.queryByTestId('onboarding-skip')).toBeNull();
+  });
+
+  it('walks through the panels in French', async () => {
+    await i18n.changeLanguage('fr');
+    render(<OnboardingScreen onDone={jest.fn()} />);
+    expect(screen.getByText('Suivez chaque franc')).toBeTruthy();
+    expect(screen.getByText('Dépenses')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Suivant' }));
+    expect(screen.getByText('Un budget par catégorie')).toBeTruthy();
   });
 });

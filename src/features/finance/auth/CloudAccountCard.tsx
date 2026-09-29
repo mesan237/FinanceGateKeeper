@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -22,25 +23,22 @@ export interface CloudAccountCardProps {
 export function CloudAccountCard({ testIDPrefix = 'settings' }: CloudAccountCardProps) {
   const cloud = useCloudSync();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   return (
     <SectionCard
       icon="cloud"
-      title="Cloud backup"
-      subtitle={
-        cloud.signedIn
-          ? undefined
-          : 'Back up your data to the cloud and restore it on a new device.'
-      }
+      title={t('cloud.title')}
+      subtitle={cloud.signedIn ? undefined : t('cloud.subtitle')}
     >
       {cloud.signedIn ? (
         <>
           <View style={styles.accountRow}>
             <View style={styles.accountText}>
-              <Typography variant="muted">Signed in as</Typography>
-              <Typography>{cloud.userEmail ?? 'your account'}</Typography>
+              <Typography variant="muted">{t('cloud.signedInAs')}</Typography>
+              <Typography>{cloud.userEmail ?? t('cloud.yourAccount')}</Typography>
             </View>
             {cloud.lastSyncedAt ? (
               <Typography
@@ -48,10 +46,10 @@ export function CloudAccountCard({ testIDPrefix = 'settings' }: CloudAccountCard
                 variant="muted"
                 style={styles.syncStamp}
               >
-                Synced {formatDateLong(cloud.lastSyncedAt)}
+                {t('cloud.syncedOn', { date: formatDateLong(cloud.lastSyncedAt) })}
               </Typography>
             ) : (
-              <Typography variant="muted">Not synced yet.</Typography>
+              <Typography variant="muted">{t('cloud.notSynced')}</Typography>
             )}
           </View>
           {cloud.status === 'error' && cloud.error ? (
@@ -59,13 +57,13 @@ export function CloudAccountCard({ testIDPrefix = 'settings' }: CloudAccountCard
           ) : null}
           <Button
             testID={`${testIDPrefix}-sync-now`}
-            label={cloud.status === 'syncing' ? 'Syncing…' : 'Sync now'}
+            label={cloud.status === 'syncing' ? t('cloud.syncing') : t('cloud.syncNow')}
             onPress={() => void cloud.syncNow()}
             disabled={cloud.status === 'syncing'}
           />
           <Button
             testID={`${testIDPrefix}-sign-out`}
-            label="Sign out"
+            label={t('cloud.signOut')}
             variant="secondary"
             compact
             onPress={() => void cloud.signOut()}
@@ -77,28 +75,28 @@ export function CloudAccountCard({ testIDPrefix = 'settings' }: CloudAccountCard
             testID={`${testIDPrefix}-cloud-email`}
             value={email}
             onChangeText={setEmail}
-            placeholder="Email"
+            placeholder={t('cloud.email')}
             autoCapitalize="none"
             keyboardType="email-address"
-            accessibilityLabel="Cloud account email"
+            accessibilityLabel={t('cloud.emailLabel')}
           />
           <TextInput
             testID={`${testIDPrefix}-cloud-password`}
             value={password}
             onChangeText={setPassword}
-            placeholder="Password"
+            placeholder={t('cloud.password')}
             secureTextEntry
-            accessibilityLabel="Cloud account password"
+            accessibilityLabel={t('cloud.passwordLabel')}
           />
           {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
           <Button
             testID={`${testIDPrefix}-sign-in`}
-            label="Sign in"
+            label={t('cloud.signIn')}
             onPress={() => void cloud.signIn(email, password)}
           />
           <Button
             testID={`${testIDPrefix}-sign-up`}
-            label="Create account"
+            label={t('cloud.signUp')}
             variant="secondary"
             compact
             onPress={() => void cloud.signUp(email, password)}
