@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { currentMonthISO } from '@/utils/formatDate';
@@ -23,7 +24,7 @@ export function useBudgetStatus(monthISO: string) {
       setBudget(next);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load budget.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadBudget', { ns: 'budget' }));
     } finally {
       setLoading(false);
     }

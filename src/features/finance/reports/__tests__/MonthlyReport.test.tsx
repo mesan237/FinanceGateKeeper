@@ -19,6 +19,7 @@ jest.mock('@/features/finance/reports/reports.service', () => ({
 }));
 
 import { MonthlyReport } from '@/features/finance/reports/MonthlyReport';
+import i18n from '@/i18n';
 import * as reportsService from '@/features/finance/reports/reports.service';
 
 const mockGetMonthly = reportsService.getMonthlyReport as jest.MockedFunction<
@@ -154,5 +155,15 @@ describe('MonthlyReport', () => {
     await screen.findByText('June 2026');
     fireEvent.press(screen.getByTestId('view-weekly-link'));
     expect(mockPush).toHaveBeenCalledWith('/reports/weekly');
+  });
+
+  it('renders the report in French, translating seeded category names', async () => {
+    await i18n.changeLanguage('fr');
+    mockGetMonthly.mockResolvedValue(buildReport({ comparison: COMPARISON }));
+    render(<MonthlyReport />);
+    expect(await screen.findByText('Juin 2026')).toBeTruthy();
+    expect(screen.getByText('Dépenses par catégorie')).toBeTruthy();
+    expect(screen.getAllByText('Alimentation').length).toBeGreaterThan(0);
+    expect(screen.getByText('62 % du total')).toBeTruthy();
   });
 });

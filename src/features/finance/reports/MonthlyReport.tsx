@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -10,7 +11,9 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { monthLabel } from '@/utils/monthMath';
 
 import { colorForIndex } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
@@ -19,17 +22,6 @@ import { OptimizationSuggestions } from './OptimizationSuggestions';
 import { SpendingDonutChart } from './SpendingDonutChart';
 import { expenseSpentPct } from './reports.service';
 import { useMonthlyReport } from './reports.hooks';
-
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
-/** Formats a `YYYY-MM` string as a "Month YYYY" label. */
-function monthLabel(monthISO: string): string {
-  const [year, month] = monthISO.split('-').map(Number);
-  return `${MONTH_NAMES[month - 1]} ${year}`;
-}
 
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
@@ -42,6 +34,7 @@ export function MonthlyReport() {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
+  const { t } = useTranslation('reports');
   const { report, monthISO, loading, error, goToPrevMonth, goToNextMonth, isCurrentMonth } =
     useMonthlyReport();
 
@@ -56,19 +49,23 @@ export function MonthlyReport() {
       />
 
       {error ? <Typography variant="muted">{error}</Typography> : null}
-      {loading && !report ? <Typography variant="muted">Loading…</Typography> : null}
+      {loading && !report ? <Typography variant="muted">{t('loading')}</Typography> : null}
 
       {report ? (
         <>
           <Card>
             <View style={styles.summaryRow}>
               <View>
-                <Typography variant="muted" style={styles.capLabel}>INCOME</Typography>
+                <Typography variant="muted" style={styles.capLabel}>
+                  {t('monthly.incomeCaps')}
+                </Typography>
                 <Typography variant="subheading">{formatCurrency(report.incomeTotal)}</Typography>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.alignEnd}>
-                <Typography variant="muted" style={styles.capLabel}>EXPENSES</Typography>
+                <Typography variant="muted" style={styles.capLabel}>
+                  {t('monthly.expensesCaps')}
+                </Typography>
                 <Typography variant="subheading">
                   {formatCurrency(report.expensePerformance.actual)}
                 </Typography>
@@ -77,8 +74,8 @@ export function MonthlyReport() {
           </Card>
 
           <View style={styles.section}>
-            <Typography variant="subheading">Expense Performance</Typography>
-            <PerfRow label="Planned" value={report.expensePerformance.planned} />
+            <Typography variant="subheading">{t('monthly.performance')}</Typography>
+            <PerfRow label={t('monthly.planned')} value={report.expensePerformance.planned} />
             <ProgressBar
               testID="expense-performance-bar"
               value={expenseSpentPct(
@@ -88,16 +85,16 @@ export function MonthlyReport() {
               color={c.TEXT_PRIMARY}
               trackColor={c.SUCCESS}
             />
-            <PerfRow label="Actual Spending" value={report.expensePerformance.actual} />
+            <PerfRow label={t('monthly.actual')} value={report.expensePerformance.actual} />
             <PerfRow
-              label="Remaining Budget"
+              label={t('monthly.remaining')}
               value={report.expensePerformance.remaining}
               color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
             />
           </View>
 
           <View style={styles.section}>
-            <Typography variant="subheading">Spending by Category</Typography>
+            <Typography variant="subheading">{t('monthly.byCategory')}</Typography>
             <SpendingDonutChart data={report.categoryBreakdown} />
             {report.categoryBreakdown.map((cat, i) => {
               const emoji = getTransactionIcon('expense', cat.categoryLabel);
@@ -118,8 +115,10 @@ export function MonthlyReport() {
                     </Typography>
                   </View>
                   <View style={styles.categoryLabelCol}>
-                    <Typography variant="body">{cat.categoryLabel}</Typography>
-                    <Typography variant="muted">{Math.round(cat.pct)}% of total</Typography>
+                    <Typography variant="body">{displayCategoryName(cat.categoryLabel)}</Typography>
+                    <Typography variant="muted">
+                      {t('monthly.pctOfTotal', { percent: Math.round(cat.pct) })}
+                    </Typography>
                   </View>
                   <Typography variant="body">{formatCurrency(cat.amount)}</Typography>
                 </View>
@@ -128,9 +127,9 @@ export function MonthlyReport() {
           </View>
 
           <View style={styles.section}>
-            <Typography variant="subheading">Debt</Typography>
-            <PerfRow label="Lent out" value={report.debtSummary.totalLent} />
-            <PerfRow label="Owed" value={report.debtSummary.totalOwed} />
+            <Typography variant="subheading">{t('monthly.debt')}</Typography>
+            <PerfRow label={t('monthly.lentOut')} value={report.debtSummary.totalLent} />
+            <PerfRow label={t('monthly.owed')} value={report.debtSummary.totalOwed} />
           </View>
 
           {report.comparison ? <MonthComparison comparison={report.comparison} /> : null}
@@ -144,7 +143,7 @@ export function MonthlyReport() {
             style={styles.weeklyLink}
           >
             <Typography variant="body" style={styles.weeklyLinkText}>
-              View Weekly Report →
+              {t('monthly.viewWeekly')}
             </Typography>
           </Pressable>
         </>

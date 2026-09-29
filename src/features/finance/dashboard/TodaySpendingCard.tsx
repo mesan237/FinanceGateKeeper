@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AnimatedCounter } from '@/components/AnimatedCounter';
@@ -33,21 +34,22 @@ export function TodaySpendingCard({
   spendingTrend,
   today,
 }: TodaySpendingCardProps) {
+  const { t } = useTranslation('dashboard');
   const peak = Math.max(0, ...spendingTrend);
   const hasTrend = peak > 0;
 
   const paceCaption =
     dailyPace !== null && dailyPace > 0
       ? todaySpending > dailyPace
-        ? `Over your daily pace of ${formatCurrency(dailyPace)}`
-        : `Within your daily pace of ${formatCurrency(dailyPace)}`
+        ? t('today.overPace', { amount: formatCurrency(dailyPace) })
+        : t('today.withinPace', { amount: formatCurrency(dailyPace) })
       : null;
 
   return (
     <Card testID="today-spending">
       <View style={styles.todayRow}>
         <View style={styles.todayLabel}>
-          <Typography variant="label">Today's Spending</Typography>
+          <Typography variant="label">{t('today.title')}</Typography>
           <Typography variant="muted" style={styles.todayDate}>
             {today}
           </Typography>
@@ -63,7 +65,7 @@ export function TodaySpendingCard({
         <View style={styles.trend}>
           <SpendingSparkline values={spendingTrend} testID="spending-sparkline" />
           <Typography variant="muted" style={styles.trendCaption}>
-            {`Last 7 days · peak ${formatCurrency(peak)}`}
+            {t('today.trend', { amount: formatCurrency(peak) })}
           </Typography>
         </View>
       ) : null}

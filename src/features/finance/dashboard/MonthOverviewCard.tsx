@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AnimatedCounter } from '@/components/AnimatedCounter';
@@ -16,11 +17,11 @@ import { monthLabel } from '@/utils/monthMath';
 
 import type { BudgetSummary, Cashflow, PaceLevel } from './dashboard.types';
 
-/** Chip wording and tone per pace level. */
-const PACE_DISPLAY: Record<PaceLevel, { label: string; tone: PillTone }> = {
-  green: { label: 'On Track', tone: 'success' },
-  yellow: { label: 'Watch Out', tone: 'warning' },
-  red: { label: 'Over Budget', tone: 'danger' },
+/** Chip tone per pace level; the wording comes from `dashboard.pace`. */
+const PACE_TONE: Record<PaceLevel, PillTone> = {
+  green: 'success',
+  yellow: 'warning',
+  red: 'danger',
 };
 
 export interface MonthOverviewCardProps {
@@ -56,10 +57,11 @@ export function MonthOverviewCard({
 }: MonthOverviewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('dashboard');
 
   const hasBudget = summary.expenseBudget > 0;
   const isOver = summary.expensesRemaining < 0;
-  const pace = PACE_DISPLAY[summary.pace];
+  const pace = { label: t(`pace.${summary.pace}`), tone: PACE_TONE[summary.pace] };
   const netColor = cashflow.net >= 0 ? c.SUCCESS_TEXT : c.DANGER;
 
   // The dashboard only ever shows the current month, so the year in
@@ -73,12 +75,12 @@ export function MonthOverviewCard({
           {monthName.toUpperCase()}
         </Typography>
         <Typography variant="muted" testID="month-overview-days">
-          {daysLeftLabel(daysRemaining)}
+          {daysRemaining <= 0 ? t('month.lastDay') : t('month.daysLeft', { count: daysRemaining })}
         </Typography>
       </View>
 
       <Typography variant="label" style={styles.remainingLabel}>
-        {isOver ? 'Over budget by' : 'Left to spend'}
+        {isOver ? t('month.overBy') : t('month.leftToSpend')}
       </Typography>
 
       {hasBudget ? (
@@ -104,7 +106,10 @@ export function MonthOverviewCard({
           />
           <View style={styles.metaRow}>
             <Typography variant="muted">
-              {`${formatCurrency(summary.expensesLogged)} of ${formatCurrency(summary.expenseBudget)} spent`}
+              {t('month.spentOf', {
+                spent: formatCurrency(summary.expensesLogged),
+                budget: formatCurrency(summary.expenseBudget),
+              })}
             </Typography>
             <Typography variant="muted">{`${Math.round(summary.spentPct)}%`}</Typography>
           </View>
@@ -119,32 +124,25 @@ export function MonthOverviewCard({
         <Pressable
           testID="month-overview-set-budget"
           accessibilityRole="button"
-          accessibilityLabel="Set a monthly budget to track this"
+          accessibilityLabel={t('month.setBudget')}
           onPress={onSetBudget}
           style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
         >
           <Icon name="add" size={ICON_SIZE.md} color={c.PRIMARY_GREEN} />
-          <Typography style={styles.ctaText}>Set a monthly budget to track this</Typography>
+          <Typography style={styles.ctaText}>{t('month.setBudget')}</Typography>
           <Icon name="forward" size={ICON_SIZE.md} color={c.PRIMARY_GREEN} />
         </Pressable>
       )}
 
       <View style={styles.cashflowRow}>
-        <CashflowStat label="In" value={cashflow.income} />
+        <CashflowStat label={t('month.in')} value={cashflow.income} />
         <View style={styles.divider} />
-        <CashflowStat label="Out" value={cashflow.expenses} />
+        <CashflowStat label={t('month.out')} value={cashflow.expenses} />
         <View style={styles.divider} />
-        <CashflowStat label="Net" value={cashflow.net} color={netColor} testID="cashflow-net" />
+        <CashflowStat label={t('month.net')} value={cashflow.net} color={netColor} testID="cashflow-net" />
       </View>
     </Card>
   );
-}
-
-/** "6 days left" / "1 day left" / "Last day" — the month's remaining runway. */
-function daysLeftLabel(daysRemaining: number): string {
-  if (daysRemaining <= 0) return 'Last day';
-  if (daysRemaining === 1) return '1 day left';
-  return `${daysRemaining} days left`;
 }
 
 /** The progress bar's fill colour for a pace level. */

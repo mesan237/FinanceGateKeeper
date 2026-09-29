@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 
@@ -14,8 +16,8 @@ export interface MonthComparisonProps {
 
 /** Formats a category's change for display: "+20%", "−50%", or "New" for a
  * first-time spend (null growth rate). */
-function formatChange(delta: CategoryDelta): string {
-  if (delta.pctChange === null) return 'New';
+function formatChange(delta: CategoryDelta, newLabel: string): string {
+  if (delta.pctChange === null) return newLabel;
   const rounded = Math.round(delta.pctChange);
   return `${rounded > 0 ? '+' : ''}${rounded}%`;
 }
@@ -36,25 +38,26 @@ function changeColor(delta: CategoryDelta, colors: ThemeColors): string {
 export function MonthComparison({ comparison }: MonthComparisonProps) {
   const styles = useThemedStyles(makeStyles);
   const colors = useTheme();
+  const { t } = useTranslation('reports');
   const { categories } = comparison;
 
   // Two interleaved bars per category: current then previous.
-  const labels = categories.flatMap((c) => [c.categoryLabel.slice(0, 4), '']);
+  const labels = categories.flatMap((c) => [displayCategoryName(c.categoryLabel).slice(0, 4), '']);
   const values = categories.flatMap((c) => [c.current, c.previous]);
 
   return (
     <View style={styles.container}>
-      <Typography variant="subheading">Spending vs previous month</Typography>
+      <Typography variant="subheading">{t('comparison.title')}</Typography>
       {categories.length === 0 ? (
-        <Typography variant="muted">No comparison data for last month.</Typography>
+        <Typography variant="muted">{t('comparison.empty')}</Typography>
       ) : (
         <>
           <SpendingBarChart labels={labels} values={values} />
           {categories.map((c) => (
             <View key={c.categoryId} style={styles.row} testID={`comparison-row-${c.categoryId}`}>
-              <Typography variant="body">{c.categoryLabel}</Typography>
+              <Typography variant="body">{displayCategoryName(c.categoryLabel)}</Typography>
               <Typography variant="label" style={{ color: changeColor(c, colors) }}>
-                {formatChange(c)}
+                {formatChange(c, t('comparison.new'))}
               </Typography>
             </View>
           ))}

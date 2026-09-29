@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { addMonths, currentMonthISO, toISODate } from '@/utils/formatDate';
@@ -44,7 +45,7 @@ export function useWeeklyReport(initialWeekStart?: string) {
       })
       .catch((e) => {
         if (!active) return;
-        setError(e instanceof Error ? e.message : 'Failed to load the weekly report.');
+        setError(e instanceof Error ? e.message : i18n.t('errors.loadWeekly', { ns: 'reports' }));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -91,7 +92,7 @@ export function useMonthlyReport(initialMonthISO?: string) {
       })
       .catch((e) => {
         if (!active) return;
-        setError(e instanceof Error ? e.message : 'Failed to load the monthly report.');
+        setError(e instanceof Error ? e.message : i18n.t('errors.loadMonthly', { ns: 'reports' }));
       })
       .finally(() => {
         if (active) setLoading(false);

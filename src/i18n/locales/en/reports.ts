@@ -1,0 +1,44 @@
+/** Copy for the reports slice: the monthly and weekly reports. */
+export const reports = {
+  loading: 'Loading…',
+  uncategorised: 'Uncategorised',
+  previousPeriod: 'Previous period',
+  nextPeriod: 'Next period',
+  noData: 'No data for this period.',
+  monthly: {
+    incomeCaps: 'INCOME',
+    expensesCaps: 'EXPENSES',
+    performance: 'Expense Performance',
+    planned: 'Planned',
+    actual: 'Actual Spending',
+    remaining: 'Remaining Budget',
+    byCategory: 'Spending by Category',
+    pctOfTotal: '{{percent}}% of total',
+    debt: 'Debt',
+    lentOut: 'Lent out',
+    owed: 'Owed',
+    viewWeekly: 'View Weekly Report →',
+  },
+  comparison: {
+    title: 'Spending vs previous month',
+    empty: 'No comparison data for last month.',
+    new: 'New',
+  },
+  suggestions: {
+    title: 'Suggestions',
+    empty: 'No suggestions for this month.',
+    increase: '{{category}} spending increased {{percent}}% vs last month — review it.',
+  },
+  weekly: {
+    title: 'Weekly Report',
+    spent: 'Spent',
+    income: 'Income',
+    highestDay: 'Highest day: {{date}} · {{amount}}',
+    topCategories: 'Top Categories',
+    empty: 'No spending this week.',
+  },
+  errors: {
+    loadWeekly: 'Failed to load the weekly report.',
+    loadMonthly: 'Failed to load the monthly report.',
+  },
+};

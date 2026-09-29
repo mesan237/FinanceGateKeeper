@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ProgressBar } from '@/components/ProgressBar';
@@ -8,6 +9,7 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { displayCategoryName } from '@/i18n/categoryNames';
 
 import { healthDisplay } from './budgetHealthDisplay';
 import type { CategoryBudgetProgress } from './budget.types';
@@ -34,6 +36,8 @@ export interface CategoryEnvelopeRowProps {
 export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelopeRowProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation(['budget', 'common']);
+  const name = displayCategoryName(envelope.categoryName);
   const icon = getTransactionIcon('expense', envelope.categoryName);
   const status = healthDisplay(envelope.health, c);
   const unbudgeted = envelope.available <= 0;
@@ -43,18 +47,21 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
     <Pressable
       testID={`envelope-row-${envelope.categoryId}`}
       accessibilityRole="button"
-      accessibilityLabel={`${envelope.categoryName} budget — ${status.label}`}
+      accessibilityLabel={t('envelope.a11y', { category: name, status: status.label })}
       onPress={onPress}
       style={[styles.row, first && styles.rowFirst]}
     >
       <View style={styles.header}>
         <Typography style={styles.icon}>{icon ?? '•'}</Typography>
         <View style={styles.title}>
-          <Typography>{envelope.categoryName}</Typography>
+          <Typography>{name}</Typography>
           <Typography variant="muted">
             {unbudgeted
-              ? 'No budget set'
-              : `${formatCurrency(envelope.spent)} of ${formatCurrency(envelope.available)}`}
+              ? t('envelope.noBudget')
+              : t('envelope.spentOf', {
+                  spent: formatCurrency(envelope.spent),
+                  available: formatCurrency(envelope.available),
+                })}
           </Typography>
         </View>
         <View style={styles.amounts}>
@@ -64,7 +71,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
               : formatCurrency(Math.abs(envelope.remaining))}
           </Typography>
           <Typography variant="muted" style={styles.remainingCaption}>
-            {unbudgeted ? 'spent' : isOver ? 'over' : 'left'}
+            {unbudgeted ? t('envelope.spent') : isOver ? t('envelope.over') : t('envelope.left')}
           </Typography>
         </View>
       </View>
@@ -81,9 +88,10 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
 
           <View style={styles.footer}>
             <Typography variant="muted" style={styles.footerText}>
-              {`${Math.round(envelope.consumedPct)}% used · ${formatCurrency(
-                Math.round(envelope.dailyAverage),
-              )}/day`}
+              {t('envelope.usedPerDay', {
+                percent: Math.round(envelope.consumedPct),
+                daily: formatCurrency(Math.round(envelope.dailyAverage)),
+              })}
             </Typography>
             <Typography
               variant="muted"
@@ -93,7 +101,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
                 envelope.projected > envelope.available && styles.footerAlert,
               ]}
             >
-              {`ends ~${formatCurrency(Math.round(envelope.projected))}`}
+              {t('envelope.endsAround', { amount: formatCurrency(Math.round(envelope.projected)) })}
             </Typography>
           </View>
 
@@ -103,7 +111,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
               style={styles.rollover}
               testID={`envelope-rollover-${envelope.categoryId}`}
             >
-              ↻ Rolls over
+              {t('envelope.rollsOver')}
             </Typography>
           ) : null}
         </>

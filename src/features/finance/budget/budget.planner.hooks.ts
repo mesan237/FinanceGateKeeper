@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Category } from '@/features/finance/expenses/expenses.types';
@@ -112,7 +113,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
         setSuggestions(suggested);
         setError(null);
       } catch (e) {
-        if (active) setError(e instanceof Error ? e.message : 'Failed to load the planner.');
+        if (active) setError(e instanceof Error ? e.message : i18n.t('errors.loadPlanner', { ns: 'budget' }));
       } finally {
         if (active) setLoading(false);
       }
@@ -174,7 +175,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
       setRollovers(Object.fromEntries(budgets.map((b) => [b.categoryId, b.rolloverEnabled])));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to copy last month.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.copyLastMonth', { ns: 'budget' }));
     }
   }, [monthISO]);
 
@@ -195,7 +196,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
       setError(null);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save the budget.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.saveBudget', { ns: 'budget' }));
       return false;
     } finally {
       setSaving(false);

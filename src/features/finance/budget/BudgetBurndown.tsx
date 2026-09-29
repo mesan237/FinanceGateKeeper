@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Line, Path } from 'react-native-svg';
 
@@ -43,11 +44,12 @@ export function BudgetBurndown({
 }: BudgetBurndownProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('budget');
 
   if (points.length < 2 || available <= 0) {
     return (
       <Typography variant="muted" testID={testID ? `${testID}-empty` : undefined}>
-        Not enough of the month has passed to chart a trend yet.
+        {t('insights.notEnoughData')}
       </Typography>
     );
   }
@@ -105,8 +107,12 @@ export function BudgetBurndown({
       <View style={styles.legend}>
         <Typography variant="muted">
           {isBehind
-            ? `Behind pace — ${formatCurrency(Math.round(last.ideal - last.actual))} ahead of plan`
-            : `Ahead of pace — ${formatCurrency(Math.round(last.actual - last.ideal))} in hand`}
+            ? t('insights.behindPace', {
+                amount: formatCurrency(Math.round(last.ideal - last.actual)),
+              })
+            : t('insights.aheadOfPace', {
+                amount: formatCurrency(Math.round(last.actual - last.ideal)),
+              })}
         </Typography>
       </View>
     </View>

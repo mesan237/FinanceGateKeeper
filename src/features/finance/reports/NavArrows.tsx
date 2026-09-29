@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -24,12 +25,13 @@ export interface NavArrowsProps {
 export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }: NavArrowsProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('reports');
   return (
     <View style={styles.nav}>
       <Pressable
         testID={`${testIDPrefix}-prev`}
         accessibilityRole="button"
-        accessibilityLabel="Previous period"
+        accessibilityLabel={t('previousPeriod')}
         onPress={onPrev}
         hitSlop={12}
       >
@@ -39,7 +41,7 @@ export function NavArrows({ label, onPrev, onNext, nextDisabled, testIDPrefix }:
       <Pressable
         testID={`${testIDPrefix}-next`}
         accessibilityRole="button"
-        accessibilityLabel="Next period"
+        accessibilityLabel={t('nextPeriod')}
         accessibilityState={{ disabled: nextDisabled }}
         onPress={nextDisabled ? undefined : onNext}
         hitSlop={12}

@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import { getAllCategories, getCategories } from '@/features/finance/expenses/expenses.service';
 import { toISODate } from '@/utils/formatDate';
 import { prevMonthISO } from '@/utils/monthMath';
@@ -84,7 +86,7 @@ export async function buildCategoryProgressList(
       return buildCategoryProgress(
         {
           categoryId,
-          categoryName: nameOf.get(categoryId) ?? 'Uncategorised',
+          categoryName: nameOf.get(categoryId) ?? i18n.t('uncategorised', { ns: 'budget' }),
           allocated: budget?.allocatedAmount ?? 0,
           carriedIn: carried.get(categoryId) ?? 0,
           spent: spendByCategory.get(categoryId) ?? 0,

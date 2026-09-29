@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -6,6 +7,7 @@ import { Modal } from '@/components/Modal';
 import { Typography } from '@/components/Typography';
 import { buildOverBudgetAlert } from '@/notifications/triggers/overBudget';
 import { hapticWarning } from '@/utils/haptics';
+import { displayCategoryName } from '@/i18n/categoryNames';
 
 export interface OverBudgetAlertProps {
   visible: boolean;
@@ -35,7 +37,11 @@ export function OverBudgetAlert({
   onProceed,
   onCancel,
 }: OverBudgetAlertProps) {
-  const payload = buildOverBudgetAlert({ overage, categoryName });
+  const { t } = useTranslation(['budget', 'common']);
+  const payload = buildOverBudgetAlert({
+    overage,
+    categoryName: categoryName ? displayCategoryName(categoryName) : undefined,
+  });
 
   // A cautionary buzz when the warning appears — the modal interrupts a save,
   // so it should feel different from a success.
@@ -48,8 +54,8 @@ export function OverBudgetAlert({
       <View style={styles.content}>
         <Typography variant="subheading">{payload.title}</Typography>
         <Typography variant="muted">{payload.body}</Typography>
-        <Button testID="over-budget-proceed" label="Proceed anyway" onPress={onProceed} />
-        <Button testID="over-budget-cancel" label="Cancel" onPress={onCancel} />
+        <Button testID="over-budget-proceed" label={t('alert.proceed')} onPress={onProceed} />
+        <Button testID="over-budget-cancel" label={t('common:actions.cancel')} onPress={onCancel} />
       </View>
     </Modal>
   );

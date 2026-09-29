@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import type { PillTone } from '@/components/Pill';
 import type { ThemeColors } from '@/theme';
 
@@ -21,12 +23,6 @@ export interface HealthDisplay {
   color: string;
 }
 
-const LABELS: Record<BudgetHealth, string> = {
-  on_track: 'On track',
-  at_risk: 'Watch out',
-  over: 'Over budget',
-};
-
 const TONES: Record<BudgetHealth, PillTone> = {
   on_track: 'success',
   at_risk: 'warning',
@@ -40,10 +36,10 @@ export function healthDisplay(health: BudgetHealth, c: ThemeColors): HealthDispl
     at_risk: c.WARNING,
     over: c.DANGER,
   };
-  return { label: LABELS[health], tone: TONES[health], color: colors[health] };
+  return { label: healthLabel(health), tone: TONES[health], color: colors[health] };
 }
 
 /** The status word on its own — for captions and accessibility labels. */
 export function healthLabel(health: BudgetHealth): string {
-  return LABELS[health];
+  return i18n.t(`health.${health}`, { ns: 'budget' });
 }

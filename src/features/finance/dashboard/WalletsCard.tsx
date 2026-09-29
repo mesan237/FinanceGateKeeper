@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -22,6 +23,7 @@ export function WalletsCard() {
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('dashboard');
 
   if (loading) return null;
 
@@ -33,11 +35,9 @@ export function WalletsCard() {
         onPress={() => router.push('/accounts/create')}
       >
         <Card style={styles.emptyCard}>
-          <Typography variant="label">Wallets</Typography>
-          <Typography variant="muted">
-            Track cash and Mobile Money separately by setting up your wallets.
-          </Typography>
-          <Typography style={styles.emptyCta}>Set up your wallets →</Typography>
+          <Typography variant="label">{t('wallets.title')}</Typography>
+          <Typography variant="muted">{t('wallets.emptyBody')}</Typography>
+          <Typography style={styles.emptyCta}>{t('wallets.emptyCta')}</Typography>
         </Card>
       </Pressable>
     );
@@ -50,7 +50,7 @@ export function WalletsCard() {
       onPress={() => router.push('/accounts')}
     >
       <Card>
-        <Typography variant="label">Wallets</Typography>
+        <Typography variant="label">{t('wallets.title')}</Typography>
         <View style={styles.list}>
           {accounts.map((account) => (
             <View key={account.id} testID={`wallet-row-${account.id}`} style={styles.row}>

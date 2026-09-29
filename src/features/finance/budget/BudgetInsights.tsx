@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -9,6 +10,7 @@ import { RADIUS, SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { daysInMonth } from '@/utils/monthMath';
+import { displayCategoryName } from '@/i18n/categoryNames';
 
 import { BudgetBurndown } from './BudgetBurndown';
 import {
@@ -39,6 +41,7 @@ export interface BudgetInsightsProps {
 export function BudgetInsights({ overview }: BudgetInsightsProps) {
   const styles = useThemedStyles(makeStyles);
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation(['budget', 'common']);
   const [trend, setTrend] = useState<BudgetTrend | null>(null);
   const [comparison, setComparison] = useState<CategoryTrend[]>([]);
 
@@ -72,13 +75,13 @@ export function BudgetInsights({ overview }: BudgetInsightsProps) {
         testID="budget-insights-toggle"
         style={styles.header}
       >
-        <Typography variant="label">Insights</Typography>
-        <Typography style={styles.toggle}>{expanded ? 'Hide' : 'Show'}</Typography>
+        <Typography variant="label">{t('insights.title')}</Typography>
+        <Typography style={styles.toggle}>{expanded ? t('insights.hide') : t('insights.show')}</Typography>
       </Pressable>
 
       {!expanded ? null : (
         <View style={styles.body} testID="budget-insights-body">
-          <Section title="Remaining budget over the month">
+          <Section title={t('insights.burndown')}>
             {trend ? (
               <BudgetBurndown
                 points={trend.burndown}
@@ -87,25 +90,27 @@ export function BudgetInsights({ overview }: BudgetInsightsProps) {
                 testID="budget-burndown"
               />
             ) : (
-              <Typography variant="muted">Loading…</Typography>
+              <Typography variant="muted">{t('loading')}</Typography>
             )}
           </Section>
 
           {trend && trend.weekly.some((w) => w > 0) ? (
-            <Section title="Weekly spending">
+            <Section title={t('insights.weekly')}>
               <WeeklyBars weekly={trend.weekly} pace={trend.weeklyPace} />
             </Section>
           ) : null}
 
           {topConsumers.length > 0 ? (
-            <Section title="Biggest share of your budget">
+            <Section title={t('insights.biggestShare')}>
               {topConsumers.map((entry) => (
                 <View
                   key={entry.categoryId}
                   style={styles.shareRow}
                   testID={`budget-share-${entry.categoryId}`}
                 >
-                  <Typography style={styles.shareName}>{entry.categoryName}</Typography>
+                  <Typography style={styles.shareName}>
+                    {displayCategoryName(entry.categoryName)}
+                  </Typography>
                   <Typography variant="muted">
                     {`${Math.round(entry.shareOfBudgetPct)}% · ${formatCurrency(entry.spent)}`}
                   </Typography>
@@ -115,7 +120,7 @@ export function BudgetInsights({ overview }: BudgetInsightsProps) {
           ) : null}
 
           {comparison.length > 0 ? (
-            <Section title="Versus last month">
+            <Section title={t('insights.versusLastMonth')}>
               {comparison.slice(0, 5).map((entry) => (
                 <ComparisonRow key={entry.categoryId} entry={entry} />
               ))}
@@ -144,6 +149,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
  */
 function WeeklyBars({ weekly, pace }: { weekly: number[]; pace: number }) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('budget');
   const c = useTheme();
   const peak = Math.max(pace, ...weekly);
 
@@ -151,7 +157,7 @@ function WeeklyBars({ weekly, pace }: { weekly: number[]; pace: number }) {
     <View style={styles.weekly} testID="budget-weekly-bars">
       {weekly.map((amount, index) => (
         <View key={index} style={styles.weekRow} testID={`budget-week-${index + 1}`}>
-          <Typography variant="muted" style={styles.weekLabel}>{`W${index + 1}`}</Typography>
+          <Typography variant="muted" style={styles.weekLabel}>{t('insights.week', { number: index + 1 })}</Typography>
           <ProgressBar
             value={peak > 0 ? (amount / peak) * 100 : 0}
             marker={peak > 0 ? (pace / peak) * 100 : undefined}
@@ -174,7 +180,7 @@ function ComparisonRow({ entry }: { entry: CategoryTrend }) {
 
   return (
     <View style={styles.shareRow} testID={`budget-vs-${entry.categoryId}`}>
-      <Typography style={styles.shareName}>{entry.categoryName}</Typography>
+      <Typography style={styles.shareName}>{displayCategoryName(entry.categoryName)}</Typography>
       <Typography variant="muted" style={up ? styles.deltaUp : styles.deltaDown}>
         {`${up ? '+' : ''}${formatCurrency(delta)}`}
         {entry.changePct !== null ? ` (${up ? '+' : ''}${Math.round(entry.changePct)}%)` : ''}

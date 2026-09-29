@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
@@ -6,6 +7,8 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { displayCategoryName } from '@/i18n/categoryNames';
+import { dateNames } from '@/i18n/dateNames';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -13,7 +16,8 @@ import { NavArrows } from './NavArrows';
 import { SpendingBarChart } from './SpendingBarChart';
 import { useWeeklyReport } from './reports.hooks';
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// The chart runs Monday to Sunday; `daysShort` is indexed from Sunday.
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 /**
  * The weekly pulse screen: total spent and income for the week, a daily
@@ -23,10 +27,13 @@ const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export function WeeklyReport() {
   const styles = useThemedStyles(makeStyles);
   const { report, loading, error, goToPrevWeek, goToNextWeek, isCurrentWeek } = useWeeklyReport();
+  const { t } = useTranslation('reports');
+  const days = dateNames();
+  const dayLabels = WEEK_ORDER.map((i) => days.daysShort[i]);
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader title="Weekly Report" />
+      <ScreenHeader title={t('weekly.title')} />
       <ScrollView contentContainerStyle={styles.content}>
         <NavArrows
           label={
@@ -41,42 +48,44 @@ export function WeeklyReport() {
         />
 
         {error ? <Typography variant="muted">{error}</Typography> : null}
-        {loading && !report ? <Typography variant="muted">Loading…</Typography> : null}
+        {loading && !report ? <Typography variant="muted">{t('loading')}</Typography> : null}
 
         {report ? (
           <>
             <Card>
               <View style={styles.summaryRow}>
                 <View>
-                  <Typography variant="muted">Spent</Typography>
+                  <Typography variant="muted">{t('weekly.spent')}</Typography>
                   <Typography variant="subheading">{formatCurrency(report.totalSpent)}</Typography>
                 </View>
                 <View style={styles.alignEnd}>
-                  <Typography variant="muted">Income</Typography>
+                  <Typography variant="muted">{t('weekly.income')}</Typography>
                   <Typography variant="subheading">{formatCurrency(report.totalIncome)}</Typography>
                 </View>
               </View>
               {report.peakDay ? (
                 <Typography variant="muted" style={styles.peak}>
-                  Highest day: {formatDateShort(report.peakDay.date)} ·{' '}
-                  {formatCurrency(report.peakDay.amount)}
+                  {t('weekly.highestDay', {
+                    date: formatDateShort(report.peakDay.date),
+                    amount: formatCurrency(report.peakDay.amount),
+                  })}
                 </Typography>
               ) : null}
             </Card>
 
             <SpendingBarChart
-              labels={DAY_LABELS}
+              labels={dayLabels}
               values={report.spendingByDay.map((d) => d.amount)}
             />
 
             <View style={styles.section}>
-              <Typography variant="subheading">Top Categories</Typography>
+              <Typography variant="subheading">{t('weekly.topCategories')}</Typography>
               {report.topCategories.length === 0 ? (
-                <Typography variant="muted">No spending this week.</Typography>
+                <Typography variant="muted">{t('weekly.empty')}</Typography>
               ) : (
                 report.topCategories.map((c) => (
                   <View key={c.categoryId} style={styles.row} testID={`week-category-${c.categoryId}`}>
-                    <Typography variant="body">{c.categoryLabel}</Typography>
+                    <Typography variant="body">{displayCategoryName(c.categoryLabel)}</Typography>
                     <View style={styles.alignEnd}>
                       <Typography variant="body">{formatCurrency(c.amount)}</Typography>
                       <Typography variant="muted">{Math.round(c.pct)}%</Typography>

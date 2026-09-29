@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, TextInput as RNTextInput, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -7,6 +8,7 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { groupDigits } from '@/utils/groupDigits';
 
 export interface PlannerCategoryRowProps {
@@ -46,6 +48,8 @@ export function PlannerCategoryRow({
 }: PlannerCategoryRowProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation(['budget', 'common']);
+  const shown = displayCategoryName(name);
   const icon = getTransactionIcon('expense', name);
 
   return (
@@ -53,22 +57,22 @@ export function PlannerCategoryRow({
       <View style={styles.rowHeader}>
         <Typography style={styles.rowIcon}>{icon ?? '•'}</Typography>
         <View style={styles.rowLabel}>
-          <Typography>{name}</Typography>
+          <Typography>{shown}</Typography>
           {suggestion ? (
             <Typography variant="muted">
-              {`You usually spend ${formatCurrency(suggestion)}`}
+              {t('planner.usuallySpend', { amount: formatCurrency(suggestion) })}
             </Typography>
           ) : null}
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Assign the remaining budget to ${name}`}
+          accessibilityLabel={t('planner.takeRestA11y', { category: shown })}
           onPress={onTakeRemainder}
           hitSlop={8}
           testID={`${testID}-remainder`}
           style={styles.remainderButton}
         >
-          <Typography style={styles.remainderText}>+ rest</Typography>
+          <Typography style={styles.remainderText}>{t('planner.takeRest')}</Typography>
         </Pressable>
       </View>
 
@@ -80,7 +84,7 @@ export function PlannerCategoryRow({
             placeholder="0"
             placeholderTextColor={c.TEXT_MUTED}
             keyboardType="numeric"
-            accessibilityLabel={`${name} budget in FCFA`}
+            accessibilityLabel={t('sheet.amountA11y', { category: shown })}
             testID={`${testID}-amount`}
             style={styles.amountInput}
           />
@@ -90,13 +94,13 @@ export function PlannerCategoryRow({
         <Pressable
           accessibilityRole="switch"
           accessibilityState={{ checked: rollover }}
-          accessibilityLabel={`Roll over unused ${name} budget`}
+          accessibilityLabel={t('planner.rolloverA11y', { category: shown })}
           onPress={onToggleRollover}
           testID={`${testID}-rollover`}
           style={[styles.rolloverChip, rollover && styles.rolloverChipOn]}
         >
           <Typography style={[styles.rolloverText, rollover && { color: c.PRIMARY_GREEN }]}>
-            {rollover ? '↻ Rolls over' : '↻ Rollover'}
+            {rollover ? t('planner.rollsOver') : t('planner.rollover')}
           </Typography>
         </Pressable>
       </View>

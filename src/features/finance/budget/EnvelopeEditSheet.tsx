@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -9,6 +10,7 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { displayCategoryName } from '@/i18n/categoryNames';
 
 import type { CategoryBudgetProgress } from './budget.types';
 
@@ -63,6 +65,8 @@ export function EnvelopeEditSheet({
     setCovering(false);
   }, [envelope]);
 
+  const { t } = useTranslation(['budget', 'common']);
+
   if (!envelope) return <BottomSheet visible={false} onClose={onClose}>{null}</BottomSheet>;
 
   const shortfall = Math.max(0, -envelope.remaining);
@@ -79,11 +83,14 @@ export function EnvelopeEditSheet({
   return (
     <BottomSheet visible onClose={onClose} testID="envelope-sheet">
       <View style={styles.sheet}>
-        <Typography variant="subheading">{envelope.categoryName}</Typography>
+        <Typography variant="subheading">{displayCategoryName(envelope.categoryName)}</Typography>
         <Typography variant="muted">
-          {`${formatCurrency(envelope.spent)} spent of ${formatCurrency(envelope.available)}`}
+          {t('sheet.spentOf', {
+            spent: formatCurrency(envelope.spent),
+            available: formatCurrency(envelope.available),
+          })}
           {envelope.carriedIn !== 0
-            ? ` · ${formatCurrency(envelope.carriedIn)} carried over`
+            ? t('sheet.carriedOver', { amount: formatCurrency(envelope.carriedIn) })
             : ''}
         </Typography>
 
@@ -102,17 +109,19 @@ export function EnvelopeEditSheet({
             {shortfall > 0 ? (
               <View style={styles.overBanner}>
                 <Typography style={styles.overText}>
-                  {`${formatCurrency(shortfall)} over budget`}
+                  {t('sheet.overBudget', { amount: formatCurrency(shortfall) })}
                 </Typography>
               </View>
             ) : null}
 
             <View style={styles.field}>
-              <Typography variant="label">Budget for this month</Typography>
+              <Typography variant="label">{t('sheet.budgetThisMonth')}</Typography>
               <AmountInput
                 value={amount}
                 onChangeText={setAmount}
-                accessibilityLabel={`${envelope.categoryName} budget in FCFA`}
+                accessibilityLabel={t('sheet.amountA11y', {
+                  category: displayCategoryName(envelope.categoryName),
+                })}
                 testID="envelope-amount"
               />
             </View>
@@ -120,23 +129,21 @@ export function EnvelopeEditSheet({
             <Pressable
               accessibilityRole="switch"
               accessibilityState={{ checked: rollover }}
-              accessibilityLabel="Roll unused budget into next month"
+              accessibilityLabel={t('sheet.rolloverA11y')}
               onPress={() => setRollover((prev) => !prev)}
               testID="envelope-rollover"
               style={[styles.toggle, rollover && styles.toggleOn]}
             >
               <View style={styles.toggleText}>
-                <Typography>Roll over what is left</Typography>
-                <Typography variant="muted">
-                  Unused budget — or an overspend — carries into next month.
-                </Typography>
+                <Typography>{t('sheet.rolloverTitle')}</Typography>
+                <Typography variant="muted">{t('sheet.rolloverHint')}</Typography>
               </View>
               <Typography style={styles.toggleMark}>{rollover ? '✓' : ''}</Typography>
             </Pressable>
 
             {shortfall > 0 && coverSources.length > 0 ? (
               <Button
-                label="Cover from another category"
+                label={t('sheet.cover')}
                 variant="secondary"
                 onPress={() => setCovering(true)}
                 testID="envelope-cover"
@@ -144,7 +151,7 @@ export function EnvelopeEditSheet({
             ) : null}
 
             <Button
-              label="Save"
+              label={t('common:actions.save')}
               loading={busy}
               onPress={() =>
                 void run(() =>
@@ -156,7 +163,7 @@ export function EnvelopeEditSheet({
 
             {envelope.allocated > 0 ? (
               <Button
-                label="Remove budget"
+                label={t('sheet.remove')}
                 variant="ghost"
                 disabled={busy}
                 onPress={() => void run(() => onRemove(envelope.categoryId))}
@@ -191,10 +198,11 @@ interface CoverPickerProps {
  */
 function CoverPicker({ shortfall, sources, busy, onPick, onCancel }: CoverPickerProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation(['budget', 'common']);
 
   return (
     <View style={styles.cover} testID="envelope-cover-picker">
-      <Typography variant="label">{`Cover ${formatCurrency(shortfall)} from…`}</Typography>
+      <Typography variant="label">{t('sheet.coverFrom', { amount: formatCurrency(shortfall) })}</Typography>
       {sources.map((source) => {
         const spare = Math.min(shortfall, source.remaining, source.allocated);
         return (
@@ -207,16 +215,16 @@ function CoverPicker({ shortfall, sources, busy, onPick, onCancel }: CoverPicker
             style={styles.coverRow}
           >
             <View style={styles.coverBody}>
-              <Typography>{source.categoryName}</Typography>
+              <Typography>{displayCategoryName(source.categoryName)}</Typography>
               <Typography variant="muted">
-                {`${formatCurrency(source.remaining)} unspent`}
+                {t('sheet.unspent', { amount: formatCurrency(source.remaining) })}
               </Typography>
             </View>
             <Typography style={styles.coverAmount}>{formatCurrency(spare)}</Typography>
           </Pressable>
         );
       })}
-      <Button label="Back" variant="ghost" onPress={onCancel} testID="envelope-cover-cancel" />
+      <Button label={t('common:actions.back')} variant="ghost" onPress={onCancel} testID="envelope-cover-cancel" />
     </View>
   );
 }
