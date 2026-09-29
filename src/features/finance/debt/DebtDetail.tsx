@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -8,7 +9,6 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
-import { DEBT_DIRECTION_LABELS, DEBT_STATUS_LABELS } from '@/constants/debt';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong } from '@/utils/formatDate';
 
@@ -26,12 +26,13 @@ export interface DebtDetailProps {
 export function DebtDetail({ debtId }: DebtDetailProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const { t } = useTranslation(['debt', 'common']);
   const { debt, loading, error, settle, remove } = useDebtDetail(debtId);
 
   if (loading && !debt) {
     return (
       <View style={styles.container}>
-        <Typography variant="muted">Loading…</Typography>
+        <Typography variant="muted">{t('loading')}</Typography>
       </View>
     );
   }
@@ -39,7 +40,7 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
   if (!debt) {
     return (
       <View style={styles.container}>
-        <Typography variant="muted">Debt not found.</Typography>
+        <Typography variant="muted">{t('detail.notFound')}</Typography>
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </View>
     );
@@ -52,24 +53,24 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Debt" />
+      <ScreenHeader title={t('detail.title')} />
       <Card>
         <View style={styles.rowHeader}>
           <Typography variant="heading">{debt.personName}</Typography>
-          <Typography variant="muted">{DEBT_STATUS_LABELS[debt.status]}</Typography>
+          <Typography variant="muted">{t(`statuses.${debt.status}`)}</Typography>
         </View>
         <Typography variant="subheading">{formatCurrency(debt.amount)}</Typography>
-        <Typography variant="muted">{DEBT_DIRECTION_LABELS[debt.direction]}</Typography>
+        <Typography variant="muted">{t(`directions.${debt.direction}`)}</Typography>
         {debt.dueDate ? (
-          <Typography variant="muted">{`Due ${formatDateLong(debt.dueDate)}`}</Typography>
+          <Typography variant="muted">{t('due', { date: formatDateLong(debt.dueDate) })}</Typography>
         ) : null}
         {debt.note ? <Typography style={styles.note}>{debt.note}</Typography> : null}
       </Card>
 
       {debt.status === 'pending' ? (
-        <Button label="Mark settled" onPress={() => void settle()} />
+        <Button label={t('detail.settle')} onPress={() => void settle()} />
       ) : null}
-      <Button label="Delete" onPress={handleDelete} />
+      <Button label={t('common:actions.delete')} onPress={handleDelete} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>

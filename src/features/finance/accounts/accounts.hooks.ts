@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { toISODate } from '@/utils/formatDate';
@@ -27,7 +28,7 @@ export function useAccounts() {
       setBalances(Object.fromEntries(pairs));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load accounts.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadAccounts', { ns: 'accounts' }));
     } finally {
       setLoading(false);
     }
@@ -64,7 +65,7 @@ export function useAccountDetail(id: number) {
       setHistory(hist);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load account.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadAccount', { ns: 'accounts' }));
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ export function useAccountStats(id: number, monthISO: string) {
           setError(null);
         }
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load stats.');
+        if (!cancelled) setError(e instanceof Error ? e.message : i18n.t('errors.loadStats', { ns: 'accounts' }));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -155,7 +156,7 @@ export function useTransferLog() {
         const def = accounts.find((a) => a.isDefault) ?? accounts[0];
         if (!cancelled && def) setFromId(def.id);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load accounts.');
+        if (!cancelled) setError(e instanceof Error ? e.message : i18n.t('errors.loadAccounts', { ns: 'accounts' }));
       }
     })();
     return () => {
@@ -180,7 +181,7 @@ export function useTransferLog() {
       await service.logTransfer(fromId, toId, numericAmount, date, note.trim() || undefined);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to log transfer.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.logTransfer', { ns: 'accounts' }));
       return false;
     }
   }, [fromId, toId, numericAmount, date, note]);

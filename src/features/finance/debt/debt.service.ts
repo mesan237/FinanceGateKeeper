@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import type { DebtDirection } from '@/constants/debt';
 import { DEBT_DUE_SOON_DAYS } from '@/constants/debt';
 import { execute, query } from '@/services/database';
@@ -64,9 +66,9 @@ export async function getDebts(direction: DebtDirection): Promise<Debt[]> {
  */
 export async function createDebt(input: NewDebt): Promise<number> {
   const personName = input.personName.trim();
-  if (!personName) throw new Error('Person name is required.');
+  if (!personName) throw new Error(i18n.t('errors.personRequired', { ns: 'debt' }));
   if (!Number.isInteger(input.amount) || input.amount <= 0) {
-    throw new Error('Debt amount must be a positive integer.');
+    throw new Error(i18n.t('errors.amountPositive', { ns: 'debt' }));
   }
   const date = input.date ?? toISODate(new Date());
   await execute(
@@ -103,12 +105,12 @@ export async function settleDebt(
 /** Updates a debt's person, amount, due date, and/or note. Leaves status untouched. */
 export async function updateDebt(id: number, patch: DebtPatch): Promise<void> {
   const debt = await getDebtById(id);
-  if (!debt) throw new Error(`Debt ${id} does not exist.`);
+  if (!debt) throw new Error(i18n.t('errors.notExist', { ns: 'debt', id: String(id) }));
   const personName = patch.personName === undefined ? debt.personName : patch.personName.trim();
-  if (!personName) throw new Error('Person name is required.');
+  if (!personName) throw new Error(i18n.t('errors.personRequired', { ns: 'debt' }));
   const amount = patch.amount === undefined ? debt.amount : patch.amount;
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new Error('Debt amount must be a positive integer.');
+    throw new Error(i18n.t('errors.amountPositive', { ns: 'debt' }));
   }
   const dueDate = patch.dueDate === undefined ? debt.dueDate : patch.dueDate;
   const note = patch.note === undefined ? debt.note : patch.note;

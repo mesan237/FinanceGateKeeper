@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -12,7 +13,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { currentMonthISO } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 
-import { ACCOUNT_PURPOSE_LABEL, ACCOUNT_TYPE_ICON } from './accountIcons';
+import { ACCOUNT_TYPE_ICON, accountPurposeLabel } from './accountIcons';
 import { useAccountStats, useAccounts } from './accounts.hooks';
 import type { Account } from './accounts.types';
 
@@ -20,6 +21,7 @@ function AccountCard({ account, balance }: { account: Account; balance: number }
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { stats } = useAccountStats(account.id, currentMonthISO());
+  const { t } = useTranslation('accounts');
 
   return (
     <Pressable
@@ -34,15 +36,17 @@ function AccountCard({ account, balance }: { account: Account; balance: number }
             {account.name}
           </Typography>
           <Typography variant="label" style={styles.badge}>
-            {ACCOUNT_PURPOSE_LABEL[account.purpose]}
+            {accountPurposeLabel(account.purpose)}
           </Typography>
         </View>
         <Typography variant="heading">{formatCurrency(balance)}</Typography>
         <View style={styles.statsRow}>
           <Typography variant="muted" style={styles.statIn}>
-            ↑ {stats?.incomePercent ?? 0}% in
+            {t('overview.statIn', { percent: stats?.incomePercent ?? 0 })}
           </Typography>
-          <Typography variant="muted">↓ {stats?.expensePercent ?? 0}% out</Typography>
+          <Typography variant="muted">
+            {t('overview.statOut', { percent: stats?.expensePercent ?? 0 })}
+          </Typography>
         </View>
       </Card>
     </Pressable>
@@ -58,20 +62,21 @@ export function AccountsOverview() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
+  const { t } = useTranslation('accounts');
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Accounts" />
+      <ScreenHeader title={t('overview.title')} />
       <ScrollView contentContainerStyle={styles.list}>
         {!loading && accounts.length === 0 ? (
-          <Typography variant="muted">No accounts yet.</Typography>
+          <Typography variant="muted">{t('overview.empty')}</Typography>
         ) : null}
         {accounts.map((account) => (
           <AccountCard key={account.id} account={account} balance={balances[account.id] ?? 0} />
         ))}
         <Button
           testID="add-account-button"
-          label="Add account"
+          label={t('overview.add')}
           variant="secondary"
           onPress={() => router.push('/accounts/create')}
         />

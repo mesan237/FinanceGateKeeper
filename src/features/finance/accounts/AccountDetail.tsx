@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -41,17 +42,18 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
+  const { t } = useTranslation(['accounts', 'common']);
   const { account, balance, history, loading } = useAccountDetail(accountId);
   const { stats } = useAccountStats(accountId, currentMonthISO());
 
   return (
     <View style={styles.container}>
       <ScreenHeader
-        title={account?.name ?? 'Account'}
+        title={account?.name ?? t('detail.fallbackTitle')}
         rightAction={
           <Button
             testID="edit-account-button"
-            label="Edit"
+            label={t('common:actions.edit')}
             variant="ghost"
             compact
             onPress={() => router.push(`/accounts/create?id=${accountId}`)}
@@ -60,21 +62,21 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
       />
 
       <View style={styles.hero}>
-        <Typography variant="muted">Balance</Typography>
+        <Typography variant="muted">{t('detail.balance')}</Typography>
         <Typography variant="display">{formatCurrency(balance)}</Typography>
         <View style={styles.statsRow}>
           <Typography variant="muted" style={styles.statIn}>
-            ↑ {stats?.incomePercent ?? 0}% in
+            {t('overview.statIn', { percent: stats?.incomePercent ?? 0 })}
           </Typography>
           <Typography variant="muted" style={styles.statOut}>
-            ↓ {stats?.expensePercent ?? 0}% out
+            {t('overview.statOut', { percent: stats?.expensePercent ?? 0 })}
           </Typography>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
         {!loading && history.length === 0 ? (
-          <Typography variant="muted">No transactions yet.</Typography>
+          <Typography variant="muted">{t('detail.empty')}</Typography>
         ) : null}
         {history.map((entry) => {
 

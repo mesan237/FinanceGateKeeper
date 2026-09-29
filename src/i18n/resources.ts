@@ -1,15 +1,19 @@
+import { accounts as enAccounts } from '@/i18n/locales/en/accounts';
 import { auth as enAuth } from '@/i18n/locales/en/auth';
 import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
+import { debt as enDebt } from '@/i18n/locales/en/debt';
 import { dataTransfer as enDataTransfer } from '@/i18n/locales/en/dataTransfer';
 import { expenses as enExpenses } from '@/i18n/locales/en/expenses';
 import { income as enIncome } from '@/i18n/locales/en/income';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
 import { notifications as enNotifications } from '@/i18n/locales/en/notifications';
 import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
+import { accounts as frAccounts } from '@/i18n/locales/fr/accounts';
 import { auth as frAuth } from '@/i18n/locales/fr/auth';
 import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
+import { debt as frDebt } from '@/i18n/locales/fr/debt';
 import { dataTransfer as frDataTransfer } from '@/i18n/locales/fr/dataTransfer';
 import { expenses as frExpenses } from '@/i18n/locales/fr/expenses';
 import { income as frIncome } from '@/i18n/locales/fr/income';
@@ -33,6 +37,8 @@ export const resources = {
     dataTransfer: enDataTransfer,
     expenses: enExpenses,
     income: enIncome,
+    accounts: enAccounts,
+    debt: enDebt,
   },
   fr: {
     common: frCommon,
@@ -44,6 +50,8 @@ export const resources = {
     dataTransfer: frDataTransfer,
     expenses: frExpenses,
     income: frIncome,
+    accounts: frAccounts,
+    debt: frDebt,
   },
 };
 

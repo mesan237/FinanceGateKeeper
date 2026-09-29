@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -24,6 +25,7 @@ export function TransferLogScreen() {
   const router = useRouter();
   const transfer = useTransferLog();
   const { show } = useToast();
+  const { t } = useTranslation(['accounts', 'common']);
   const [saving, setSaving] = useState(false);
 
   const sameAccount =
@@ -34,7 +36,7 @@ export function TransferLogScreen() {
     setSaving(true);
     const ok = await transfer.submit();
     if (ok) {
-      show('Transfer logged');
+      show(t('transfer.logged'));
       router.back();
     } else {
       setSaving(false);
@@ -43,49 +45,49 @@ export function TransferLogScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Log Transfer" cancelLabel="Cancel" />
+      <ScreenHeader title={t('transfer.title')} cancelLabel={t('common:actions.cancel')} />
 
       <AccountPicker
         testID="transfer-from"
-        label="From"
+        label={t('transfer.from')}
         value={transfer.fromId}
         onChange={transfer.setFromId}
       />
       <AccountPicker
         testID="transfer-to"
-        label="To"
+        label={t('transfer.to')}
         value={transfer.toId}
         onChange={transfer.setToId}
       />
 
       {sameAccount ? (
-        <Typography style={styles.error}>Cannot transfer to the same account.</Typography>
+        <Typography style={styles.error}>{t('transfer.sameAccount')}</Typography>
       ) : null}
 
       <TextInput
         testID="transfer-amount"
-        placeholder="Amount (FCFA)"
+        placeholder={t('transfer.amountPlaceholder')}
         keyboardType="number-pad"
         value={transfer.amount}
         onChangeText={transfer.setAmount}
-        accessibilityLabel="Amount"
+        accessibilityLabel={t('transfer.amount')}
       />
       <TextInput
         testID="transfer-date"
-        placeholder="Date (YYYY-MM-DD)"
+        placeholder={t('transfer.datePlaceholder')}
         value={transfer.date}
         onChangeText={transfer.setDate}
-        accessibilityLabel="Date"
+        accessibilityLabel={t('transfer.date')}
       />
       <TextInput
         testID="transfer-note"
-        placeholder="Note (optional)"
+        placeholder={t('transfer.notePlaceholder')}
         value={transfer.note}
         onChangeText={transfer.setNote}
-        accessibilityLabel="Note"
+        accessibilityLabel={t('transfer.note')}
       />
 
-      <Button label="Save" onPress={handleSave} disabled={!transfer.canSubmit} loading={saving} />
+      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!transfer.canSubmit} loading={saving} />
 
       {transfer.error ? <Typography style={styles.error}>{transfer.error}</Typography> : null}
     </View>

@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import {
@@ -34,7 +35,7 @@ export function useDebts(direction: DebtDirection) {
       setTotals(outstanding);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load debts.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadDebts', { ns: 'debt' }));
     } finally {
       setLoading(false);
     }
@@ -50,7 +51,7 @@ export function useDebts(direction: DebtDirection) {
         await debtService.settleDebt(id);
         await refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to settle debt.');
+        setError(e instanceof Error ? e.message : i18n.t('errors.settleFailed', { ns: 'debt' }));
       }
     },
     [refresh],
@@ -62,7 +63,7 @@ export function useDebts(direction: DebtDirection) {
         await debtService.deleteDebt(id);
         await refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to delete debt.');
+        setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'debt' }));
       }
     },
     [refresh],
@@ -86,7 +87,7 @@ export function useDebtDetail(id: number) {
       setDebt(await debtService.getDebtById(id));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load debt.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadDebt', { ns: 'debt' }));
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ export function useDebtDetail(id: number) {
       await debtService.settleDebt(id);
       await refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to settle debt.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.settleFailed', { ns: 'debt' }));
     }
   }, [id, refresh]);
 
@@ -111,7 +112,7 @@ export function useDebtDetail(id: number) {
         await debtService.updateDebt(id, patch);
         await refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to update debt.');
+        setError(e instanceof Error ? e.message : i18n.t('errors.updateFailed', { ns: 'debt' }));
       }
     },
     [id, refresh],
@@ -121,7 +122,7 @@ export function useDebtDetail(id: number) {
     try {
       await debtService.deleteDebt(id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete debt.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'debt' }));
     }
   }, [id]);
 
@@ -166,7 +167,7 @@ export function useDebtReminders() {
         }
         setError(null);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to schedule reminders.');
+        if (!cancelled) setError(e instanceof Error ? e.message : i18n.t('errors.remindersFailed', { ns: 'debt' }));
       } finally {
         if (!cancelled) setLoading(false);
       }

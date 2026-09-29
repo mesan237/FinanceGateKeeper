@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 
@@ -90,10 +92,10 @@ async function clearDefault(): Promise<void> {
  */
 export async function createAccount(fields: NewAccountFields): Promise<Account> {
   const name = fields.name.trim();
-  if (!name) throw new Error('Account name is required.');
+  if (!name) throw new Error(i18n.t('errors.nameRequired', { ns: 'accounts' }));
   const openingBalance = fields.openingBalance ?? 0;
   if (!Number.isInteger(openingBalance) || openingBalance < 0) {
-    throw new Error('Opening balance must be a non-negative integer.');
+    throw new Error(i18n.t('errors.openingBalance', { ns: 'accounts' }));
   }
   // Clearing the prior default and inserting the new default account must be
   // atomic so a failure can't leave the table with zero or two defaults.
@@ -112,7 +114,7 @@ export async function createAccount(fields: NewAccountFields): Promise<Account> 
   }
   const [{ id }] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');
   const created = await getAccountById(id);
-  if (!created) throw new Error('Failed to create account.');
+  if (!created) throw new Error(i18n.t('errors.createFailed', { ns: 'accounts' }));
   return created;
 }
 
@@ -122,14 +124,14 @@ export async function createAccount(fields: NewAccountFields): Promise<Account> 
  */
 export async function updateAccount(id: number, patch: AccountPatch): Promise<void> {
   const current = await getAccountById(id);
-  if (!current) throw new Error(`Account ${id} does not exist.`);
+  if (!current) throw new Error(i18n.t('errors.notExist', { ns: 'accounts', id: String(id) }));
 
   const name = patch.name === undefined ? current.name : patch.name.trim();
-  if (!name) throw new Error('Account name is required.');
+  if (!name) throw new Error(i18n.t('errors.nameRequired', { ns: 'accounts' }));
   const openingBalance =
     patch.openingBalance === undefined ? current.openingBalance : patch.openingBalance;
   if (!Number.isInteger(openingBalance) || openingBalance < 0) {
-    throw new Error('Opening balance must be a non-negative integer.');
+    throw new Error(i18n.t('errors.openingBalance', { ns: 'accounts' }));
   }
   const type = patch.type ?? current.type;
   const purpose = patch.purpose ?? current.purpose;
@@ -186,9 +188,9 @@ export async function logTransfer(
   date: string = toISODate(new Date()),
   note?: string,
 ): Promise<Transfer> {
-  if (fromId === toId) throw new Error('Cannot transfer to the same account.');
+  if (fromId === toId) throw new Error(i18n.t('errors.sameAccount', { ns: 'accounts' }));
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new Error('Transfer amount must be a positive integer.');
+    throw new Error(i18n.t('errors.transferAmount', { ns: 'accounts' }));
   }
   await execute(
     `INSERT INTO transfers (from_account_id, to_account_id, amount, date, note, created_at)
