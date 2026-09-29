@@ -12,6 +12,7 @@ export const navigation = {
     management: 'Management',
     accounts: 'Accounts',
     categories: 'Categories',
+    debts: 'Debts',
     exportImport: 'Export & Import',
     backupRestore: 'Backup & Restore',
     deleteReset: 'Delete & Reset',

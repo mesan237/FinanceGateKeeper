@@ -34,6 +34,15 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
+  it('navigates to /debt and closes the drawer when "Debts" is pressed', () => {
+    const { navigation } = renderDrawer();
+    const row = screen.getByRole('button', { name: 'Debts' });
+    expect(row.props.accessibilityState?.disabled).not.toBe(true);
+    fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/debt');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves "Backup & Restore" disabled', () => {
     renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });
@@ -45,6 +54,7 @@ describe('AppDrawerContent', () => {
     renderDrawer();
     expect(screen.getByText('Gestion')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Comptes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dettes' })).toBeTruthy();
     expect(screen.queryAllByText('Bientôt').length).toBeGreaterThan(0);
   });
 });

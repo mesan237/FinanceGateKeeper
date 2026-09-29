@@ -16,6 +16,7 @@ export const navigation: Translation<typeof en> = {
     management: 'Gestion',
     accounts: 'Comptes',
     categories: 'Catégories',
+    debts: 'Dettes',
     exportImport: 'Export et import',
     backupRestore: 'Sauvegarde et restauration',
     deleteReset: 'Supprimer et réinitialiser',
