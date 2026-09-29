@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -23,10 +25,7 @@ export interface RecurringExpenseFormProps {
   onClose: () => void;
 }
 
-const FREQUENCIES: ReadonlyArray<{ value: Frequency; label: string }> = [
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'weekly', label: 'Weekly' },
-];
+const FREQUENCIES: ReadonlyArray<Frequency> = ['monthly', 'weekly'];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
@@ -37,6 +36,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: RecurringExpenseFormProps) {
   const styles = useThemedStyles(makeStyles);
   const { labelFor } = useCategories();
+  const { t } = useTranslation(['expenses', 'common']);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [frequency, setFrequency] = useState<Frequency>('monthly');
@@ -79,7 +79,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       categoryId === null ||
       !ISO_DATE.test(nextDueDate)
     ) {
-      setError('Enter a label, amount > 0, a category, and a valid next due date (YYYY-MM-DD).');
+      setError(t('recurring.invalid'));
       return;
     }
     await onSave({
@@ -98,37 +98,37 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
     <Modal visible={visible} onRequestClose={onClose}>
       <View style={styles.form}>
         <Typography variant="subheading">
-          {recurring ? 'Edit recurring' : 'New recurring'}
+          {recurring ? t('recurring.editRecurring') : t('recurring.newRecurring')}
         </Typography>
 
         <TextInput
           value={label}
           onChangeText={setLabel}
-          placeholder="Label (e.g. Rent)"
-          accessibilityLabel="Recurring label"
+          placeholder={t('recurring.labelPlaceholder')}
+          accessibilityLabel={t('recurring.labelA11y')}
           testID="recurring-label-input"
         />
         <TextInput
           value={amount}
           onChangeText={setAmount}
-          placeholder="Amount (FCFA)"
+          placeholder={t('quickAdd.amountPlaceholder')}
           keyboardType="numeric"
-          accessibilityLabel="Recurring amount"
+          accessibilityLabel={t('recurring.amountA11y')}
           testID="recurring-amount-input"
         />
 
         <View style={styles.pills}>
           {FREQUENCIES.map((option) => (
             <Pressable
-              key={option.value}
+              key={option}
               accessibilityRole="button"
-              accessibilityState={{ selected: frequency === option.value }}
-              testID={`recurring-frequency-${option.value}`}
-              style={[styles.pill, frequency === option.value && styles.pillActive]}
-              onPress={() => setFrequency(option.value)}
+              accessibilityState={{ selected: frequency === option }}
+              testID={`recurring-frequency-${option}`}
+              style={[styles.pill, frequency === option && styles.pillActive]}
+              onPress={() => setFrequency(option)}
             >
-              <Typography style={frequency === option.value ? styles.pillTextActive : styles.pillText}>
-                {option.label}
+              <Typography style={frequency === option ? styles.pillTextActive : styles.pillText}>
+                {t(`recurring.frequency.${option}`)}
               </Typography>
             </Pressable>
           ))}
@@ -137,19 +137,19 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
         <TextInput
           value={nextDueDate}
           onChangeText={setNextDueDate}
-          placeholder="Next due date (YYYY-MM-DD)"
-          accessibilityLabel="Next due date"
+          placeholder={t('recurring.datePlaceholder')}
+          accessibilityLabel={t('recurring.dateA11y')}
           testID="recurring-date-input"
         />
         <Button
-          label={categoryLabel ?? 'Select category'}
+          label={categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
           onPress={() => setPickerVisible(true)}
         />
 
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
 
-        <Button label="Save" onPress={handleSave} testID="recurring-save" />
-        <Button label="Cancel" onPress={onClose} testID="recurring-cancel" />
+        <Button label={t('common:actions.save')} onPress={handleSave} testID="recurring-save" />
+        <Button label={t('common:actions.cancel')} onPress={onClose} testID="recurring-cancel" />
       </View>
 
       <CategoryPicker

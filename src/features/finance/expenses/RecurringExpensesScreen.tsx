@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -29,6 +30,7 @@ type ModalState =
  */
 export function RecurringExpensesScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation(['expenses', 'common']);
   const { recurring, add, update, setActive, skip, remove } = useRecurring();
   const [modal, setModal] = useState<ModalState>({ mode: 'idle' });
   const [deleteTarget, setDeleteTarget] = useState<RecurringExpense | null>(null);
@@ -40,45 +42,47 @@ export function RecurringExpensesScreen() {
         <Typography style={styles.amount}>{formatCurrency(item.amount)}</Typography>
       </View>
       <View style={styles.rowMeta}>
-        <Typography style={styles.badge}>{item.frequency}</Typography>
-        <Typography variant="muted">{`Next: ${formatDateShort(item.nextDueDate)}`}</Typography>
+        <Typography style={styles.badge}>{t(`recurring.frequency.${item.frequency}`)}</Typography>
+        <Typography variant="muted">{t('recurring.next', { date: formatDateShort(item.nextDueDate) })}</Typography>
       </View>
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: item.isActive }}
-          accessibilityLabel={`${item.isActive ? 'Deactivate' : 'Activate'} ${item.label}`}
+          accessibilityLabel={t(item.isActive ? 'recurring.deactivate' : 'recurring.activate', {
+            label: item.label,
+          })}
           testID={`recurring-toggle-${item.id}`}
           onPress={() => setActive(item.id, !item.isActive)}
         >
           <Typography style={item.isActive ? styles.active : styles.inactive}>
-            {item.isActive ? 'Active' : 'Inactive'}
+            {item.isActive ? t('recurring.active') : t('recurring.inactive')}
           </Typography>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Skip next ${item.label}`}
+          accessibilityLabel={t('recurring.skipNextA11y', { label: item.label })}
           testID={`recurring-skip-${item.id}`}
           disabled={!item.isActive}
           onPress={() => skip(item.id)}
         >
-          <Typography style={item.isActive ? styles.action : styles.disabled}>Skip next</Typography>
+          <Typography style={item.isActive ? styles.action : styles.disabled}>{t('recurring.skipNext')}</Typography>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${item.label}`}
+          accessibilityLabel={t('recurring.editA11y', { label: item.label })}
           testID={`recurring-edit-${item.id}`}
           onPress={() => setModal({ mode: 'edit', recurring: item })}
         >
-          <Typography style={styles.action}>Edit</Typography>
+          <Typography style={styles.action}>{t('common:actions.edit')}</Typography>
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Delete ${item.label}`}
+          accessibilityLabel={t('recurring.deleteA11y', { label: item.label })}
           testID={`recurring-delete-${item.id}`}
           onPress={() => setDeleteTarget(item)}
         >
-          <Typography style={styles.danger}>Delete</Typography>
+          <Typography style={styles.danger}>{t('common:actions.delete')}</Typography>
         </Pressable>
       </View>
     </View>
@@ -86,9 +90,9 @@ export function RecurringExpensesScreen() {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Recurring" />
+      <ScreenHeader title={t('recurring.title')} />
       <Button
-        label="+ Add recurring"
+        label={t('recurring.add')}
         onPress={() => setModal({ mode: 'create' })}
         testID="recurring-add-btn"
       />
@@ -99,7 +103,7 @@ export function RecurringExpensesScreen() {
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
-          <Typography variant="muted">No recurring expenses yet.</Typography>
+          <Typography variant="muted">{t('recurring.empty')}</Typography>
         }
       />
 
@@ -119,19 +123,17 @@ export function RecurringExpensesScreen() {
       <Modal visible={deleteTarget !== null} onRequestClose={() => setDeleteTarget(null)}>
         {deleteTarget ? (
           <View style={styles.confirm}>
-            <Typography variant="subheading">{`Delete "${deleteTarget.label}"?`}</Typography>
-            <Typography variant="muted">
-              Already-logged expenses are kept; only the schedule is removed.
-            </Typography>
+            <Typography variant="subheading">{t('recurring.deleteTitle', { label: deleteTarget.label })}</Typography>
+            <Typography variant="muted">{t('recurring.deleteBody')}</Typography>
             <Button
-              label="Delete"
+              label={t('common:actions.delete')}
               testID="recurring-delete-confirm"
               onPress={async () => {
                 await remove(deleteTarget.id);
                 setDeleteTarget(null);
               }}
             />
-            <Button label="Cancel" onPress={() => setDeleteTarget(null)} />
+            <Button label={t('common:actions.cancel')} onPress={() => setDeleteTarget(null)} />
           </View>
         ) : null}
       </Modal>

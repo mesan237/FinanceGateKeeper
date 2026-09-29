@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -21,24 +22,23 @@ export interface ZeroDayPromptProps {
  */
 export function ZeroDayPrompt({ visible, onConfirm, onClose }: ZeroDayPromptProps) {
   const router = useRouter();
+  const { t } = useTranslation('expenses');
 
   return (
     <Modal visible={visible} onRequestClose={onClose}>
       <View style={styles.content}>
-        <Typography variant="subheading">Did you spend nothing today?</Typography>
-        <Typography variant="muted">
-          Confirm a zero-spend day, or log what you spent.
-        </Typography>
+        <Typography variant="subheading">{t('zeroDay.title')}</Typography>
+        <Typography variant="muted">{t('zeroDay.body')}</Typography>
         <Button
           testID="zero-day-confirm"
-          label="Yes, I spent nothing"
+          label={t('zeroDay.confirm')}
           onPress={() => {
             void onConfirm();
           }}
         />
         <Button
           testID="zero-day-log"
-          label="Let me log"
+          label={t('zeroDay.log')}
           onPress={() => {
             onClose();
             router.push('/expenses/log');

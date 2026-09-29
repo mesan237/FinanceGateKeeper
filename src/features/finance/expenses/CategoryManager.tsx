@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -10,6 +11,7 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
@@ -33,6 +35,7 @@ interface AddTarget {
  */
 export function CategoryManager() {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation(['expenses', 'common']);
   const { managedCategories, subcategoriesOf, addCategory, rename, remove, toggleHidden, reorder } =
     useCategories();
 
@@ -52,13 +55,19 @@ export function CategoryManager() {
       return next;
     });
 
+  // The editor starts from the name as displayed (a translated default). Saving
+  // it untouched must not store that translation over the seeded name.
+  const [shownName, setShownName] = useState('');
+
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
-    setDraftName(cat.name);
+    setShownName(displayCategoryName(cat.name));
+    setDraftName(displayCategoryName(cat.name));
   };
 
   const saveEdit = async () => {
-    if (editingId != null && draftName.trim()) {
+    const next = draftName.trim();
+    if (editingId != null && next && next !== shownName) {
       await rename(editingId, draftName);
     }
     setEditingId(null);
@@ -84,13 +93,15 @@ export function CategoryManager() {
       <TextInput
         value={draftName}
         onChangeText={setDraftName}
-        accessibilityLabel={`Edit name for ${cat.name}`}
+        accessibilityLabel={t('manager.editNameFor', { name: displayCategoryName(cat.name) })}
         testID={`edit-input-${cat.id}`}
         style={styles.grow}
       />
     ) : (
       <Typography numberOfLines={2} style={[styles.grow, cat.isHidden && styles.hidden]}>
-        {cat.isHidden ? `${cat.name} (hidden)` : cat.name}
+        {cat.isHidden
+          ? t('manager.hiddenName', { name: displayCategoryName(cat.name) })
+          : displayCategoryName(cat.name)}
       </Typography>
     );
 
@@ -105,7 +116,7 @@ export function CategoryManager() {
             <IconButton
               icon="check"
               tone="primary"
-              accessibilityLabel={`Save ${cat.name}`}
+              accessibilityLabel={t('manager.save', { name: displayCategoryName(cat.name) })}
               testID={`save-${cat.id}`}
               onPress={saveEdit}
             />
@@ -113,13 +124,15 @@ export function CategoryManager() {
             <>
               <IconButton
                 icon="edit"
-                accessibilityLabel={`Rename ${cat.name}`}
+                accessibilityLabel={t('manager.rename', { name: displayCategoryName(cat.name) })}
                 testID={`rename-${cat.id}`}
                 onPress={() => startEdit(cat)}
               />
               <IconButton
                 icon={cat.isHidden ? 'show' : 'hide'}
-                accessibilityLabel={`${cat.isHidden ? 'Unhide' : 'Hide'} ${cat.name}`}
+                accessibilityLabel={t(cat.isHidden ? 'manager.unhide' : 'manager.hide', {
+                  name: displayCategoryName(cat.name),
+                })}
                 testID={`hide-${cat.id}`}
                 onPress={() => toggleHidden(cat.id, !cat.isHidden)}
               />
@@ -127,7 +140,7 @@ export function CategoryManager() {
                 <IconButton
                   icon="delete"
                   tone="danger"
-                  accessibilityLabel={`Delete ${cat.name}`}
+                  accessibilityLabel={t('manager.delete', { name: displayCategoryName(cat.name) })}
                   testID={`delete-${cat.id}`}
                   onPress={() => setDeleteTarget(cat)}
                 />
@@ -151,10 +164,10 @@ export function CategoryManager() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <ScreenHeader title="Categories" />
+      <ScreenHeader title={t('manager.title')} />
 
       <Button
-        label="+ New category"
+        label={t('manager.newCategory')}
         testID="add-parent-btn"
         onPress={() => setAddTarget({ parentId: null, parentName: null })}
       />
@@ -168,7 +181,9 @@ export function CategoryManager() {
             <View style={styles.parentHeader}>
               <IconButton
                 icon={isExpanded ? 'moveDown' : 'forward'}
-                accessibilityLabel={`${isExpanded ? 'Collapse' : 'Expand'} ${parent.name}`}
+                accessibilityLabel={t(isExpanded ? 'manager.collapse' : 'manager.expand', {
+                  name: displayCategoryName(parent.name),
+                })}
                 testID={`toggle-${parent.id}`}
                 onPress={() => toggleExpanded(parent.id)}
               />
@@ -178,7 +193,7 @@ export function CategoryManager() {
                 <IconButton
                   icon="check"
                   tone="primary"
-                  accessibilityLabel={`Save ${parent.name}`}
+                  accessibilityLabel={t('manager.save', { name: displayCategoryName(parent.name) })}
                   testID={`save-${parent.id}`}
                   onPress={saveEdit}
                 />
@@ -195,13 +210,15 @@ export function CategoryManager() {
                   <View style={styles.toolbar}>
                     <IconButton
                       icon="edit"
-                      accessibilityLabel={`Rename ${parent.name}`}
+                      accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name) })}
                       testID={`rename-${parent.id}`}
                       onPress={() => startEdit(parent)}
                     />
                     <IconButton
                       icon={parent.isHidden ? 'show' : 'hide'}
-                      accessibilityLabel={`${parent.isHidden ? 'Unhide' : 'Hide'} ${parent.name}`}
+                      accessibilityLabel={t(parent.isHidden ? 'manager.unhide' : 'manager.hide', {
+                        name: displayCategoryName(parent.name),
+                      })}
                       testID={`hide-${parent.id}`}
                       onPress={() => toggleHidden(parent.id, !parent.isHidden)}
                     />
@@ -209,7 +226,7 @@ export function CategoryManager() {
                       <IconButton
                         icon="delete"
                         tone="danger"
-                        accessibilityLabel={`Delete ${parent.name}`}
+                        accessibilityLabel={t('manager.delete', { name: displayCategoryName(parent.name) })}
                         testID={`delete-${parent.id}`}
                         onPress={() => setDeleteTarget(parent)}
                       />
@@ -217,13 +234,13 @@ export function CategoryManager() {
                     <View style={styles.grow} />
                     <IconButton
                       icon="moveUp"
-                      accessibilityLabel={`Move ${parent.name} up`}
+                      accessibilityLabel={t('manager.moveUp', { name: displayCategoryName(parent.name) })}
                       disabled={index === 0}
                       onPress={() => moveParent(index, -1)}
                     />
                     <IconButton
                       icon="moveDown"
-                      accessibilityLabel={`Move ${parent.name} down`}
+                      accessibilityLabel={t('manager.moveDown', { name: displayCategoryName(parent.name) })}
                       disabled={index === managedCategories.length - 1}
                       onPress={() => moveParent(index, 1)}
                     />
@@ -233,7 +250,7 @@ export function CategoryManager() {
                 {subs.map(renderSubRow)}
 
                 <Button
-                  label="+ Add subcategory"
+                  label={t('manager.addSubcategory')}
                   variant="secondary"
                   compact
                   testID={`add-sub-${parent.id}`}
@@ -256,14 +273,14 @@ export function CategoryManager() {
         {deleteTarget ? (
           <View>
             <Typography variant="subheading">
-              {`Move expenses from "${deleteTarget.name}" to:`}
+              {t('manager.reassignTitle', { name: displayCategoryName(deleteTarget.name) })}
             </Typography>
             <ScrollView style={styles.optionList}>
               {reassignOptions.map((option) => (
                 <Pressable
                   key={option.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Reassign to ${option.name}`}
+                  accessibilityLabel={t('manager.reassignTo', { name: displayCategoryName(option.name) })}
                   testID={`reassign-${option.id}`}
                   style={styles.optionRow}
                   onPress={async () => {
@@ -271,11 +288,15 @@ export function CategoryManager() {
                     setDeleteTarget(null);
                   }}
                 >
-                  <Typography>{option.name}</Typography>
+                  <Typography>{displayCategoryName(option.name)}</Typography>
                 </Pressable>
               ))}
             </ScrollView>
-            <Button label="Cancel" variant="secondary" onPress={() => setDeleteTarget(null)} />
+            <Button
+              label={t('common:actions.cancel')}
+              variant="secondary"
+              onPress={() => setDeleteTarget(null)}
+            />
           </View>
         ) : (
           <View />

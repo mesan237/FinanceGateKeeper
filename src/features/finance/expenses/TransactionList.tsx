@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -11,6 +12,7 @@ import { ICON_SIZE } from '@/constants/icons';
 import type { TransactionEntry } from '@/types/transactions';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { currentMonthISO, formatSectionDate } from '@/utils/formatDate';
+import { monthLabel } from '@/utils/monthMath';
 
 import { CategoryChips } from './CategoryChips';
 import { TransactionRow } from './TransactionRow';
@@ -67,6 +69,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
+  const { t, i18n } = useTranslation(['expenses', 'common']);
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const { entries, loading, error, refresh } = useTransactions(monthISO, selectedCategoryId);
@@ -87,7 +90,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
     }, [refresh]),
   );
 
-  const sections = useMemo(() => buildSections(entries), [entries]);
+  const sections = useMemo(() => buildSections(entries), [entries, i18n.language]);
   const isCurrentMonth = monthISO === currentMonthISO();
 
   const prevMonth = () => {
@@ -102,14 +105,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
     setMonthISO(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
   };
 
-  const monthLabel = (() => {
-    const [year, month] = monthISO.split('-').map(Number);
-    const names = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    return `${names[month - 1]} ${year}`;
-  })();
+  const monthTitle = monthLabel(monthISO);
 
   return (
     <View style={styles.container}>
@@ -118,17 +114,17 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
         <Pressable
           testID="month-nav-prev"
           accessibilityRole="button"
-          accessibilityLabel="Previous month"
+          accessibilityLabel={t('common:fields.previousMonth')}
           onPress={prevMonth}
           hitSlop={12}
         >
           <Icon name="back" size={ICON_SIZE.md} color={c.TEXT_MUTED} />
         </Pressable>
-        <Typography variant="subheading">{monthLabel}</Typography>
+        <Typography variant="subheading">{monthTitle}</Typography>
         <Pressable
           testID="month-nav-next"
           accessibilityRole="button"
-          accessibilityLabel="Next month"
+          accessibilityLabel={t('common:fields.nextMonth')}
           accessibilityState={{ disabled: isCurrentMonth }}
           onPress={isCurrentMonth ? undefined : nextMonth}
           hitSlop={12}
@@ -154,7 +150,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
             {error}
           </Typography>
           <Pressable testID="feed-retry" accessibilityRole="button" onPress={() => void refresh()}>
-            <Typography style={styles.retryText}>Retry</Typography>
+            <Typography style={styles.retryText}>{t('list.retry')}</Typography>
           </Pressable>
         </View>
       ) : null}
@@ -193,7 +189,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
         <ActivityIndicator testID="feed-loading" color={c.PRIMARY_GREEN} style={styles.firstLoad} />
       ) : !error ? (
         <Typography variant="muted" style={styles.empty}>
-          No transactions in {monthLabel}.
+          {t('list.empty', { month: monthTitle })}
         </Typography>
       ) : null}
     </View>

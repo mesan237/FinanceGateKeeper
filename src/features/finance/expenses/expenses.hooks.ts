@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getTransactionFeed } from '@/services/transactions';
@@ -15,6 +16,11 @@ import type {
   QuickAddTemplate,
   RecurringExpense,
 } from './expenses.types';
+
+/** Label for a category id that no longer resolves, in the active UI language. */
+function unknownLabel(): string {
+  return i18n.t('unknownCategory', { ns: 'expenses' });
+}
 
 /** External state a caller can own so a value survives this hook unmounting. */
 export interface ControlledField {
@@ -73,7 +79,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setError(null);
       return id;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
   }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId]);
@@ -120,7 +126,7 @@ export function useTransactions(
       setAllEntries(await getTransactionFeed(monthISO));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load transactions.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadTransactions', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -194,9 +200,9 @@ export function useCategories() {
   const labelFor = useCallback(
     (categoryId: number, subcategoryId: number | null): string => {
       if (subcategoryId != null) {
-        return byId.get(subcategoryId)?.name ?? byId.get(categoryId)?.name ?? 'Unknown';
+        return byId.get(subcategoryId)?.name ?? byId.get(categoryId)?.name ?? unknownLabel();
       }
-      return byId.get(categoryId)?.name ?? 'Unknown';
+      return byId.get(categoryId)?.name ?? unknownLabel();
     },
     [byId],
   );
@@ -273,7 +279,7 @@ export function useQuickAdd() {
       setTemplates(await expenseService.getQuickAddTemplates());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load quick-add templates.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadTemplates', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -289,7 +295,7 @@ export function useQuickAdd() {
       setError(null);
       return expenseId;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to log from template.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.logTemplate', { ns: 'expenses' }));
       return null;
     }
   }, []);
@@ -336,7 +342,7 @@ export function useRecurring() {
       setRecurring(await expenseService.getRecurringExpenses());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load recurring expenses.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadRecurring', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -452,7 +458,7 @@ export function useExpenseEdit(id: number): {
       setOriginalAccountId(expense.accountId);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadExpense', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -483,7 +489,7 @@ export function useExpenseEdit(id: number): {
       setError(null);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.updateExpense', { ns: 'expenses' }));
       return false;
     }
   }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, load]);
@@ -493,7 +499,7 @@ export function useExpenseEdit(id: number): {
       await expenseService.deleteExpense(id);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.deleteExpense', { ns: 'expenses' }));
       return false;
     }
   }, [id]);

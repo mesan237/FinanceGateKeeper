@@ -50,6 +50,7 @@ jest.mock('@/features/finance/income/income.service', () => ({
 }));
 
 import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
+import i18n from '@/i18n';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 
@@ -82,6 +83,16 @@ describe('AddTransactionSheet', () => {
     expect(screen.getByTestId('add-segment-templates')).toBeTruthy();
     // Expense panel is active: its amount field is shown.
     expect(screen.getByLabelText('Amount in FCFA')).toBeTruthy();
+  });
+
+  it('labels the sheet and its segments in French', async () => {
+    await i18n.changeLanguage('fr');
+    renderSheet();
+    expect(screen.getByText('Ajouter une transaction')).toBeTruthy();
+    expect(screen.getByText('Dépense')).toBeTruthy();
+    expect(screen.getByText('Modèles')).toBeTruthy();
+    expect(screen.getByLabelText('Montant en FCFA')).toBeTruthy();
+    expect(screen.getByText('Choisir une catégorie')).toBeTruthy();
   });
 
   it('logs an expense, refreshes the feed, and closes', async () => {

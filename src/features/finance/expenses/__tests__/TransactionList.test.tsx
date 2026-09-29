@@ -40,6 +40,7 @@ jest.mock('@/utils/formatDate', () => {
 });
 
 import { TransactionList } from '@/features/finance/expenses/TransactionList';
+import i18n from '@/i18n';
 
 const EXPENSE_TODAY: TransactionEntry = {
   type: 'expense',
@@ -349,5 +350,35 @@ describe('TransactionList', () => {
     await waitFor(() => expect(screen.getByTestId('tx-account-chip-expense-20')).toBeTruthy());
     // EXPENSE_YESTERDAY has a null account → no chip
     expect(screen.queryByTestId('tx-account-chip-expense-2')).toBeNull();
+  });
+
+  it('renders the feed in French: day headers, month, categories and sources', async () => {
+    await i18n.changeLanguage('fr');
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY, INCOME_TODAY, EXPENSE_YESTERDAY]);
+    render(<TransactionList />);
+
+    expect(await screen.findByText("Aujourd'hui")).toBeTruthy();
+    expect(screen.getByText('Hier')).toBeTruthy();
+    expect(screen.getByText('Juin 2026')).toBeTruthy();
+    // Seeded category names are translated at display time; the chip row too.
+    expect(screen.getAllByText('Alimentation').length).toBeGreaterThan(0);
+    expect(screen.getByText('Toutes')).toBeTruthy();
+  });
+
+  it('re-labels the day headers when the language changes', async () => {
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    render(<TransactionList />);
+    expect(await screen.findByText('Today')).toBeTruthy();
+
+    await act(async () => {
+      await i18n.changeLanguage('fr');
+    });
+    expect(screen.getByText("Aujourd'hui")).toBeTruthy();
+  });
+
+  it('shows the empty month in French', async () => {
+    await i18n.changeLanguage('fr');
+    render(<TransactionList />);
+    expect(await screen.findByText('Aucune transaction en Juin 2026.')).toBeTruthy();
   });
 });

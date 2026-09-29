@@ -2,6 +2,7 @@ import { auth as enAuth } from '@/i18n/locales/en/auth';
 import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
 import { dataTransfer as enDataTransfer } from '@/i18n/locales/en/dataTransfer';
+import { expenses as enExpenses } from '@/i18n/locales/en/expenses';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
 import { notifications as enNotifications } from '@/i18n/locales/en/notifications';
 import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
@@ -9,6 +10,7 @@ import { auth as frAuth } from '@/i18n/locales/fr/auth';
 import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
 import { dataTransfer as frDataTransfer } from '@/i18n/locales/fr/dataTransfer';
+import { expenses as frExpenses } from '@/i18n/locales/fr/expenses';
 import { navigation as frNavigation } from '@/i18n/locales/fr/navigation';
 import { notifications as frNotifications } from '@/i18n/locales/fr/notifications';
 import { onboarding as frOnboarding } from '@/i18n/locales/fr/onboarding';
@@ -27,6 +29,7 @@ export const resources = {
     auth: enAuth,
     onboarding: enOnboarding,
     dataTransfer: enDataTransfer,
+    expenses: enExpenses,
   },
   fr: {
     common: frCommon,
@@ -36,6 +39,7 @@ export const resources = {
     auth: frAuth,
     onboarding: frOnboarding,
     dataTransfer: frDataTransfer,
+    expenses: frExpenses,
   },
 };
 

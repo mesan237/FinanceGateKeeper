@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -11,6 +12,7 @@ import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
@@ -49,6 +51,7 @@ export function ExpenseEntryPanel({
 }: ExpenseEntryPanelProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation(['expenses', 'common']);
   const log = useExpenseLog({ amount, note });
   const { check } = useOverBudgetCheck();
   const { check: checkCategory } = useCategoryOverBudgetCheck();
@@ -73,7 +76,14 @@ export function ExpenseEntryPanel({
       const amountLabel = formatCurrency(Math.trunc(Number(log.amount)));
       const id = await log.submit();
       if (id !== null) {
-        show(categoryLabel ? `Logged ${amountLabel} · ${categoryLabel}` : `Logged ${amountLabel}`);
+        show(
+          categoryLabel
+            ? t('entry.loggedWithCategory', {
+                amount: amountLabel,
+                category: displayCategoryName(categoryLabel),
+              })
+            : t('entry.logged', { amount: amountLabel }),
+        );
         onSaved();
       }
     } finally {
@@ -120,7 +130,7 @@ export function ExpenseEntryPanel({
             color={categoryLabel ? c.TEXT_PRIMARY : c.PRIMARY_GREEN}
           />
           <Typography style={categoryLabel ? undefined : styles.categoryPlaceholder}>
-            {categoryLabel ?? 'Select category'}
+            {categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
           </Typography>
         </View>
         <Icon name="forward" size={18} color={c.TEXT_MUTED} />
@@ -128,13 +138,13 @@ export function ExpenseEntryPanel({
 
       <View>
         <Typography variant="muted" style={styles.noteLabel}>
-          Description
+          {t('entry.description')}
         </Typography>
         <TextInput
           value={log.note}
           onChangeText={log.setNote}
-          placeholder="Note (optional)"
-          accessibilityLabel="Note"
+          placeholder={t('entry.notePlaceholder')}
+          accessibilityLabel={t('entry.noteLabel')}
           multiline
           numberOfLines={3}
           textAlignVertical="top"
@@ -146,12 +156,12 @@ export function ExpenseEntryPanel({
 
       <AccountPicker
         testID="expense-account"
-        label="Account"
+        label={t('entry.account')}
         value={log.accountId}
         onChange={log.setAccountId}
       />
 
-      <Button label="Save" onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
+      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
 
       {log.error ? (
         <View style={styles.errorRow}>

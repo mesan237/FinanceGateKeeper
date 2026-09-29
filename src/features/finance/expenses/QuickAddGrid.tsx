@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -54,6 +55,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   const styles = useThemedStyles(makeStyles);
   const { templates, add, update, remove, log } = useQuickAdd();
   const { labelFor } = useCategories();
+  const { t } = useTranslation(['expenses', 'common']);
   const { check } = useOverBudgetCheck();
   const { check: checkCategory } = useCategoryOverBudgetCheck();
   const { show } = useToast();
@@ -73,7 +75,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
   const performLog = async (template: QuickAddTemplate, dateISO: string) => {
     const id = await log(template.id, dateISO);
     if (id !== null) {
-      show(`Logged ${formatCurrency(template.amount)} · ${template.label}`);
+      show(t('quickAdd.logged', { amount: formatCurrency(template.amount), label: template.label }));
       onLogged?.();
     }
   };
@@ -118,7 +120,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
       return (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Add template"
+          accessibilityLabel={t('quickAdd.addTemplate')}
           testID="quick-add-add-tile"
           style={[styles.tile, styles.addTile]}
           onPress={() => setModal({ mode: 'create' })}
@@ -167,7 +169,7 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
 
   return (
     <View style={styles.container}>
-      <Typography variant="muted">Tap to log · long-press a tile to edit</Typography>
+      <Typography variant="muted">{t('quickAdd.hint')}</Typography>
 
       {scrollable ? (
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -200,9 +202,9 @@ export function QuickAddGrid({ onLogged, scrollable = true }: QuickAddGridProps)
 
           <DateField value={confirmDate} onChange={setConfirmDate} testID="quick-add-confirm-date" />
 
-          <Button label="Log" onPress={handleConfirmLog} testID="quick-add-confirm-log" />
+          <Button label={t('quickAdd.log')} onPress={handleConfirmLog} testID="quick-add-confirm-log" />
           <Button
-            label="Cancel"
+            label={t('common:actions.cancel')}
             variant="secondary"
             onPress={() => setConfirming(null)}
             testID="quick-add-confirm-cancel"

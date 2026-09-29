@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,6 +21,7 @@ import { TransactionList } from './TransactionList';
  */
 export function TransactionsScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('expenses');
   const c = useTheme();
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -32,7 +34,7 @@ export function TransactionsScreen() {
       <Pressable
         testID="add-transaction-fab"
         accessibilityRole="button"
-        accessibilityLabel="Add transaction"
+        accessibilityLabel={t('list.addTransaction')}
         style={({ pressed }) => [
           styles.fab,
           { bottom: 24 + insets.bottom },

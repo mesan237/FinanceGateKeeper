@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
@@ -16,11 +17,7 @@ import { QuickAddGrid } from './QuickAddGrid';
 
 type Segment = 'expense' | 'income' | 'templates';
 
-const SEGMENTS = [
-  { key: 'expense', label: 'Expense' },
-  { key: 'income', label: 'Income' },
-  { key: 'templates', label: 'Templates' },
-];
+const SEGMENT_KEYS: ReadonlyArray<Segment> = ['expense', 'income', 'templates'];
 
 export interface AddTransactionSheetProps {
   visible: boolean;
@@ -48,6 +45,7 @@ export function AddTransactionSheet({
   initialSegment = 'expense',
 }: AddTransactionSheetProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation(['expenses', 'common']);
   const c = useTheme();
   const router = useRouter();
   const [segment, setSegment] = useState<Segment>(initialSegment);
@@ -74,12 +72,12 @@ export function AddTransactionSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="add-transaction-sheet">
       <Typography variant="subheading" style={styles.title}>
-        Add transaction
+        {t('sheet.title')}
       </Typography>
 
       <SegmentedControl
         testID="add-segment"
-        segments={SEGMENTS}
+        segments={SEGMENT_KEYS.map((key) => ({ key, label: t(`sheet.${key}`) }))}
         value={segment}
         onChange={(key) => {
           setSegment(key as Segment);
@@ -123,7 +121,7 @@ export function AddTransactionSheet({
         }}
       >
         <Icon name="transfer" size={18} color={c.PRIMARY_GREEN} />
-        <Typography style={styles.transferText}>Log a transfer between accounts</Typography>
+        <Typography style={styles.transferText}>{t('sheet.transferLink')}</Typography>
       </Pressable>
     </BottomSheet>
   );

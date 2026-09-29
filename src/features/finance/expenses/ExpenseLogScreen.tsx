@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
@@ -16,10 +17,11 @@ import { ExpenseEntryPanel } from './ExpenseEntryPanel';
  */
 export function ExpenseLogScreen() {
   const router = useRouter();
+  const { t } = useTranslation(['expenses', 'common']);
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Log Expense" cancelLabel="Cancel" />
+      <ScreenHeader title={t('log.title')} cancelLabel={t('common:actions.cancel')} />
       <KeyboardAwareForm>
         <ExpenseEntryPanel onSaved={() => router.replace('/transactions')} />
       </KeyboardAwareForm>

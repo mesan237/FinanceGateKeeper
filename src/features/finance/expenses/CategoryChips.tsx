@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Typography } from '@/components/Typography';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { RADIUS } from '@/constants/layout';
@@ -39,6 +41,7 @@ export interface CategoryChipsProps {
 /** The horizontal category filter row above the transaction feed. */
 export function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('expenses');
   return (
     <ScrollView
       horizontal
@@ -46,11 +49,11 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
       style={styles.scroll}
       contentContainerStyle={styles.content}
     >
-      <Chip label="All" active={selectedId === null} onPress={() => onSelect(null)} />
+      <Chip label={t('list.all')} active={selectedId === null} onPress={() => onSelect(null)} />
       {categories.map((cat) => (
         <Chip
           key={cat.id}
-          label={cat.name}
+          label={displayCategoryName(cat.name)}
           active={selectedId === cat.id}
           onPress={() => onSelect(cat.id)}
         />

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -14,6 +15,7 @@ import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
@@ -34,6 +36,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
+  const { t } = useTranslation(['expenses', 'common']);
   const edit = useExpenseEdit(expenseId);
   const { labelFor, loading: categoriesLoading } = useCategories();
   const { check } = useOverBudgetCheck();
@@ -94,14 +97,14 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Edit Expense" />
+      <ScreenHeader title={t('detail.title')} />
 
       <KeyboardAwareForm>
         <View style={styles.form}>
           <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 
           <Button
-            label={categoryLabel ?? 'Select category'}
+            label={categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
             variant="secondary"
             onPress={() => setPickerVisible(true)}
           />
@@ -109,8 +112,8 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
           <TextInput
             value={edit.note}
             onChangeText={edit.setNote}
-            placeholder="Note (optional)"
-            accessibilityLabel="Note"
+            placeholder={t('entry.notePlaceholder')}
+            accessibilityLabel={t('entry.noteLabel')}
             multiline
             numberOfLines={3}
             textAlignVertical="top"
@@ -121,12 +124,12 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
 
           <AccountPicker
             testID="expense-account"
-            label="Account"
+            label={t('entry.account')}
             value={edit.accountId}
             onChange={edit.setAccountId}
           />
 
-          <Button label="Save" onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
+          <Button label={t('common:actions.save')} onPress={handleSave} disabled={!edit.canSubmit} loading={saving} />
 
           {edit.error ? (
             <View style={styles.errorRow}>
@@ -136,7 +139,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
           ) : null}
 
           <Button
-            label="Delete expense"
+            label={t('detail.delete')}
             variant="danger"
             onPress={() => setDeleteModalVisible(true)}
           />
@@ -159,12 +162,10 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
         onRequestClose={() => setDeleteModalVisible(false)}
       >
         <View style={styles.deleteModal}>
-          <Typography variant="subheading">Delete expense?</Typography>
-          <Typography variant="muted">
-            Delete this expense? This cannot be undone.
-          </Typography>
-          <Button label="Delete" onPress={handleDeleteConfirm} variant="danger" />
-          <Button testID="delete-modal-cancel" label="Cancel" onPress={() => setDeleteModalVisible(false)} />
+          <Typography variant="subheading">{t('detail.deleteTitle')}</Typography>
+          <Typography variant="muted">{t('detail.deleteBody')}</Typography>
+          <Button label={t('common:actions.delete')} onPress={handleDeleteConfirm} variant="danger" />
+          <Button testID="delete-modal-cancel" label={t('common:actions.cancel')} onPress={() => setDeleteModalVisible(false)} />
         </View>
       </Modal>
 

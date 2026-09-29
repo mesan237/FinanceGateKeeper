@@ -1,3 +1,6 @@
+import i18n from 'i18next';
+
+import type { expenses as expenseCopy } from '@/i18n/locales/en/expenses';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 
@@ -13,6 +16,13 @@ import type {
   QuickAddTemplate,
   RecurringExpense,
 } from './expenses.types';
+
+type ExpenseErrorKey = keyof (typeof expenseCopy)['errors'];
+
+/** A validation message in the active UI language — thrown errors reach the screen as-is. */
+function err(key: ExpenseErrorKey, params?: Record<string, string>): string {
+  return i18n.t(`errors.${key}`, { ns: 'expenses', ...params });
+}
 
 interface ExpenseRow {
   id: number;
@@ -72,10 +82,10 @@ function mapCategory(row: CategoryRow): Category {
  */
 export async function createExpense(input: NewExpense): Promise<number> {
   if (!Number.isInteger(input.amount) || input.amount <= 0) {
-    throw new Error('Expense amount must be a positive integer (FCFA).');
+    throw new Error(err('amountPositive'));
   }
   if (input.categoryId == null) {
-    throw new Error('Expense must have a category.');
+    throw new Error(err('categoryRequired'));
   }
 
   await execute(
@@ -167,7 +177,7 @@ export async function getAllCategories(): Promise<Category[]> {
 export async function createCategory(input: NewCategory): Promise<number> {
   const name = input.name.trim();
   if (!name) {
-    throw new Error('Category name cannot be empty.');
+    throw new Error(err('categoryNameEmpty'));
   }
   const parentId = input.parentId ?? null;
   const [{ next }] =
@@ -196,7 +206,7 @@ export async function createCategory(input: NewCategory): Promise<number> {
 export async function renameCategory(id: number, name: string): Promise<void> {
   const trimmed = name.trim();
   if (!trimmed) {
-    throw new Error('Category name cannot be empty.');
+    throw new Error(err('categoryNameEmpty'));
   }
   await execute('UPDATE categories SET name = ? WHERE id = ?', [trimmed, id]);
 }
@@ -217,29 +227,29 @@ export async function setCategoryHidden(id: number, hidden: boolean): Promise<vo
  */
 export async function deleteCategory(id: number, reassignToId: number): Promise<void> {
   if (reassignToId === id) {
-    throw new Error('Cannot reassign a category to itself.');
+    throw new Error(err('reassignSelf'));
   }
   const [category] = await query<CategoryRow>(
     `SELECT ${CATEGORY_COLUMNS} FROM categories WHERE id = ?`,
     [id],
   );
   if (!category) {
-    throw new Error('Category not found.');
+    throw new Error(err('categoryNotFound'));
   }
   if (category.is_default === 1) {
-    throw new Error('Default categories cannot be deleted — hide them instead.');
+    throw new Error(err('defaultNoDelete'));
   }
   const [target] = await query<{ id: number }>('SELECT id FROM categories WHERE id = ?', [
     reassignToId,
   ]);
   if (!target) {
-    throw new Error('Reassignment target category does not exist.');
+    throw new Error(err('reassignTargetMissing'));
   }
 
   const subs = await query<{ id: number }>('SELECT id FROM categories WHERE parent_id = ?', [id]);
   const affected = [id, ...subs.map((s) => s.id)];
   if (affected.includes(reassignToId)) {
-    throw new Error('Cannot reassign expenses to a category being deleted.');
+    throw new Error(err('reassignToDeleted'));
   }
   const placeholders = affected.map(() => '?').join(', ');
   // Reassign-then-delete must be atomic: a crash between them would leave
@@ -334,7 +344,7 @@ function mapRecurringExpense(row: RecurringExpenseRow): RecurringExpense {
 /** Throws unless `amount` is a positive integer (FCFA has no decimals). */
 function assertAmount(amount: number): void {
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new Error('Amount must be a positive integer (FCFA).');
+    throw new Error(err('templateAmountPositive'));
   }
 }
 
@@ -342,7 +352,7 @@ function assertAmount(amount: number): void {
 function assertLabel(label: string): string {
   const trimmed = label.trim();
   if (!trimmed) {
-    throw new Error('Label cannot be empty.');
+    throw new Error(err('labelEmpty'));
   }
   return trimmed;
 }
@@ -353,21 +363,21 @@ async function assertCategoryExists(categoryId: number): Promise<void> {
     categoryId,
   ]);
   if (!row) {
-    throw new Error('Category does not exist.');
+    throw new Error(err('categoryMissing'));
   }
 }
 
 /** Throws unless `value` matches `YYYY-MM-DD`. */
 function assertISODate(value: string): void {
   if (!ISO_DATE.test(value)) {
-    throw new Error('Date must be in YYYY-MM-DD format.');
+    throw new Error(err('dateFormat'));
   }
 }
 
 /** Throws unless `value` is a supported `Frequency`. */
 function assertFrequency(value: string): void {
   if (!FREQUENCY_SET.has(value)) {
-    throw new Error(`Unsupported frequency: ${value}.`);
+    throw new Error(err('unsupportedFrequency', { value }));
   }
 }
 
@@ -484,7 +494,7 @@ export async function logFromQuickAddTemplate(id: number, dateISO?: string): Pro
     [id],
   );
   if (!row) {
-    throw new Error('Quick-add template not found.');
+    throw new Error(err('templateNotFound'));
   }
   return createExpense({
     amount: row.amount,
@@ -612,10 +622,10 @@ export async function skipRecurringOccurrence(id: number): Promise<void> {
     [id],
   );
   if (!row) {
-    throw new Error('Recurring expense not found.');
+    throw new Error(err('recurringNotFound'));
   }
   if (row.is_active !== 1) {
-    throw new Error('Cannot skip an inactive recurring expense — re-activate it first.');
+    throw new Error(err('skipInactive'));
   }
   await execute('UPDATE recurring_expenses SET next_due_date = ? WHERE id = ?', [
     advanceDueDate(row.next_due_date, row.frequency),
@@ -706,7 +716,7 @@ export async function updateExpense(
 
   if (fields.amount !== undefined) {
     if (!Number.isInteger(fields.amount) || fields.amount <= 0) {
-      throw new Error('Expense amount must be a positive integer (FCFA).');
+      throw new Error(err('amountPositive'));
     }
     sets.push('amount = ?');
     params.push(fields.amount);
@@ -734,7 +744,7 @@ export async function updateExpense(
   if (sets.length === 0) return;
 
   const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
-  if (!existing) throw new Error('Expense not found.');
+  if (!existing) throw new Error(err('expenseNotFound'));
 
   params.push(id);
   await execute(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`, params);
@@ -745,7 +755,7 @@ export async function updateExpense(
  */
 export async function deleteExpense(id: number): Promise<void> {
   const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
-  if (!existing) throw new Error('Expense not found.');
+  if (!existing) throw new Error(err('expenseNotFound'));
   await execute('DELETE FROM expenses WHERE id = ?', [id]);
 }
 
