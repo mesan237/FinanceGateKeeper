@@ -1,6 +1,9 @@
-import { MESSAGES } from '@/notifications/notifications.config';
+import i18n from 'i18next';
+
+import { notificationCopy } from '@/notifications/notifications.config';
 import type { NotificationPayload } from '@/notifications/notifications.types';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDateLong } from '@/utils/formatDate';
 
 /**
  * The reminder data this trigger formats. Declared locally (structurally
@@ -22,14 +25,19 @@ export interface DebtDueInput {
  * debt so the user can tell them apart at a glance.
  */
 export function buildDebtDueAlert(input: DebtDueInput): NotificationPayload {
-  const amount = formatCurrency(input.amount);
+  const params = {
+    ns: 'notifications',
+    person: input.personName,
+    amount: formatCurrency(input.amount),
+    date: formatDateLong(input.dueDate),
+  } as const;
   const body =
     input.kind === 'overdue'
-      ? `${input.personName} — ${amount} is overdue (was due ${input.dueDate}).`
-      : `${input.personName} — ${amount} is due on ${input.dueDate}.`;
+      ? i18n.t('debtDueDate.bodyOverdue', params)
+      : i18n.t('debtDueDate.bodyDueSoon', params);
   return {
     type: 'debtDueDate',
-    title: MESSAGES.debtDueDate.title,
+    title: notificationCopy('debtDueDate').title,
     body,
   };
 }

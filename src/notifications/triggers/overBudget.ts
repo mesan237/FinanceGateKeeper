@@ -1,4 +1,6 @@
-import { MESSAGES } from '@/notifications/notifications.config';
+import i18n from 'i18next';
+
+import { notificationCopy } from '@/notifications/notifications.config';
 import type { NotificationPayload } from '@/notifications/notifications.types';
 import { formatCurrency } from '@/utils/formatCurrency';
 
@@ -29,10 +31,13 @@ export function buildOverBudgetAlert({
   overage,
   categoryName,
 }: OverBudgetInput): NotificationPayload {
-  const scope = categoryName ? `your ${categoryName} budget` : 'your monthly expense budget';
+  const amount = formatCurrency(overage);
+  const body = categoryName
+    ? i18n.t('overBudget.bodyCategory', { ns: 'notifications', amount, category: categoryName })
+    : i18n.t('overBudget.bodyMonth', { ns: 'notifications', amount });
   return {
     type: 'overBudget',
-    title: MESSAGES.overBudget.title,
-    body: `This expense puts you ${formatCurrency(overage)} over ${scope}.`,
+    title: notificationCopy('overBudget').title,
+    body,
   };
 }

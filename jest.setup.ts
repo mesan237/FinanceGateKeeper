@@ -160,7 +160,13 @@ jest.mock('expo-localization', () => ({
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const i18n = require('@/i18n').default as typeof import('@/i18n').default;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { act } = require('@testing-library/react-native') as typeof import('@testing-library/react-native');
 
+// Wrapped in act: a still-mounted component re-renders when the language flips.
 afterEach(async () => {
-  if (i18n.language !== 'en') await i18n.changeLanguage('en');
+  if (i18n.language === 'en') return;
+  await act(async () => {
+    await i18n.changeLanguage('en');
+  });
 });

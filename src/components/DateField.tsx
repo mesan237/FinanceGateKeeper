@@ -2,6 +2,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -30,11 +31,12 @@ export interface DateFieldProps {
 export function DateField({ value, onChange, accessibilityLabel, testID }: DateFieldProps) {
   const [open, setOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
   const c = useTheme();
   // `value` can be empty while an edited record is still loading; fall back to a
   // neutral label and today's date for the picker until a real date arrives.
   const isISO = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  const label = isISO ? formatSectionDate(value) : 'Select date';
+  const label = isISO ? formatSectionDate(value) : t('fields.selectDate');
 
   const now = new Date();
   const [year, month, day] = isISO

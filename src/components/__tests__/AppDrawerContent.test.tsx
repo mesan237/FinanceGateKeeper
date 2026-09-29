@@ -7,6 +7,7 @@ jest.mock('expo-router', () => ({
 }));
 
 import { AppDrawerContent } from '@/components/AppDrawerContent';
+import i18n from '@/i18n';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 
 function renderDrawer() {
@@ -37,5 +38,13 @@ describe('AppDrawerContent', () => {
     renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });
     expect(row.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('labels the menu in French when the app is in French', async () => {
+    await i18n.changeLanguage('fr');
+    renderDrawer();
+    expect(screen.getByText('Gestion')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Comptes' })).toBeTruthy();
+    expect(screen.queryAllByText('Bientôt').length).toBeGreaterThan(0);
   });
 });

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
 jest.mock('@/features/finance/auth/auth.service', () => ({
@@ -51,7 +51,6 @@ import {
   setReminderTime,
 } from '@/features/finance/auth/auth.service';
 import { applyReminderSchedule } from '@/features/finance/auth/reminder';
-import i18n from '@/i18n';
 
 const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
 const mockedSetTime = setReminderTime as jest.MockedFunction<typeof setReminderTime>;
@@ -121,12 +120,6 @@ describe('SettingsScreen', () => {
 });
 
 describe('SettingsScreen — Language', () => {
-  afterEach(async () => {
-    await act(async () => {
-      await i18n.changeLanguage('en');
-    });
-  });
-
   it('follows the device language by default', async () => {
     renderSettings();
     const system = await screen.findByTestId('settings-language-control-system');

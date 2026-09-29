@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View, type DimensionValue, type ViewProps } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -34,6 +35,7 @@ export interface SkeletonProps extends ViewProps {
  */
 export function Skeleton({ width = '100%', height = 14, radius, style, ...rest }: SkeletonProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
   const opacity = useSharedValue(MAX_OPACITY);
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function Skeleton({ width = '100%', height = 14, radius, style, ...rest }
   return (
     <Animated.View
       accessibilityRole="progressbar"
-      accessibilityLabel="Loading"
+      accessibilityLabel={t('fields.loading')}
       style={[styles.block, { width, height, borderRadius: radius ?? RADIUS.sm }, pulse, style]}
       {...rest}
     />

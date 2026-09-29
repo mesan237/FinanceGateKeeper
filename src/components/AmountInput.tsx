@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput as RNTextInput, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -26,12 +27,13 @@ export interface AmountInputProps {
 export function AmountInput({
   value,
   onChangeText,
-  accessibilityLabel = 'Amount in FCFA',
+  accessibilityLabel,
   autoFocus,
   testID,
 }: AmountInputProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation();
   const handleChange = (text: string) => {
     onChangeText(text.replace(/\D/g, ''));
   };
@@ -44,7 +46,7 @@ export function AmountInput({
         placeholder="0"
         placeholderTextColor={c.TEXT_MUTED}
         keyboardType="numeric"
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={accessibilityLabel ?? t('fields.amountInFcfa')}
         autoFocus={autoFocus}
         testID={testID}
         style={styles.input}

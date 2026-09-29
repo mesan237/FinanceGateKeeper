@@ -1,6 +1,7 @@
 import { DrawerActions } from '@react-navigation/native';
 import { Tabs, useNavigation } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -41,10 +42,11 @@ function tabIcon(name: IconName, focused: boolean, color: string) {
 function MenuIcon() {
   const navigation = useNavigation();
   const c = useTheme();
+  const { t } = useTranslation('navigation');
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Open menu"
+      accessibilityLabel={t('openMenu')}
       onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       hitSlop={12}
       style={{ marginLeft: 16 }}
@@ -56,6 +58,8 @@ function MenuIcon() {
 
 export default function TabsLayout() {
   const c = useTheme();
+  // Subscribing re-renders the navigator's titles when the language changes.
+  const { t } = useTranslation('navigation');
   // The bar pads itself by this inset; the explicit height below is the content
   // area only, so it has to be added back or the inset eats into the content.
   const insets = useSafeAreaInsets();
@@ -108,28 +112,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
+          title: t('tabs.dashboard'),
           tabBarIcon: ({ color, focused }) => tabIcon('home', focused, color),
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transactions',
+          title: t('tabs.transactions'),
           tabBarIcon: ({ color, focused }) => tabIcon('transactions', focused, color),
         }}
       />
       <Tabs.Screen
         name="budget"
         options={{
-          title: 'Budget',
+          title: t('tabs.budget'),
           tabBarIcon: ({ color, focused }) => tabIcon('budget', focused, color),
         }}
       />
       <Tabs.Screen
         name="reports"
         options={{
-          title: 'Reports',
+          title: t('tabs.reports'),
           tabBarIcon: ({ color, focused }) => tabIcon('reports', focused, color),
         }}
       />

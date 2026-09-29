@@ -14,6 +14,20 @@ export const common: Translation<typeof en> = {
     back: 'Retour',
     retry: 'Réessayer',
   },
+  fields: {
+    loading: 'Chargement',
+    selectDate: 'Choisir une date',
+    setTime: "Choisir l'heure",
+    select: 'Choisir',
+    // French keeps the field name's own casing: "Choisir : Catégorie".
+    selectTitled: 'Choisir : {{title}}',
+    amountInFcfa: 'Montant en FCFA',
+    previousMonth: 'Mois précédent',
+    nextMonth: 'Mois suivant',
+  },
+  errors: {
+    syncFailed: 'La synchronisation a échoué.',
+  },
   // Each language is named in itself, so it stays findable whatever the UI is in.
   languages: {
     en: 'English',

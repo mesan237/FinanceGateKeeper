@@ -19,9 +19,6 @@ describe('IncomeSourcePicker', () => {
       await i18n.changeLanguage('fr');
     });
     expect(screen.getByRole('button', { name: 'Salaire' })).toBeTruthy();
-    await act(async () => {
-      await i18n.changeLanguage('en');
-    });
   });
 
   it('calls onChange with the source value when a pill is tapped', () => {

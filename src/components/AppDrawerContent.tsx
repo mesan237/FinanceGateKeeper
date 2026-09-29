@@ -3,18 +3,22 @@ import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
+import type { navigation } from '@/i18n/locales/en/navigation';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** Where "Feedback" opens a pre-addressed email for this single-user app. */
 const FEEDBACK_EMAIL = 'abdielkouam@gmail.com';
 
+type DrawerKey = keyof (typeof navigation)['drawer'];
+
 interface DrawerRow {
-  label: string;
+  labelKey: DrawerKey;
   icon: IconName;
   /** Stack route to navigate to. Mutually exclusive with `onPress`/`soon`. */
   route?: string;
@@ -25,7 +29,7 @@ interface DrawerRow {
 }
 
 interface DrawerSection {
-  title?: string;
+  titleKey?: DrawerKey;
   rows: DrawerRow[];
 }
 
@@ -33,23 +37,23 @@ interface DrawerSection {
 // `soon` rows are placeholders for screens not yet built (Backup & Restore,
 // Delete & Reset, Help) and render disabled so navigation never dead-ends.
 const SECTIONS: DrawerSection[] = [
-  { rows: [{ label: 'Preferences', icon: 'settings', route: '/settings' }] },
+  { rows: [{ labelKey: 'preferences', icon: 'settings', route: '/settings' }] },
   {
-    title: 'Management',
+    titleKey: 'management',
     rows: [
-      { label: 'Accounts', icon: 'wallet', route: '/accounts' },
-      { label: 'Categories', icon: 'categories', route: '/expenses/categories' },
-      { label: 'Export & Import', icon: 'export', route: '/data-transfer' },
-      { label: 'Backup & Restore', icon: 'backup', soon: true },
-      { label: 'Delete & Reset', icon: 'delete', soon: true },
+      { labelKey: 'accounts', icon: 'wallet', route: '/accounts' },
+      { labelKey: 'categories', icon: 'categories', route: '/expenses/categories' },
+      { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
+      { labelKey: 'backupRestore', icon: 'backup', soon: true },
+      { labelKey: 'deleteReset', icon: 'delete', soon: true },
     ],
   },
   {
-    title: 'Application',
+    titleKey: 'application',
     rows: [
-      { label: 'Help', icon: 'help', soon: true },
+      { labelKey: 'help', icon: 'help', soon: true },
       {
-        label: 'Feedback',
+        labelKey: 'feedback',
         icon: 'feedback',
         onPress: () => void Linking.openURL(`mailto:${FEEDBACK_EMAIL}`),
       },
@@ -66,6 +70,7 @@ const SECTIONS: DrawerSection[] = [
 export function AppDrawerContent(props: DrawerContentComponentProps) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('navigation');
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const handlePress = (row: DrawerRow) => {
@@ -86,14 +91,21 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
       </View>
 
       {SECTIONS.map((section, i) => (
-        <View key={section.title ?? `section-${i}`} style={styles.section}>
-          {section.title ? (
+        <View key={section.titleKey ?? `section-${i}`} style={styles.section}>
+          {section.titleKey ? (
             <Typography variant="label" style={styles.sectionTitle}>
-              {section.title}
+              {t(`drawer.${section.titleKey}`)}
             </Typography>
           ) : null}
           {section.rows.map((row) => (
-            <DrawerItem key={row.label} row={row} onPress={() => handlePress(row)} styles={styles} />
+            <DrawerItem
+              key={row.labelKey}
+              row={row}
+              label={t(`drawer.${row.labelKey}`)}
+              soonLabel={t('drawer.soon')}
+              onPress={() => handlePress(row)}
+              styles={styles}
+            />
           ))}
         </View>
       ))}
@@ -103,27 +115,31 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
 
 function DrawerItem({
   row,
+  label,
+  soonLabel,
   onPress,
   styles,
 }: {
   row: DrawerRow;
+  label: string;
+  soonLabel: string;
   onPress: () => void;
   styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={row.label}
+      accessibilityLabel={label}
       accessibilityState={{ disabled: !!row.soon }}
       disabled={row.soon}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && !row.soon ? styles.rowPressed : null]}
     >
       <Icon name={row.icon} size={ICON_SIZE.md} />
-      <Typography style={row.soon ? styles.rowLabelDisabled : styles.rowLabel}>{row.label}</Typography>
+      <Typography style={row.soon ? styles.rowLabelDisabled : styles.rowLabel}>{label}</Typography>
       {row.soon ? (
         <Typography variant="label" style={styles.soonTag}>
-          Soon
+          {soonLabel}
         </Typography>
       ) : null}
     </Pressable>

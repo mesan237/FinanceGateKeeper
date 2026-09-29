@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { REMINDER_CHANNEL, REMINDER_CHANNEL_ID } from '@/notifications/notifications.config';
+import { REMINDER_CHANNEL_ID, reminderChannel } from '@/notifications/notifications.config';
 import type { NotificationPayload } from '@/notifications/notifications.types';
 
 /**
@@ -24,10 +24,11 @@ export async function requestPermissions(): Promise<boolean> {
 /** Ensures the Android reminder channel exists. No-op on other platforms. */
 async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  const { name, description } = reminderChannel();
   await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL_ID, {
-    name: REMINDER_CHANNEL.name,
+    name,
     importance: Notifications.AndroidImportance.DEFAULT,
-    description: REMINDER_CHANNEL.description,
+    description,
   });
 }
 

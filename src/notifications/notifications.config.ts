@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import type { NotificationType } from '@/notifications/notifications.types';
 
 /** Default end-of-day reminder time (24-hour `HH:mm`) when the user hasn't set one. */
@@ -7,30 +9,26 @@ export const DEFAULT_REMINDER_TIME = '21:00';
 export const REMINDER_CHANNEL_ID = 'daily-reminder';
 
 /**
- * Android channel descriptor, created before scheduling. Importance is set in
- * `notifications.service` (from `AndroidImportance`) since it's an SDK enum.
+ * Android channel descriptor, created before scheduling, in the active UI
+ * language. Importance is set in `notifications.service` (from
+ * `AndroidImportance`) since it's an SDK enum.
  */
-export const REMINDER_CHANNEL = {
-  name: 'Daily reminders',
-  description: 'End-of-day reminders to log your spending.',
-};
+export function reminderChannel(): { name: string; description: string } {
+  return {
+    name: i18n.t('channel.name', { ns: 'notifications' }),
+    description: i18n.t('channel.description', { ns: 'notifications' }),
+  };
+}
 
-/** Default copy per notification type. Single hard-coded FCFA-context message set. */
-export const MESSAGES: Record<NotificationType, { title: string; body: string }> = {
-  dailyReminder: {
-    title: 'Log your spending',
-    body: "Take a few seconds to record today's expenses before the day ends.",
-  },
-  zeroDayCheck: {
-    title: 'Did you spend nothing today?',
-    body: 'Confirm you spent nothing today, or log what you spent.',
-  },
-  overBudget: {
-    title: 'Over budget',
-    body: 'This expense puts you over your budget.',
-  },
-  debtDueDate: {
-    title: 'Debt due soon',
-    body: 'A debt is approaching its due date.',
-  },
-};
+/**
+ * Default title and body for a notification type, in the active UI language.
+ * Read at build time, so a notification is worded in whatever language the app
+ * was in when it was scheduled — Settings re-schedules the daily reminder when
+ * the language changes.
+ */
+export function notificationCopy(type: NotificationType): { title: string; body: string } {
+  return {
+    title: i18n.t(`${type}.title`, { ns: 'notifications' }),
+    body: i18n.t(`${type}.body`, { ns: 'notifications' }),
+  };
+}

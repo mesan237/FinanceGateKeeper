@@ -1,4 +1,4 @@
-import { MESSAGES } from '@/notifications/notifications.config';
+import { notificationCopy } from '@/notifications/notifications.config';
 import type { NotificationPayload } from '@/notifications/notifications.types';
 
 const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -18,8 +18,7 @@ export function buildDailyReminder(time: string): NotificationPayload {
   }
   return {
     type: 'dailyReminder',
-    title: MESSAGES.dailyReminder.title,
-    body: MESSAGES.dailyReminder.body,
+    ...notificationCopy('dailyReminder'),
     schedule: {
       hour: Number(match[1]),
       minute: Number(match[2]),
