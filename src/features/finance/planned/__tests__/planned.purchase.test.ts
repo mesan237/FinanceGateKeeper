@@ -55,6 +55,21 @@ function allExpenses(): ExpenseRow[] {
     .all() as ExpenseRow[];
 }
 
+/**
+ * Asserts that `promise` rejects. Used where the failure is a native SQLite
+ * error: Jest's `rejects.toThrow()` does not reliably recognise those as
+ * `Error`s (they come from outside its realm), which makes it flaky under load.
+ */
+async function expectRejection(promise: Promise<unknown>): Promise<void> {
+  let rejected = false;
+  try {
+    await promise;
+  } catch {
+    rejected = true;
+  }
+  expect(rejected).toBe(true);
+}
+
 /** A list holding one 5 000 FCFA rice item; returns the item's id and its list id. */
 async function seedRice(): Promise<{ itemId: number; listId: number }> {
   const listId = await createList('Market');
@@ -142,9 +157,9 @@ describe('markBought', () => {
        BEGIN SELECT RAISE(ABORT, 'link failed'); END`,
     );
 
-    await expect(
+    await expectRejection(
       markBought(itemId, { amount: 4800, accountId: CASH, date: '2026-10-03' }),
-    ).rejects.toThrow();
+    );
 
     expect(allExpenses()).toHaveLength(0);
     expect((await getItems(listId))[0].isBought).toBe(false);
@@ -204,7 +219,7 @@ describe('unmarkBought', () => {
        BEGIN SELECT RAISE(ABORT, 'reopen failed'); END`,
     );
 
-    await expect(unmarkBought(itemId)).rejects.toThrow();
+    await expectRejection(unmarkBought(itemId));
 
     expect(allExpenses()).toHaveLength(1);
     expect((await getItems(listId))[0].isBought).toBe(true);

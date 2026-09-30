@@ -1091,8 +1091,9 @@ French label lengths still need a check on a real Android device.
 - Test: unticking deletes the expense; deleting the expense elsewhere reopens the item.
 - Test: a planned item changes no envelope figure; a bought one changes it like any expense.
 
-**Milestones:** M1 migration + list/item service ✅ · M2 mark/unmark bought ✅ · M3 screens
-and routes · M4 French copy · M5 sync + export · M6 arch check, review, docs.
+**Milestones:** M1 migration + list/item service ✅ · M2 mark/unmark bought ✅ · M3 screens ✅
+and routes ✅ · M4 French copy ✅ (landed with M3: the typed catalogue needs it) · M5 sync + export · M6 arch
+check, review, docs.
 
 **Done when:** A user can plan a shopping list, tick items off in the shop and see each
 one land in Transactions and the budget with the price actually paid.
