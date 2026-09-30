@@ -21,6 +21,21 @@ beforeEach(() => {
 });
 
 describe('DebtForm', () => {
+  it('lets the due date be cleared again', () => {
+    render(<DebtForm />);
+    fireEvent.press(screen.getByTestId('debt-due'));
+    fireEvent(screen.getByTestId('date-picker'), 'onChange', { type: 'set' }, new Date(2026, 5, 15));
+    fireEvent.press(screen.getByTestId('debt-due-clear'));
+    expect(screen.queryByTestId('debt-due-clear')).toBeNull();
+  });
+
+  it('marks the chosen direction as selected', () => {
+    render(<DebtForm />);
+    expect(screen.getByTestId('debt-direction-lent').props.accessibilityState.selected).toBe(true);
+    fireEvent.press(screen.getByTestId('debt-direction-owed'));
+    expect(screen.getByTestId('debt-direction-owed').props.accessibilityState.selected).toBe(true);
+  });
+
   it('disables save until a person and a positive amount are entered', () => {
     render(<DebtForm />);
     const save = screen.getByRole('button', { name: 'Save' });
@@ -35,7 +50,8 @@ describe('DebtForm', () => {
     render(<DebtForm />);
     fireEvent.changeText(screen.getByTestId('debt-person'), 'Jean');
     fireEvent.changeText(screen.getByTestId('debt-amount'), '15000');
-    fireEvent.changeText(screen.getByTestId('debt-due'), '2026-06-15');
+    fireEvent.press(screen.getByTestId('debt-due'));
+    fireEvent(screen.getByTestId('date-picker'), 'onChange', { type: 'set' }, new Date(2026, 5, 15));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>

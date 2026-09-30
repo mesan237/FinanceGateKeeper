@@ -28,9 +28,7 @@ export const debt: Translation<typeof en> = {
   form: {
     title: 'Nouvelle dette',
     person: 'Personne',
-    amountPlaceholder: 'Montant (FCFA)',
     amount: 'Montant',
-    duePlaceholder: "Date d'échéance (AAAA-MM-JJ, facultatif)",
     dueDate: "Date d'échéance",
     notePlaceholder: 'Note (facultatif)',
     note: 'Note',
