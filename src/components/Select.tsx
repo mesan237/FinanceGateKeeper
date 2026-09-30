@@ -75,7 +75,7 @@ export function Select({ options, value, onChange, title, placeholder, testID }:
       <Modal visible={open} onRequestClose={() => setOpen(false)}>
         <View style={styles.header}>
           <Typography variant="subheading">{title
-              ? t('fields.selectTitled', { title, lower: title.toLowerCase() })
+              ? t('fields.selectTitled', { title: title.toLowerCase() })
               : t('fields.select')}</Typography>
           <Pressable accessibilityRole="button" onPress={() => setOpen(false)}>
             <Typography style={styles.action}>{t('actions.close')}</Typography>

@@ -13,7 +13,6 @@ import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
-import { displayCategoryName } from '@/i18n/categoryNames';
 import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
@@ -81,7 +80,7 @@ export function ExpenseEntryPanel({
           categoryLabel
             ? t('entry.loggedWithCategory', {
                 amount: amountLabel,
-                category: displayCategoryName(categoryLabel),
+                category: categoryLabel,
               })
             : t('entry.logged', { amount: amountLabel }),
         );
@@ -143,7 +142,7 @@ export function ExpenseEntryPanel({
             color={categoryLabel ? c.TEXT_PRIMARY : c.PRIMARY_GREEN}
           />
           <Typography style={categoryLabel ? undefined : styles.categoryPlaceholder}>
-            {categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
+            {categoryLabel ?? t('selectCategory')}
           </Typography>
         </View>
         <Icon name="forward" size={18} color={c.TEXT_MUTED} />

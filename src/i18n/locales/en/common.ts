@@ -16,7 +16,7 @@ export const common = {
     selectDate: 'Select date',
     setTime: 'Set time',
     select: 'Select',
-    selectTitled: 'Select {{lower}}',
+    selectTitled: 'Select {{title}}',
     amountInFcfa: 'Amount in FCFA',
     previousMonth: 'Previous month',
     nextMonth: 'Next month',

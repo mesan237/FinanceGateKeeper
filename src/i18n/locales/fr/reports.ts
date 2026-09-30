@@ -32,7 +32,7 @@ export const reports: Translation<typeof en> = {
     title: 'Suggestions',
     empty: 'Aucune suggestion pour ce mois.',
     increase:
-      'Les dépenses {{category}} ont augmenté de {{percent}} % par rapport au mois dernier — à surveiller.',
+      'Les dépenses en {{category}} ont augmenté de {{percent}} % par rapport au mois dernier — à surveiller.',
   },
   weekly: {
     title: 'Rapport hebdomadaire',

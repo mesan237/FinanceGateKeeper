@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { getTransactionFeed } from '@/services/transactions';
 import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
@@ -181,7 +182,8 @@ export function useTransactions(
  * - `categories` — visible parents, for the picker.
  * - `managedCategories` — all parents incl. hidden, for the manager.
  * - `subcategoriesOf(parentId, includeHidden?)` — children (visible by default).
- * - `labelFor` — subcategory name, falling back to the parent name.
+ * - `labelFor` — subcategory name, falling back to the parent name (stored, for icon lookups).
+ * - `displayLabelFor` — the same, as shown to the user in the active language.
  */
 export function useCategories() {
   const [all, setAll] = useState<Category[]>([]);
@@ -232,6 +234,17 @@ export function useCategories() {
     [byId],
   );
 
+  // Like `labelFor`, but in the active language: a seeded default is
+  // translated, a user's own category is shown exactly as typed.
+  const displayLabelFor = useCallback(
+    (categoryId: number, subcategoryId: number | null): string => {
+      const row =
+        (subcategoryId != null ? byId.get(subcategoryId) : undefined) ?? byId.get(categoryId);
+      return row ? displayCategoryName(row.name, row.isDefault) : unknownLabel();
+    },
+    [byId],
+  );
+
   const addCategory = useCallback(
     async (input: NewCategory) => {
       await expenseService.createCategory(input);
@@ -277,6 +290,7 @@ export function useCategories() {
     managedCategories,
     subcategoriesOf,
     labelFor,
+    displayLabelFor,
     loading,
     refresh,
     addCategory,

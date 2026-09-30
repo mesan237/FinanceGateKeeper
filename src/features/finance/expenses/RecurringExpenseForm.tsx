@@ -6,7 +6,6 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -35,7 +34,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
  */
 export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: RecurringExpenseFormProps) {
   const styles = useThemedStyles(makeStyles);
-  const { labelFor } = useCategories();
+  const { displayLabelFor } = useCategories();
   const { t } = useTranslation(['expenses', 'common']);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
@@ -58,7 +57,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       setNextDueDate(recurring.nextDueDate);
       setCategoryId(recurring.categoryId);
       setSubcategoryId(recurring.subcategoryId);
-      setCategoryLabel(labelFor(recurring.categoryId, recurring.subcategoryId));
+      setCategoryLabel(displayLabelFor(recurring.categoryId, recurring.subcategoryId));
     } else {
       setLabel('');
       setAmount('');
@@ -68,7 +67,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       setSubcategoryId(null);
       setCategoryLabel(null);
     }
-  }, [visible, recurring, labelFor]);
+  }, [visible, recurring, displayLabelFor]);
 
   const handleSave = async () => {
     const numericAmount = Number(amount);
@@ -142,7 +141,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
           testID="recurring-date-input"
         />
         <Button
-          label={categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
+          label={categoryLabel ?? t('selectCategory')}
           onPress={() => setPickerVisible(true)}
         />
 

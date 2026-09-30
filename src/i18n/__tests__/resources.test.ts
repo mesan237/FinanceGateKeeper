@@ -27,4 +27,17 @@ describe('translation resources', () => {
     });
     expect(empty).toEqual([]);
   });
+
+  it('uses the same {{placeholders}} in French as in English', () => {
+    const leafAt = (tree: unknown, path: string): unknown =>
+      path.split('.').reduce<unknown>((node, key) => (node as Record<string, unknown>)[key], tree);
+    const placeholders = (value: unknown): string[] =>
+      typeof value === 'string' ? [...value.matchAll(/{{(\w+)}}/g)].map((m) => m[1]).sort() : [];
+    const mismatched = leafKeys(resources.en).filter(
+      (path) =>
+        placeholders(leafAt(resources.en, path)).join() !==
+        placeholders(leafAt(resources.fr, path)).join(),
+    );
+    expect(mismatched).toEqual([]);
+  });
 });

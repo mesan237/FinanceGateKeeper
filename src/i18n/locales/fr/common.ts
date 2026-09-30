@@ -19,7 +19,6 @@ export const common: Translation<typeof en> = {
     selectDate: 'Choisir une date',
     setTime: "Choisir l'heure",
     select: 'Choisir',
-    // French keeps the field name's own casing: "Choisir : Catégorie".
     selectTitled: 'Choisir : {{title}}',
     amountInFcfa: 'Montant en FCFA',
     previousMonth: 'Mois précédent',

@@ -99,7 +99,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
         )}
 
         <View style={styles.headerText}>
-          <Typography variant="subheading">{parent ? displayCategoryName(parent.name) : t('selectCategory')}</Typography>
+          <Typography variant="subheading">{parent ? displayCategoryName(parent.name, parent.isDefault) : t('selectCategory')}</Typography>
           <Typography variant="muted" style={styles.subtitle}>
             {parent ? t('picker.subtitleParent') : t('picker.subtitleRoot')}
           </Typography>
@@ -125,7 +125,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 onPress={() => setParent(category)}
               >
                 <PickerIcon name={category.name} />
-                <Typography style={styles.rowLabel}>{displayCategoryName(category.name)}</Typography>
+                <Typography style={styles.rowLabel}>{displayCategoryName(category.name, category.isDefault)}</Typography>
                 <Icon name="forward" size={20} color={c.TEXT_MUTED} />
               </Pressable>
             ))
@@ -135,13 +135,17 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 accessibilityRole="button"
                 style={[styles.row, styles.useParentRow]}
                 onPress={() =>
-                  commit({ categoryId: parent.id, subcategoryId: null, label: parent.name })
+                  commit({
+                    categoryId: parent.id,
+                    subcategoryId: null,
+                    label: displayCategoryName(parent.name, parent.isDefault),
+                  })
                 }
               >
                 <View style={styles.useParentIcon}>
                   <Icon name="check" size={18} color={c.PRIMARY_GREEN} />
                 </View>
-                <Typography style={[styles.rowLabel, styles.action]}>{t('picker.useParent', { name: displayCategoryName(parent.name) })}</Typography>
+                <Typography style={[styles.rowLabel, styles.action]}>{t('picker.useParent', { name: displayCategoryName(parent.name, parent.isDefault) })}</Typography>
               </Pressable>,
               ...subcategories.map((sub) => (
                 <Pressable
@@ -149,11 +153,15 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                   accessibilityRole="button"
                   style={styles.row}
                   onPress={() =>
-                    commit({ categoryId: parent.id, subcategoryId: sub.id, label: sub.name })
+                    commit({
+                      categoryId: parent.id,
+                      subcategoryId: sub.id,
+                      label: displayCategoryName(sub.name, sub.isDefault),
+                    })
                   }
                 >
                   <PickerIcon name={sub.name} />
-                  <Typography style={styles.rowLabel}>{displayCategoryName(sub.name)}</Typography>
+                  <Typography style={styles.rowLabel}>{displayCategoryName(sub.name, sub.isDefault)}</Typography>
                 </Pressable>
               )),
             ]}

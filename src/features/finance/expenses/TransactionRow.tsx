@@ -28,7 +28,8 @@ interface RowIconProps {
  */
 function RowIcon({ entry }: RowIconProps) {
   const styles = useThemedStyles(makeStyles);
-  const label = entry.type === 'expense' ? entry.categoryLabel : entry.sourceLabel;
+  // Keyed on stored values, so the tint does not change with the UI language.
+  const label = entry.type === 'expense' ? entry.categoryLabel : entry.source;
   const avatar = getCategoryAvatar(label);
   const emoji =
     entry.type === 'income'

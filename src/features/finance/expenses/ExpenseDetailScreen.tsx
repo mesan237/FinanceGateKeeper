@@ -15,7 +15,6 @@ import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
-import { displayCategoryName } from '@/i18n/categoryNames';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
@@ -38,7 +37,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   const router = useRouter();
   const { t } = useTranslation(['expenses', 'common']);
   const edit = useExpenseEdit(expenseId);
-  const { labelFor, loading: categoriesLoading } = useCategories();
+  const { displayLabelFor, loading: categoriesLoading } = useCategories();
   const { check } = useOverBudgetCheck();
   const { check: checkCategory } = useCategoryOverBudgetCheck();
 
@@ -53,9 +52,9 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
 
   useEffect(() => {
     if (!edit.loading && !categoriesLoading && edit.categoryId !== null) {
-      setCategoryLabel(labelFor(edit.categoryId, edit.subcategoryId));
+      setCategoryLabel(displayLabelFor(edit.categoryId, edit.subcategoryId));
     }
-  }, [edit.loading, edit.categoryId, edit.subcategoryId, categoriesLoading, labelFor]);
+  }, [edit.loading, edit.categoryId, edit.subcategoryId, categoriesLoading, displayLabelFor]);
 
   const handleSave = async () => {
     const newAmount = Math.trunc(Number(edit.amount));
@@ -104,7 +103,7 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
           <AmountInput value={edit.amount} onChangeText={edit.setAmount} />
 
           <Button
-            label={categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
+            label={categoryLabel ?? t('selectCategory')}
             variant="secondary"
             onPress={() => setPickerVisible(true)}
           />

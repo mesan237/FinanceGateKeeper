@@ -237,7 +237,7 @@ export async function checkCategoryBudget(
   ]);
 
   const budget = budgets.find((b) => b.categoryId === categoryId);
-  const categoryName = categories.find((c) => c.id === categoryId)?.name ?? 'this category';
+  const categoryName = categories.find((c) => c.id === categoryId)?.name ?? i18n.t('thisCategory', { ns: 'budget' });
   const spent = spendByCategory.get(categoryId) ?? 0;
 
   if (!budget) {

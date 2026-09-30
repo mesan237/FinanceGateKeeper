@@ -4,6 +4,7 @@ import type { Translation } from '@/i18n/translation.types';
 /** French copy for the budget slice. */
 export const budget: Translation<typeof en> = {
   uncategorised: 'Sans catégorie',
+  thisCategory: 'cette catégorie',
   loading: 'Chargement…',
   health: {
     on_track: 'Dans les clous',
@@ -28,7 +29,7 @@ export const budget: Translation<typeof en> = {
   hero: {
     overBy: 'Budget dépassé de',
     leftToSpend: 'Reste à dépenser',
-    spentOf: '{{spent}} dépensé sur {{available}}',
+    spentOf: '{{spent}} dépensés sur {{available}}',
     carried: 'Dont {{amount}} reporté du mois dernier.',
     daysLeft: 'Jours restants',
     safeDaily: 'Dépense sûre par jour',
@@ -46,7 +47,7 @@ export const budget: Translation<typeof en> = {
     rollsOver: '↻ Reporté',
   },
   sheet: {
-    spentOf: '{{spent}} dépensé sur {{available}}',
+    spentOf: '{{spent}} dépensés sur {{available}}',
     carriedOver: ' · {{amount}} reporté',
     overBudget: '{{amount}} au-dessus du budget',
     budgetThisMonth: 'Budget pour ce mois',

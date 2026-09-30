@@ -16,7 +16,7 @@ export const dashboard: Translation<typeof en> = {
     daysLeft_other: '{{count}} jours restants',
     overBy: 'Budget dépassé de',
     leftToSpend: 'Reste à dépenser',
-    spentOf: '{{spent}} dépensé sur {{budget}}',
+    spentOf: '{{spent}} dépensés sur {{budget}}',
     setBudget: 'Fixez un budget mensuel pour suivre ceci',
     in: 'Entrées',
     out: 'Sorties',

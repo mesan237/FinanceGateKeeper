@@ -6,7 +6,6 @@ import { Button } from '@/components/Button';
 import { Modal } from '@/components/Modal';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 
@@ -36,7 +35,7 @@ export function QuickAddTemplateForm({
   onClose,
 }: QuickAddTemplateFormProps) {
   const styles = useThemedStyles(makeStyles);
-  const { labelFor } = useCategories();
+  const { displayLabelFor } = useCategories();
   const { t } = useTranslation(['expenses', 'common']);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
@@ -55,7 +54,7 @@ export function QuickAddTemplateForm({
       setAmount(String(template.amount));
       setCategoryId(template.categoryId);
       setSubcategoryId(template.subcategoryId);
-      setCategoryLabel(labelFor(template.categoryId, template.subcategoryId));
+      setCategoryLabel(displayLabelFor(template.categoryId, template.subcategoryId));
     } else {
       setLabel('');
       setAmount('');
@@ -63,7 +62,7 @@ export function QuickAddTemplateForm({
       setSubcategoryId(null);
       setCategoryLabel(null);
     }
-  }, [visible, template, labelFor]);
+  }, [visible, template, displayLabelFor]);
 
   const handleSave = async () => {
     const numericAmount = Number(amount);
@@ -110,7 +109,7 @@ export function QuickAddTemplateForm({
           testID="quick-add-amount-input"
         />
         <Button
-          label={categoryLabel ? displayCategoryName(categoryLabel) : t('selectCategory')}
+          label={categoryLabel ?? t('selectCategory')}
           onPress={() => setPickerVisible(true)}
         />
 

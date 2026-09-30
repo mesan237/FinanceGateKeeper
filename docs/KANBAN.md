@@ -1023,7 +1023,7 @@ Budget opens to this month's category envelopes without touching a setting,
 Reports shows a category breakdown uninterrupted by funds or projects, and every
 wallet balance matches what it showed before the slice.
 
-### VS-35: French Localization
+### VS-35: French Localization ✅ Done
 
 **Priority:** High — user-requested; French is the target user's working language
 **Plan:** `issues/ISSUE-033/implementation-plan.md`
@@ -1051,6 +1051,20 @@ wallet balance matches what it showed before the slice.
 **Done when:** A phone set to French opens the whole app in French, the Settings
 override switches language without a restart, and every existing English test
 still passes.
+
+**Outcome:** i18next + react-i18next + expo-localization behind the new bottom-layer
+`src/i18n/` (typed en/fr catalogues per slice, runtime key and placeholder parity
+tests, `intl-pluralrules` polyfill). Migration 029 `users.language` + a Settings
+System / Français / English control that switches live and re-schedules the daily
+reminder. French dates via `i18n/dateNames`; seeded categories translated at display
+through `displayCategoryName(name, isDefault)`, never written back. Every slice, the
+shell, notifications and service validation errors translated. code-reviewer
+APPROVE WITH NITS; fixed: user categories sharing a seeded name ("Courses") are no
+longer translated where the row is known, the last English literals, income tint
+keyed on the source, placeholder parity. Known limits: label-only views (feed,
+reports, budget rows) still name-match; a few values fetched before a language
+switch stay in the old language until the next refetch; the plural polyfill and
+French label lengths still need a check on a real Android device.
 
 ---
 

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -24,13 +25,14 @@ export function ScreenHeader({ title, cancelLabel, rightAction }: ScreenHeaderPr
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       <Pressable
         testID="screen-header-back"
         accessibilityRole="button"
-        accessibilityLabel={cancelLabel ?? 'Back'}
+        accessibilityLabel={cancelLabel ?? t('actions.back')}
         onPress={() => router.back()}
         hitSlop={8}
         style={styles.backSlot}

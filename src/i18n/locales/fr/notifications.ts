@@ -18,11 +18,11 @@ export const notifications: Translation<typeof en> = {
   overBudget: {
     title: 'Budget dépassé',
     body: 'Cette dépense vous fait dépasser votre budget.',
-    bodyCategory: 'Cette dépense vous fait dépasser votre budget {{category}} de {{amount}}.',
+    bodyCategory: 'Cette dépense vous fait dépasser votre budget « {{category}} » de {{amount}}.',
     bodyMonth: 'Cette dépense vous fait dépasser votre budget mensuel de dépenses de {{amount}}.',
   },
   debtDueDate: {
-    title: 'Dette bientôt due',
+    title: 'Échéance de dette proche',
     body: "Une dette approche de sa date d'échéance.",
     bodyDueSoon: '{{person}} — {{amount}} à rembourser le {{date}}.',
     bodyOverdue: '{{person}} — {{amount}} en retard (échéance le {{date}}).',

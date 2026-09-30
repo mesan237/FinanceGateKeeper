@@ -61,8 +61,8 @@ export function CategoryManager() {
 
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
-    setShownName(displayCategoryName(cat.name));
-    setDraftName(displayCategoryName(cat.name));
+    setShownName(displayCategoryName(cat.name, cat.isDefault));
+    setDraftName(displayCategoryName(cat.name, cat.isDefault));
   };
 
   const saveEdit = async () => {
@@ -93,15 +93,15 @@ export function CategoryManager() {
       <TextInput
         value={draftName}
         onChangeText={setDraftName}
-        accessibilityLabel={t('manager.editNameFor', { name: displayCategoryName(cat.name) })}
+        accessibilityLabel={t('manager.editNameFor', { name: displayCategoryName(cat.name, cat.isDefault) })}
         testID={`edit-input-${cat.id}`}
         style={styles.grow}
       />
     ) : (
       <Typography numberOfLines={2} style={[styles.grow, cat.isHidden && styles.hidden]}>
         {cat.isHidden
-          ? t('manager.hiddenName', { name: displayCategoryName(cat.name) })
-          : displayCategoryName(cat.name)}
+          ? t('manager.hiddenName', { name: displayCategoryName(cat.name, cat.isDefault) })
+          : displayCategoryName(cat.name, cat.isDefault)}
       </Typography>
     );
 
@@ -116,7 +116,7 @@ export function CategoryManager() {
             <IconButton
               icon="check"
               tone="primary"
-              accessibilityLabel={t('manager.save', { name: displayCategoryName(cat.name) })}
+              accessibilityLabel={t('manager.save', { name: displayCategoryName(cat.name, cat.isDefault) })}
               testID={`save-${cat.id}`}
               onPress={saveEdit}
             />
@@ -124,14 +124,14 @@ export function CategoryManager() {
             <>
               <IconButton
                 icon="edit"
-                accessibilityLabel={t('manager.rename', { name: displayCategoryName(cat.name) })}
+                accessibilityLabel={t('manager.rename', { name: displayCategoryName(cat.name, cat.isDefault) })}
                 testID={`rename-${cat.id}`}
                 onPress={() => startEdit(cat)}
               />
               <IconButton
                 icon={cat.isHidden ? 'show' : 'hide'}
                 accessibilityLabel={t(cat.isHidden ? 'manager.unhide' : 'manager.hide', {
-                  name: displayCategoryName(cat.name),
+                  name: displayCategoryName(cat.name, cat.isDefault),
                 })}
                 testID={`hide-${cat.id}`}
                 onPress={() => toggleHidden(cat.id, !cat.isHidden)}
@@ -140,7 +140,7 @@ export function CategoryManager() {
                 <IconButton
                   icon="delete"
                   tone="danger"
-                  accessibilityLabel={t('manager.delete', { name: displayCategoryName(cat.name) })}
+                  accessibilityLabel={t('manager.delete', { name: displayCategoryName(cat.name, cat.isDefault) })}
                   testID={`delete-${cat.id}`}
                   onPress={() => setDeleteTarget(cat)}
                 />
@@ -182,7 +182,7 @@ export function CategoryManager() {
               <IconButton
                 icon={isExpanded ? 'moveDown' : 'forward'}
                 accessibilityLabel={t(isExpanded ? 'manager.collapse' : 'manager.expand', {
-                  name: displayCategoryName(parent.name),
+                  name: displayCategoryName(parent.name, parent.isDefault),
                 })}
                 testID={`toggle-${parent.id}`}
                 onPress={() => toggleExpanded(parent.id)}
@@ -193,7 +193,7 @@ export function CategoryManager() {
                 <IconButton
                   icon="check"
                   tone="primary"
-                  accessibilityLabel={t('manager.save', { name: displayCategoryName(parent.name) })}
+                  accessibilityLabel={t('manager.save', { name: displayCategoryName(parent.name, parent.isDefault) })}
                   testID={`save-${parent.id}`}
                   onPress={saveEdit}
                 />
@@ -210,14 +210,14 @@ export function CategoryManager() {
                   <View style={styles.toolbar}>
                     <IconButton
                       icon="edit"
-                      accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name) })}
+                      accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name, parent.isDefault) })}
                       testID={`rename-${parent.id}`}
                       onPress={() => startEdit(parent)}
                     />
                     <IconButton
                       icon={parent.isHidden ? 'show' : 'hide'}
                       accessibilityLabel={t(parent.isHidden ? 'manager.unhide' : 'manager.hide', {
-                        name: displayCategoryName(parent.name),
+                        name: displayCategoryName(parent.name, parent.isDefault),
                       })}
                       testID={`hide-${parent.id}`}
                       onPress={() => toggleHidden(parent.id, !parent.isHidden)}
@@ -226,7 +226,7 @@ export function CategoryManager() {
                       <IconButton
                         icon="delete"
                         tone="danger"
-                        accessibilityLabel={t('manager.delete', { name: displayCategoryName(parent.name) })}
+                        accessibilityLabel={t('manager.delete', { name: displayCategoryName(parent.name, parent.isDefault) })}
                         testID={`delete-${parent.id}`}
                         onPress={() => setDeleteTarget(parent)}
                       />
@@ -234,13 +234,13 @@ export function CategoryManager() {
                     <View style={styles.grow} />
                     <IconButton
                       icon="moveUp"
-                      accessibilityLabel={t('manager.moveUp', { name: displayCategoryName(parent.name) })}
+                      accessibilityLabel={t('manager.moveUp', { name: displayCategoryName(parent.name, parent.isDefault) })}
                       disabled={index === 0}
                       onPress={() => moveParent(index, -1)}
                     />
                     <IconButton
                       icon="moveDown"
-                      accessibilityLabel={t('manager.moveDown', { name: displayCategoryName(parent.name) })}
+                      accessibilityLabel={t('manager.moveDown', { name: displayCategoryName(parent.name, parent.isDefault) })}
                       disabled={index === managedCategories.length - 1}
                       onPress={() => moveParent(index, 1)}
                     />
@@ -273,14 +273,14 @@ export function CategoryManager() {
         {deleteTarget ? (
           <View>
             <Typography variant="subheading">
-              {t('manager.reassignTitle', { name: displayCategoryName(deleteTarget.name) })}
+              {t('manager.reassignTitle', { name: displayCategoryName(deleteTarget.name, deleteTarget.isDefault) })}
             </Typography>
             <ScrollView style={styles.optionList}>
               {reassignOptions.map((option) => (
                 <Pressable
                   key={option.id}
                   accessibilityRole="button"
-                  accessibilityLabel={t('manager.reassignTo', { name: displayCategoryName(option.name) })}
+                  accessibilityLabel={t('manager.reassignTo', { name: displayCategoryName(option.name, option.isDefault) })}
                   testID={`reassign-${option.id}`}
                   style={styles.optionRow}
                   onPress={async () => {
@@ -288,7 +288,7 @@ export function CategoryManager() {
                     setDeleteTarget(null);
                   }}
                 >
-                  <Typography>{displayCategoryName(option.name)}</Typography>
+                  <Typography>{displayCategoryName(option.name, option.isDefault)}</Typography>
                 </Pressable>
               ))}
             </ScrollView>

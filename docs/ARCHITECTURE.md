@@ -221,9 +221,10 @@ app/ ──────────► features/finance/*
 | -------------------- | ----------------------------------------------- | ---------------------- |
 | `app/` routes        | Features, Shared infra                          | Nothing imports routes |
 | `features/finance/*` | Other features (with caution), all shared infra | Routes                 |
-| `components/`        | `utils/`, `constants/`, `types/`                | Features, Routes       |
-| `services/`          | `utils/`, `constants/`, `types/`                | Features, Routes       |
-| `hooks/`             | `utils/`, `services/`                           | Features, Routes       |
+| `components/`        | `utils/`, `constants/`, `types/`, `i18n/`       | Features, Routes       |
+| `services/`          | `utils/`, `constants/`, `types/`, `i18n/`       | Features, Routes       |
+| `hooks/`             | `utils/`, `services/`, `i18n/`                  | Features, Routes       |
+| `constants/`         | `types/`, `i18next` (display labels)            | Everything else        |
 | `utils/`             | `constants/`, `types/`, `i18n/` only            | Everything else        |
 | `notifications/`     | `utils/`, `constants/`, `types/`, `i18n/`       | Features, Routes       |
 | `i18n/`              | External packages only (`i18next`, `expo-localization`) | Every other `src/` folder |
@@ -231,8 +232,7 @@ app/ ──────────► features/finance/*
 `i18n/` is the bottom layer: any folder may import it, and it imports nothing
 from `src/` outside itself. Its namespaces mirror the feature slices, but the
 catalogues live here rather than inside each feature, so that initialisation can
-load them all without shared infra importing a feature. `components/`,
-`services/` and `hooks/` may import `i18n/` as well.
+load them all without shared infra importing a feature.
 
 ### Cross-feature imports
 

@@ -23,7 +23,7 @@ describe('notification copy', () => {
   it('writes the over-budget alert in French, naming the envelope', async () => {
     await i18n.changeLanguage('fr');
     const { body } = buildOverBudgetAlert({ overage: 3000, categoryName: 'Alimentation' });
-    expect(body).toBe('Cette dépense vous fait dépasser votre budget Alimentation de 3 000 FCFA.');
+    expect(body).toBe('Cette dépense vous fait dépasser votre budget « Alimentation » de 3 000 FCFA.');
   });
 
   it('writes the debt due date as a French date', async () => {

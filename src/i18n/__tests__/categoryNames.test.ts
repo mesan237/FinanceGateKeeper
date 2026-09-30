@@ -1,5 +1,6 @@
 import i18n from '@/i18n';
-import { displayCategoryName } from '@/i18n/categoryNames';
+import { DEFAULT_CATEGORIES } from '@/constants/categories';
+import { SEEDED_NAME_KEYS, displayCategoryName } from '@/i18n/categoryNames';
 
 describe('displayCategoryName', () => {
   afterEach(async () => {
@@ -23,5 +24,17 @@ describe('displayCategoryName', () => {
   it('shows a user-created category verbatim in any language', async () => {
     await i18n.changeLanguage('fr');
     expect(displayCategoryName('Gym membership')).toBe('Gym membership');
+  });
+
+  it('keeps a user category that shares a seeded name ("Courses") as typed', async () => {
+    await i18n.changeLanguage('fr');
+    expect(displayCategoryName('Courses', false)).toBe('Courses');
+    // The seeded Education subcategory of the same name is still translated.
+    expect(displayCategoryName('Courses', true)).toBe('Formations');
+  });
+
+  it('maps exactly the categories migration 001 seeds', () => {
+    const seeded = DEFAULT_CATEGORIES.flatMap((c) => [c.name, ...c.subcategories]);
+    expect(Object.keys(SEEDED_NAME_KEYS).sort()).toEqual([...seeded].sort());
   });
 });

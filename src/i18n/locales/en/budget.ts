@@ -1,6 +1,7 @@
 /** Copy for the budget slice: envelopes, the planner, insights and over-budget alerts. */
 export const budget = {
   uncategorised: 'Uncategorised',
+  thisCategory: 'this category',
   loading: 'Loading…',
   health: {
     on_track: 'On track',

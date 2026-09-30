@@ -53,7 +53,7 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
       {categories.map((cat) => (
         <Chip
           key={cat.id}
-          label={displayCategoryName(cat.name)}
+          label={displayCategoryName(cat.name, cat.isDefault)}
           active={selectedId === cat.id}
           onPress={() => onSelect(cat.id)}
         />
