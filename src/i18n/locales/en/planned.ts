@@ -7,5 +7,7 @@ export const planned = {
     dateFormat: 'The date must be in YYYY-MM-DD format.',
     listNotFound: 'That list no longer exists.',
     itemNotFound: 'That item no longer exists.',
+    alreadyBought: 'This item is already bought.',
+    notBought: 'This item has not been bought.',
   },
 };

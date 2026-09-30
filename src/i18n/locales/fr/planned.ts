@@ -10,5 +10,7 @@ export const planned: Translation<typeof en> = {
     dateFormat: 'La date doit être au format AAAA-MM-JJ.',
     listNotFound: "Cette liste n'existe plus.",
     itemNotFound: "Cet article n'existe plus.",
+    alreadyBought: 'Cet article est déjà acheté.',
+    notBought: "Cet article n'a pas été acheté.",
   },
 };

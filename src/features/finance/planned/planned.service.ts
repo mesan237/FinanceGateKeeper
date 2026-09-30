@@ -162,18 +162,21 @@ function mapItem(row: ItemRow): PlannedItem {
   };
 }
 
+const ITEM_SELECT = `SELECT i.id, i.list_id, i.name, i.estimated_amount, i.category_id,
+            i.account_id, i.planned_date, i.expense_id, i.created_at, e.amount AS bought_amount
+       FROM planned_items i
+       LEFT JOIN expenses e ON e.id = i.expense_id`;
+
 /** The items of one list in the order they were added, with bought state read from the expense. */
 export async function getItems(listId: number): Promise<PlannedItem[]> {
-  const rows = await query<ItemRow>(
-    `SELECT i.id, i.list_id, i.name, i.estimated_amount, i.category_id, i.account_id,
-            i.planned_date, i.expense_id, i.created_at, e.amount AS bought_amount
-       FROM planned_items i
-       LEFT JOIN expenses e ON e.id = i.expense_id
-      WHERE i.list_id = ?
-      ORDER BY i.id`,
-    [listId],
-  );
+  const rows = await query<ItemRow>(`${ITEM_SELECT} WHERE i.list_id = ? ORDER BY i.id`, [listId]);
   return rows.map(mapItem);
+}
+
+/** One item by id, or null when it does not exist. */
+export async function getItem(id: number): Promise<PlannedItem | null> {
+  const [row] = await query<ItemRow>(`${ITEM_SELECT} WHERE i.id = ?`, [id]);
+  return row ? mapItem(row) : null;
 }
 
 /**
