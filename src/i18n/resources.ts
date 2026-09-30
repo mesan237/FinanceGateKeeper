@@ -11,6 +11,7 @@ import { income as enIncome } from '@/i18n/locales/en/income';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
 import { notifications as enNotifications } from '@/i18n/locales/en/notifications';
 import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
+import { planned as enPlanned } from '@/i18n/locales/en/planned';
 import { reports as enReports } from '@/i18n/locales/en/reports';
 import { accounts as frAccounts } from '@/i18n/locales/fr/accounts';
 import { auth as frAuth } from '@/i18n/locales/fr/auth';
@@ -25,6 +26,7 @@ import { income as frIncome } from '@/i18n/locales/fr/income';
 import { navigation as frNavigation } from '@/i18n/locales/fr/navigation';
 import { notifications as frNotifications } from '@/i18n/locales/fr/notifications';
 import { onboarding as frOnboarding } from '@/i18n/locales/fr/onboarding';
+import { planned as frPlanned } from '@/i18n/locales/fr/planned';
 import { reports as frReports } from '@/i18n/locales/fr/reports';
 
 /**
@@ -48,6 +50,7 @@ export const resources = {
     budget: enBudget,
     dashboard: enDashboard,
     reports: enReports,
+    planned: enPlanned,
   },
   fr: {
     common: frCommon,
@@ -64,6 +67,7 @@ export const resources = {
     budget: frBudget,
     dashboard: frDashboard,
     reports: frReports,
+    planned: frPlanned,
   },
 };
 

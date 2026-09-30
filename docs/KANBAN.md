@@ -1066,6 +1066,37 @@ reports, budget rows) still name-match; a few values fetched before a language
 switch stay in the old language until the next refetch; the plural polyfill and
 French label lengths still need a check on a real Android device.
 
+### VS-36: Planned Purchases — Shopping Lists that Become Expenses 🔄 In Progress
+
+**Priority:** High — user-requested; closes the gap before spending
+**Plan:** `issues/ISSUE-034/implementation-plan.md`
+**Branch:** `feat/vs-36-planned-purchases`
+
+**Scope:**
+
+- New `planned` slice: named lists of items (name, estimated amount, category, optional
+  date and account). Migration 030 adds `planned_lists` and `planned_items`.
+- Ticking an item opens a confirm sheet with the estimate prefilled; the user confirms
+  the actual amount, account and date, and one transaction creates the expense and links
+  it. The item shows struck through with the amount actually paid.
+- Unticking (after a confirmation) deletes the linked expense and reopens the item.
+- **Planned items never affect the budget.** Only the expense created on ticking does.
+- No status column: an item is bought exactly when its linked expense exists.
+- New approved dependencies: `planned → expenses`, `planned → accounts`.
+
+**TDD Anchor:**
+
+- Test: create/rename/delete lists; an estimate that is zero, negative or fractional is rejected.
+- Test: ticking creates one expense with the confirmed amount, and a failure rolls back both writes.
+- Test: unticking deletes the expense; deleting the expense elsewhere reopens the item.
+- Test: a planned item changes no envelope figure; a bought one changes it like any expense.
+
+**Milestones:** M1 migration + list/item service ✅ · M2 mark/unmark bought · M3 screens
+and routes · M4 French copy · M5 sync + export · M6 arch check, review, docs.
+
+**Done when:** A user can plan a shopping list, tick items off in the shop and see each
+one land in Transactions and the budget with the price actually paid.
+
 ---
 
 ## DEPENDENCY GRAPH
