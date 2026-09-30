@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { getLastSyncedAt, syncNow as runSync } from '@/services/sync';
@@ -64,7 +65,7 @@ export function useCloudSync(): CloudSync {
       setStatus('idle');
     } else {
       setStatus('error');
-      setError(result.error ?? 'Sync failed.');
+      setError(result.error ?? i18n.t('errors.syncFailed'));
     }
   }, []);
 

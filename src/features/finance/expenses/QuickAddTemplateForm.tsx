@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -34,7 +35,8 @@ export function QuickAddTemplateForm({
   onClose,
 }: QuickAddTemplateFormProps) {
   const styles = useThemedStyles(makeStyles);
-  const { labelFor } = useCategories();
+  const { displayLabelFor } = useCategories();
+  const { t } = useTranslation(['expenses', 'common']);
   const [label, setLabel] = useState('');
   const [amount, setAmount] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -52,7 +54,7 @@ export function QuickAddTemplateForm({
       setAmount(String(template.amount));
       setCategoryId(template.categoryId);
       setSubcategoryId(template.subcategoryId);
-      setCategoryLabel(labelFor(template.categoryId, template.subcategoryId));
+      setCategoryLabel(displayLabelFor(template.categoryId, template.subcategoryId));
     } else {
       setLabel('');
       setAmount('');
@@ -60,12 +62,12 @@ export function QuickAddTemplateForm({
       setSubcategoryId(null);
       setCategoryLabel(null);
     }
-  }, [visible, template, labelFor]);
+  }, [visible, template, displayLabelFor]);
 
   const handleSave = async () => {
     const numericAmount = Number(amount);
     if (!label.trim() || !Number.isFinite(numericAmount) || numericAmount <= 0 || categoryId === null) {
-      setError('Enter a label, an amount greater than 0, and pick a category.');
+      setError(t('quickAdd.invalid'));
       return;
     }
     await onSave({
@@ -88,36 +90,36 @@ export function QuickAddTemplateForm({
     <Modal visible={visible} onRequestClose={onClose}>
       <View style={styles.form}>
         <Typography variant="subheading">
-          {template ? 'Edit template' : 'New template'}
+          {template ? t('quickAdd.editTemplate') : t('quickAdd.newTemplate')}
         </Typography>
 
         <TextInput
           value={label}
           onChangeText={setLabel}
-          placeholder="Label (e.g. Taxi 500)"
-          accessibilityLabel="Template label"
+          placeholder={t('quickAdd.labelPlaceholder')}
+          accessibilityLabel={t('quickAdd.labelA11y')}
           testID="quick-add-label-input"
         />
         <TextInput
           value={amount}
           onChangeText={setAmount}
-          placeholder="Amount (FCFA)"
+          placeholder={t('quickAdd.amountPlaceholder')}
           keyboardType="numeric"
-          accessibilityLabel="Template amount"
+          accessibilityLabel={t('quickAdd.amountA11y')}
           testID="quick-add-amount-input"
         />
         <Button
-          label={categoryLabel ?? 'Select category'}
+          label={categoryLabel ?? t('selectCategory')}
           onPress={() => setPickerVisible(true)}
         />
 
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
 
-        <Button label="Save" onPress={handleSave} testID="quick-add-save" />
+        <Button label={t('common:actions.save')} onPress={handleSave} testID="quick-add-save" />
         {template ? (
-          <Button label="Delete" onPress={handleDelete} testID="quick-add-delete" />
+          <Button label={t('common:actions.delete')} onPress={handleDelete} testID="quick-add-delete" />
         ) : null}
-        <Button label="Cancel" onPress={onClose} testID="quick-add-cancel" />
+        <Button label={t('common:actions.cancel')} onPress={onClose} testID="quick-add-cancel" />
       </View>
 
       <CategoryPicker

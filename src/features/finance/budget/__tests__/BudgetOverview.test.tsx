@@ -35,6 +35,7 @@ jest.mock('@/features/finance/budget/budget.insights', () => ({
 }));
 
 import { BudgetOverview } from '@/features/finance/budget/BudgetOverview';
+import i18n from '@/i18n';
 import * as envelopes from '@/features/finance/budget/budget.envelopes';
 import * as plan from '@/features/finance/budget/budget.plan';
 
@@ -182,6 +183,21 @@ describe('BudgetOverview — loading and empty states', () => {
 });
 
 describe('BudgetOverview — the hero', () => {
+  it('offers the empty-month call to action in French', async () => {
+    await i18n.changeLanguage('fr');
+    mockedGetOverview.mockResolvedValue(overviewData({ isUnplanned: true, categories: [] }));
+    await renderTab();
+    expect(screen.getByText('Aucun plan pour Août 2026')).toBeTruthy();
+    expect(screen.getByText('Planifier ce mois')).toBeTruthy();
+  });
+
+  it('states the hero and status in French', async () => {
+    await i18n.changeLanguage('fr');
+    await renderTab();
+    expect(screen.getByText('Reste à dépenser')).toBeTruthy();
+    expect(screen.getByTestId('budget-health-chip')).toHaveTextContent('Attention');
+  });
+
   it('leads with what is left to spend', async () => {
     await renderTab();
     expect(screen.getByTestId('budget-remaining')).toHaveTextContent('200 000 FCFA');

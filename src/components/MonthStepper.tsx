@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -36,12 +37,13 @@ export function MonthStepper({
   prevDisabled = false,
   testIDPrefix,
 }: MonthStepperProps) {
+  const { t } = useTranslation();
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.nav}>
       <StepArrow
         direction="back"
-        label="Previous month"
+        label={t('fields.previousMonth')}
         disabled={prevDisabled}
         onPress={onPrev}
         testID={`${testIDPrefix}-prev`}
@@ -49,7 +51,7 @@ export function MonthStepper({
       <Typography variant="subheading">{label}</Typography>
       <StepArrow
         direction="forward"
-        label="Next month"
+        label={t('fields.nextMonth')}
         disabled={nextDisabled}
         onPress={onNext}
         testID={`${testIDPrefix}-next`}

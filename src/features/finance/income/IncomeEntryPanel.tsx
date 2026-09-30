@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Keyboard, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
+import { FieldError } from '@/components/FieldError';
 import { Icon } from '@/components/Icon';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
@@ -44,6 +46,7 @@ export function IncomeEntryPanel({
 }: IncomeEntryPanelProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation(['income', 'common']);
   const log = useIncomeLog({ amount, note });
   const defaultAccountId = useDefaultAccountId();
   const [saving, setSaving] = useState(false);
@@ -53,6 +56,7 @@ export function IncomeEntryPanel({
   }, [defaultAccountId, log.accountId]);
 
   const handleSave = async () => {
+    Keyboard.dismiss();
     setSaving(true);
     try {
       const id = await log.submit();
@@ -64,16 +68,26 @@ export function IncomeEntryPanel({
 
   return (
     <View style={styles.container}>
-      <AmountInput value={log.amount} onChangeText={log.setAmount} autoFocus={autoFocus} />
+      <AmountInput
+        value={log.amount}
+        onChangeText={log.setAmount}
+        autoFocus={autoFocus}
+        invalid={log.fieldErrors.amount !== undefined}
+      />
+      <FieldError message={log.fieldErrors.amount} testID="income-amount-error" />
 
       <IncomeSourcePicker value={log.source} onChange={log.setSource} />
+      <FieldError message={log.fieldErrors.source} testID="income-source-error" />
 
       <TextInput
         value={log.note}
         onChangeText={log.setNote}
-        placeholder="Note (optional)"
-        accessibilityLabel="Note"
+        placeholder={t('notePlaceholder')}
+        accessibilityLabel={t('noteLabel')}
         multiline
+        // Return key closes the keyboard instead of inserting a newline.
+        returnKeyType="done"
+        submitBehavior="blurAndSubmit"
         numberOfLines={3}
         textAlignVertical="top"
         style={styles.note}
@@ -83,12 +97,12 @@ export function IncomeEntryPanel({
 
       <AccountPicker
         testID="income-account"
-        label="Account"
+        label={t('account')}
         value={log.accountId}
         onChange={log.setAccountId}
       />
 
-      <Button label="Save" onPress={handleSave} disabled={!log.canSubmit} loading={saving} />
+      <Button label={t('common:actions.save')} onPress={handleSave} loading={saving} />
 
       {log.error ? (
         <View style={styles.errorRow}>

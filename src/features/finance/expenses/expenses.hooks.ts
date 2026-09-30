@@ -1,5 +1,7 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { getTransactionFeed } from '@/services/transactions';
 import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
@@ -16,10 +18,21 @@ import type {
   RecurringExpense,
 } from './expenses.types';
 
+/** Label for a category id that no longer resolves, in the active UI language. */
+function unknownLabel(): string {
+  return i18n.t('unknownCategory', { ns: 'expenses' });
+}
+
 /** External state a caller can own so a value survives this hook unmounting. */
 export interface ControlledField {
   value: string;
   onChange: (value: string) => void;
+}
+
+/** Per-field validation messages; a key is set only while that field is invalid. */
+export interface ExpenseFieldErrors {
+  amount?: string;
+  category?: string;
 }
 
 export interface UseExpenseLogOptions {
@@ -35,7 +48,9 @@ export interface UseExpenseLogOptions {
  * (rather than a form-state object) so later slices reusing this shape stay
  * consistent. Validates `amount > 0` and a chosen category before allowing
  * submit. `amount`/`note` may be lifted to a parent via `options` so their
- * values survive the form unmounting.
+ * values survive the form unmounting. `fieldErrors` stays empty until the first
+ * `validate`/`submit` attempt, then tracks each field live so a message clears
+ * the moment the user fixes it.
  */
 export function useExpenseLog(options?: UseExpenseLogOptions) {
   const internalAmount = useState('');
@@ -49,15 +64,30 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempted, setAttempted] = useState(false);
 
   const numericAmount = Number(amount);
-  const canSubmit =
-    Number.isFinite(numericAmount) && numericAmount > 0 && categoryId !== null;
+  const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
+  const canSubmit = amountValid && categoryId !== null;
+
+  const fieldErrors: ExpenseFieldErrors = {};
+  if (attempted && !amountValid) {
+    fieldErrors.amount = i18n.t('validation.amountRequired', { ns: 'expenses' });
+  }
+  if (attempted && categoryId === null) {
+    fieldErrors.category = i18n.t('validation.categoryRequired', { ns: 'expenses' });
+  }
+
+  /** Marks the form as attempted (revealing field errors) and returns whether it is valid. */
+  const validate = useCallback((): boolean => {
+    setAttempted(true);
+    return canSubmit;
+  }, [canSubmit]);
 
   /** Persists the expense. Returns the new id, or null if invalid / failed. */
   const submit = useCallback(async (): Promise<number | null> => {
     if (!canSubmit || categoryId === null) {
-      setError('Enter an amount greater than 0 and pick a category.');
+      setAttempted(true);
       return null;
     }
     try {
@@ -73,7 +103,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setError(null);
       return id;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
   }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId]);
@@ -92,7 +122,9 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
     accountId,
     setAccountId,
     submit,
+    validate,
     canSubmit,
+    fieldErrors,
     error,
   };
 }
@@ -120,7 +152,7 @@ export function useTransactions(
       setAllEntries(await getTransactionFeed(monthISO));
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load transactions.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadTransactions', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -150,7 +182,8 @@ export function useTransactions(
  * - `categories` — visible parents, for the picker.
  * - `managedCategories` — all parents incl. hidden, for the manager.
  * - `subcategoriesOf(parentId, includeHidden?)` — children (visible by default).
- * - `labelFor` — subcategory name, falling back to the parent name.
+ * - `labelFor` — subcategory name, falling back to the parent name (stored, for icon lookups).
+ * - `displayLabelFor` — the same, as shown to the user in the active language.
  */
 export function useCategories() {
   const [all, setAll] = useState<Category[]>([]);
@@ -194,9 +227,20 @@ export function useCategories() {
   const labelFor = useCallback(
     (categoryId: number, subcategoryId: number | null): string => {
       if (subcategoryId != null) {
-        return byId.get(subcategoryId)?.name ?? byId.get(categoryId)?.name ?? 'Unknown';
+        return byId.get(subcategoryId)?.name ?? byId.get(categoryId)?.name ?? unknownLabel();
       }
-      return byId.get(categoryId)?.name ?? 'Unknown';
+      return byId.get(categoryId)?.name ?? unknownLabel();
+    },
+    [byId],
+  );
+
+  // Like `labelFor`, but in the active language: a seeded default is
+  // translated, a user's own category is shown exactly as typed.
+  const displayLabelFor = useCallback(
+    (categoryId: number, subcategoryId: number | null): string => {
+      const row =
+        (subcategoryId != null ? byId.get(subcategoryId) : undefined) ?? byId.get(categoryId);
+      return row ? displayCategoryName(row.name, row.isDefault) : unknownLabel();
     },
     [byId],
   );
@@ -246,6 +290,7 @@ export function useCategories() {
     managedCategories,
     subcategoriesOf,
     labelFor,
+    displayLabelFor,
     loading,
     refresh,
     addCategory,
@@ -273,7 +318,7 @@ export function useQuickAdd() {
       setTemplates(await expenseService.getQuickAddTemplates());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load quick-add templates.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadTemplates', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -289,7 +334,7 @@ export function useQuickAdd() {
       setError(null);
       return expenseId;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to log from template.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.logTemplate', { ns: 'expenses' }));
       return null;
     }
   }, []);
@@ -336,7 +381,7 @@ export function useRecurring() {
       setRecurring(await expenseService.getRecurringExpenses());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load recurring expenses.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadRecurring', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -435,7 +480,7 @@ export function useExpenseEdit(id: number): {
     try {
       const expense = await expenseService.getExpenseById(id);
       if (!expense) {
-        setError('Expense not found.');
+        setError(i18n.t('errors.expenseNotFound', { ns: 'expenses' }));
         return;
       }
       setAmount(String(expense.amount));
@@ -452,7 +497,7 @@ export function useExpenseEdit(id: number): {
       setOriginalAccountId(expense.accountId);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadExpense', { ns: 'expenses' }));
     } finally {
       setLoading(false);
     }
@@ -483,7 +528,7 @@ export function useExpenseEdit(id: number): {
       setError(null);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.updateExpense', { ns: 'expenses' }));
       return false;
     }
   }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, load]);
@@ -493,7 +538,7 @@ export function useExpenseEdit(id: number): {
       await expenseService.deleteExpense(id);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to delete expense.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.deleteExpense', { ns: 'expenses' }));
       return false;
     }
   }, [id]);

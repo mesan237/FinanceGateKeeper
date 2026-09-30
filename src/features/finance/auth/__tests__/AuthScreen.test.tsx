@@ -22,6 +22,7 @@ jest.mock('@/features/finance/auth/PinRecoveryScreen', () => {
 });
 
 import { AuthScreen } from '@/features/finance/auth/AuthScreen';
+import i18n from '@/i18n';
 
 function enter(pin: string) {
   for (const digit of pin) {
@@ -89,6 +90,17 @@ describe('AuthScreen — unlock', () => {
     render(<AuthScreen />);
     enter('0000');
     expect(await screen.findByTestId('auth-error')).toBeTruthy();
+  });
+
+  it('prompts and reports a wrong PIN in French', async () => {
+    await i18n.changeLanguage('fr');
+    mockLock.unlock.mockResolvedValue(false);
+    mockLock.attemptsLeft = 2;
+    render(<AuthScreen />);
+    expect(screen.getByText('Saisissez votre code')).toBeTruthy();
+
+    enter('0000');
+    expect(await screen.findByText('Code incorrect. Tentatives restantes : 2.')).toBeTruthy();
   });
 
   it('disables entry and shows a countdown while cooling down', () => {

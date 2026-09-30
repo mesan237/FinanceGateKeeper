@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -24,6 +25,7 @@ export interface PinKeypadProps {
  */
 export function PinKeypad({ value, onChange, disabled = false }: PinKeypadProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('auth');
 
   const press = (key: string) => {
     if (disabled) return;
@@ -55,7 +57,7 @@ export function PinKeypad({ value, onChange, disabled = false }: PinKeypadProps)
               key={key}
               testID={key === 'del' ? 'pin-delete' : `pin-key-${key}`}
               accessibilityRole="button"
-              accessibilityLabel={key === 'del' ? 'Delete' : key}
+              accessibilityLabel={key === 'del' ? t('pin.deleteDigit') : key}
               disabled={disabled}
               onPress={() => press(key)}
               style={({ pressed }) => [

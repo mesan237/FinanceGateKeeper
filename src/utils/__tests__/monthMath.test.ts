@@ -117,6 +117,10 @@ describe('monthLabel', () => {
   it('formats a month as name + year', () => {
     expect(monthLabel('2026-08')).toBe('August 2026');
   });
+
+  it('formats the month in French, capitalized for a header', () => {
+    expect(monthLabel('2026-08', 'fr')).toBe('Août 2026');
+  });
 });
 
 describe('weekIndexOfDate / weeksInMonth', () => {

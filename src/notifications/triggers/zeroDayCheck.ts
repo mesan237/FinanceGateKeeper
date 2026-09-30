@@ -1,4 +1,4 @@
-import { MESSAGES } from '@/notifications/notifications.config';
+import { notificationCopy } from '@/notifications/notifications.config';
 import type { NotificationPayload } from '@/notifications/notifications.types';
 
 export interface ZeroDayCheckInput {
@@ -22,7 +22,6 @@ export function shouldTriggerZeroDay({
 export function buildZeroDayNotification(): NotificationPayload {
   return {
     type: 'zeroDayCheck',
-    title: MESSAGES.zeroDayCheck.title,
-    body: MESSAGES.zeroDayCheck.body,
+    ...notificationCopy('zeroDayCheck'),
   };
 }

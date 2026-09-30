@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -7,7 +8,7 @@ import { Card } from '@/components/Card';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
-import { DEBT_STATUS_LABELS, type DebtDirection } from '@/constants/debt';
+import type { DebtDirection } from '@/constants/debt';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateShort } from '@/utils/formatDate';
 
@@ -24,27 +25,28 @@ export function DebtListScreen() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const [direction, setDirection] = useState<DebtDirection>('lent');
+  const { t } = useTranslation('debt');
   const { debts, totals, loading, error } = useDebts(direction);
 
   return (
     <View style={styles.container}>
-      <Typography variant="heading">Debts</Typography>
+      <Typography variant="heading">{t('list.title')}</Typography>
 
       <View style={styles.tabs}>
         <View style={styles.grow}>
-          <Button testID="debt-tab-lent" label="Lent" onPress={() => setDirection('lent')} />
+          <Button testID="debt-tab-lent" label={t('directions.lent')} onPress={() => setDirection('lent')} />
         </View>
         <View style={styles.grow}>
-          <Button testID="debt-tab-owed" label="Owed" onPress={() => setDirection('owed')} />
+          <Button testID="debt-tab-owed" label={t('directions.owed')} onPress={() => setDirection('owed')} />
         </View>
       </View>
 
-      <Typography variant="muted">{`Outstanding: ${formatCurrency(totals[direction])}`}</Typography>
+      <Typography variant="muted">{t('list.outstanding', { amount: formatCurrency(totals[direction]) })}</Typography>
 
       {loading ? (
-        <Typography variant="muted">Loading…</Typography>
+        <Typography variant="muted">{t('loading')}</Typography>
       ) : debts.length === 0 ? (
-        <Typography variant="muted">No debts here yet.</Typography>
+        <Typography variant="muted">{t('list.empty')}</Typography>
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {debts.map((debt) => (
@@ -53,7 +55,7 @@ export function DebtListScreen() {
         </ScrollView>
       )}
 
-      <Button label="Add debt" onPress={() => router.push('/debt/create')} />
+      <Button label={t('list.add')} onPress={() => router.push('/debt/create')} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>
@@ -68,17 +70,18 @@ interface DebtRowProps {
 function DebtRow({ debt, onPress }: DebtRowProps) {
   const styles = useThemedStyles(makeStyles);
   const settled = debt.status === 'settled';
+  const { t } = useTranslation('debt');
   return (
     <Pressable testID={`debt-row-${debt.id}`} onPress={onPress}>
       <Card style={settled ? styles.settledCard : undefined}>
         <View style={styles.rowHeader}>
           <Typography variant="subheading">{debt.personName}</Typography>
-          <Typography variant="muted">{DEBT_STATUS_LABELS[debt.status]}</Typography>
+          <Typography variant="muted">{t(`statuses.${debt.status}`)}</Typography>
         </View>
         <Typography>{formatCurrency(debt.amount)}</Typography>
         {debt.dueDate ? (
           <Typography variant="muted" style={styles.due}>
-            {`Due ${formatDateShort(debt.dueDate)}`}
+            {t('due', { date: formatDateShort(debt.dueDate) })}
           </Typography>
         ) : null}
       </Card>

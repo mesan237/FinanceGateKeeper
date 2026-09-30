@@ -22,6 +22,7 @@ jest.mock('../dataTransfer.hooks', () => ({
 }));
 
 import { DataTransferScreen } from '@/features/finance/dataTransfer/DataTransferScreen';
+import i18n from '@/i18n';
 
 const PAYLOAD = {
   version: 1 as const,
@@ -59,6 +60,17 @@ describe('DataTransferScreen', () => {
     expect(screen.getByText(/categories/i)).toBeTruthy();
     expect(screen.getByText(/expenses/i)).toBeTruthy();
     expect(mockConfirm).not.toHaveBeenCalled();
+  });
+
+  it('previews the import in French, with readable table names', async () => {
+    await i18n.changeLanguage('fr');
+    mockPick.mockResolvedValue(PICKED);
+    render(<DataTransferScreen />);
+
+    fireEvent.press(screen.getByText('Choisir un fichier à importer'));
+
+    expect(await screen.findByText('Remplacer toutes les données de cet appareil ?')).toBeTruthy();
+    expect(screen.getByText('Dépenses: 2')).toBeTruthy();
   });
 
   it('cancelling the picked file does nothing', async () => {

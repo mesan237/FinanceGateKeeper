@@ -16,6 +16,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ToastViewport } from '@/components/Toast';
@@ -75,6 +76,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(visible ? 1 : 0);
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
 
   // Overlay content registered by any `Modal` hosted within this sheet (see
   // `SheetHostContext`), keyed by a per-instance id. Rendered at this
@@ -129,7 +131,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
       <View style={styles.fill} testID={testID}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
-            accessibilityLabel="Close"
+            accessibilityLabel={t('actions.close')}
             accessibilityRole="button"
             testID={testID ? `${testID}-backdrop` : 'bottom-sheet-backdrop'}
             style={styles.backdropPress}

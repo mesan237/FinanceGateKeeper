@@ -36,16 +36,33 @@ describe('IncomeLogScreen', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
   });
 
-  it('keeps save disabled until an amount and a source are set', () => {
+  it('flags each missing field when save is pressed on an empty form', () => {
     render(<IncomeLogScreen />);
     const save = screen.getByRole('button', { name: 'Save' });
-    expect(save).toBeDisabled();
+    expect(save).toBeEnabled();
 
+    fireEvent.press(save);
+
+    expect(screen.getByText('Enter an amount greater than 0.')).toBeTruthy();
+    expect(screen.getByText('Pick a source.')).toBeTruthy();
+    expect(mockedCreate).not.toHaveBeenCalled();
+  });
+
+  it('clears the source error once a source is picked', () => {
+    render(<IncomeLogScreen />);
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
-    expect(save).toBeDisabled(); // amount set, no source yet
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByText('Pick a source.')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
-    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    expect(screen.queryByText('Pick a source.')).toBeNull();
+  });
+
+  it('lets the note field close the keyboard from its return key', () => {
+    render(<IncomeLogScreen />);
+    const note = screen.getByLabelText('Note');
+    expect(note.props.returnKeyType).toBe('done');
+    expect(note.props.submitBehavior).toBe('blurAndSubmit');
   });
 
   it('calls createIncome once with the entered values on save', async () => {

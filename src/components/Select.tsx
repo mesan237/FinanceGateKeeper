@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -37,8 +38,10 @@ export interface SelectProps {
  * grew independently — reach for it whenever a form needs "pick one from a fixed
  * set" and the set is too long or too wordy to sit in a `SegmentedControl`.
  */
-export function Select({ options, value, onChange, title, placeholder = 'Select', testID }: SelectProps) {
+export function Select({ options, value, onChange, title, placeholder, testID }: SelectProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
+  const emptyLabel = placeholder ?? t('fields.select');
   const c = useTheme();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.key === value) ?? null;
@@ -52,7 +55,7 @@ export function Select({ options, value, onChange, title, placeholder = 'Select'
     <View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={title ? `${title}: ${selected?.label ?? placeholder}` : undefined}
+        accessibilityLabel={title ? `${title}: ${selected?.label ?? emptyLabel}` : undefined}
         accessibilityState={{ expanded: open }}
         testID={testID ? `${testID}-trigger` : undefined}
         style={styles.trigger}
@@ -64,16 +67,18 @@ export function Select({ options, value, onChange, title, placeholder = 'Select'
             <Typography>{selected.label}</Typography>
           </View>
         ) : (
-          <Typography variant="muted">{placeholder}</Typography>
+          <Typography variant="muted">{emptyLabel}</Typography>
         )}
         <Icon name="dropdown" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
       </Pressable>
 
       <Modal visible={open} onRequestClose={() => setOpen(false)}>
         <View style={styles.header}>
-          <Typography variant="subheading">{title ? `Select ${title.toLowerCase()}` : 'Select'}</Typography>
+          <Typography variant="subheading">{title
+              ? t('fields.selectTitled', { title: title.toLowerCase() })
+              : t('fields.select')}</Typography>
           <Pressable accessibilityRole="button" onPress={() => setOpen(false)}>
-            <Typography style={styles.action}>Close</Typography>
+            <Typography style={styles.action}>{t('actions.close')}</Typography>
           </Pressable>
         </View>
         <ScrollView style={styles.list}>

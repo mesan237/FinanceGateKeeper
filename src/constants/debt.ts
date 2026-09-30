@@ -10,12 +10,6 @@ export const DEBT_DIRECTION_VALUES = ['lent', 'owed'] as const;
 /** A valid debt direction — one of `DEBT_DIRECTION_VALUES`. */
 export type DebtDirection = (typeof DEBT_DIRECTION_VALUES)[number];
 
-/** Display labels for each direction. */
-export const DEBT_DIRECTION_LABELS: Record<DebtDirection, string> = {
-  lent: 'Lent',
-  owed: 'Owed',
-};
-
 /** O(1) runtime validation set, mirroring `PROJECT_STATUS_SET`. */
 export const DEBT_DIRECTION_SET: ReadonlySet<string> = new Set(DEBT_DIRECTION_VALUES);
 
@@ -24,12 +18,6 @@ export const DEBT_STATUS_VALUES = ['pending', 'settled'] as const;
 
 /** A valid debt status — one of `DEBT_STATUS_VALUES`. */
 export type DebtStatus = (typeof DEBT_STATUS_VALUES)[number];
-
-/** Display labels for each status. */
-export const DEBT_STATUS_LABELS: Record<DebtStatus, string> = {
-  pending: 'Pending',
-  settled: 'Settled',
-};
 
 /** O(1) runtime validation set. */
 export const DEBT_STATUS_SET: ReadonlySet<string> = new Set(DEBT_STATUS_VALUES);

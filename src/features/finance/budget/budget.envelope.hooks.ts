@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { currentMonthISO } from '@/utils/formatDate';
@@ -35,7 +36,7 @@ export function useBudgetOverview(monthISO: string) {
       setOverview(next);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load the budget.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadTheBudget', { ns: 'budget' }));
     } finally {
       setLoading(false);
     }
@@ -67,7 +68,7 @@ export function useEnvelopeActions(monthISO: string) {
       setError(null);
       return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to update the budget.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.updateBudget', { ns: 'budget' }));
       return false;
     }
   }, []);

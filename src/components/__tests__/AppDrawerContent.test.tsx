@@ -7,6 +7,7 @@ jest.mock('expo-router', () => ({
 }));
 
 import { AppDrawerContent } from '@/components/AppDrawerContent';
+import i18n from '@/i18n';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 
 function renderDrawer() {
@@ -33,9 +34,27 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
+  it('navigates to /debt and closes the drawer when "Debts" is pressed', () => {
+    const { navigation } = renderDrawer();
+    const row = screen.getByRole('button', { name: 'Debts' });
+    expect(row.props.accessibilityState?.disabled).not.toBe(true);
+    fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/debt');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves "Backup & Restore" disabled', () => {
     renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });
     expect(row.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('labels the menu in French when the app is in French', async () => {
+    await i18n.changeLanguage('fr');
+    renderDrawer();
+    expect(screen.getByText('Gestion')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Comptes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dettes' })).toBeTruthy();
+    expect(screen.queryAllByText('Bientôt').length).toBeGreaterThan(0);
   });
 });

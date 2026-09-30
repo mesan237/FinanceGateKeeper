@@ -110,7 +110,7 @@ describe('useIncomeLog', () => {
     expect(result.current.note).toBe('');
   });
 
-  it('does not call the service and surfaces an error when invalid', async () => {
+  it('does not call the service and flags the missing fields when invalid', async () => {
     const { result } = renderHook(() => useIncomeLog());
 
     let id: number | null = 1;
@@ -120,7 +120,10 @@ describe('useIncomeLog', () => {
 
     expect(id).toBeNull();
     expect(mockedCreate).not.toHaveBeenCalled();
-    expect(result.current.error).toBeTruthy();
+    expect(result.current.fieldErrors).toEqual({
+      amount: 'Enter an amount greater than 0.',
+      source: 'Pick a source.',
+    });
   });
 });
 

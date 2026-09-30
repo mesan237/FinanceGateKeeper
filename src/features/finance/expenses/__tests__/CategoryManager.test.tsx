@@ -38,6 +38,7 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 }));
 
 import { CategoryManager } from '@/features/finance/expenses/CategoryManager';
+import i18n from '@/i18n';
 import {
   createCategory,
   deleteCategory,
@@ -139,5 +140,27 @@ describe('CategoryManager', () => {
 
     fireEvent.press(screen.getByTestId('reassign-1'));
     await waitFor(() => expect(mockedDelete).toHaveBeenCalledWith(4, 1));
+  });
+
+  it('shows seeded defaults in French and custom names as typed', async () => {
+    await i18n.changeLanguage('fr');
+    render(<CategoryManager />);
+    expect(await screen.findByText('Alimentation')).toBeTruthy();
+    expect(screen.getByText('Freelance')).toBeTruthy();
+    expect(screen.getByText('+ Nouvelle catégorie')).toBeTruthy();
+  });
+
+  it('does not store the French display name when a default is saved unchanged', async () => {
+    await i18n.changeLanguage('fr');
+    render(<CategoryManager />);
+    await screen.findByText('Alimentation');
+
+    fireEvent.press(screen.getByTestId('toggle-1'));
+    fireEvent.press(screen.getByTestId('rename-1'));
+    expect(screen.getByTestId('edit-input-1').props.value).toBe('Alimentation');
+    fireEvent.press(screen.getByTestId('save-1'));
+
+    await waitFor(() => expect(screen.queryByTestId('edit-input-1')).toBeNull());
+    expect(mockedRename).not.toHaveBeenCalled();
   });
 });

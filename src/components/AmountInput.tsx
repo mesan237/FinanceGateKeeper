@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, TextInput as RNTextInput, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -14,6 +15,8 @@ export interface AmountInputProps {
   onChangeText: (value: string) => void;
   accessibilityLabel?: string;
   autoFocus?: boolean;
+  /** Draws the border in the danger colour when the field failed validation. */
+  invalid?: boolean;
   testID?: string;
 }
 
@@ -26,25 +29,28 @@ export interface AmountInputProps {
 export function AmountInput({
   value,
   onChangeText,
-  accessibilityLabel = 'Amount in FCFA',
+  accessibilityLabel,
   autoFocus,
+  invalid = false,
   testID,
 }: AmountInputProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation();
   const handleChange = (text: string) => {
     onChangeText(text.replace(/\D/g, ''));
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, invalid && { borderColor: c.DANGER }]}>
       <RNTextInput
         value={value ? groupDigits(value) : ''}
         onChangeText={handleChange}
         placeholder="0"
         placeholderTextColor={c.TEXT_MUTED}
         keyboardType="numeric"
-        accessibilityLabel={accessibilityLabel}
+        returnKeyType="done"
+        accessibilityLabel={accessibilityLabel ?? t('fields.amountInFcfa')}
         autoFocus={autoFocus}
         testID={testID}
         style={styles.input}

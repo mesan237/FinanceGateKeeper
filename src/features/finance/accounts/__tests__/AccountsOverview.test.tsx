@@ -13,6 +13,7 @@ jest.mock('@/features/finance/accounts/accounts.service', () => ({
 import { AccountsOverview } from '@/features/finance/accounts/AccountsOverview';
 import * as service from '@/features/finance/accounts/accounts.service';
 import type { Account, AccountStats } from '@/features/finance/accounts/accounts.types';
+import i18n from '@/i18n';
 
 const mocked = service as jest.Mocked<typeof service>;
 
@@ -66,5 +67,14 @@ describe('AccountsOverview', () => {
     await waitFor(() => expect(screen.getByTestId('account-card-2')).toBeTruthy());
     fireEvent.press(screen.getByTestId('account-card-2'));
     expect(mockPush).toHaveBeenCalledWith('/accounts/2');
+  });
+
+  it('labels purposes and monthly stats in French', async () => {
+    await i18n.changeLanguage('fr');
+    render(<AccountsOverview />);
+    await waitFor(() => expect(screen.getByTestId('account-card-1')).toBeTruthy());
+    expect(screen.getByText('Comptes')).toBeTruthy();
+    expect(screen.getAllByText('Dépenses').length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getAllByText('↑ 80 % entrées').length).toBeGreaterThan(0));
   });
 });

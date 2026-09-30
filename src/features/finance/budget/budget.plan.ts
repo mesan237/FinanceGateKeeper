@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import { getAllCategories, getCategories } from '@/features/finance/expenses/expenses.service';
 import { toISODate } from '@/utils/formatDate';
 import { prevMonthISO } from '@/utils/monthMath';
@@ -84,7 +86,7 @@ export async function buildCategoryProgressList(
       return buildCategoryProgress(
         {
           categoryId,
-          categoryName: nameOf.get(categoryId) ?? 'Uncategorised',
+          categoryName: nameOf.get(categoryId) ?? i18n.t('uncategorised', { ns: 'budget' }),
           allocated: budget?.allocatedAmount ?? 0,
           carriedIn: carried.get(categoryId) ?? 0,
           spent: spendByCategory.get(categoryId) ?? 0,
@@ -235,7 +237,7 @@ export async function checkCategoryBudget(
   ]);
 
   const budget = budgets.find((b) => b.categoryId === categoryId);
-  const categoryName = categories.find((c) => c.id === categoryId)?.name ?? 'this category';
+  const categoryName = categories.find((c) => c.id === categoryId)?.name ?? i18n.t('thisCategory', { ns: 'budget' });
   const spent = spendByCategory.get(categoryId) ?? 0;
 
   if (!budget) {

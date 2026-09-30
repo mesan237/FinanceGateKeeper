@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -10,9 +11,10 @@ import { QuickAddGrid } from './QuickAddGrid';
  * template tiles. The grid is also embedded in the unified `AddTransactionSheet`.
  */
 export function QuickAddScreen() {
+  const { t } = useTranslation('expenses');
   return (
     <View style={styles.container}>
-      <ScreenHeader title="Quick Add" />
+      <ScreenHeader title={t('quickAdd.title')} />
       <QuickAddGrid />
     </View>
   );

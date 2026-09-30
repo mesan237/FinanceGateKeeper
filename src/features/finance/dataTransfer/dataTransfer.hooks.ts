@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useState } from 'react';
 
 import { getDocumentAsync } from 'expo-document-picker';
@@ -37,7 +38,7 @@ export function useExportData() {
       }
       return true;
     } catch (e) {
-      setError(errorMessage(e, 'Export failed.'));
+      setError(errorMessage(e, i18n.t('exportFailed', { ns: 'dataTransfer' })));
       return false;
     } finally {
       setIsLoading(false);
@@ -72,7 +73,7 @@ export function useImportData() {
       }
       return { payload, summary };
     } catch (e) {
-      setError(errorMessage(e, 'Failed to read the selected file.'));
+      setError(errorMessage(e, i18n.t('readFailed', { ns: 'dataTransfer' })));
       return null;
     } finally {
       setIsLoading(false);
@@ -85,7 +86,7 @@ export function useImportData() {
     try {
       return await importData(payload);
     } catch (e) {
-      setError(errorMessage(e, 'Import failed.'));
+      setError(errorMessage(e, i18n.t('importFailed', { ns: 'dataTransfer' })));
       return null;
     } finally {
       setIsLoading(false);

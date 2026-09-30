@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,33 +14,18 @@ export interface OnboardingScreenProps {
 }
 
 interface Panel {
-  title: string;
-  body: string;
+  /** Catalogue key under `onboarding.panels`. */
+  key: 'track' | 'budget' | 'reports' | 'done';
   /** Optional chip row (used to preview what the app tracks). */
-  chips?: string[];
+  chips?: ReadonlyArray<'expenses' | 'income' | 'budgets' | 'debts'>;
 }
 
-const TRACK_CHIPS = ['Expenses', 'Income', 'Budgets', 'Debts'];
-
-// The intro panels. Copy is deliberately jargon-light.
-const PANELS: Panel[] = [
-  {
-    title: 'Track every franc',
-    body: 'Log each income and expense as it happens. That daily habit is the whole game — everything else builds on it.',
-    chips: TRACK_CHIPS,
-  },
-  {
-    title: 'Budget by category',
-    body: 'Give each category a monthly envelope. Finance Gatekeeper paces it against the day of the month, so you know whether you are ahead or behind before the month ends.',
-  },
-  {
-    title: 'See where it went',
-    body: 'Reports break the month down by category and compare it with the one before, so the pattern shows up on its own.',
-  },
-  {
-    title: "You're all set",
-    body: 'Set a daily reminder any time in Settings so a day never slips by unlogged. Let’s get started.',
-  },
+// The intro panels; their copy lives in the `onboarding` catalogue.
+const PANELS: ReadonlyArray<Panel> = [
+  { key: 'track', chips: ['expenses', 'income', 'budgets', 'debts'] },
+  { key: 'budget' },
+  { key: 'reports' },
+  { key: 'done' },
 ];
 
 /**
@@ -50,6 +36,7 @@ const PANELS: Panel[] = [
  */
 export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('onboarding');
   const { scheme } = useThemeMode();
   const [index, setIndex] = useState(0);
 
@@ -73,12 +60,12 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
           <Pressable
             testID="onboarding-skip"
             accessibilityRole="button"
-            accessibilityLabel="Skip onboarding"
+            accessibilityLabel={t('skipLabel')}
             onPress={onDone}
             hitSlop={12}
           >
             <Typography variant="muted" style={styles.skip}>
-              Skip
+              {t('skip')}
             </Typography>
           </Pressable>
         )}
@@ -86,18 +73,18 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
 
       <View style={styles.body}>
         <Typography variant="display" style={styles.title}>
-          {panel.title}
+          {t(`panels.${panel.key}.title`)}
         </Typography>
         <Typography variant="body" style={styles.text}>
-          {panel.body}
+          {t(`panels.${panel.key}.body`)}
         </Typography>
 
         {panel.chips ? (
           <View style={styles.chips}>
-            {panel.chips.map((label) => (
-              <View key={label} style={styles.chip}>
+            {panel.chips.map((chip) => (
+              <View key={chip} style={styles.chip}>
                 <Typography variant="label" style={styles.chipText}>
-                  {label}
+                  {t(`chips.${chip}`)}
                 </Typography>
               </View>
             ))}
@@ -109,14 +96,14 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
         <View style={styles.dots}>
           {PANELS.map((p, i) => (
             <View
-              key={p.title}
+              key={p.key}
               style={[styles.dot, i === index ? styles.dotActive : null]}
             />
           ))}
         </View>
         <Button
           testID="onboarding-next"
-          label={isLast ? 'Get started' : 'Next'}
+          label={isLast ? t('getStarted') : t('next')}
           onPress={next}
         />
       </View>

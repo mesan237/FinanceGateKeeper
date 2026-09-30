@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 
@@ -30,11 +31,12 @@ export interface SpendingDonutChartProps {
  */
 export function SpendingDonutChart({ data, size = SIZE }: SpendingDonutChartProps) {
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('reports');
 
   if (data.length === 0) {
     return (
       <View style={styles.empty}>
-        <Typography variant="muted">No data for this period.</Typography>
+        <Typography variant="muted">{t('noData')}</Typography>
       </View>
     );
   }
@@ -82,7 +84,7 @@ export function SpendingDonutChart({ data, size = SIZE }: SpendingDonutChartProp
       </Svg>
       <View style={[styles.center, { transform: [{ scale }] }]} pointerEvents="none">
         <Typography variant="muted" style={styles.totalLabel}>
-          TOTAL
+          {t('totalCaps')}
         </Typography>
         <Typography variant="subheading">{groupDigits(Math.trunc(total).toString())}</Typography>
         <Typography variant="muted" style={styles.totalUnit}>

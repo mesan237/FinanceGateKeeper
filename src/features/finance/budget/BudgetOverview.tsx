@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -39,6 +40,7 @@ export interface BudgetOverviewProps {
 export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const { t } = useTranslation(['budget', 'common']);
   const [month, setMonth] = useState(monthISO);
   const [editing, setEditing] = useState<CategoryBudgetProgress | null>(null);
 
@@ -84,9 +86,9 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
           <EmptyState
             testID="budget-empty"
             icon="budget"
-            title={`No plan for ${monthLabel(month)} yet`}
-            subtitle="Set what you can spend this month, then share it out across your categories. You will see exactly where each one stands as the month goes."
-            actionLabel="Plan this month"
+            title={t('overview.emptyTitle', { month: monthLabel(month) })}
+            subtitle={t('overview.emptySubtitle')}
+            actionLabel={t('overview.emptyAction')}
             onAction={openPlanner}
           />
         ) : (
@@ -106,36 +108,35 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
                 <View style={styles.stripBody}>
                   <Typography style={styles.stripTitle}>
                     {overview.plan.isOverAllocated
-                      ? `${formatCurrency(-overview.plan.unassigned)} over-allocated`
-                      : `${formatCurrency(overview.plan.unassigned)} unassigned`}
+                      ? t('overview.overAllocated', { amount: formatCurrency(-overview.plan.unassigned) })
+                      : t('overview.unassigned', { amount: formatCurrency(overview.plan.unassigned) })}
                   </Typography>
                   <Typography variant="muted">
                     {overview.plan.isOverAllocated
-                      ? 'Your categories promise more than your budget.'
-                      : 'Give it a job before you spend it.'}
+                      ? t('overview.overAllocatedHint')
+                      : t('overview.unassignedHint')}
                   </Typography>
                 </View>
-                <Typography style={styles.stripAction}>Assign</Typography>
+                <Typography style={styles.stripAction}>{t('overview.assign')}</Typography>
               </Pressable>
             ) : null}
 
             <Card>
               <View style={styles.sectionHeader}>
-                <Typography variant="label">Categories</Typography>
+                <Typography variant="label">{t('overview.categories')}</Typography>
                 <Pressable
                   accessibilityRole="button"
                   onPress={openPlanner}
                   hitSlop={8}
                   testID="budget-edit-plan"
                 >
-                  <Typography style={styles.sectionAction}>Edit plan</Typography>
+                  <Typography style={styles.sectionAction}>{t('overview.editPlan')}</Typography>
                 </Pressable>
               </View>
 
               {overview.categories.length === 0 ? (
                 <Typography variant="muted" testID="budget-no-categories">
-                  No category budgets yet. Tap “Edit plan” to share your budget
-                  out.
+                  {t('overview.noCategories')}
                 </Typography>
               ) : (
                 overview.categories.map((envelope, index) => (

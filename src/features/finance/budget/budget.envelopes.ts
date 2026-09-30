@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import { execute, query } from '@/services/database';
 import { lastDayOfMonth } from '@/utils/monthMath';
 
@@ -47,7 +49,7 @@ function mapRow(row: CategoryBudgetRow): CategoryBudget {
 /** Rejects amounts that are not whole, non-negative FCFA. */
 function assertValidAmount(amount: number): void {
   if (!Number.isInteger(amount) || amount < 0) {
-    throw new Error('A budget amount must be a whole number of FCFA, zero or greater.');
+    throw new Error(i18n.t('errors.amountWhole', { ns: 'budget' }));
   }
 }
 
@@ -124,16 +126,16 @@ export async function moveBudget(
   amount: number,
 ): Promise<void> {
   if (fromCategoryId === toCategoryId) {
-    throw new Error('Choose a different category to move budget from.');
+    throw new Error(i18n.t('errors.sameCategory', { ns: 'budget' }));
   }
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new Error('The amount to move must be a whole number of FCFA above zero.');
+    throw new Error(i18n.t('errors.moveAmount', { ns: 'budget' }));
   }
 
   const budgets = await getCategoryBudgets(monthISO);
   const source = budgets.find((b) => b.categoryId === fromCategoryId);
   if (!source || source.allocatedAmount < amount) {
-    throw new Error('That category does not have enough budget to move.');
+    throw new Error(i18n.t('errors.notEnough', { ns: 'budget' }));
   }
   const destination = budgets.find((b) => b.categoryId === toCategoryId);
 

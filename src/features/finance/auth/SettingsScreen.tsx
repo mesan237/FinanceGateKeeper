@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -11,6 +12,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { isAppLanguage } from '@/i18n/resolveLanguage';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
 import { CloudAccountCard } from './CloudAccountCard';
@@ -18,13 +20,15 @@ import { useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
 /**
- * App settings: set the daily reminder time and toggle notifications.
- * Reminder/notification changes reconcile the scheduled notification via
- * `applyReminderSchedule` (shared notifications infra).
+ * App settings: appearance, language, the daily reminder time and the
+ * notifications toggle. Reminder, notification and language changes reconcile
+ * the scheduled notification via `applyReminderSchedule` (shared notifications
+ * infra) — a language change re-schedules it so its text follows the UI.
  */
 export function SettingsScreen() {
-  const { settings, setReminderTime, setNotificationsEnabled } = useAppSettings();
+  const { settings, setReminderTime, setNotificationsEnabled, setLanguage } = useAppSettings();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
+  const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
   const c = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -40,10 +44,18 @@ export function SettingsScreen() {
   if (!settings) {
     return (
       <View style={styles.loading}>
-        <Typography variant="muted">Loading settings…</Typography>
+        <Typography variant="muted">{t('settings.loading')}</Typography>
       </View>
     );
   }
+
+  const changeLanguage = async (key: string) => {
+    await setLanguage(isAppLanguage(key) ? key : null);
+    await applyReminderSchedule({
+      reminderTime: settings.reminderTime,
+      notificationsEnabled: settings.notificationsEnabled,
+    });
+  };
 
   const saveReminder = async () => {
     try {
@@ -56,7 +68,7 @@ export function SettingsScreen() {
     } catch (e) {
       // The picker only yields a valid HH:mm, so this surfaces genuine save
       // failures — not a format error.
-      setError(e instanceof Error ? e.message : "Couldn't save the reminder.");
+      setError(e instanceof Error ? e.message : t('settings.reminderSaveError'));
     }
   };
 
@@ -67,7 +79,7 @@ export function SettingsScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <ScreenHeader title="Settings" />
+      <ScreenHeader title={t('settings.title')} />
 
       <Pressable
         testID="settings-profile-link"
@@ -76,49 +88,70 @@ export function SettingsScreen() {
       >
         <SectionCard
           icon="profile"
-          title="Profile"
-          subtitle="Your name, avatar, and account."
+          title={t('settings.profileTitle')}
+          subtitle={t('settings.profileSubtitle')}
           right={<Icon name="forward" color={c.TEXT_MUTED} />}
         />
       </Pressable>
 
       <SectionCard
         icon="appearance"
-        title="Appearance"
-        subtitle="Choose a light or dark look, or follow your device."
+        title={t('settings.appearanceTitle')}
+        subtitle={t('settings.appearanceSubtitle')}
       >
         <SegmentedControl
           testID="settings-theme-control"
           value={themeMode}
           segments={[
-            { key: 'system', label: 'System' },
-            { key: 'light', label: 'Light' },
-            { key: 'dark', label: 'Dark' },
+            { key: 'system', label: t('settings.themeSystem') },
+            { key: 'light', label: t('settings.themeLight') },
+            { key: 'dark', label: t('settings.themeDark') },
           ]}
           onChange={(key) => void setThemeMode(key as ThemeMode)}
         />
       </SectionCard>
 
       <SectionCard
+        icon="language"
+        title={t('settings.languageTitle')}
+        subtitle={t('settings.languageSubtitle')}
+      >
+        <SegmentedControl
+          testID="settings-language-control"
+          value={settings.language ?? 'system'}
+          segments={[
+            { key: 'system', label: t('settings.languageSystem') },
+            { key: 'fr', label: t('common:languages.fr') },
+            { key: 'en', label: t('common:languages.en') },
+          ]}
+          onChange={(key) => void changeLanguage(key)}
+        />
+      </SectionCard>
+
+      <SectionCard
         icon="reminder"
-        title="Daily reminder"
-        subtitle="We'll nudge you to log the day's spending."
+        title={t('settings.reminderTitle')}
+        subtitle={t('settings.reminderSubtitle')}
         right={<Pill label={settings.reminderTime} />}
       >
         <TimeField
           testID="settings-reminder-time"
           value={reminderInput}
           onChange={setReminderInput}
-          accessibilityLabel="Reminder time"
+          accessibilityLabel={t('settings.reminderTimeLabel')}
         />
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
-        <Button testID="settings-reminder-save" label="Save reminder" onPress={saveReminder} />
+        <Button
+          testID="settings-reminder-save"
+          label={t('settings.reminderSave')}
+          onPress={saveReminder}
+        />
       </SectionCard>
 
       <SectionCard
         icon="notifications"
-        title="Notifications"
-        subtitle="Daily reminders and budget alerts."
+        title={t('settings.notificationsTitle')}
+        subtitle={t('settings.notificationsSubtitle')}
         right={
           <Switch
             testID="settings-notifications-switch"

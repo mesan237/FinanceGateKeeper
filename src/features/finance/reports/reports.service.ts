@@ -1,8 +1,11 @@
+import i18n from 'i18next';
+
 import {
   getExpensesByDateRange,
   getAllCategories,
 } from '@/features/finance/expenses/expenses.service';
 import { getIncomeByDateRange } from '@/features/finance/income/income.service';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
 import { getMonthlyBudget } from '@/features/finance/budget/budget.service';
 import { getOutstandingTotals } from '@/features/finance/debt/debt.service';
@@ -28,7 +31,7 @@ function sumAmounts(rows: { amount: number }[]): number {
 /** Builds a category-id → display-label resolver from the category list. */
 function categoryLabelResolver(categories: Category[]): (id: number) => string {
   const byId = new Map(categories.map((c) => [c.id, c.name]));
-  return (id) => byId.get(id) ?? 'Uncategorised';
+  return (id) => byId.get(id) ?? i18n.t('uncategorised', { ns: 'reports' });
 }
 
 /** Groups expenses by category id, summing amounts. */
@@ -170,7 +173,11 @@ export function generateSuggestions(
       type: 'increase' as const,
       categoryLabel: d.categoryLabel,
       pctChange: d.pctChange,
-      message: `${d.categoryLabel} spending increased ${Math.round(d.pctChange)}% vs last month — review it.`,
+      message: i18n.t('suggestions.increase', {
+        ns: 'reports',
+        category: displayCategoryName(d.categoryLabel),
+        percent: Math.round(d.pctChange),
+      }),
     }));
 }
 

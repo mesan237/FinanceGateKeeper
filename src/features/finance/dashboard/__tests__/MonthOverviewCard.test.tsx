@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 
 import { DANGER, DANGER_LIGHT, SUCCESS_LIGHT, SUCCESS_TEXT, WARNING_LIGHT } from '@/constants/colors';
 import { MonthOverviewCard } from '@/features/finance/dashboard/MonthOverviewCard';
+import i18n from '@/i18n';
 import type { BudgetSummary, Cashflow } from '@/features/finance/dashboard/dashboard.types';
 
 const FUNDED: BudgetSummary = {
@@ -190,5 +191,20 @@ describe('MonthOverviewCard', () => {
   it('is addressable by testID', () => {
     renderCard();
     expect(screen.getByTestId('month-overview-card')).toBeTruthy();
+  });
+
+  it('summarises the month in French, with a pluralised day count', async () => {
+    await i18n.changeLanguage('fr');
+    renderCard();
+    expect(screen.getByText('SEPTEMBRE')).toBeTruthy();
+    expect(screen.getByText('6 jours restants')).toBeTruthy();
+    expect(screen.getByText('Reste à dépenser')).toBeTruthy();
+    expect(screen.getByText('Entrées')).toBeTruthy();
+  });
+
+  it('says "1 jour restant" on the penultimate day', async () => {
+    await i18n.changeLanguage('fr');
+    renderCard({ daysRemaining: 1 });
+    expect(screen.getByText('1 jour restant')).toBeTruthy();
   });
 });

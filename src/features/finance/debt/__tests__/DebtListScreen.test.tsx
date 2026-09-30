@@ -14,6 +14,7 @@ jest.mock('@/features/finance/debt/debt.hooks', () => ({
 
 import { DebtListScreen } from '@/features/finance/debt/DebtListScreen';
 import { useDebts } from '@/features/finance/debt/debt.hooks';
+import i18n from '@/i18n';
 
 const mockedUseDebts = useDebts as jest.MockedFunction<typeof useDebts>;
 
@@ -106,5 +107,14 @@ describe('DebtListScreen', () => {
     mockedUseDebts.mockImplementation((direction) => ({ ...stateFor(direction), debts: [] }));
     render(<DebtListScreen />);
     expect(screen.getByText('No debts here yet.')).toBeTruthy();
+  });
+
+  it('renders the ledger in French', async () => {
+    await i18n.changeLanguage('fr');
+    render(<DebtListScreen />);
+    expect(screen.getByText('Dettes')).toBeTruthy();
+    expect(screen.getByText('Restant dû : 15 000 FCFA')).toBeTruthy();
+    expect(screen.getByText('Réglée')).toBeTruthy();
+    expect(screen.getByText('Échéance : 15 juin')).toBeTruthy();
   });
 });

@@ -18,7 +18,15 @@ in Central/West Africa. Currency: FCFA only.
 Three layers — never violate these:
 1. `app/` — Routing layer. Thin entry points only. No business logic, no API calls, no state.
 2. `features/finance/` — FeatureSlices. Self-contained by domain.
-3. Root folders (`components/`, `services/`, `hooks/`, `utils/`, `notifications/`, `constants/`, `types/`) — Shared infrastructure. Never imports from features or routes.
+3. Root folders (`components/`, `services/`, `hooks/`, `utils/`, `notifications/`, `constants/`, `types/`, `i18n/`) — Shared infrastructure. Never imports from features or routes.
+
+## Localization (VS-35)
+- Every user-facing string comes from the catalogue in `src/i18n/locales/{en,fr}/<namespace>.ts`, one namespace per slice. No hard-coded UI copy.
+- Components: `const { t } = useTranslation('<namespace>')`. Non-React code (services, triggers): `i18n.t(...)`.
+- Add each key to `en/` and `fr/` together. French is typed against English, so a missing key fails `tsc`.
+- Dates go through `formatDate`/`monthLabel` (French month names via `i18n/dateNames`). Show categories with `displayCategoryName`.
+- `i18n/` is the bottom layer: anything may import it, and it imports nothing from `src/`.
+- Jest pins English. A French test switches with `i18n.changeLanguage('fr')` inside `act` and switches back.
 
 **Golden Rule:** Domain-specific → `features/`. Reusable → root folders. Route → `app/`.
 

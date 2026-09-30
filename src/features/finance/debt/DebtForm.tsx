@@ -1,5 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -8,7 +10,7 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
-import { DEBT_DIRECTION_LABELS, DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
+import { DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
 
 import { createDebt } from './debt.service';
 
@@ -20,6 +22,7 @@ import { createDebt } from './debt.service';
 export function DebtForm() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const { t } = useTranslation(['debt', 'common']);
   const [person, setPerson] = useState('');
   const [amount, setAmount] = useState('');
   const [direction, setDirection] = useState<DebtDirection>('lent');
@@ -45,38 +48,37 @@ export function DebtForm() {
       });
       router.replace('/debt');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to create debt.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.createFailed', { ns: 'debt' }));
       setSaving(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title="New Debt" cancelLabel="Cancel" />
+      <ScreenHeader title={t('form.title')} cancelLabel={t('common:actions.cancel')} />
 
       <TextInput
         testID="debt-person"
-        placeholder="Person"
+        placeholder={t('form.person')}
         value={person}
         onChangeText={setPerson}
-        accessibilityLabel="Person"
+        accessibilityLabel={t('form.person')}
       />
       <TextInput
         testID="debt-amount"
-        placeholder="Amount (FCFA)"
+        placeholder={t('form.amountPlaceholder')}
         keyboardType="number-pad"
         value={amount}
         onChangeText={setAmount}
-        accessibilityLabel="Amount"
+        accessibilityLabel={t('form.amount')}
       />
 
       <View style={styles.directionRow}>
         {DEBT_DIRECTION_VALUES.map((value) => {
 
           const active = direction === value;
-          const label = active
-            ? `● ${DEBT_DIRECTION_LABELS[value]}`
-            : DEBT_DIRECTION_LABELS[value];
+          const name = t(`directions.${value}`);
+          const label = active ? `● ${name}` : name;
           return (
             <View key={value} style={styles.grow}>
               <Button
@@ -91,20 +93,20 @@ export function DebtForm() {
 
       <TextInput
         testID="debt-due"
-        placeholder="Due date (YYYY-MM-DD, optional)"
+        placeholder={t('form.duePlaceholder')}
         value={due}
         onChangeText={setDue}
-        accessibilityLabel="Due date"
+        accessibilityLabel={t('form.dueDate')}
       />
       <TextInput
         testID="debt-note"
-        placeholder="Note (optional)"
+        placeholder={t('form.notePlaceholder')}
         value={note}
         onChangeText={setNote}
-        accessibilityLabel="Note"
+        accessibilityLabel={t('form.note')}
       />
 
-      <Button label="Save" onPress={handleSave} disabled={!canSubmit} />
+      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>

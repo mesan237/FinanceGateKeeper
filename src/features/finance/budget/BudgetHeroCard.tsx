@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { AnimatedCounter } from '@/components/AnimatedCounter';
@@ -35,6 +36,7 @@ export interface BudgetHeroCardProps {
 export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation(['budget', 'common']);
   const status = healthDisplay(overview.health, c);
   const isOver = overview.remaining < 0;
 
@@ -42,7 +44,7 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
     <Card testID="budget-hero">
       <View style={styles.headerRow}>
         <Typography variant="label">
-          {isOver ? 'Over budget by' : 'Left to spend'}
+          {isOver ? t('hero.overBy') : t('hero.leftToSpend')}
         </Typography>
         <Pill label={status.label} tone={status.tone} testID="budget-health-chip" />
       </View>
@@ -64,30 +66,33 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
 
       <View style={styles.captionRow}>
         <Typography variant="muted">
-          {`${formatCurrency(overview.spent)} of ${formatCurrency(overview.available)} spent`}
+          {t('hero.spentOf', {
+            spent: formatCurrency(overview.spent),
+            available: formatCurrency(overview.available),
+          })}
         </Typography>
         <Typography variant="muted">{`${Math.round(overview.consumedPct)}%`}</Typography>
       </View>
 
       {overview.totalCarried !== 0 ? (
         <Typography variant="muted" style={styles.carried} testID="budget-carried">
-          {`Includes ${formatCurrency(overview.totalCarried)} carried over from last month.`}
+          {t('hero.carried', { amount: formatCurrency(overview.totalCarried) })}
         </Typography>
       ) : null}
 
       <View style={styles.stats}>
         <Stat
-          label="Days left"
+          label={t('hero.daysLeft')}
           value={String(overview.daysRemaining)}
           testID="budget-stat-days"
         />
         <Stat
-          label="Safe daily spend"
+          label={t('hero.safeDaily')}
           value={formatCurrency(Math.round(overview.safeDailySpend))}
           testID="budget-stat-daily"
         />
         <Stat
-          label="On this pace"
+          label={t('hero.onThisPace')}
           value={formatCurrency(Math.round(overview.projected))}
           emphasis={overview.projected > overview.available}
           testID="budget-stat-projected"

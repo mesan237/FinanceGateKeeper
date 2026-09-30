@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { AmountInput } from '@/components/AmountInput';
@@ -41,12 +42,16 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const planner = useBudgetPlanner(monthISO);
+  const { t } = useTranslation(['budget', 'common']);
 
   if (planner.loading) {
     return (
       <View style={styles.container}>
-        <ScreenHeader title={`Plan ${monthLabel(monthISO)}`} cancelLabel="Cancel" />
-        <LoadingState label="Loading your plan…" testID="planner-loading" />
+        <ScreenHeader
+          title={t('planner.title', { month: monthLabel(monthISO) })}
+          cancelLabel={t('common:actions.cancel')}
+        />
+        <LoadingState label={t('planner.loading')} testID="planner-loading" />
       </View>
     );
   }
@@ -57,7 +62,10 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
 
   return (
     <View style={styles.container}>
-      <ScreenHeader title={`Plan ${monthLabel(monthISO)}`} cancelLabel="Cancel" />
+      <ScreenHeader
+        title={t('planner.title', { month: monthLabel(monthISO) })}
+        cancelLabel={t('common:actions.cancel')}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -65,37 +73,37 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
         keyboardShouldPersistTaps="handled"
       >
         <Card>
-          <Typography variant="label">Monthly budget</Typography>
+          <Typography variant="label">{t('planner.monthlyBudget')}</Typography>
           <View style={styles.totalField}>
             <AmountInput
               value={planner.totalInput}
               onChangeText={planner.setTotalInput}
-              accessibilityLabel="Monthly budget in FCFA"
+              accessibilityLabel={t('planner.monthlyBudgetA11y')}
               testID="planner-total"
             />
           </View>
           <Typography variant="muted" testID="planner-total-hint">
             {planner.totalInput
-              ? 'Set by you for this month.'
-              : `Following your income split — ${formatCurrency(planner.derivedTotal)}.`}
+              ? t('planner.setByYou')
+              : t('planner.followingIncome', { amount: formatCurrency(planner.derivedTotal) })}
           </Typography>
 
           <View style={styles.chips}>
             {planner.totalInput ? (
               <SuggestionChip
-                label="Use income split"
+                label={t('planner.useIncome')}
                 testID="planner-use-derived"
                 onPress={planner.useDerivedTotal}
               />
             ) : null}
             <SuggestionChip
-              label="Copy last month"
+              label={t('planner.copyLastMonth')}
               testID="planner-copy-last-month"
               onPress={() => void planner.copyFromLastMonth()}
             />
             {planner.suggestions.size > 0 ? (
               <SuggestionChip
-                label="Use my averages"
+                label={t('planner.useAverages')}
                 testID="planner-apply-suggestions"
                 onPress={planner.applySuggestions}
               />
@@ -104,10 +112,9 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
         </Card>
 
         <Card>
-          <Typography variant="label">Categories</Typography>
+          <Typography variant="label">{t('planner.categories')}</Typography>
           <Typography variant="muted" style={styles.sectionHint}>
-            Give each category an amount. Tap “+ rest” to drop whatever is left
-            into it.
+            {t('planner.categoriesHint')}
           </Typography>
 
           {planner.categories.map((category, index) => (
@@ -137,7 +144,7 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
         <View style={styles.footerRow}>
           <View style={styles.footerText}>
             <Typography variant="label">
-              {planner.isOverAllocated ? 'Over-allocated' : 'Unassigned'}
+              {planner.isOverAllocated ? t('planner.overAllocated') : t('planner.unassigned')}
             </Typography>
             <Typography
               testID="planner-unassigned"
@@ -151,20 +158,22 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
             </Typography>
           </View>
           <Pill
-            label={`${formatCurrency(planner.assigned)} of ${formatCurrency(planner.totalBudget)}`}
+            label={t('planner.assignedOf', {
+              assigned: formatCurrency(planner.assigned),
+              total: formatCurrency(planner.totalBudget),
+            })}
             tone={planner.isOverAllocated ? 'danger' : 'neutral'}
           />
         </View>
 
         {planner.isOverAllocated ? (
           <Typography variant="muted" style={styles.warning} testID="planner-over-warning">
-            Your categories add up to more than your monthly budget. You can still
-            save — just know the plan does not fit.
+            {t('planner.overWarning')}
           </Typography>
         ) : null}
 
         <Button
-          label="Save plan"
+          label={t('planner.save')}
           onPress={() => void handleSave()}
           loading={planner.saving}
           testID="planner-save"

@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Typography } from '@/components/Typography';
@@ -14,13 +15,14 @@ import { DebtDetail } from './DebtDetail';
  */
 export function DebtDetailRoute() {
   const params = useLocalSearchParams<{ id?: string }>();
+  const { t } = useTranslation('debt');
   const id = Number(params.id);
   const valid = Number.isInteger(id) && id > 0;
 
   if (!valid) {
     return (
       <View style={styles.container}>
-        <Typography variant="muted">Invalid debt id.</Typography>
+        <Typography variant="muted">{t('detail.invalidId')}</Typography>
       </View>
     );
   }

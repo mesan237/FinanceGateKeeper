@@ -1,5 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
@@ -10,18 +12,12 @@ import { Typography } from '@/components/Typography';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 
-import { ACCOUNT_PURPOSE_LABEL, ACCOUNT_TYPE_ICON, ACCOUNT_TYPE_LABEL } from './accountIcons';
+import { ACCOUNT_TYPE_ICON, accountPurposeLabel, accountTypeLabel } from './accountIcons';
 import { createAccount, getAccountById, updateAccount } from './accounts.service';
 import type { AccountPurpose, AccountType } from './accounts.types';
 
-const TYPE_OPTIONS = (['cash', 'mobile_money', 'bank', 'card'] as AccountType[]).map((key) => ({
-  key,
-  label: ACCOUNT_TYPE_LABEL[key],
-  icon: ACCOUNT_TYPE_ICON[key],
-}));
-const PURPOSE_OPTIONS = (
-  ['spending', 'saving', 'emergency', 'general'] as AccountPurpose[]
-).map((key) => ({ key, label: ACCOUNT_PURPOSE_LABEL[key] }));
+const TYPES: AccountType[] = ['cash', 'mobile_money', 'bank', 'card'];
+const PURPOSES: AccountPurpose[] = ['spending', 'saving', 'emergency', 'general'];
 
 /**
  * Create/edit form for a wallet. With no `?id=` it creates; with a valid id it
@@ -31,6 +27,14 @@ const PURPOSE_OPTIONS = (
 export function AccountForm() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const { t } = useTranslation(['accounts', 'common']);
+  // Built per render so the labels follow the active language.
+  const typeOptions = TYPES.map((key) => ({
+    key,
+    label: accountTypeLabel(key),
+    icon: ACCOUNT_TYPE_ICON[key],
+  }));
+  const purposeOptions = PURPOSES.map((key) => ({ key, label: accountPurposeLabel(key) }));
   const params = useLocalSearchParams<{ id?: string }>();
   const editId = Number.isInteger(Number(params.id)) && Number(params.id) > 0 ? Number(params.id) : null;
 
@@ -47,7 +51,7 @@ export function AccountForm() {
     void (async () => {
       const account = await getAccountById(editId);
       if (!account) {
-        setError('Account not found.');
+        setError(t('form.notFound'));
         return;
       }
       setName(account.name);
@@ -79,7 +83,7 @@ export function AccountForm() {
         router.replace('/accounts');
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save account.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'accounts' }));
       setSaving(false);
     }
   };
@@ -89,46 +93,46 @@ export function AccountForm() {
       {/* Create is a modal entry form ("Cancel"); edit is a drill-down from
           AccountDetail (back chevron) — VS-26 M3 header rule. */}
       <ScreenHeader
-        title={editId !== null ? 'Edit Account' : 'New Account'}
-        cancelLabel={editId !== null ? undefined : 'Cancel'}
+        title={editId !== null ? t('form.editTitle') : t('form.newTitle')}
+        cancelLabel={editId !== null ? undefined : t('common:actions.cancel')}
       />
 
       <TextInput
         testID="account-name"
-        placeholder="Account name"
+        placeholder={t('form.name')}
         value={name}
         onChangeText={setName}
-        accessibilityLabel="Account name"
+        accessibilityLabel={t('form.name')}
       />
 
-      <Typography variant="label">Type</Typography>
+      <Typography variant="label">{t('form.type')}</Typography>
       <Select
         testID="account-type"
-        title="Type"
-        options={TYPE_OPTIONS}
+        title={t('form.type')}
+        options={typeOptions}
         value={type}
         onChange={(key) => setType(key as AccountType)}
       />
 
-      <Typography variant="label">Purpose</Typography>
+      <Typography variant="label">{t('form.purpose')}</Typography>
       <Select
         testID="account-purpose"
-        title="Purpose"
-        options={PURPOSE_OPTIONS}
+        title={t('form.purpose')}
+        options={purposeOptions}
         value={purpose}
         onChange={(key) => setPurpose(key as AccountPurpose)}
       />
 
-      <Typography variant="label">Current balance</Typography>
+      <Typography variant="label">{t('form.currentBalance')}</Typography>
       <TextInput
         testID="account-balance"
         placeholder="0"
         keyboardType="number-pad"
         value={balance}
         onChangeText={setBalance}
-        accessibilityLabel="Opening balance"
+        accessibilityLabel={t('form.openingBalance')}
       />
-      <Typography variant="muted">Leave blank to start from 0.</Typography>
+      <Typography variant="muted">{t('form.balanceHint')}</Typography>
 
       <Pressable
         accessibilityRole="switch"
@@ -137,10 +141,12 @@ export function AccountForm() {
         style={styles.toggle}
         onPress={() => setIsDefault((v) => !v)}
       >
-        <Typography>{isDefault ? '☑' : '☐'} Set as default account</Typography>
+        <Typography>
+          {isDefault ? '☑' : '☐'} {t('form.setDefault')}
+        </Typography>
       </Pressable>
 
-      <Button label="Save" onPress={handleSave} disabled={!canSubmit} />
+      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
 
       {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>

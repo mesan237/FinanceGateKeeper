@@ -2,6 +2,7 @@ import DateTimePicker, {
   type DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -34,10 +35,11 @@ function pad2(n: number): string {
 export function TimeField({ value, onChange, accessibilityLabel, testID }: TimeFieldProps) {
   const [open, setOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation();
   const c = useTheme();
 
   const isHHmm = /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-  const label = isHHmm ? value : 'Set time';
+  const label = isHHmm ? value : t('fields.setTime');
 
   const now = new Date();
   const [hours, minutes] = isHHmm

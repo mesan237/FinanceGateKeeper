@@ -27,6 +27,7 @@ import { migration as addOnboardingComplete } from '@/services/migrations/025_ad
 import { migration as createCategoryBudgetsTable } from '@/services/migrations/026_create_category_budgets_table';
 import { migration as addAllocationTotalBudget } from '@/services/migrations/027_add_allocation_total_budget';
 import { migration as syncCategoryBudgets } from '@/services/migrations/028_sync_category_budgets';
+import { migration as addUserLanguage } from '@/services/migrations/029_add_user_language';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -57,4 +58,5 @@ export const migrations: ReadonlyArray<Migration> = [
   createCategoryBudgetsTable,
   addAllocationTotalBudget,
   syncCategoryBudgets,
+  addUserLanguage,
 ];

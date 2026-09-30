@@ -1,5 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Pressable,
@@ -33,6 +34,7 @@ export function DashboardScreen() {
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('dashboard');
 
   // The dashboard opens the same add-transaction sheet the Transactions FAB
   // uses (VS-26) rather than pushing standalone log routes.
@@ -53,7 +55,7 @@ export function DashboardScreen() {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={c.PRIMARY_GREEN} />
         <Typography variant="muted" style={styles.loadingText}>
-          Loading…
+          {t('loading')}
         </Typography>
       </View>
     );
@@ -80,7 +82,7 @@ export function DashboardScreen() {
           <Card style={styles.errorCard}>
             <Typography style={styles.errorText}>{error}</Typography>
             <Pressable onPress={() => void refresh()} style={styles.retryButton}>
-              <Typography style={styles.retryText}>Retry</Typography>
+              <Typography style={styles.retryText}>{t('retry')}</Typography>
             </Pressable>
           </Card>
         ) : null}

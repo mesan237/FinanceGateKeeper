@@ -17,6 +17,7 @@ import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { applyLanguagePreference } from '@/i18n';
 import { ToastProvider } from '@/components/Toast';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
@@ -40,6 +41,13 @@ export default function RootLayout() {
   // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
   // feature stays presentational (see ISSUE-023).
   const { settings, loading: settingsLoading, completeOnboarding } = useAppSettings();
+
+  // i18n starts in the device language; once the saved Settings override has
+  // loaded, apply it. Later changes are applied by the Settings screen itself.
+  const savedLanguage = settings?.language;
+  useEffect(() => {
+    if (savedLanguage !== undefined) void applyLanguagePreference(savedLanguage);
+  }, [savedLanguage]);
 
   // Best-effort cloud backup: pull/push on app open and foreground when signed
   // in. No-op when signed out or offline; never blocks render.

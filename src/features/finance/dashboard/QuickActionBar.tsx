@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -78,19 +79,20 @@ export function QuickActionBar({
 }: QuickActionBarProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('dashboard');
   const showZeroDay = !zeroDay.hasExpenses && !zeroDay.zeroDayConfirmed;
 
   return (
     <View style={styles.section}>
-      <Typography variant="label">Quick log</Typography>
+      <Typography variant="label">{t('quickLog.title')}</Typography>
 
       <View style={styles.tiles}>
         <LogTile
           testID="quick-log-expense"
           icon="expense"
-          title="Expense"
-          subtitle="Money out"
-          accessibilityLabel="Log an expense"
+          title={t('quickLog.expense')}
+          subtitle={t('quickLog.expenseSubtitle')}
+          accessibilityLabel={t('quickLog.expenseA11y')}
           onPress={onLogExpense}
           tint={c.DANGER_LIGHT}
           accent={c.DANGER_TEXT}
@@ -98,9 +100,9 @@ export function QuickActionBar({
         <LogTile
           testID="quick-log-income"
           icon="income"
-          title="Income"
-          subtitle="Money in"
-          accessibilityLabel="Log income"
+          title={t('quickLog.income')}
+          subtitle={t('quickLog.incomeSubtitle')}
+          accessibilityLabel={t('quickLog.incomeA11y')}
           onPress={onLogIncome}
           tint={c.PRIMARY_LIGHT}
           accent={c.PRIMARY_GREEN}
@@ -111,12 +113,12 @@ export function QuickActionBar({
         <Pressable
           testID="quick-confirm-zero-day"
           accessibilityRole="button"
-          accessibilityLabel="Confirm I spent nothing today"
+          accessibilityLabel={t('quickLog.zeroDayA11y')}
           onPress={onConfirmZeroDay}
           style={({ pressed }) => [styles.zeroDay, pressed && styles.pressed]}
         >
           <Icon name="zeroDay" size={ICON_SIZE.md} color={c.TEXT_MUTED} />
-          <Typography style={styles.zeroDayLabel}>I spent nothing today</Typography>
+          <Typography style={styles.zeroDayLabel}>{t('quickLog.zeroDay')}</Typography>
         </Pressable>
       )}
     </View>

@@ -1,12 +1,11 @@
+import i18n from 'i18next';
+
+import { labelForSource } from '@/constants/incomeSources';
+import { displayCategoryName } from '@/i18n/categoryNames';
+import type { accounts as accountsCopy } from '@/i18n/locales/en/accounts';
 import { query } from '@/services/database';
 
 import type { AccountHistoryEntry, AccountStats } from './accounts.types';
-
-const SOURCE_LABELS: Record<string, string> = {
-  salary: 'Salary',
-  freelance: 'Freelance',
-  ecommerce: 'E-commerce',
-};
 
 /**
  * Computes a wallet's live balance from its transaction history — never stored.
@@ -114,19 +113,24 @@ export async function getAccountHistory(id: number): Promise<AccountHistoryEntry
   }));
 }
 
+/** A history-row label in the active UI language; `account` names a transfer's counterpart. */
+function history(key: keyof (typeof accountsCopy)['history'], account = ''): string {
+  return i18n.t(`history.${key}`, { ns: 'accounts', account });
+}
+
 function labelFor(row: HistoryRow): string {
   switch (row.kind) {
     case 'income':
-      return SOURCE_LABELS[row.label ?? ''] ?? 'Income';
+      return row.label ? labelForSource(row.label) : history('income');
     case 'expense':
-      return row.label ?? 'Expense';
+      return row.label ? displayCategoryName(row.label) : history('expense');
     case 'transfer_out':
-      return `Transfer to ${row.label}`;
+      return history('transferTo', row.label ?? '');
     case 'transfer_in':
-      return `Transfer from ${row.label}`;
+      return history('transferFrom', row.label ?? '');
     case 'fund_contribution':
-      return row.label ?? 'Fund deposit';
+      return row.label ?? history('fundDeposit');
     case 'project_contribution':
-      return 'Project contribution';
+      return history('projectContribution');
   }
 }

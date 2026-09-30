@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import { currentMonthISO } from '@/utils/formatDate';
@@ -21,7 +22,7 @@ export function useDashboard() {
       setState(snapshot);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load dashboard.');
+      setError(e instanceof Error ? e.message : i18n.t('errors.loadFailed', { ns: 'dashboard' }));
       setState(null);
     } finally {
       setLoading(false);

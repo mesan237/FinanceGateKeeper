@@ -9,6 +9,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import type { ExpenseEntry, IncomeEntry, TransactionEntry } from '@/types/transactions';
+import { displayCategoryName } from '@/i18n/categoryNames';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 const ICON_BOX = 36;
@@ -27,7 +28,8 @@ interface RowIconProps {
  */
 function RowIcon({ entry }: RowIconProps) {
   const styles = useThemedStyles(makeStyles);
-  const label = entry.type === 'expense' ? entry.categoryLabel : entry.sourceLabel;
+  // Keyed on stored values, so the tint does not change with the UI language.
+  const label = entry.type === 'expense' ? entry.categoryLabel : entry.source;
   const avatar = getCategoryAvatar(label);
   const emoji =
     entry.type === 'income'
@@ -84,7 +86,9 @@ export function TransactionRow({ item, onPressExpense, onPressIncome }: Transact
 
   const isIncome = item.type === 'income';
   const label =
-    item.type === 'expense' ? (item.subcategoryLabel ?? item.categoryLabel) : item.sourceLabel;
+    item.type === 'expense'
+      ? displayCategoryName(item.subcategoryLabel ?? item.categoryLabel)
+      : item.sourceLabel;
 
   const content = (
     <>

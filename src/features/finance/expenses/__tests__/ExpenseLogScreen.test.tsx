@@ -72,17 +72,37 @@ describe('ExpenseLogScreen', () => {
     await waitFor(() => expect(mockedGetAll).toHaveBeenCalled());
   });
 
-  it('keeps save disabled until an amount and a category are set', async () => {
+  it('flags each missing field when save is pressed on an empty form', async () => {
     render(<ExpenseLogScreen />);
     const save = screen.getByRole('button', { name: 'Save' });
+    expect(save).toBeEnabled();
 
-    expect(save).toBeDisabled();
+    fireEvent.press(save);
 
+    expect(await screen.findByText('Enter an amount greater than 0.')).toBeTruthy();
+    expect(screen.getByText('Pick a category.')).toBeTruthy();
+    expect(mockedCreate).not.toHaveBeenCalled();
+    expect(mockCheck).not.toHaveBeenCalled();
+  });
+
+  it('clears a field error as soon as that field is filled', async () => {
+    render(<ExpenseLogScreen />);
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
-    expect(save).toBeDisabled(); // amount set, but no category yet
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('Pick a category.')).toBeTruthy();
+    expect(screen.queryByText('Enter an amount greater than 0.')).toBeNull();
 
     await selectFoodRestaurant();
-    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    expect(screen.queryByText('Pick a category.')).toBeNull();
+  });
+
+  it('lets the note field close the keyboard from its return key', async () => {
+    render(<ExpenseLogScreen />);
+    const note = screen.getByLabelText('Note');
+    expect(note.props.returnKeyType).toBe('done');
+    expect(note.props.submitBehavior).toBe('blurAndSubmit');
+    await waitFor(() => expect(mockedGetAll).toHaveBeenCalled());
   });
 
   it('calls createExpense once with the entered values on save', async () => {

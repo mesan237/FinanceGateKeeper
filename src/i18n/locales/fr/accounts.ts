@@ -1,0 +1,82 @@
+import type { accounts as en } from '@/i18n/locales/en/accounts';
+import type { Translation } from '@/i18n/translation.types';
+
+/** French copy for the accounts slice. */
+export const accounts: Translation<typeof en> = {
+  types: {
+    cash: 'Espèces',
+    mobile_money: 'Mobile Money',
+    bank: 'Banque',
+    card: 'Carte',
+  },
+  purposes: {
+    spending: 'Dépenses',
+    saving: 'Épargne',
+    emergency: 'Urgence',
+    general: 'Général',
+  },
+  overview: {
+    title: 'Comptes',
+    empty: 'Aucun compte pour le moment.',
+    add: 'Ajouter un compte',
+    statIn: '↑ {{percent}} % entrées',
+    statOut: '↓ {{percent}} % sorties',
+  },
+  detail: {
+    fallbackTitle: 'Compte',
+    balance: 'Solde',
+    empty: 'Aucune transaction pour le moment.',
+    invalidId: 'Identifiant de compte invalide.',
+  },
+  history: {
+    income: 'Revenu',
+    expense: 'Dépense',
+    transferTo: 'Virement vers {{account}}',
+    transferFrom: 'Virement depuis {{account}}',
+    fundDeposit: 'Dépôt sur un fonds',
+    projectContribution: 'Contribution à un projet',
+  },
+  form: {
+    editTitle: 'Modifier le compte',
+    newTitle: 'Nouveau compte',
+    name: 'Nom du compte',
+    type: 'Type',
+    purpose: 'Usage',
+    currentBalance: 'Solde actuel',
+    openingBalance: "Solde d'ouverture",
+    balanceHint: 'Laissez vide pour partir de 0.',
+    setDefault: 'Définir comme compte par défaut',
+    notFound: 'Compte introuvable.',
+  },
+  picker: {
+    title: 'compte',
+    placeholder: 'Choisir un compte',
+    defaultBadge: '✓ Par défaut',
+  },
+  transfer: {
+    title: 'Nouveau virement',
+    from: 'De',
+    to: 'Vers',
+    sameAccount: 'Impossible de virer vers le même compte.',
+    amountPlaceholder: 'Montant (FCFA)',
+    amount: 'Montant',
+    datePlaceholder: 'Date (AAAA-MM-JJ)',
+    date: 'Date',
+    notePlaceholder: 'Note (facultatif)',
+    note: 'Note',
+    logged: 'Virement enregistré',
+  },
+  errors: {
+    saveFailed: "Impossible d'enregistrer le compte.",
+    loadAccounts: 'Impossible de charger les comptes.',
+    loadAccount: 'Impossible de charger le compte.',
+    loadStats: 'Impossible de charger les statistiques.',
+    logTransfer: "Impossible d'enregistrer le virement.",
+    nameRequired: 'Le nom du compte est obligatoire.',
+    openingBalance: "Le solde d'ouverture doit être un entier positif ou nul.",
+    createFailed: 'Impossible de créer le compte.',
+    notExist: "Le compte {{id}} n'existe pas.",
+    sameAccount: 'Impossible de virer vers le même compte.',
+    transferAmount: 'Le montant du virement doit être un entier positif.',
+  },
+};

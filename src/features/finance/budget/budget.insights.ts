@@ -1,3 +1,5 @@
+import i18n from 'i18next';
+
 import {
   getAllCategories,
   getExpensesByDateRange,
@@ -129,7 +131,7 @@ export async function getMonthOverMonth(monthISO: string): Promise<CategoryTrend
       const before = previous.get(categoryId) ?? 0;
       return {
         categoryId,
-        categoryName: nameOf.get(categoryId) ?? 'Uncategorised',
+        categoryName: nameOf.get(categoryId) ?? i18n.t('uncategorised', { ns: 'budget' }),
         current: now,
         previous: before,
         changePct: before > 0 ? ((now - before) / before) * 100 : null,

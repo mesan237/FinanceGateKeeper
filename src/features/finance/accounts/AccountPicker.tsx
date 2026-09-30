@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Select, type SelectOption } from '@/components/Select';
@@ -32,12 +33,13 @@ export function AccountPicker({
   testID = 'account-picker',
 }: AccountPickerProps) {
   const { accounts } = useAccounts();
+  const { t } = useTranslation('accounts');
 
   const options: SelectOption[] = accounts.map((account) => ({
     key: String(account.id),
     label: account.name,
     icon: ACCOUNT_TYPE_ICON[account.type],
-    badge: account.isDefault ? '✓ Default' : undefined,
+    badge: account.isDefault ? t('picker.defaultBadge') : undefined,
   }));
 
   return (
@@ -50,8 +52,8 @@ export function AccountPicker({
 
       <Select
         testID={testID}
-        title="account"
-        placeholder="Select account"
+        title={t('picker.title')}
+        placeholder={t('picker.placeholder')}
         options={options}
         value={value === null ? null : String(value)}
         onChange={(key) => onChange(Number(key))}
