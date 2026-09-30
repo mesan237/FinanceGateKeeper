@@ -34,5 +34,7 @@ export const dataTransfer = {
     zero_days: 'No-spend days',
     debts: 'Debts',
     transfers: 'Transfers',
+    planned_lists: "Planned lists",
+    planned_items: "Planned items",
   },
 };

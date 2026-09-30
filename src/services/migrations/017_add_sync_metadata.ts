@@ -23,15 +23,23 @@ export const SYNCED_TABLES = [
   'zero_days',
   'debts',
   'transfers',
+  'planned_lists',
+  'planned_items',
 ] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
 
-// `accounts`, `transfers`, and `category_budgets` are created by later
-// migrations (018/020/026), so this migration cannot provision their sync
-// columns — migrations 021 and 028 do that. This migration only touches the
-// tables that already exist when it runs.
-const PROVISIONED_LATER: ReadonlyArray<string> = ['accounts', 'transfers', 'category_budgets'];
+// `accounts`, `transfers`, `category_budgets` and the planned-purchases tables
+// are created by later migrations (018/020/026/030), so this migration cannot
+// provision their sync columns — migrations 021, 028 and 031 do that. This
+// migration only touches the tables that already exist when it runs.
+const PROVISIONED_LATER: ReadonlyArray<string> = [
+  'accounts',
+  'transfers',
+  'category_budgets',
+  'planned_lists',
+  'planned_items',
+];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
   (t) => !PROVISIONED_LATER.includes(t),
@@ -89,6 +97,19 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'category_id',
     'allocated_amount',
     'rollover_enabled',
+    'created_at',
+  ],
+  planned_lists: ['name', 'created_at'],
+  // `expense_id` is a data column on purpose: deleting the linked expense sets it
+  // to NULL (an FK action, which fires this trigger), so the reopened item syncs.
+  planned_items: [
+    'list_id',
+    'name',
+    'estimated_amount',
+    'category_id',
+    'account_id',
+    'planned_date',
+    'expense_id',
     'created_at',
   ],
   fund_transactions: ['fund_id', 'amount', 'direction', 'reason', 'date', 'created_at'],

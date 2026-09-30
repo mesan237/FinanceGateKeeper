@@ -38,5 +38,7 @@ export const dataTransfer: Translation<typeof en> = {
     zero_days: 'Jours sans dépense',
     debts: 'Dettes',
     transfers: 'Virements',
+    planned_lists: "Listes d’achats",
+    planned_items: "Articles prévus",
   },
 };

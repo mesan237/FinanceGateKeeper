@@ -231,6 +231,89 @@ describe('pullChanges', () => {
   });
 });
 
+describe('planned purchases', () => {
+  /** Seeds a list and a bought item in the cloud; `withExpense: false` leaves the expense out. */
+  function seedPlannedCloud(withExpense = true): void {
+    cloud.__seed('planned_lists', [
+      {
+        uuid: 'list-A',
+        name: 'Saturday market',
+        created_at: '2026-10-01T00:00:00.000Z',
+        updated_at: '2026-10-01T00:00:00.000Z',
+      },
+    ]);
+    cloud.__seed('expenses', withExpense ? [
+      {
+        uuid: 'exp-A',
+        amount: 4800,
+        category_id: 'seed-category-1',
+        subcategory_id: null,
+        note: 'Rice',
+        date: '2026-10-03',
+        is_recurring: 0,
+        account_id: null,
+        created_at: '2026-10-03T00:00:00.000Z',
+        updated_at: '2026-10-03T00:00:00.000Z',
+      },
+    ] : []);
+    cloud.__seed('planned_items', [
+      {
+        uuid: 'item-A',
+        list_id: 'list-A',
+        name: 'Rice',
+        estimated_amount: 5000,
+        category_id: 'seed-category-1',
+        account_id: null,
+        planned_date: null,
+        expense_id: 'exp-A',
+        created_at: '2026-10-01T00:00:00.000Z',
+        updated_at: '2026-10-03T00:00:00.000Z',
+      },
+    ]);
+  }
+
+  it('pulls an item with its list, category and expense links resolved to local ids', async () => {
+    seedPlannedCloud();
+
+    await pullChanges();
+
+    const item = get<{ list_id: number; category_id: number; expense_id: number }>(
+      `SELECT list_id, category_id, expense_id FROM planned_items WHERE uuid = 'item-A'`,
+    );
+    expect(item.list_id).toBe(get<{ id: number }>(`SELECT id FROM planned_lists WHERE uuid = 'list-A'`).id);
+    expect(item.category_id).toBe(get<{ id: number }>(`SELECT id FROM categories WHERE uuid = 'seed-category-1'`).id);
+    expect(item.expense_id).toBe(get<{ id: number }>(`SELECT id FROM expenses WHERE uuid = 'exp-A'`).id);
+  });
+
+  it('pushes an item with its links as uuids, never local ids', async () => {
+    run(`INSERT INTO planned_lists (name, created_at) VALUES ('Market', '2026-10-01T00:00:00.000Z')`);
+    run(
+      `INSERT INTO planned_items (list_id, name, estimated_amount, category_id, created_at)
+       VALUES (1, 'Rice', 5000, 1, '2026-10-01T00:00:00.000Z')`,
+    );
+
+    await pushChanges();
+
+    const [list] = cloud.__getTable('planned_lists');
+    const [item] = cloud.__getTable('planned_items');
+    expect(item.list_id).toBe(list.uuid);
+    expect(item.category_id).toBe('seed-category-1');
+    expect(item.expense_id).toBeNull();
+    expect(item).not.toHaveProperty('id');
+  });
+
+  it('keeps an item planned when its expense never reached this device', async () => {
+    seedPlannedCloud(false);
+
+    await pullChanges();
+
+    const item = get<{ expense_id: number | null }>(
+      `SELECT expense_id FROM planned_items WHERE uuid = 'item-A'`,
+    );
+    expect(item.expense_id).toBeNull();
+  });
+});
+
 describe('syncNow', () => {
   it('reports not-signed-in and writes nothing when there is no session', async () => {
     cloud.__setSession(null);

@@ -29,6 +29,7 @@ import { migration as addAllocationTotalBudget } from '@/services/migrations/027
 import { migration as syncCategoryBudgets } from '@/services/migrations/028_sync_category_budgets';
 import { migration as addUserLanguage } from '@/services/migrations/029_add_user_language';
 import { migration as createPlannedTables } from '@/services/migrations/030_create_planned_tables';
+import { migration as syncPlannedTables } from '@/services/migrations/031_sync_planned_tables';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -61,4 +62,5 @@ export const migrations: ReadonlyArray<Migration> = [
   syncCategoryBudgets,
   addUserLanguage,
   createPlannedTables,
+  syncPlannedTables,
 ];
