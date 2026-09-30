@@ -42,6 +42,7 @@ import {
   Trash2,
   UserRound,
   Wallet,
+  X,
   type LucideIcon,
 } from 'lucide-react-native';
 
@@ -54,6 +55,7 @@ import {
  */
 export const ICONS = {
   back: ChevronLeft,
+  close: X,
   forward: ChevronRight,
   add: Plus,
   check: Check,

@@ -12,6 +12,7 @@ export const common: Translation<typeof en> = {
     confirm: 'Confirmer',
     close: 'Fermer',
     back: 'Retour',
+    clear: 'Effacer',
     retry: 'Réessayer',
   },
   fields: {
