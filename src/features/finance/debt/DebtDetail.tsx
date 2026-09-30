@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -29,7 +28,6 @@ export interface DebtDetailProps {
 export function DebtDetail({ debtId }: DebtDetailProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation(['debt', 'common']);
   const { debt, loading, error, settle, remove } = useDebtDetail(debtId);
 
@@ -82,7 +80,7 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={styles.footer}>
         {debt.status === 'pending' ? (
           <Button label={t('detail.settle')} onPress={() => void settle()} />
         ) : null}
@@ -106,6 +104,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   footer: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 16,
     gap: 12,
   },
   rowHeader: {

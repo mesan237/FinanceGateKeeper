@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -28,7 +27,6 @@ import type { Debt } from './debt.types';
 export function DebtListScreen() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const [direction, setDirection] = useState<DebtDirection>('lent');
   const { t } = useTranslation('debt');
   const { debts, totals, loading, error } = useDebts(direction);
@@ -67,7 +65,7 @@ export function DebtListScreen() {
         {error ? <Typography style={styles.error}>{error}</Typography> : null}
       </View>
 
-      <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={styles.footer}>
         <Button label={t('list.add')} onPress={() => router.push('/debt/create')} />
       </View>
     </View>
@@ -113,6 +111,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   footer: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 16,
   },
   grow: {
     flex: 1,

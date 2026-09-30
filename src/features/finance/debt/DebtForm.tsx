@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
@@ -30,7 +29,6 @@ import { createDebt } from './debt.service';
 export function DebtForm() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { t } = useTranslation(['debt', 'common']);
   const [person, setPerson] = useState('');
   const [amount, setAmount] = useState('');
@@ -125,7 +123,7 @@ export function DebtForm() {
         </View>
       </KeyboardAwareForm>
 
-      <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+      <View style={styles.footer}>
         <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
       </View>
     </View>
@@ -146,6 +144,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   footer: {
     paddingHorizontal: 16,
     paddingTop: 12,
+    paddingBottom: 16,
   },
   error: {
     color: c.DANGER,

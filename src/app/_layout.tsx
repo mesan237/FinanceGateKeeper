@@ -10,7 +10,6 @@ import {
   ThemeProvider as NavThemeProvider,
 } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useMemo } from 'react';
@@ -19,6 +18,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyLanguagePreference } from '@/i18n';
 import { ToastProvider } from '@/components/Toast';
+import { PushedScreensStack } from '@/components/PushedScreensStack';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
@@ -95,7 +95,7 @@ export default function RootLayout() {
                     >
                       <ThemedShell>
                         <ToastProvider>
-                          <Stack screenOptions={{ headerShown: false }} />
+                          <PushedScreensStack />
                         </ToastProvider>
                       </ThemedShell>
                     </ZeroDayGate>
