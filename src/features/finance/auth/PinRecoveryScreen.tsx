@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { resetLocalData } from '@/services/database';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { useThemedStyles, type ThemeColors } from '@/theme';
@@ -93,61 +94,63 @@ export function PinRecoveryScreen({ onClose }: PinRecoveryScreenProps) {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Typography variant="display" style={styles.center}>
-          {t('recovery.title')}
-        </Typography>
-        <Typography variant="muted" style={styles.center}>
-          {cloud.signedIn
-            ? t('recovery.subtitleSignedIn', {
-                email: cloud.userEmail ?? t('recovery.yourCloudAccount'),
-              })
-            : t('recovery.subtitleSignedOut')}
-        </Typography>
-      </View>
-
-      <View style={styles.body}>
-        {!cloud.signedIn ? (
-          <TextInput
-            testID="recovery-email"
-            value={email}
-            onChangeText={setEmail}
-            placeholder={t('cloud.email')}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            accessibilityLabel={t('cloud.emailLabel')}
-          />
-        ) : null}
-        <TextInput
-          testID="recovery-password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder={t('cloud.password')}
-          secureTextEntry
-          accessibilityLabel={t('cloud.passwordLabel')}
-        />
-        {error ? (
-          <Typography testID="recovery-error" style={styles.error}>
-            {error}
+    <KeyboardAvoider>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Typography variant="display" style={styles.center}>
+            {t('recovery.title')}
           </Typography>
-        ) : null}
-        <Button
-          testID="recovery-submit"
-          label={cloud.signedIn ? t('recovery.submitSignedIn') : t('recovery.submitSignedOut')}
-          loading={busy}
-          onPress={() => void verifyAndReset()}
-        />
-        <Button
-          testID="recovery-wipe-start"
-          label={t('recovery.wipeStart')}
-          variant="ghost"
-          compact
-          onPress={() => setPhase('wipe')}
-        />
-        <Button testID="recovery-cancel" label={t('recovery.backToUnlock')} variant="ghost" onPress={onClose} />
+          <Typography variant="muted" style={styles.center}>
+            {cloud.signedIn
+              ? t('recovery.subtitleSignedIn', {
+                  email: cloud.userEmail ?? t('recovery.yourCloudAccount'),
+                })
+              : t('recovery.subtitleSignedOut')}
+          </Typography>
+        </View>
+
+        <View style={styles.body}>
+          {!cloud.signedIn ? (
+            <TextInput
+              testID="recovery-email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t('cloud.email')}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              accessibilityLabel={t('cloud.emailLabel')}
+            />
+          ) : null}
+          <TextInput
+            testID="recovery-password"
+            value={password}
+            onChangeText={setPassword}
+            placeholder={t('cloud.password')}
+            secureTextEntry
+            accessibilityLabel={t('cloud.passwordLabel')}
+          />
+          {error ? (
+            <Typography testID="recovery-error" style={styles.error}>
+              {error}
+            </Typography>
+          ) : null}
+          <Button
+            testID="recovery-submit"
+            label={cloud.signedIn ? t('recovery.submitSignedIn') : t('recovery.submitSignedOut')}
+            loading={busy}
+            onPress={() => void verifyAndReset()}
+          />
+          <Button
+            testID="recovery-wipe-start"
+            label={t('recovery.wipeStart')}
+            variant="ghost"
+            compact
+            onPress={() => setPhase('wipe')}
+          />
+          <Button testID="recovery-cancel" label={t('recovery.backToUnlock')} variant="ghost" onPress={onClose} />
+        </View>
       </View>
-    </View>
+    </KeyboardAvoider>
   );
 }
 

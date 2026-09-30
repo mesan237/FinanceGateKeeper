@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import type { PlannedItem } from '@/features/finance/planned/planned.types';
 import i18n from '@/i18n';
@@ -113,6 +113,8 @@ function setup(items: PlannedItem[], error: string | null = null): HookState {
 }
 
 beforeEach(() => jest.clearAllMocks());
+
+afterEach(() => jest.restoreAllMocks());
 
 describe('PlannedListScreen', () => {
   it('shows the list name, each item with its estimate, and the amount left to buy', () => {
@@ -361,6 +363,27 @@ describe('PlannedListScreen', () => {
     });
 
     expect(state.remove).toHaveBeenCalledWith(1);
+  });
+
+  it.each(['android', 'ios'] as const)(
+    'keeps the item and purchase sheets above the keyboard on %s',
+    (os) => {
+      jest.replaceProperty(Platform, 'OS', os);
+      setup([RICE]);
+      render(<PlannedListScreen listId={7} />);
+
+      fireEvent.press(screen.getByTestId('planned-add-item'));
+      expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
+    },
+  );
+
+  it('keeps the purchase sheet above the keyboard on Android', () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    setup([RICE]);
+    render(<PlannedListScreen listId={7} />);
+
+    fireEvent.press(screen.getByTestId('planned-check-1'));
+    expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
   });
 
   it('reads in French, including the purchase sheet', async () => {

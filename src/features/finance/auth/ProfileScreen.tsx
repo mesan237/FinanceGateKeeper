@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { AVATAR_PALETTE } from '@/constants/categoryIcons';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
@@ -55,98 +56,104 @@ export function ProfileScreen() {
   const displayName = name.trim() === '' ? null : name.trim();
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <ScreenHeader title={t('profile.title')} />
-
-      <View style={styles.avatarWrap}>
-        <ProfileAvatar displayName={displayName} avatarColor={color} avatarEmoji={emoji} />
-      </View>
-
-      <SectionCard icon="profile" title={t('profile.nameTitle')}>
-        <TextInput
-          testID="profile-name-input"
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            setSaved(false);
-          }}
-          placeholder={t('profile.namePlaceholder')}
-          accessibilityLabel={t('profile.nameTitle')}
-        />
-      </SectionCard>
-
-      <SectionCard icon="appearance" title={t('profile.colorTitle')}>
-        <View style={styles.swatchRow}>
-          {AVATAR_PALETTE.map((swatch) => (
-            <Pressable
-              key={swatch}
-              testID={`profile-color-${swatch}`}
-              accessibilityRole="button"
-              onPress={() => {
-                setColor(swatch);
-                setSaved(false);
-              }}
-              style={[
-                styles.swatch,
-                { backgroundColor: swatch },
-                color === swatch && styles.swatchSelected,
-              ]}
-            />
-          ))}
-        </View>
-      </SectionCard>
-
-      <SectionCard
-        icon="reports"
-        title={t('profile.emojiTitle')}
-        subtitle={t('profile.emojiSubtitle')}
+    <KeyboardAvoider>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.emojiRow}>
-          <Pressable
-            testID="profile-emoji-none"
-            accessibilityRole="button"
-            onPress={() => {
-              setEmoji(null);
+        <ScreenHeader title={t('profile.title')} />
+
+        <View style={styles.avatarWrap}>
+          <ProfileAvatar displayName={displayName} avatarColor={color} avatarEmoji={emoji} />
+        </View>
+
+        <SectionCard icon="profile" title={t('profile.nameTitle')}>
+          <TextInput
+            testID="profile-name-input"
+            value={name}
+            onChangeText={(text) => {
+              setName(text);
               setSaved(false);
             }}
-            style={[styles.emojiChip, emoji === null && styles.emojiChipSelected]}
-          >
-            <Typography variant="muted">Aa</Typography>
-          </Pressable>
-          {EMOJI_CHOICES.map((choice) => (
+            placeholder={t('profile.namePlaceholder')}
+            accessibilityLabel={t('profile.nameTitle')}
+          />
+        </SectionCard>
+
+        <SectionCard icon="appearance" title={t('profile.colorTitle')}>
+          <View style={styles.swatchRow}>
+            {AVATAR_PALETTE.map((swatch) => (
+              <Pressable
+                key={swatch}
+                testID={`profile-color-${swatch}`}
+                accessibilityRole="button"
+                onPress={() => {
+                  setColor(swatch);
+                  setSaved(false);
+                }}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: swatch },
+                  color === swatch && styles.swatchSelected,
+                ]}
+              />
+            ))}
+          </View>
+        </SectionCard>
+
+        <SectionCard
+          icon="reports"
+          title={t('profile.emojiTitle')}
+          subtitle={t('profile.emojiSubtitle')}
+        >
+          <View style={styles.emojiRow}>
             <Pressable
-              key={choice}
-              testID={`profile-emoji-${choice}`}
+              testID="profile-emoji-none"
               accessibilityRole="button"
               onPress={() => {
-                setEmoji(choice);
+                setEmoji(null);
                 setSaved(false);
               }}
-              style={[styles.emojiChip, emoji === choice && styles.emojiChipSelected]}
+              style={[styles.emojiChip, emoji === null && styles.emojiChipSelected]}
             >
-              <Typography style={styles.emojiGlyph}>{choice}</Typography>
+              <Typography variant="muted">Aa</Typography>
             </Pressable>
-          ))}
-        </View>
-      </SectionCard>
+            {EMOJI_CHOICES.map((choice) => (
+              <Pressable
+                key={choice}
+                testID={`profile-emoji-${choice}`}
+                accessibilityRole="button"
+                onPress={() => {
+                  setEmoji(choice);
+                  setSaved(false);
+                }}
+                style={[styles.emojiChip, emoji === choice && styles.emojiChipSelected]}
+              >
+                <Typography style={styles.emojiGlyph}>{choice}</Typography>
+              </Pressable>
+            ))}
+          </View>
+        </SectionCard>
 
-      <Button testID="profile-save" label={saved ? t('profile.saved') : t('profile.save')} onPress={onSave} />
+        <Button testID="profile-save" label={saved ? t('profile.saved') : t('profile.save')} onPress={onSave} />
 
-      <SectionCard
-        icon="lock"
-        title={t('profile.securityTitle')}
-        subtitle={t('profile.securitySubtitle')}
-      >
-        <Button
-          testID="profile-change-pin"
-          label={t('profile.changePin')}
-          variant="secondary"
-          onPress={() => router.push('/profile/change-pin')}
-        />
-      </SectionCard>
+        <SectionCard
+          icon="lock"
+          title={t('profile.securityTitle')}
+          subtitle={t('profile.securitySubtitle')}
+        >
+          <Button
+            testID="profile-change-pin"
+            label={t('profile.changePin')}
+            variant="secondary"
+            onPress={() => router.push('/profile/change-pin')}
+          />
+        </SectionCard>
 
-      <CloudAccountCard testIDPrefix="profile" />
-    </ScrollView>
+        <CloudAccountCard testIDPrefix="profile" />
+      </ScrollView>
+    </KeyboardAvoider>
   );
 }
 

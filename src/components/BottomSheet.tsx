@@ -2,7 +2,6 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ToastViewport } from '@/components/Toast';
+import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
@@ -73,6 +73,7 @@ export interface BottomSheetProps {
 export function BottomSheet({ visible, onClose, children, testID }: BottomSheetProps) {
   const { height: windowHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const keyboardHeight = useKeyboardHeight();
   const [mounted, setMounted] = useState(visible);
   const progress = useSharedValue(visible ? 1 : 0);
   const styles = useThemedStyles(makeStyles);
@@ -126,8 +127,21 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
 
   if (!mounted) return null;
 
+  // The panel is lifted above the keyboard by the avoider below, so what is left
+  // for it is the window minus the keyboard. Without this cap a tall form would
+  // be pushed past the top of the screen instead of scrolling.
+  const maxHeight = Math.min(windowHeight * 0.92, windowHeight - keyboardHeight - insets.top - 12);
+
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+    <Modal
+      visible
+      transparent
+      animationType="none"
+      // Full-window coordinates, so the keyboard overlap is measured correctly.
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={onClose}
+    >
       <View style={styles.fill} testID={testID}>
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
@@ -139,12 +153,11 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
           />
         </Animated.View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.avoider}
-          pointerEvents="box-none"
-        >
-          <Animated.View style={[styles.sheet, { maxHeight: windowHeight * 0.92 }, panelStyle]}>
+        <KeyboardAvoidingView behavior="padding" style={styles.avoider} pointerEvents="box-none">
+          <Animated.View
+            testID={`${testID ?? 'bottom-sheet'}-panel`}
+            style={[styles.sheet, { maxHeight }, panelStyle]}
+          >
             <View style={styles.handle} />
             <ScrollView
               keyboardShouldPersistTaps="handled"

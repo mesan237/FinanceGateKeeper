@@ -1,10 +1,14 @@
 import React, { useContext, useEffect, useId } from 'react';
 import {
   BackHandler,
+  KeyboardAvoidingView,
   Modal as RNModal,
+  ScrollView,
   StyleSheet,
   View,
   type ModalProps as RNModalProps,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 
 import { SheetHostContext } from '@/components/BottomSheet';
@@ -46,9 +50,9 @@ export function Modal({
     }
     host.register(
       overlayId,
-      <View style={styles.backdropHosted}>
-        <View style={styles.content}>{children}</View>
-      </View>,
+      <DialogShell style={styles.backdropHosted} scrollStyle={styles.scroll} cardStyle={styles.content}>
+        {children}
+      </DialogShell>,
     );
     return () => host.unregister(overlayId);
   }, [host, overlayId, visible, children, styles]);
@@ -75,13 +79,43 @@ export function Modal({
       transparent={transparent}
       animationType={animationType}
       visible={visible}
+      // Full-window coordinates, so the keyboard overlap is measured correctly.
+      statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={onRequestClose}
       {...rest}
     >
-      <View style={styles.backdrop}>
-        <View style={styles.content}>{children}</View>
-      </View>
+      <DialogShell style={styles.backdrop} scrollStyle={styles.scroll} cardStyle={styles.content}>
+        {children}
+      </DialogShell>
     </RNModal>
+  );
+}
+
+interface DialogShellProps {
+  children: React.ReactNode;
+  style: StyleProp<ViewStyle>;
+  scrollStyle: StyleProp<ViewStyle>;
+  cardStyle: StyleProp<ViewStyle>;
+}
+
+/**
+ * The dimmed backdrop and card of a dialog. The card is centred in whatever the
+ * keyboard leaves free (`behavior="padding"` on both platforms — see
+ * `KeyboardAvoider`), and scrolls when a tall form does not fit, so no field of
+ * an edit dialog can end up behind the keyboard.
+ */
+function DialogShell({ children, style, scrollStyle, cardStyle }: DialogShellProps) {
+  return (
+    <KeyboardAvoidingView behavior="padding" style={style}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={scrollStyle}
+      >
+        <View style={cardStyle}>{children}</View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -89,16 +123,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 24,
   },
   backdropHosted: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
+    padding: 24,
+  },
+  scroll: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
   },
   content: {
     backgroundColor: c.SURFACE,
