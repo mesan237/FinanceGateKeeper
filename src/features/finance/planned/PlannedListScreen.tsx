@@ -37,8 +37,19 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
   const { t } = useTranslation(['planned', 'common']);
   const { show } = useToast();
   const { displayLabelFor } = useCategories();
-  const { listName, items, loading, error, add, update, remove, buy, unbuy, removeList } =
-    usePlannedItems(listId);
+  const {
+    listName,
+    items,
+    loading,
+    error,
+    clearError,
+    add,
+    update,
+    remove,
+    buy,
+    unbuy,
+    removeList,
+  } = usePlannedItems(listId);
 
   const [buying, setBuying] = useState<PlannedItem | null>(null);
   const [undoing, setUndoing] = useState<PlannedItem | null>(null);
@@ -49,6 +60,7 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
   const leftToBuy = items.reduce((sum, i) => (i.isBought ? sum : sum + i.estimatedAmount), 0);
 
   const openItemSheet = (item: PlannedItem | null) => {
+    clearError();
     setEditing(item);
     setItemSheetOpen(true);
   };
@@ -116,7 +128,11 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
                 key={item.id}
                 item={item}
                 categoryLabel={displayLabelFor(item.categoryId, null)}
-                onToggle={() => (item.isBought ? setUndoing(item) : setBuying(item))}
+                onToggle={() => {
+                  clearError();
+                  if (item.isBought) setUndoing(item);
+                  else setBuying(item);
+                }}
                 onEdit={() => openItemSheet(item)}
                 onDelete={() => void remove(item.id)}
               />
@@ -125,21 +141,31 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
         </>
       )}
 
-      {error ? <Typography style={styles.error}>{error}</Typography> : null}
+      {error && !itemSheetOpen && buying === null ? (
+        <Typography style={styles.error}>{error}</Typography>
+      ) : null}
 
       <Button testID="planned-add-item" label={t('list.add')} onPress={() => openItemSheet(null)} />
 
       <PlannedItemSheet
         visible={itemSheetOpen}
         item={editing}
-        onClose={() => setItemSheetOpen(false)}
+        onClose={() => {
+          clearError();
+          setItemSheetOpen(false);
+        }}
         onSubmit={handleSubmitItem}
+        error={error}
       />
 
       <PurchaseConfirmSheet
         item={buying}
-        onClose={() => setBuying(null)}
+        onClose={() => {
+          clearError();
+          setBuying(null);
+        }}
         onConfirm={handleConfirmPurchase}
+        error={error}
       />
 
       <Modal visible={undoing !== null} onRequestClose={() => setUndoing(null)}>

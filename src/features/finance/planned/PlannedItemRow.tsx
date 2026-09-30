@@ -69,9 +69,7 @@ export function PlannedItemRow({
         <Typography variant="muted">{categoryLabel}</Typography>
       </Pressable>
 
-      <Typography variant="muted" style={item.isBought ? styles.amountBought : undefined}>
-        {amountLabel}
-      </Typography>
+      <Typography variant="muted">{amountLabel}</Typography>
 
       <IconButton
         testID={`planned-delete-${item.id}`}
@@ -98,5 +96,4 @@ const makeStyles = (c: ThemeColors) =>
     checkboxChecked: { backgroundColor: c.PRIMARY_GREEN, borderColor: c.PRIMARY_GREEN },
     body: { flex: 1 },
     nameBought: { textDecorationLine: 'line-through', color: c.TEXT_MUTED },
-    amountBought: { textDecorationLine: 'line-through' },
   });

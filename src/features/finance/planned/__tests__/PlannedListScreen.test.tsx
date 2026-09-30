@@ -91,7 +91,7 @@ interface HookState {
   removeList: jest.Mock;
 }
 
-function setup(items: PlannedItem[]): HookState {
+function setup(items: PlannedItem[], error: string | null = null): HookState {
   const state = {
     items,
     buy: jest.fn().mockResolvedValue(true),
@@ -104,8 +104,9 @@ function setup(items: PlannedItem[]): HookState {
   mockedUsePlannedItems.mockReturnValue({
     listName: 'Saturday market',
     loading: false,
-    error: null,
+    error,
     refresh: jest.fn(),
+    clearError: jest.fn(),
     ...state,
   });
   return state;
@@ -134,6 +135,14 @@ describe('PlannedListScreen', () => {
     expect(StyleSheet.flatten(screen.getByText('Rice').props.style).textDecorationLine).not.toBe(
       'line-through',
     );
+  });
+
+  it('keeps the price paid readable: only the name is struck through', () => {
+    setup([OIL_BOUGHT]);
+    render(<PlannedListScreen listId={7} />);
+
+    const amount = StyleSheet.flatten(screen.getByText('Paid 2 300 FCFA').props.style);
+    expect(amount?.textDecorationLine).not.toBe('line-through');
   });
 
   it('marks only bought items as checked', () => {
@@ -220,6 +229,52 @@ describe('PlannedListScreen', () => {
 
     expect(state.buy).not.toHaveBeenCalled();
     expect(screen.getByTestId('purchase-amount-error')).toBeTruthy();
+  });
+
+  it('records the purchase once when the confirm button is pressed twice quickly', async () => {
+    const state = setup([RICE]);
+    state.buy.mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve(true), 20)));
+    render(<PlannedListScreen listId={7} />);
+
+    fireEvent.press(screen.getByTestId('planned-check-1'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('purchase-confirm'));
+      fireEvent.press(screen.getByTestId('purchase-confirm'));
+    });
+
+    expect(state.buy).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows why a purchase failed and keeps the sheet open', async () => {
+    const state = setup([RICE], 'Could not record the purchase.');
+    state.buy.mockResolvedValue(false);
+    render(<PlannedListScreen listId={7} />);
+
+    fireEvent.press(screen.getByTestId('planned-check-1'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('purchase-confirm'));
+    });
+
+    expect(screen.getByTestId('purchase-confirm')).toBeTruthy();
+    expect(screen.getByTestId('purchase-error')).toHaveTextContent('Could not record the purchase.');
+  });
+
+  it('shows why an item could not be saved and keeps the sheet open', async () => {
+    const state = setup([], 'Failed to save.');
+    state.add.mockResolvedValue(false);
+    render(<PlannedListScreen listId={7} />);
+
+    fireEvent.press(screen.getByTestId('planned-add-item'));
+    fireEvent.changeText(screen.getByTestId('item-name'), 'Rice');
+    fireEvent.changeText(screen.getByTestId('item-amount'), '5000');
+    fireEvent.press(screen.getByTestId('item-category'));
+    fireEvent.press(screen.getByTestId('category-stub'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('item-save'));
+    });
+
+    expect(screen.getByTestId('item-save')).toBeTruthy();
+    expect(screen.getByTestId('item-error')).toHaveTextContent('Failed to save.');
   });
 
   it('closes the purchase sheet after the expense is recorded', async () => {

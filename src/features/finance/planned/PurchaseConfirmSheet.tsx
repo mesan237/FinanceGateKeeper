@@ -22,6 +22,8 @@ export interface PurchaseConfirmSheetProps {
   onClose: () => void;
   /** Records the purchase; resolves `true` when the expense was created. */
   onConfirm: (item: PlannedItem, details: PurchaseDetails) => Promise<boolean>;
+  /** Why the last attempt failed, shown inside the sheet so it is not hidden behind it. */
+  error?: string | null;
 }
 
 /**
@@ -30,7 +32,12 @@ export interface PurchaseConfirmSheetProps {
  * paid, the wallet and the date, so the expense that lands in their records is
  * the real one.
  */
-export function PurchaseConfirmSheet({ item, onClose, onConfirm }: PurchaseConfirmSheetProps) {
+export function PurchaseConfirmSheet({
+  item,
+  onClose,
+  onConfirm,
+  error = null,
+}: PurchaseConfirmSheetProps) {
   // Keep showing the last item while the sheet animates out, so the content
   // does not blank before the slide finishes.
   const lastItem = useRef<PlannedItem | null>(item);
@@ -40,7 +47,13 @@ export function PurchaseConfirmSheet({ item, onClose, onConfirm }: PurchaseConfi
   return (
     <BottomSheet visible={item !== null} onClose={onClose} testID="purchase-sheet">
       {shown ? (
-        <PurchaseForm key={shown.id} item={shown} onClose={onClose} onConfirm={onConfirm} />
+        <PurchaseForm
+          key={shown.id}
+          item={shown}
+          onClose={onClose}
+          onConfirm={onConfirm}
+          error={error}
+        />
       ) : null}
     </BottomSheet>
   );
@@ -50,9 +63,10 @@ interface PurchaseFormProps {
   item: PlannedItem;
   onClose: () => void;
   onConfirm: PurchaseConfirmSheetProps['onConfirm'];
+  error: string | null;
 }
 
-function PurchaseForm({ item, onClose, onConfirm }: PurchaseFormProps) {
+function PurchaseForm({ item, onClose, onConfirm, error }: PurchaseFormProps) {
   const { t } = useTranslation(['planned', 'common']);
   const defaultAccountId = useDefaultAccountId();
   const [amount, setAmount] = useState(String(item.estimatedAmount));
@@ -60,6 +74,9 @@ function PurchaseForm({ item, onClose, onConfirm }: PurchaseFormProps) {
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [amountError, setAmountError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // State updates are asynchronous, so a fast double tap would run the handler
+  // twice before `saving` reads true; the ref closes that window at once.
+  const inFlight = useRef(false);
 
   // The item's own wallet wins, then the default one — unless the user picked.
   const accountId = chosenAccountId ?? item.accountId ?? defaultAccountId;
@@ -70,11 +87,14 @@ function PurchaseForm({ item, onClose, onConfirm }: PurchaseFormProps) {
       setAmountError(t('purchase.amountRequired'));
       return;
     }
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSaving(true);
     try {
       const ok = await onConfirm(item, { amount: value, accountId, date });
       if (ok) onClose();
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };
@@ -102,6 +122,8 @@ function PurchaseForm({ item, onClose, onConfirm }: PurchaseFormProps) {
       <DateField value={date} onChange={setDate} testID="purchase-date" />
 
       <AccountPicker testID="purchase-account" value={accountId} onChange={setChosenAccountId} />
+
+      <FieldError message={error ?? undefined} testID="purchase-error" />
 
       <Button
         testID="purchase-confirm"

@@ -165,6 +165,24 @@ describe('markBought', () => {
     expect((await getItems(listId))[0].isBought).toBe(false);
   });
 
+  it('records only one expense when the same item is ticked twice at once', async () => {
+    const { itemId, listId } = await seedRice();
+    const details = { amount: 4800, accountId: CASH, date: '2026-10-03' };
+
+    const results = await Promise.allSettled([
+      markBought(itemId, details),
+      markBought(itemId, details),
+    ]);
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    expect(rejected).toHaveLength(1);
+    // A clean "already bought" refusal, not a raw SQLite "transaction within a transaction".
+    expect((rejected[0].reason as Error).message).toBe('This item is already bought.');
+    expect(allExpenses()).toHaveLength(1);
+    expect((await getItems(listId))[0].expenseId).toBe(allExpenses()[0].id);
+  });
+
   it('changes nothing in the expenses table until an item is bought', async () => {
     const { itemId } = await seedRice();
     expect(allExpenses()).toHaveLength(0);
@@ -223,6 +241,21 @@ describe('unmarkBought', () => {
 
     expect(allExpenses()).toHaveLength(1);
     expect((await getItems(listId))[0].isBought).toBe(true);
+  });
+});
+
+describe('undoing twice at once', () => {
+  it('deletes the expense once and rejects the second attempt', async () => {
+    const { itemId } = await seedRice();
+    await markBought(itemId, { amount: 4800, accountId: CASH, date: '2026-10-03' });
+
+    const results = await Promise.allSettled([unmarkBought(itemId), unmarkBought(itemId)]);
+
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+    expect(rejected).toHaveLength(1);
+    expect((rejected[0].reason as Error).message).toBe('This item has not been bought.');
+    expect(allExpenses()).toHaveLength(0);
   });
 });
 

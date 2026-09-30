@@ -32,9 +32,26 @@ async function inTransaction<T>(work: () => Promise<T>): Promise<T> {
     await execute('COMMIT');
     return result;
   } catch (e) {
-    await execute('ROLLBACK');
+    try {
+      await execute('ROLLBACK');
+    } catch {
+      // SQLite may already have rolled back (e.g. after a constraint abort).
+      // Never let that hide the error that got us here.
+    }
     throw e;
   }
+}
+
+// There is one shared connection, so a second BEGIN while one is open fails with
+// a raw SQLite error, and a second tick of the same item would race the first
+// one's check. Ticks and undos therefore run strictly one after another.
+let queue: Promise<unknown> = Promise.resolve();
+
+/** Runs `work` after every earlier tick/undo has settled; one failure does not block the next. */
+function inSequence<T>(work: () => Promise<T>): Promise<T> {
+  const run = queue.then(work, work);
+  queue = run.catch(() => undefined);
+  return run;
 }
 
 /**
@@ -45,23 +62,25 @@ async function inTransaction<T>(work: () => Promise<T>): Promise<T> {
  * @throws if the item does not exist, is already bought, or the expense fails
  * validation (e.g. a zero amount).
  */
-export async function markBought(itemId: number, details: PurchaseDetails): Promise<number> {
-  const item = await getItem(itemId);
-  if (!item) throw new Error(i18n.t('errors.itemNotFound', { ns: 'planned' }));
-  if (item.isBought) throw new Error(i18n.t('errors.alreadyBought', { ns: 'planned' }));
+export function markBought(itemId: number, details: PurchaseDetails): Promise<number> {
+  return inSequence(async () => {
+    const item = await getItem(itemId);
+    if (!item) throw new Error(i18n.t('errors.itemNotFound', { ns: 'planned' }));
+    if (item.isBought) throw new Error(i18n.t('errors.alreadyBought', { ns: 'planned' }));
 
-  return inTransaction(async () => {
-    const expenseId = await createExpense({
-      amount: details.amount,
-      categoryId: item.categoryId,
-      subcategoryId: null,
-      note: item.name,
-      date: details.date,
-      isRecurring: false,
-      accountId: details.accountId,
+    return inTransaction(async () => {
+      const expenseId = await createExpense({
+        amount: details.amount,
+        categoryId: item.categoryId,
+        subcategoryId: null,
+        note: item.name,
+        date: details.date,
+        isRecurring: false,
+        accountId: details.accountId,
+      });
+      await execute('UPDATE planned_items SET expense_id = ? WHERE id = ?', [expenseId, itemId]);
+      return expenseId;
     });
-    await execute('UPDATE planned_items SET expense_id = ? WHERE id = ?', [expenseId, itemId]);
-    return expenseId;
   });
 }
 
@@ -70,16 +89,18 @@ export async function markBought(itemId: number, details: PurchaseDetails): Prom
  *
  * @throws if the item does not exist or is not bought.
  */
-export async function unmarkBought(itemId: number): Promise<void> {
-  const item = await getItem(itemId);
-  if (!item) throw new Error(i18n.t('errors.itemNotFound', { ns: 'planned' }));
-  if (!item.isBought || item.expenseId === null) {
-    throw new Error(i18n.t('errors.notBought', { ns: 'planned' }));
-  }
-  const expenseId = item.expenseId;
+export function unmarkBought(itemId: number): Promise<void> {
+  return inSequence(async () => {
+    const item = await getItem(itemId);
+    if (!item) throw new Error(i18n.t('errors.itemNotFound', { ns: 'planned' }));
+    if (!item.isBought || item.expenseId === null) {
+      throw new Error(i18n.t('errors.notBought', { ns: 'planned' }));
+    }
+    const expenseId = item.expenseId;
 
-  await inTransaction(async () => {
-    await deleteExpense(expenseId);
-    await execute('UPDATE planned_items SET expense_id = NULL WHERE id = ?', [itemId]);
+    await inTransaction(async () => {
+      await deleteExpense(expenseId);
+      await execute('UPDATE planned_items SET expense_id = NULL WHERE id = ?', [itemId]);
+    });
   });
 }

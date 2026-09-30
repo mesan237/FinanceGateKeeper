@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 
@@ -29,6 +29,8 @@ export interface PlannedItemSheetProps {
   onClose: () => void;
   /** Saves the values; resolves `true` on success (the sheet then closes). */
   onSubmit: (values: PlannedItemValues) => Promise<boolean>;
+  /** Why the last save failed, shown inside the sheet so it is not hidden behind it. */
+  error?: string | null;
 }
 
 /**
@@ -36,10 +38,22 @@ export interface PlannedItemSheetProps {
  * and optionally a date and the wallet to pay from. The category is required
  * because buying the item creates an expense, and an expense needs one.
  */
-export function PlannedItemSheet({ visible, item, onClose, onSubmit }: PlannedItemSheetProps) {
+export function PlannedItemSheet({
+  visible,
+  item,
+  onClose,
+  onSubmit,
+  error = null,
+}: PlannedItemSheetProps) {
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="planned-item-sheet">
-      <ItemForm key={item?.id ?? 'new'} item={item} onClose={onClose} onSubmit={onSubmit} />
+      <ItemForm
+        key={item?.id ?? 'new'}
+        item={item}
+        onClose={onClose}
+        onSubmit={onSubmit}
+        error={error}
+      />
     </BottomSheet>
   );
 }
@@ -48,9 +62,10 @@ interface ItemFormProps {
   item: PlannedItem | null;
   onClose: () => void;
   onSubmit: PlannedItemSheetProps['onSubmit'];
+  error: string | null;
 }
 
-function ItemForm({ item, onClose, onSubmit }: ItemFormProps) {
+function ItemForm({ item, onClose, onSubmit, error }: ItemFormProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation(['planned', 'common']);
@@ -64,6 +79,8 @@ function ItemForm({ item, onClose, onSubmit }: ItemFormProps) {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; amount?: string; category?: string }>({});
   const [saving, setSaving] = useState(false);
+  // Closes the window in which a fast double tap would save the item twice.
+  const inFlight = useRef(false);
 
   const handleSave = async () => {
     Keyboard.dismiss();
@@ -76,6 +93,8 @@ function ItemForm({ item, onClose, onSubmit }: ItemFormProps) {
     setErrors(next);
     if (next.name || next.amount || next.category || categoryId === null) return;
 
+    if (inFlight.current) return;
+    inFlight.current = true;
     setSaving(true);
     try {
       const ok = await onSubmit({
@@ -87,6 +106,7 @@ function ItemForm({ item, onClose, onSubmit }: ItemFormProps) {
       });
       if (ok) onClose();
     } finally {
+      inFlight.current = false;
       setSaving(false);
     }
   };
@@ -183,6 +203,8 @@ function ItemForm({ item, onClose, onSubmit }: ItemFormProps) {
         value={accountId}
         onChange={setAccountId}
       />
+
+      <FieldError message={error ?? undefined} testID="item-error" />
 
       <Button
         testID="item-save"

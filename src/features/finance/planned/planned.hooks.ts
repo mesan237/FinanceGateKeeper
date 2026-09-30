@@ -115,6 +115,8 @@ export function usePlannedItems(listId: number) {
     [mutate],
   );
   const unbuy = useCallback((id: number) => mutate(() => unmarkBought(id)), [mutate]);
+  /** Dismisses the last failure, e.g. when a sheet is opened or closed. */
+  const clearError = useCallback(() => setError(null), []);
 
   /** Deletes the whole list; resolves `true` when it is gone. */
   const removeList = useCallback(async (): Promise<boolean> => {
@@ -127,5 +129,18 @@ export function usePlannedItems(listId: number) {
     }
   }, [listId]);
 
-  return { listName, items, loading, error, refresh, add, update, remove, buy, unbuy, removeList };
+  return {
+    listName,
+    items,
+    loading,
+    error,
+    refresh,
+    clearError,
+    add,
+    update,
+    remove,
+    buy,
+    unbuy,
+    removeList,
+  };
 }

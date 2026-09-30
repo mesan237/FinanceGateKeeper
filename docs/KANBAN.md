@@ -1066,7 +1066,7 @@ reports, budget rows) still name-match; a few values fetched before a language
 switch stay in the old language until the next refetch; the plural polyfill and
 French label lengths still need a check on a real Android device.
 
-### VS-36: Planned Purchases — Shopping Lists that Become Expenses 🔄 In Progress
+### VS-36: Planned Purchases — Shopping Lists that Become Expenses ✅ Done
 
 **Priority:** High — user-requested; closes the gap before spending
 **Plan:** `issues/ISSUE-034/implementation-plan.md`
@@ -1093,10 +1093,28 @@ French label lengths still need a check on a real Android device.
 
 **Milestones:** M1 migration + list/item service ✅ · M2 mark/unmark bought ✅ · M3 screens ✅
 and routes ✅ · M4 French copy ✅ (landed with M3: the typed catalogue needs it) · M5 sync + export ✅ · M6 arch
-check, review, docs.
+check, review, docs ✅.
 
 **Done when:** A user can plan a shopping list, tick items off in the shop and see each
 one land in Transactions and the budget with the price actually paid.
+
+**Outcome:** New `planned` slice (migrations 030 + 031, `planned_lists` / `planned_items`, no
+status column: bought = the linked expense exists). `markBought` / `unmarkBought` create and
+delete the expense in one SQLite transaction and run strictly one after another, so a double
+tap or a failed link cannot leave a duplicate or orphaned expense. Lists and items screens,
+a purchase sheet that confirms amount / account / date, strikethrough with the price paid,
+confirm-before-undo, drawer entry, full EN/FR copy. Planned items never touch the budget; the
+over-budget warning is not shown on ticking (the check lives in `budget` and `planned` may not
+import it). Both tables sync and export; **the Supabase patch
+`supabase/patches/036_planned_purchases.sql` must be run before installing this build**, or every
+sync fails. /check-arch PASS; code-reviewer APPROVE WITH NITS, and the should-fix items were
+addressed (tick/undo serialised with a double-tap guard, ROLLBACK can no longer mask the real
+error, sheet errors shown inside the sheet, price paid no longer struck through). Known limits
+left as follow-ups: an unresolved expense link on a sync pull does not self-heal; deleted expenses
+are not synced; items keep the parent category only; `createItem` does not check the category or
+account exists (it relies on foreign keys, and nothing in `database.ts` turns them on at open, so
+that is worth confirming on a device); lists load once on mount rather than on focus; deleting an
+item has no confirmation; the purchase sheet can confirm before the default wallet has loaded.
 
 ---
 
