@@ -3,7 +3,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
@@ -17,6 +17,8 @@ export interface DateFieldProps {
   value: string;
   /** Receives the newly picked date as an ISO `YYYY-MM-DD` string. */
   onChange: (iso: string) => void;
+  /** When set and a date is chosen, shows a clear button that calls this (optional dates). */
+  onClear?: () => void;
   accessibilityLabel?: string;
   testID?: string;
 }
@@ -28,7 +30,7 @@ export interface DateFieldProps {
  * components so the day the user taps is the day that gets stored — no UTC
  * drift across the picker boundary.
  */
-export function DateField({ value, onChange, accessibilityLabel, testID }: DateFieldProps) {
+export function DateField({ value, onChange, onClear, accessibilityLabel, testID }: DateFieldProps) {
   const [open, setOpen] = useState(false);
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation();
@@ -55,23 +57,37 @@ export function DateField({ value, onChange, accessibilityLabel, testID }: DateF
 
   return (
     <View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? `Date: ${label}`}
-        testID={testID}
-        onPress={() => setOpen(true)}
-        style={styles.pill}
-      >
-        <Icon name="calendar" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} />
-        <Typography style={styles.label}>{label}</Typography>
-      </Pressable>
+      <View style={styles.row}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel ?? `Date: ${label}`}
+          testID={testID}
+          onPress={() => setOpen(true)}
+          style={styles.pill}
+        >
+          <Icon name="calendar" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} />
+          <Typography style={styles.label}>{label}</Typography>
+        </Pressable>
+        {onClear && isISO ? (
+          <Pressable
+            testID={testID ? `${testID}-clear` : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={t('actions.clear')}
+            onPress={onClear}
+            hitSlop={8}
+            style={styles.clear}
+          >
+            <Icon name="close" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
+          </Pressable>
+        ) : null}
+      </View>
 
       {open ? (
         <DateTimePicker
           testID="date-picker"
           value={pickerValue}
           mode="date"
-          display="spinner"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={handleChange}
         />
       ) : null}
@@ -80,6 +96,14 @@ export function DateField({ value, onChange, accessibilityLabel, testID }: DateF
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clear: {
+    padding: 6,
+  },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

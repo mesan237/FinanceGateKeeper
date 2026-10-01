@@ -10,6 +10,7 @@ import { LoadingState } from '@/components/LoadingState';
 import { Pill } from '@/components/Pill';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
@@ -61,125 +62,127 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
   };
 
   return (
-    <View style={styles.container}>
-      <ScreenHeader
-        title={t('planner.title', { month: monthLabel(monthISO) })}
-        cancelLabel={t('common:actions.cancel')}
-      />
+    <KeyboardAvoider>
+      <View style={styles.container}>
+        <ScreenHeader
+          title={t('planner.title', { month: monthLabel(monthISO) })}
+          cancelLabel={t('common:actions.cancel')}
+        />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Card>
-          <Typography variant="label">{t('planner.monthlyBudget')}</Typography>
-          <View style={styles.totalField}>
-            <AmountInput
-              value={planner.totalInput}
-              onChangeText={planner.setTotalInput}
-              accessibilityLabel={t('planner.monthlyBudgetA11y')}
-              testID="planner-total"
-            />
-          </View>
-          <Typography variant="muted" testID="planner-total-hint">
-            {planner.totalInput
-              ? t('planner.setByYou')
-              : t('planner.followingIncome', { amount: formatCurrency(planner.derivedTotal) })}
-          </Typography>
-
-          <View style={styles.chips}>
-            {planner.totalInput ? (
-              <SuggestionChip
-                label={t('planner.useIncome')}
-                testID="planner-use-derived"
-                onPress={planner.useDerivedTotal}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Card>
+            <Typography variant="label">{t('planner.monthlyBudget')}</Typography>
+            <View style={styles.totalField}>
+              <AmountInput
+                value={planner.totalInput}
+                onChangeText={planner.setTotalInput}
+                accessibilityLabel={t('planner.monthlyBudgetA11y')}
+                testID="planner-total"
               />
-            ) : null}
-            <SuggestionChip
-              label={t('planner.copyLastMonth')}
-              testID="planner-copy-last-month"
-              onPress={() => void planner.copyFromLastMonth()}
-            />
-            {planner.suggestions.size > 0 ? (
+            </View>
+            <Typography variant="muted" testID="planner-total-hint">
+              {planner.totalInput
+                ? t('planner.setByYou')
+                : t('planner.followingIncome', { amount: formatCurrency(planner.derivedTotal) })}
+            </Typography>
+
+            <View style={styles.chips}>
+              {planner.totalInput ? (
+                <SuggestionChip
+                  label={t('planner.useIncome')}
+                  testID="planner-use-derived"
+                  onPress={planner.useDerivedTotal}
+                />
+              ) : null}
               <SuggestionChip
-                label={t('planner.useAverages')}
-                testID="planner-apply-suggestions"
-                onPress={planner.applySuggestions}
+                label={t('planner.copyLastMonth')}
+                testID="planner-copy-last-month"
+                onPress={() => void planner.copyFromLastMonth()}
               />
-            ) : null}
-          </View>
-        </Card>
+              {planner.suggestions.size > 0 ? (
+                <SuggestionChip
+                  label={t('planner.useAverages')}
+                  testID="planner-apply-suggestions"
+                  onPress={planner.applySuggestions}
+                />
+              ) : null}
+            </View>
+          </Card>
 
-        <Card>
-          <Typography variant="label">{t('planner.categories')}</Typography>
-          <Typography variant="muted" style={styles.sectionHint}>
-            {t('planner.categoriesHint')}
-          </Typography>
+          <Card>
+            <Typography variant="label">{t('planner.categories')}</Typography>
+            <Typography variant="muted" style={styles.sectionHint}>
+              {t('planner.categoriesHint')}
+            </Typography>
 
-          {planner.categories.map((category, index) => (
-            <PlannerCategoryRow
-              key={category.id}
-              name={category.name}
-              value={planner.amounts[category.id] ?? ''}
-              suggestion={planner.suggestions.get(category.id)}
-              rollover={planner.rollovers[category.id] ?? false}
-              first={index === 0}
-              onChange={(text) => planner.setAmount(category.id, text)}
-              onToggleRollover={() => planner.toggleRollover(category.id)}
-              onTakeRemainder={() => planner.distributeRemainder(category.id)}
-              testID={`planner-category-${category.id}`}
+            {planner.categories.map((category, index) => (
+              <PlannerCategoryRow
+                key={category.id}
+                name={category.name}
+                value={planner.amounts[category.id] ?? ''}
+                suggestion={planner.suggestions.get(category.id)}
+                rollover={planner.rollovers[category.id] ?? false}
+                first={index === 0}
+                onChange={(text) => planner.setAmount(category.id, text)}
+                onToggleRollover={() => planner.toggleRollover(category.id)}
+                onTakeRemainder={() => planner.distributeRemainder(category.id)}
+                testID={`planner-category-${category.id}`}
+              />
+            ))}
+          </Card>
+
+          {planner.error ? (
+            <Typography style={styles.error} testID="planner-error">
+              {planner.error}
+            </Typography>
+          ) : null}
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <View style={styles.footerRow}>
+            <View style={styles.footerText}>
+              <Typography variant="label">
+                {planner.isOverAllocated ? t('planner.overAllocated') : t('planner.unassigned')}
+              </Typography>
+              <Typography
+                testID="planner-unassigned"
+                style={[
+                  styles.unassigned,
+                  planner.isOverAllocated && styles.unassignedOver,
+                  planner.unassigned === 0 && styles.unassignedDone,
+                ]}
+              >
+                {formatCurrency(Math.abs(planner.unassigned))}
+              </Typography>
+            </View>
+            <Pill
+              label={t('planner.assignedOf', {
+                assigned: formatCurrency(planner.assigned),
+                total: formatCurrency(planner.totalBudget),
+              })}
+              tone={planner.isOverAllocated ? 'danger' : 'neutral'}
             />
-          ))}
-        </Card>
-
-        {planner.error ? (
-          <Typography style={styles.error} testID="planner-error">
-            {planner.error}
-          </Typography>
-        ) : null}
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <View style={styles.footerRow}>
-          <View style={styles.footerText}>
-            <Typography variant="label">
-              {planner.isOverAllocated ? t('planner.overAllocated') : t('planner.unassigned')}
-            </Typography>
-            <Typography
-              testID="planner-unassigned"
-              style={[
-                styles.unassigned,
-                planner.isOverAllocated && styles.unassignedOver,
-                planner.unassigned === 0 && styles.unassignedDone,
-              ]}
-            >
-              {formatCurrency(Math.abs(planner.unassigned))}
-            </Typography>
           </View>
-          <Pill
-            label={t('planner.assignedOf', {
-              assigned: formatCurrency(planner.assigned),
-              total: formatCurrency(planner.totalBudget),
-            })}
-            tone={planner.isOverAllocated ? 'danger' : 'neutral'}
+
+          {planner.isOverAllocated ? (
+            <Typography variant="muted" style={styles.warning} testID="planner-over-warning">
+              {t('planner.overWarning')}
+            </Typography>
+          ) : null}
+
+          <Button
+            label={t('planner.save')}
+            onPress={() => void handleSave()}
+            loading={planner.saving}
+            testID="planner-save"
           />
         </View>
-
-        {planner.isOverAllocated ? (
-          <Typography variant="muted" style={styles.warning} testID="planner-over-warning">
-            {t('planner.overWarning')}
-          </Typography>
-        ) : null}
-
-        <Button
-          label={t('planner.save')}
-          onPress={() => void handleSave()}
-          loading={planner.saving}
-          testID="planner-save"
-        />
       </View>
-    </View>
+    </KeyboardAvoider>
   );
 }
 

@@ -9,6 +9,7 @@ import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { getCategoryAvatar, getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { displayCategoryName } from '@/i18n/categoryNames';
@@ -159,150 +160,152 @@ export function CategoryManager() {
     : [];
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ScreenHeader title={t('manager.title')} />
+    <KeyboardAvoider>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <ScreenHeader title={t('manager.title')} />
 
-      <Button
-        label={t('manager.newCategory')}
-        testID="add-parent-btn"
-        onPress={() => setAddTarget({ parentId: null, parentName: null })}
-      />
+        <Button
+          label={t('manager.newCategory')}
+          testID="add-parent-btn"
+          onPress={() => setAddTarget({ parentId: null, parentName: null })}
+        />
 
-      {managedCategories.map((parent, index) => {
-        const subs = subcategoriesOf(parent.id, true);
-        const isExpanded = expandedIds.has(parent.id);
-        const editing = editingId === parent.id;
-        return (
-          <Card key={parent.id} style={styles.group}>
-            <View style={styles.parentHeader}>
-              <IconButton
-                icon={isExpanded ? 'moveDown' : 'forward'}
-                accessibilityLabel={t(isExpanded ? 'manager.collapse' : 'manager.expand', {
-                  name: displayCategoryName(parent.name, parent.isDefault),
-                })}
-                testID={`toggle-${parent.id}`}
-                onPress={() => toggleExpanded(parent.id)}
-              />
-              <Avatar cat={parent} depth={0} />
-              {renderName(parent)}
-              {editing ? (
+        {managedCategories.map((parent, index) => {
+          const subs = subcategoriesOf(parent.id, true);
+          const isExpanded = expandedIds.has(parent.id);
+          const editing = editingId === parent.id;
+          return (
+            <Card key={parent.id} style={styles.group}>
+              <View style={styles.parentHeader}>
                 <IconButton
-                  icon="check"
-                  tone="primary"
-                  accessibilityLabel={t('manager.save', { name: displayCategoryName(parent.name, parent.isDefault) })}
-                  testID={`save-${parent.id}`}
-                  onPress={saveEdit}
+                  icon={isExpanded ? 'moveDown' : 'forward'}
+                  accessibilityLabel={t(isExpanded ? 'manager.collapse' : 'manager.expand', {
+                    name: displayCategoryName(parent.name, parent.isDefault),
+                  })}
+                  testID={`toggle-${parent.id}`}
+                  onPress={() => toggleExpanded(parent.id)}
                 />
-              ) : !isExpanded ? (
-                <Typography variant="muted" style={styles.subCount}>
-                  {subs.length}
-                </Typography>
-              ) : null}
-            </View>
+                <Avatar cat={parent} depth={0} />
+                {renderName(parent)}
+                {editing ? (
+                  <IconButton
+                    icon="check"
+                    tone="primary"
+                    accessibilityLabel={t('manager.save', { name: displayCategoryName(parent.name, parent.isDefault) })}
+                    testID={`save-${parent.id}`}
+                    onPress={saveEdit}
+                  />
+                ) : !isExpanded ? (
+                  <Typography variant="muted" style={styles.subCount}>
+                    {subs.length}
+                  </Typography>
+                ) : null}
+              </View>
 
-            {isExpanded ? (
-              <>
-                {editing ? null : (
-                  <View style={styles.toolbar}>
-                    <IconButton
-                      icon="edit"
-                      accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name, parent.isDefault) })}
-                      testID={`rename-${parent.id}`}
-                      onPress={() => startEdit(parent)}
-                    />
-                    <IconButton
-                      icon={parent.isHidden ? 'show' : 'hide'}
-                      accessibilityLabel={t(parent.isHidden ? 'manager.unhide' : 'manager.hide', {
-                        name: displayCategoryName(parent.name, parent.isDefault),
-                      })}
-                      testID={`hide-${parent.id}`}
-                      onPress={() => toggleHidden(parent.id, !parent.isHidden)}
-                    />
-                    {parent.isDefault ? null : (
+              {isExpanded ? (
+                <>
+                  {editing ? null : (
+                    <View style={styles.toolbar}>
                       <IconButton
-                        icon="delete"
-                        tone="danger"
-                        accessibilityLabel={t('manager.delete', { name: displayCategoryName(parent.name, parent.isDefault) })}
-                        testID={`delete-${parent.id}`}
-                        onPress={() => setDeleteTarget(parent)}
+                        icon="edit"
+                        accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name, parent.isDefault) })}
+                        testID={`rename-${parent.id}`}
+                        onPress={() => startEdit(parent)}
                       />
-                    )}
-                    <View style={styles.grow} />
-                    <IconButton
-                      icon="moveUp"
-                      accessibilityLabel={t('manager.moveUp', { name: displayCategoryName(parent.name, parent.isDefault) })}
-                      disabled={index === 0}
-                      onPress={() => moveParent(index, -1)}
-                    />
-                    <IconButton
-                      icon="moveDown"
-                      accessibilityLabel={t('manager.moveDown', { name: displayCategoryName(parent.name, parent.isDefault) })}
-                      disabled={index === managedCategories.length - 1}
-                      onPress={() => moveParent(index, 1)}
-                    />
-                  </View>
-                )}
+                      <IconButton
+                        icon={parent.isHidden ? 'show' : 'hide'}
+                        accessibilityLabel={t(parent.isHidden ? 'manager.unhide' : 'manager.hide', {
+                          name: displayCategoryName(parent.name, parent.isDefault),
+                        })}
+                        testID={`hide-${parent.id}`}
+                        onPress={() => toggleHidden(parent.id, !parent.isHidden)}
+                      />
+                      {parent.isDefault ? null : (
+                        <IconButton
+                          icon="delete"
+                          tone="danger"
+                          accessibilityLabel={t('manager.delete', { name: displayCategoryName(parent.name, parent.isDefault) })}
+                          testID={`delete-${parent.id}`}
+                          onPress={() => setDeleteTarget(parent)}
+                        />
+                      )}
+                      <View style={styles.grow} />
+                      <IconButton
+                        icon="moveUp"
+                        accessibilityLabel={t('manager.moveUp', { name: displayCategoryName(parent.name, parent.isDefault) })}
+                        disabled={index === 0}
+                        onPress={() => moveParent(index, -1)}
+                      />
+                      <IconButton
+                        icon="moveDown"
+                        accessibilityLabel={t('manager.moveDown', { name: displayCategoryName(parent.name, parent.isDefault) })}
+                        disabled={index === managedCategories.length - 1}
+                        onPress={() => moveParent(index, 1)}
+                      />
+                    </View>
+                  )}
 
-                {subs.map(renderSubRow)}
+                  {subs.map(renderSubRow)}
 
-                <Button
-                  label={t('manager.addSubcategory')}
-                  variant="secondary"
-                  compact
-                  testID={`add-sub-${parent.id}`}
-                  onPress={() => setAddTarget({ parentId: parent.id, parentName: parent.name })}
-                />
-              </>
-            ) : null}
-          </Card>
-        );
-      })}
+                  <Button
+                    label={t('manager.addSubcategory')}
+                    variant="secondary"
+                    compact
+                    testID={`add-sub-${parent.id}`}
+                    onPress={() => setAddTarget({ parentId: parent.id, parentName: parent.name })}
+                  />
+                </>
+              ) : null}
+            </Card>
+          );
+        })}
 
-      <CategoryFormModal
-        visible={addTarget !== null}
-        parentName={addTarget?.parentName ?? null}
-        onSubmit={submitAdd}
-        onClose={() => setAddTarget(null)}
-      />
+        <CategoryFormModal
+          visible={addTarget !== null}
+          parentName={addTarget?.parentName ?? null}
+          onSubmit={submitAdd}
+          onClose={() => setAddTarget(null)}
+        />
 
-      <Modal visible={deleteTarget !== null} onRequestClose={() => setDeleteTarget(null)}>
-        {deleteTarget ? (
-          <View>
-            <Typography variant="subheading">
-              {t('manager.reassignTitle', { name: displayCategoryName(deleteTarget.name, deleteTarget.isDefault) })}
-            </Typography>
-            <ScrollView style={styles.optionList}>
-              {reassignOptions.map((option) => (
-                <Pressable
-                  key={option.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('manager.reassignTo', { name: displayCategoryName(option.name, option.isDefault) })}
-                  testID={`reassign-${option.id}`}
-                  style={styles.optionRow}
-                  onPress={async () => {
-                    await remove(deleteTarget.id, option.id);
-                    setDeleteTarget(null);
-                  }}
-                >
-                  <Typography>{displayCategoryName(option.name, option.isDefault)}</Typography>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Button
-              label={t('common:actions.cancel')}
-              variant="secondary"
-              onPress={() => setDeleteTarget(null)}
-            />
-          </View>
-        ) : (
-          <View />
-        )}
-      </Modal>
-    </ScrollView>
+        <Modal visible={deleteTarget !== null} onRequestClose={() => setDeleteTarget(null)}>
+          {deleteTarget ? (
+            <View>
+              <Typography variant="subheading">
+                {t('manager.reassignTitle', { name: displayCategoryName(deleteTarget.name, deleteTarget.isDefault) })}
+              </Typography>
+              <ScrollView style={styles.optionList}>
+                {reassignOptions.map((option) => (
+                  <Pressable
+                    key={option.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('manager.reassignTo', { name: displayCategoryName(option.name, option.isDefault) })}
+                    testID={`reassign-${option.id}`}
+                    style={styles.optionRow}
+                    onPress={async () => {
+                      await remove(deleteTarget.id, option.id);
+                      setDeleteTarget(null);
+                    }}
+                  >
+                    <Typography>{displayCategoryName(option.name, option.isDefault)}</Typography>
+                  </Pressable>
+                ))}
+              </ScrollView>
+              <Button
+                label={t('common:actions.cancel')}
+                variant="secondary"
+                onPress={() => setDeleteTarget(null)}
+              />
+            </View>
+          ) : (
+            <View />
+          )}
+        </Modal>
+      </ScrollView>
+    </KeyboardAvoider>
   );
 }
 

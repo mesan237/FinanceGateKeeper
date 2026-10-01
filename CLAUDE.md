@@ -41,6 +41,7 @@ Three layers — never violate these:
 - `reports` → reads from `expenses`, `income`, `budget`, `debt`
 - `income` → reads `accounts` (AccountPicker on income log)
 - `expenses` → reads `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the log/detail/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
+- `planned` → `expenses` (ticking an item creates the expense, unticking deletes it, VS-36), `accounts` (AccountPicker on the purchase sheet). Nothing depends on `planned`: planned items never affect the budget
 All other cross-feature imports are forbidden.
 
 The list covers **source** imports. Service tests that seed an in-memory database may

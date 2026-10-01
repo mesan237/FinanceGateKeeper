@@ -247,6 +247,7 @@ Some features legitimately need each other. These are the **approved cross-featu
 | `income`    | `budget` (triggers allocation screen after income log); `accounts` (AccountPicker on the income log screen) |
 | `funds`     | `budget` (reads allocation percentages); `accounts` (reserved — `depositToFund` accepts an `accountId`; manual-deposit picker UI deferred, fund deposits are allocation-driven) |
 | `projects`  | `budget` (reads allocation percentages); `accounts` (AccountPicker on the manual contribution section) |
+| `planned`   | `expenses` (ticking an item creates the expense, unticking deletes it, VS-36); `accounts` (AccountPicker on the purchase sheet). No feature imports `planned` — planned items never affect the budget |
 
 All other cross-feature imports are **forbidden** unless explicitly justified and documented.
 

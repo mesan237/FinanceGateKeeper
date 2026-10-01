@@ -1,0 +1,78 @@
+import type { planned as en } from '@/i18n/locales/en/planned';
+import type { Translation } from '@/i18n/translation.types';
+
+/** French copy for the planned-purchases slice. */
+export const planned: Translation<typeof en> = {
+  title: 'Achats prévus',
+  loading: 'Chargement…',
+  lists: {
+    emptyTitle: "Aucune liste d'achats",
+    emptySubtitle:
+      "Prévoyez ce que vous voulez acheter. Cochez un article quand vous l'achetez : il est enregistré comme dépense.",
+    add: 'Nouvelle liste',
+    toBuy: '{{n}} à acheter · {{amount}}',
+    allBought: 'Tout est acheté',
+    noItems: 'Aucun article',
+  },
+  newList: {
+    title: 'Nouvelle liste',
+    nameLabel: 'Nom de la liste',
+    namePlaceholder: 'ex. Marché du samedi',
+    create: 'Créer la liste',
+  },
+  list: {
+    emptyTitle: 'Rien de prévu pour le moment',
+    emptySubtitle:
+      "Ajoutez ce que vous voulez acheter. Une fois acheté, cochez-le pour enregistrer la dépense.",
+    add: 'Ajouter un article',
+    estimated: 'Est. {{amount}}',
+    paid: 'Payé {{amount}}',
+    leftToBuy: 'Reste à acheter : {{amount}}',
+    check: 'Marquer {{name}} comme acheté',
+    uncheck: "Annuler l'achat de {{name}}",
+    deleteItem: 'Supprimer {{name}}',
+    deleteList: 'Supprimer la liste',
+    deleteListTitle: 'Supprimer cette liste ?',
+    deleteListBody:
+      'La liste et ses articles sont supprimés. Les dépenses déjà enregistrées restent dans vos transactions.',
+    invalidId: 'Cette liste est introuvable.',
+  },
+  item: {
+    addTitle: 'Ajouter un article',
+    editTitle: "Modifier l'article",
+    nameLabel: 'Quoi acheter',
+    namePlaceholder: 'ex. Riz 25 kg',
+    estimateLabel: 'Prix estimé',
+    selectCategory: 'Choisir une catégorie',
+    dateLabel: 'Date prévue (facultatif)',
+    setDate: 'Choisir une date',
+    clearDate: 'Retirer la date',
+    accountLabel: 'Payer avec (facultatif)',
+  },
+  purchase: {
+    title: "Enregistrer l'achat",
+    estimated: 'Estimé {{amount}}',
+    amountLabel: 'Montant payé',
+    amountRequired: 'Saisissez le montant payé.',
+    confirm: 'Enregistrer la dépense',
+    recorded: '{{amount}} enregistrés pour {{name}}',
+  },
+  undo: {
+    title: "Annuler cet achat ?",
+    body: 'La dépense de {{amount}} sera supprimée et {{name}} retourne sur votre liste.',
+    confirm: "Annuler l'achat",
+    undone: '{{name}} est de retour sur votre liste',
+  },
+  errors: {
+    nameRequired: 'Donnez-lui un nom.',
+    amountWhole: "L'estimation doit être un nombre entier de FCFA supérieur à zéro.",
+    categoryRequired: 'Choisissez une catégorie.',
+    dateFormat: 'La date doit être au format AAAA-MM-JJ.',
+    listNotFound: "Cette liste n'existe plus.",
+    itemNotFound: "Cet article n'existe plus.",
+    alreadyBought: 'Cet article est déjà acheté.',
+    notBought: "Cet article n'a pas été acheté.",
+    load: 'Impossible de charger vos achats prévus.',
+    save: "Échec de l'enregistrement.",
+  },
+};

@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { TextInput } from '@/components/TextInput';
 import { useToast } from '@/components/Toast';
 import { Typography } from '@/components/Typography';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 
@@ -47,54 +48,57 @@ export function TransferLogScreen() {
     <View style={styles.container}>
       <ScreenHeader title={t('transfer.title')} cancelLabel={t('common:actions.cancel')} />
 
-      <AccountPicker
-        testID="transfer-from"
-        label={t('transfer.from')}
-        value={transfer.fromId}
-        onChange={transfer.setFromId}
-      />
-      <AccountPicker
-        testID="transfer-to"
-        label={t('transfer.to')}
-        value={transfer.toId}
-        onChange={transfer.setToId}
-      />
+      <KeyboardAwareForm contentContainerStyle={styles.fields}>
+        <AccountPicker
+          testID="transfer-from"
+          label={t('transfer.from')}
+          value={transfer.fromId}
+          onChange={transfer.setFromId}
+        />
+        <AccountPicker
+          testID="transfer-to"
+          label={t('transfer.to')}
+          value={transfer.toId}
+          onChange={transfer.setToId}
+        />
 
-      {sameAccount ? (
-        <Typography style={styles.error}>{t('transfer.sameAccount')}</Typography>
-      ) : null}
+        {sameAccount ? (
+          <Typography style={styles.error}>{t('transfer.sameAccount')}</Typography>
+        ) : null}
 
-      <TextInput
-        testID="transfer-amount"
-        placeholder={t('transfer.amountPlaceholder')}
-        keyboardType="number-pad"
-        value={transfer.amount}
-        onChangeText={transfer.setAmount}
-        accessibilityLabel={t('transfer.amount')}
-      />
-      <TextInput
-        testID="transfer-date"
-        placeholder={t('transfer.datePlaceholder')}
-        value={transfer.date}
-        onChangeText={transfer.setDate}
-        accessibilityLabel={t('transfer.date')}
-      />
-      <TextInput
-        testID="transfer-note"
-        placeholder={t('transfer.notePlaceholder')}
-        value={transfer.note}
-        onChangeText={transfer.setNote}
-        accessibilityLabel={t('transfer.note')}
-      />
+        <TextInput
+          testID="transfer-amount"
+          placeholder={t('transfer.amountPlaceholder')}
+          keyboardType="number-pad"
+          value={transfer.amount}
+          onChangeText={transfer.setAmount}
+          accessibilityLabel={t('transfer.amount')}
+        />
+        <TextInput
+          testID="transfer-date"
+          placeholder={t('transfer.datePlaceholder')}
+          value={transfer.date}
+          onChangeText={transfer.setDate}
+          accessibilityLabel={t('transfer.date')}
+        />
+        <TextInput
+          testID="transfer-note"
+          placeholder={t('transfer.notePlaceholder')}
+          value={transfer.note}
+          onChangeText={transfer.setNote}
+          accessibilityLabel={t('transfer.note')}
+        />
 
-      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!transfer.canSubmit} loading={saving} />
+        <Button label={t('common:actions.save')} onPress={handleSave} disabled={!transfer.canSubmit} loading={saving} />
 
-      {transfer.error ? <Typography style={styles.error}>{transfer.error}</Typography> : null}
+        {transfer.error ? <Typography style={styles.error}>{transfer.error}</Typography> : null}
+      </KeyboardAwareForm>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
+  fields: { gap: 12 },
   error: { color: c.DANGER },
 });

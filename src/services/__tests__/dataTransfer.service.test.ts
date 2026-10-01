@@ -119,6 +119,34 @@ describe('importData', () => {
     }
   });
 
+  it('keeps a bought item linked to its expense after a round trip', async () => {
+    use(source);
+    const categoryId = await firstSubcategoryId(source);
+    await source.driver.execute(
+      `INSERT INTO planned_lists (name, created_at) VALUES ('Market', '2026-10-01T00:00:00.000Z')`,
+    );
+    await source.driver.execute(
+      `INSERT INTO expenses (amount, category_id, date, created_at) VALUES (4800, ?, '2026-10-03', '2026-10-03T00:00:00.000Z')`,
+      [categoryId],
+    );
+    await source.driver.execute(
+      `INSERT INTO planned_items (list_id, name, estimated_amount, category_id, expense_id, created_at)
+       VALUES (1, 'Rice', 5000, ?, 1, '2026-10-01T00:00:00.000Z')`,
+      [categoryId],
+    );
+    const payload = await exportData();
+
+    use(target);
+    const summary = await importData(payload);
+
+    expect(summary.planned_lists).toBe(1);
+    expect(summary.planned_items).toBe(1);
+    const [row] = await target.driver.query<{ name: string; amount: number }>(
+      `SELECT i.name, e.amount FROM planned_items i JOIN expenses e ON e.id = i.expense_id`,
+    );
+    expect(row).toEqual({ name: 'Rice', amount: 4800 });
+  });
+
   it('rejects an unsupported version and leaves existing data untouched', async () => {
     use(target);
     const [{ n: before }] = await target.driver.query<{ n: number }>(

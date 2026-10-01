@@ -11,6 +11,7 @@ import { SectionCard } from '@/components/SectionCard';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { isAppLanguage } from '@/i18n/resolveLanguage';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
@@ -78,91 +79,97 @@ export function SettingsScreen() {
   };
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <ScreenHeader title={t('settings.title')} />
-
-      <Pressable
-        testID="settings-profile-link"
-        accessibilityRole="button"
-        onPress={() => router.push('/profile')}
+    <KeyboardAvoider>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
       >
-        <SectionCard
-          icon="profile"
-          title={t('settings.profileTitle')}
-          subtitle={t('settings.profileSubtitle')}
-          right={<Icon name="forward" color={c.TEXT_MUTED} />}
-        />
-      </Pressable>
+        <ScreenHeader title={t('settings.title')} />
 
-      <SectionCard
-        icon="appearance"
-        title={t('settings.appearanceTitle')}
-        subtitle={t('settings.appearanceSubtitle')}
-      >
-        <SegmentedControl
-          testID="settings-theme-control"
-          value={themeMode}
-          segments={[
-            { key: 'system', label: t('settings.themeSystem') },
-            { key: 'light', label: t('settings.themeLight') },
-            { key: 'dark', label: t('settings.themeDark') },
-          ]}
-          onChange={(key) => void setThemeMode(key as ThemeMode)}
-        />
-      </SectionCard>
-
-      <SectionCard
-        icon="language"
-        title={t('settings.languageTitle')}
-        subtitle={t('settings.languageSubtitle')}
-      >
-        <SegmentedControl
-          testID="settings-language-control"
-          value={settings.language ?? 'system'}
-          segments={[
-            { key: 'system', label: t('settings.languageSystem') },
-            { key: 'fr', label: t('common:languages.fr') },
-            { key: 'en', label: t('common:languages.en') },
-          ]}
-          onChange={(key) => void changeLanguage(key)}
-        />
-      </SectionCard>
-
-      <SectionCard
-        icon="reminder"
-        title={t('settings.reminderTitle')}
-        subtitle={t('settings.reminderSubtitle')}
-        right={<Pill label={settings.reminderTime} />}
-      >
-        <TimeField
-          testID="settings-reminder-time"
-          value={reminderInput}
-          onChange={setReminderInput}
-          accessibilityLabel={t('settings.reminderTimeLabel')}
-        />
-        {error ? <Typography style={styles.error}>{error}</Typography> : null}
-        <Button
-          testID="settings-reminder-save"
-          label={t('settings.reminderSave')}
-          onPress={saveReminder}
-        />
-      </SectionCard>
-
-      <SectionCard
-        icon="notifications"
-        title={t('settings.notificationsTitle')}
-        subtitle={t('settings.notificationsSubtitle')}
-        right={
-          <Switch
-            testID="settings-notifications-switch"
-            value={settings.notificationsEnabled}
-            onValueChange={toggleNotifications}
+        <Pressable
+          testID="settings-profile-link"
+          accessibilityRole="button"
+          onPress={() => router.push('/profile')}
+        >
+          <SectionCard
+            icon="profile"
+            title={t('settings.profileTitle')}
+            subtitle={t('settings.profileSubtitle')}
+            right={<Icon name="forward" color={c.TEXT_MUTED} />}
           />
-        }
-      />
+        </Pressable>
 
-      <CloudAccountCard />
-    </ScrollView>
+        <SectionCard
+          icon="appearance"
+          title={t('settings.appearanceTitle')}
+          subtitle={t('settings.appearanceSubtitle')}
+        >
+          <SegmentedControl
+            testID="settings-theme-control"
+            value={themeMode}
+            segments={[
+              { key: 'system', label: t('settings.themeSystem') },
+              { key: 'light', label: t('settings.themeLight') },
+              { key: 'dark', label: t('settings.themeDark') },
+            ]}
+            onChange={(key) => void setThemeMode(key as ThemeMode)}
+          />
+        </SectionCard>
+
+        <SectionCard
+          icon="language"
+          title={t('settings.languageTitle')}
+          subtitle={t('settings.languageSubtitle')}
+        >
+          <SegmentedControl
+            testID="settings-language-control"
+            value={settings.language ?? 'system'}
+            segments={[
+              { key: 'system', label: t('settings.languageSystem') },
+              { key: 'fr', label: t('common:languages.fr') },
+              { key: 'en', label: t('common:languages.en') },
+            ]}
+            onChange={(key) => void changeLanguage(key)}
+          />
+        </SectionCard>
+
+        <SectionCard
+          icon="reminder"
+          title={t('settings.reminderTitle')}
+          subtitle={t('settings.reminderSubtitle')}
+          right={<Pill label={settings.reminderTime} />}
+        >
+          <TimeField
+            testID="settings-reminder-time"
+            value={reminderInput}
+            onChange={setReminderInput}
+            accessibilityLabel={t('settings.reminderTimeLabel')}
+          />
+          {error ? <Typography style={styles.error}>{error}</Typography> : null}
+          <Button
+            testID="settings-reminder-save"
+            label={t('settings.reminderSave')}
+            onPress={saveReminder}
+          />
+        </SectionCard>
+
+        <SectionCard
+          icon="notifications"
+          title={t('settings.notificationsTitle')}
+          subtitle={t('settings.notificationsSubtitle')}
+          right={
+            <Switch
+              testID="settings-notifications-switch"
+              value={settings.notificationsEnabled}
+              onValueChange={toggleNotifications}
+            />
+          }
+        />
+
+        <CloudAccountCard />
+      </ScrollView>
+    </KeyboardAvoider>
   );
 }
 

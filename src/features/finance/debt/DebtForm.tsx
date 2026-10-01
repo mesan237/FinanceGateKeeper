@@ -4,11 +4,15 @@ import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import { StyleSheet, View } from 'react-native';
 
+import { AmountInput } from '@/components/AmountInput';
 import { Button } from '@/components/Button';
+import { DateField } from '@/components/DateField';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
 
@@ -16,8 +20,11 @@ import { createDebt } from './debt.service';
 
 /**
  * Create form for a new debt: person, amount, direction (Lent / Owed), and an
- * optional due date and note. On save it creates the debt and returns to the
- * ledger. (Editing lives in `DebtDetail`; this form is create-only.)
+ * optional due date and note. The amount uses the shared FCFA field and the due
+ * date a calendar picker (clearable), so nobody types `YYYY-MM-DD` by hand. The
+ * Save button sits in a footer that clears the Android system bar. On save it
+ * creates the debt and returns to the ledger. (Editing lives in `DebtDetail`;
+ * this form is create-only.)
  */
 export function DebtForm() {
   const styles = useThemedStyles(makeStyles);
@@ -43,7 +50,7 @@ export function DebtForm() {
         personName: person.trim(),
         amount: parsedAmount,
         direction,
-        dueDate: due.trim() === '' ? null : due.trim(),
+        dueDate: due === '' ? null : due,
         note: note.trim() === '' ? null : note.trim(),
       });
       router.replace('/debt');
@@ -54,77 +61,90 @@ export function DebtForm() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.screen}>
       <ScreenHeader title={t('form.title')} cancelLabel={t('common:actions.cancel')} />
 
-      <TextInput
-        testID="debt-person"
-        placeholder={t('form.person')}
-        value={person}
-        onChangeText={setPerson}
-        accessibilityLabel={t('form.person')}
-      />
-      <TextInput
-        testID="debt-amount"
-        placeholder={t('form.amountPlaceholder')}
-        keyboardType="number-pad"
-        value={amount}
-        onChangeText={setAmount}
-        accessibilityLabel={t('form.amount')}
-      />
+      <KeyboardAwareForm>
+        <View style={styles.fields}>
+          <SegmentedControl
+            testID="debt-direction"
+            segments={DEBT_DIRECTION_VALUES.map((value) => ({
+              key: value,
+              label: t(`directions.${value}`),
+            }))}
+            value={direction}
+            onChange={(key) => setDirection(key as DebtDirection)}
+          />
 
-      <View style={styles.directionRow}>
-        {DEBT_DIRECTION_VALUES.map((value) => {
+          <View style={styles.field}>
+            <Typography variant="label">{t('form.person')}</Typography>
+            <TextInput
+              testID="debt-person"
+              placeholder={t('form.person')}
+              value={person}
+              onChangeText={setPerson}
+              accessibilityLabel={t('form.person')}
+            />
+          </View>
 
-          const active = direction === value;
-          const name = t(`directions.${value}`);
-          const label = active ? `● ${name}` : name;
-          return (
-            <View key={value} style={styles.grow}>
-              <Button
-                testID={`debt-direction-${value}`}
-                label={label}
-                onPress={() => setDirection(value)}
-              />
-            </View>
-          );
-        })}
+          <View style={styles.field}>
+            <Typography variant="label">{t('form.amount')}</Typography>
+            <AmountInput
+              testID="debt-amount"
+              value={amount}
+              onChangeText={setAmount}
+              accessibilityLabel={t('form.amount')}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Typography variant="label">{t('form.dueDate')}</Typography>
+            <DateField
+              testID="debt-due"
+              value={due}
+              onChange={setDue}
+              onClear={() => setDue('')}
+              accessibilityLabel={t('form.dueDate')}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Typography variant="label">{t('form.note')}</Typography>
+            <TextInput
+              testID="debt-note"
+              placeholder={t('form.notePlaceholder')}
+              value={note}
+              onChangeText={setNote}
+              accessibilityLabel={t('form.note')}
+            />
+          </View>
+
+          {error ? <Typography style={styles.error}>{error}</Typography> : null}
+        </View>
+      </KeyboardAwareForm>
+
+      <View style={styles.footer}>
+        <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
       </View>
-
-      <TextInput
-        testID="debt-due"
-        placeholder={t('form.duePlaceholder')}
-        value={due}
-        onChangeText={setDue}
-        accessibilityLabel={t('form.dueDate')}
-      />
-      <TextInput
-        testID="debt-note"
-        placeholder={t('form.notePlaceholder')}
-        value={note}
-        onChangeText={setNote}
-        accessibilityLabel={t('form.note')}
-      />
-
-      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
-
-      {error ? <Typography style={styles.error}>{error}</Typography> : null}
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    padding: 16,
-    gap: 12,
   },
-  directionRow: {
-    flexDirection: 'row',
-    gap: 8,
+  fields: {
+    paddingHorizontal: 16,
+    gap: 16,
   },
-  grow: {
-    flex: 1,
+  field: {
+    gap: 6,
+  },
+  footer: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
   },
   error: {
     color: c.DANGER,

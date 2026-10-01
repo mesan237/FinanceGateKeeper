@@ -25,9 +25,7 @@ export const debt = {
   form: {
     title: 'New Debt',
     person: 'Person',
-    amountPlaceholder: 'Amount (FCFA)',
     amount: 'Amount',
-    duePlaceholder: 'Due date (YYYY-MM-DD, optional)',
     dueDate: 'Due date',
     notePlaceholder: 'Note (optional)',
     note: 'Note',

@@ -36,7 +36,8 @@
 drop table if exists
   categories, funds, projects, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
-  quick_add_templates, recurring_expenses, zero_days, debts, users
+  quick_add_templates, recurring_expenses, zero_days, debts,
+  planned_lists, planned_items, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -204,6 +205,28 @@ create table debts (
   updated_at  text not null
 );
 
+create table planned_lists (
+  uuid       text primary key,
+  user_id    uuid not null default auth.uid(),
+  name       text not null,
+  created_at text not null,
+  updated_at text not null
+);
+
+create table planned_items (
+  uuid             text primary key,
+  user_id          uuid not null default auth.uid(),
+  list_id          text not null,   -- uuid of the planned list
+  name             text not null,
+  estimated_amount integer not null,
+  category_id      text not null,   -- uuid of the category
+  account_id       text,            -- uuid of the account, or null
+  planned_date     text,
+  expense_id       text,            -- uuid of the expense that bought it, or null
+  created_at       text not null,
+  updated_at       text not null
+);
+
 -- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
@@ -214,7 +237,8 @@ begin
   foreach t in array array[
     'categories','funds','projects','expenses','income','allocations',
     'category_budgets','fund_transactions','project_transactions',
-    'quick_add_templates','recurring_expenses','zero_days','debts'
+    'quick_add_templates','recurring_expenses','zero_days','debts',
+    'planned_lists','planned_items'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

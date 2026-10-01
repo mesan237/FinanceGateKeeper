@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 
@@ -97,64 +98,67 @@ export function AccountForm() {
         cancelLabel={editId !== null ? undefined : t('common:actions.cancel')}
       />
 
-      <TextInput
-        testID="account-name"
-        placeholder={t('form.name')}
-        value={name}
-        onChangeText={setName}
-        accessibilityLabel={t('form.name')}
-      />
+      <KeyboardAwareForm contentContainerStyle={styles.fields}>
+        <TextInput
+          testID="account-name"
+          placeholder={t('form.name')}
+          value={name}
+          onChangeText={setName}
+          accessibilityLabel={t('form.name')}
+        />
 
-      <Typography variant="label">{t('form.type')}</Typography>
-      <Select
-        testID="account-type"
-        title={t('form.type')}
-        options={typeOptions}
-        value={type}
-        onChange={(key) => setType(key as AccountType)}
-      />
+        <Typography variant="label">{t('form.type')}</Typography>
+        <Select
+          testID="account-type"
+          title={t('form.type')}
+          options={typeOptions}
+          value={type}
+          onChange={(key) => setType(key as AccountType)}
+        />
 
-      <Typography variant="label">{t('form.purpose')}</Typography>
-      <Select
-        testID="account-purpose"
-        title={t('form.purpose')}
-        options={purposeOptions}
-        value={purpose}
-        onChange={(key) => setPurpose(key as AccountPurpose)}
-      />
+        <Typography variant="label">{t('form.purpose')}</Typography>
+        <Select
+          testID="account-purpose"
+          title={t('form.purpose')}
+          options={purposeOptions}
+          value={purpose}
+          onChange={(key) => setPurpose(key as AccountPurpose)}
+        />
 
-      <Typography variant="label">{t('form.currentBalance')}</Typography>
-      <TextInput
-        testID="account-balance"
-        placeholder="0"
-        keyboardType="number-pad"
-        value={balance}
-        onChangeText={setBalance}
-        accessibilityLabel={t('form.openingBalance')}
-      />
-      <Typography variant="muted">{t('form.balanceHint')}</Typography>
+        <Typography variant="label">{t('form.currentBalance')}</Typography>
+        <TextInput
+          testID="account-balance"
+          placeholder="0"
+          keyboardType="number-pad"
+          value={balance}
+          onChangeText={setBalance}
+          accessibilityLabel={t('form.openingBalance')}
+        />
+        <Typography variant="muted">{t('form.balanceHint')}</Typography>
 
-      <Pressable
-        accessibilityRole="switch"
-        accessibilityState={{ checked: isDefault }}
-        testID="account-default-toggle"
-        style={styles.toggle}
-        onPress={() => setIsDefault((v) => !v)}
-      >
-        <Typography>
-          {isDefault ? '☑' : '☐'} {t('form.setDefault')}
-        </Typography>
-      </Pressable>
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: isDefault }}
+          testID="account-default-toggle"
+          style={styles.toggle}
+          onPress={() => setIsDefault((v) => !v)}
+        >
+          <Typography>
+            {isDefault ? '☑' : '☐'} {t('form.setDefault')}
+          </Typography>
+        </Pressable>
 
-      <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
+        <Button label={t('common:actions.save')} onPress={handleSave} disabled={!canSubmit} />
 
-      {error ? <Typography style={styles.error}>{error}</Typography> : null}
+        {error ? <Typography style={styles.error}>{error}</Typography> : null}
+      </KeyboardAwareForm>
     </View>
   );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, padding: 16, gap: 12 },
+  fields: { gap: 12 },
   toggle: { paddingVertical: 8 },
   error: { color: c.DANGER },
 });

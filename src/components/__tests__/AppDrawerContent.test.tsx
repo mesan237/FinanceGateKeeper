@@ -43,6 +43,13 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
+  it('navigates to /planned and closes the drawer when "Planned purchases" is pressed', () => {
+    const { navigation } = renderDrawer();
+    fireEvent.press(screen.getByRole('button', { name: 'Planned purchases' }));
+    expect(mockPush).toHaveBeenCalledWith('/planned');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves "Backup & Restore" disabled', () => {
     renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });

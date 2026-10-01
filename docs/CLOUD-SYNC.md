@@ -136,6 +136,18 @@ The 12 financial tables: `categories`, `expenses`, `income`, `allocations`,
 (`SYNCED_TABLES` in
 [`017_add_sync_metadata.ts`](../src/services/migrations/017_add_sync_metadata.ts)).
 
+Planned purchases (VS-36) add `planned_lists` and `planned_items`. An item's link to
+the expense that bought it travels as that expense's `uuid`, like every other foreign
+key. Two known edges: if the expense failed to apply on a device, the item there is
+stored with no link and reads as still planned (it does not heal on later pulls, and
+a later edit of that item would clear the link in the cloud); and deleted expenses are
+not synced anywhere (no tombstones), so undoing a purchase on one device reopens the
+item on the others while they keep the expense. **Before installing a build with migration 031, run
+[`supabase/patches/036_planned_purchases.sql`](../supabase/patches/036_planned_purchases.sql)**
+in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
+exist, every sync from that build fails, because a Supabase error on any synced
+table fails the whole sync.
+
 **Not synced:**
 
 - `users` — device/settings state (PIN hash, app mode, reminder prefs, first-run

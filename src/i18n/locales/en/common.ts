@@ -10,6 +10,7 @@ export const common = {
     close: 'Close',
     back: 'Back',
     retry: 'Try again',
+    clear: 'Clear',
   },
   fields: {
     loading: 'Loading',

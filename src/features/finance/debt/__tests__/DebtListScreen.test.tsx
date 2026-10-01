@@ -91,6 +91,13 @@ describe('DebtListScreen', () => {
     expect(screen.queryByText('Jean')).toBeNull();
   });
 
+  it('shows a back button and the active direction as selected', () => {
+    render(<DebtListScreen />);
+    expect(screen.getByTestId('screen-header-back')).toBeTruthy();
+    expect(screen.getByTestId('debt-tab-lent').props.accessibilityState.selected).toBe(true);
+    expect(screen.getByTestId('debt-tab-owed').props.accessibilityState.selected).toBe(false);
+  });
+
   it('navigates to the create form from the Add button', () => {
     render(<DebtListScreen />);
     fireEvent.press(screen.getByRole('button', { name: 'Add debt' }));
