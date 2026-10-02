@@ -93,12 +93,18 @@ jest.mock('expo-crypto', () => {
 // I/O that doesn't exist under Jest. The mock backs every file with an
 // in-memory string keyed by its joined uri, matching the real
 // create()-then-write() contract (write() throws if create() was never called).
+// Directories are tracked as a set of uris: `list()` returns the direct child
+// files and `delete()` removes the folder with everything under it, so a test
+// can wipe a folder in `beforeEach` (the store lives for the whole test file).
 jest.mock('expo-file-system', () => {
   const store = new Map<string, string>();
+  const dirs = new Set<string>(['mock-cache-dir', 'mock-document-dir']);
+  const joinUris = (uris: Array<string | { uri: string }>) =>
+    uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/');
   class MockFile {
     uri: string;
     constructor(...uris: Array<string | { uri: string }>) {
-      this.uri = uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/');
+      this.uri = joinUris(uris);
     }
     create(options?: { overwrite?: boolean }) {
       if (store.has(this.uri) && !options?.overwrite) {
@@ -111,24 +117,61 @@ jest.mock('expo-file-system', () => {
       store.set(this.uri, content);
     }
     async text() {
+      return this.textSync();
+    }
+    textSync() {
       const content = store.get(this.uri);
       if (content === undefined) throw new Error(`File not found: ${this.uri}`);
       return content;
     }
+    delete() {
+      if (!store.delete(this.uri)) throw new Error(`File not found: ${this.uri}`);
+    }
     get exists() {
       return store.has(this.uri);
+    }
+    get name() {
+      return this.uri.slice(this.uri.lastIndexOf('/') + 1);
+    }
+    get size() {
+      return store.get(this.uri)?.length ?? 0;
     }
   }
   class MockDirectory {
     uri: string;
     constructor(...uris: Array<string | { uri: string }>) {
-      this.uri = uris.map((u) => (typeof u === 'string' ? u : u.uri)).join('/');
+      this.uri = joinUris(uris);
+    }
+    create(options?: { idempotent?: boolean }) {
+      if (dirs.has(this.uri) && !options?.idempotent) {
+        throw new Error(`Directory already exists: ${this.uri}`);
+      }
+      dirs.add(this.uri);
+    }
+    delete() {
+      if (!dirs.delete(this.uri)) throw new Error(`Directory not found: ${this.uri}`);
+      for (const uri of [...store.keys()]) {
+        if (uri.startsWith(`${this.uri}/`)) store.delete(uri);
+      }
+    }
+    list() {
+      if (!dirs.has(this.uri)) throw new Error(`Directory not found: ${this.uri}`);
+      const prefix = `${this.uri}/`;
+      return [...store.keys()]
+        .filter((uri) => uri.startsWith(prefix) && !uri.slice(prefix.length).includes('/'))
+        .map((uri) => new MockFile(uri));
+    }
+    get exists() {
+      return dirs.has(this.uri);
     }
   }
   return {
     File: MockFile,
     Directory: MockDirectory,
-    Paths: { cache: new MockDirectory('mock-cache-dir') },
+    Paths: {
+      cache: new MockDirectory('mock-cache-dir'),
+      document: new MockDirectory('mock-document-dir'),
+    },
   };
 });
 

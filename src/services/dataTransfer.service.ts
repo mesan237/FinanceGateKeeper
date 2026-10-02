@@ -9,6 +9,13 @@ import {
 
 const EXPORT_VERSION = 1;
 
+/** The body of `markAllPending`, for callers already inside a transaction. */
+async function setAllPending(now: string): Promise<void> {
+  for (const table of SYNCED_TABLES) {
+    await execute(`UPDATE ${table} SET sync_status = 'pending', updated_at = ?`, [now]);
+  }
+}
+
 /**
  * Dumps every row of every table in `SYNCED_TABLES` — the same scope cloud sync
  * already trusts — into a single portable snapshot. `users` (PIN hash/salt,
@@ -48,8 +55,14 @@ function assertValidPayload(payload: ExportPayload): void {
  * pre-import state instead of leaving a half-wiped, half-restored database.
  * `PRAGMA foreign_keys` can only be toggled outside an active transaction, so
  * it is switched off before `BEGIN` and back on after the transaction closes.
+ * With `markPendingAt`, every restored row is also marked pending at that time
+ * inside the same transaction (see `markAllPending`), so a snapshot restore and
+ * its cloud-convergence marking land together or not at all.
  */
-export async function importData(payload: ExportPayload): Promise<ImportSummary> {
+export async function importData(
+  payload: ExportPayload,
+  options: { markPendingAt?: string } = {},
+): Promise<ImportSummary> {
   assertValidPayload(payload);
 
   const summary: ImportSummary = {};
@@ -74,6 +87,7 @@ export async function importData(payload: ExportPayload): Promise<ImportSummary>
         }
         summary[table] = rows.length;
       }
+      if (options.markPendingAt) await setAllPending(options.markPendingAt);
       await execute('COMMIT');
     } catch (e) {
       await execute('ROLLBACK');
@@ -83,4 +97,23 @@ export async function importData(payload: ExportPayload): Promise<ImportSummary>
     await execute('PRAGMA foreign_keys = ON');
   }
   return summary;
+}
+
+/**
+ * Marks every synced row `pending` with `updated_at = now`, so the next sync
+ * pushes the whole local data set and it wins last-write-wins in the cloud.
+ * Used after a local snapshot restore: the restored rows keep their old
+ * `synced` status and timestamps, which would otherwise leave the cloud's newer
+ * versions in place. Only sync columns change, so the dirty-marking triggers
+ * (which watch data columns) stay quiet. Runs in one transaction.
+ */
+export async function markAllPending(now: string = new Date().toISOString()): Promise<void> {
+  await execute('BEGIN TRANSACTION');
+  try {
+    await setAllPending(now);
+    await execute('COMMIT');
+  } catch (e) {
+    await execute('ROLLBACK');
+    throw e;
+  }
 }

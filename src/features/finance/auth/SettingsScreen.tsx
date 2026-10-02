@@ -16,7 +16,6 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { isAppLanguage } from '@/i18n/resolveLanguage';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
-import { CloudAccountCard } from './CloudAccountCard';
 import { useAppSettings } from './auth.hooks';
 import { applyReminderSchedule } from './reminder';
 
@@ -166,8 +165,6 @@ export function SettingsScreen() {
             />
           }
         />
-
-        <CloudAccountCard />
       </ScrollView>
     </KeyboardAvoider>
   );

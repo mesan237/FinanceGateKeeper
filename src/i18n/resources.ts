@@ -1,5 +1,6 @@
 import { accounts as enAccounts } from '@/i18n/locales/en/accounts';
 import { auth as enAuth } from '@/i18n/locales/en/auth';
+import { backup as enBackup } from '@/i18n/locales/en/backup';
 import { budget as enBudget } from '@/i18n/locales/en/budget';
 import { categories as enCategories } from '@/i18n/locales/en/categories';
 import { common as enCommon } from '@/i18n/locales/en/common';
@@ -15,6 +16,7 @@ import { planned as enPlanned } from '@/i18n/locales/en/planned';
 import { reports as enReports } from '@/i18n/locales/en/reports';
 import { accounts as frAccounts } from '@/i18n/locales/fr/accounts';
 import { auth as frAuth } from '@/i18n/locales/fr/auth';
+import { backup as frBackup } from '@/i18n/locales/fr/backup';
 import { budget as frBudget } from '@/i18n/locales/fr/budget';
 import { categories as frCategories } from '@/i18n/locales/fr/categories';
 import { common as frCommon } from '@/i18n/locales/fr/common';
@@ -43,6 +45,7 @@ export const resources = {
     auth: enAuth,
     onboarding: enOnboarding,
     dataTransfer: enDataTransfer,
+    backup: enBackup,
     expenses: enExpenses,
     income: enIncome,
     accounts: enAccounts,
@@ -60,6 +63,7 @@ export const resources = {
     auth: frAuth,
     onboarding: frOnboarding,
     dataTransfer: frDataTransfer,
+    backup: frBackup,
     expenses: frExpenses,
     income: frIncome,
     accounts: frAccounts,

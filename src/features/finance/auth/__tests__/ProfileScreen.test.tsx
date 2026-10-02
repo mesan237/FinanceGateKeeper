@@ -9,19 +9,6 @@ jest.mock('@/features/finance/auth/auth.profile', () => ({
   setProfile: jest.fn().mockResolvedValue(undefined),
 }));
 
-const mockCloud = {
-  userEmail: null as string | null,
-  signedIn: false,
-  status: 'idle' as const,
-  lastSyncedAt: null,
-  error: null,
-  signIn: jest.fn().mockResolvedValue(true),
-  signUp: jest.fn().mockResolvedValue(true),
-  signOut: jest.fn().mockResolvedValue(undefined),
-  syncNow: jest.fn().mockResolvedValue(undefined),
-};
-jest.mock('@/hooks/useCloudSync', () => ({ useCloudSync: () => mockCloud }));
-
 import { ProfileScreen } from '@/features/finance/auth/ProfileScreen';
 import { getProfile, setProfile } from '@/features/finance/auth/auth.profile';
 
@@ -66,8 +53,10 @@ describe('ProfileScreen', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/profile/change-pin');
   });
 
-  it('renders the cloud-account controls', async () => {
+  it('leaves the cloud account to the Backup & Restore screen', async () => {
     render(<ProfileScreen />);
-    expect(await screen.findByTestId('profile-sign-in')).toBeTruthy();
+    await screen.findByTestId('profile-change-pin');
+    expect(screen.queryByTestId('profile-sign-in')).toBeNull();
+    expect(screen.queryByText('Cloud backup')).toBeNull();
   });
 });

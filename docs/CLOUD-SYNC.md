@@ -24,12 +24,20 @@ non-blocking. On a new device you sign in and pull your data back.
 
 2. **Apply the schema.** Open the Supabase SQL editor, paste the **entire**
    contents of [`supabase/schema.sql`](../supabase/schema.sql), and run it. It
-   drops any stale tables and recreates the 12 financial tables uuid-keyed with
+   drops any stale tables and recreates the 17 financial tables uuid-keyed with
    per-user row-level security.
 
    > ⚠️ The script begins with `DROP TABLE … CASCADE`. That is safe on a fresh
    > project but **destroys existing rows** — do not run it over a project that
    > already holds real synced data.
+
+   **Upgrading an existing project:** run
+   [`supabase/patches/037_catch_up_schema.sql`](../supabase/patches/037_catch_up_schema.sql)
+   instead. It creates any missing table (including patch 036's) and adds any
+   missing column, never drops anything, and is safe to re-run. A sync error like *"Could not find the 'deleted_at' column of 'projects' in the
+   schema cache"* means the cloud schema is behind and needs this script.
+   `src/services/__tests__/supabaseSchema.test.ts` fails whenever a migration
+   adds a synced column that `schema.sql` or patch 037 lacks.
 
 3. **Set env vars.** Copy [`.env.example`](../.env.example) to `.env` and fill in
    your project URL and anon key (Project Settings → API):
@@ -100,7 +108,7 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 ### The sync engine
 
 [`sync.ts`](../src/services/sync.ts) exposes `pushChanges`, `pullChanges`,
-`syncNow`, `getLastSyncedAt`.
+`syncNow`, `restoreFromCloud`, `getLastSyncedAt`.
 
 - **push** — for each table (parents first), select `sync_status = 'pending'`,
   translate FK ids → uuids, `upsert(onConflict: 'uuid')`, then mark the rows
@@ -114,6 +122,25 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 - **syncNow** — `push` then `pull`. Returns `{ ok: false }` (never throws) when
   signed out or when the cloud is unreachable, so callers surface state without
   try/catch. Pending rows survive a failed attempt.
+- **restoreFromCloud** (VS-37) — replaces the phone's synced data with the cloud
+  copy instead of merging. It fetches every table first, so a signed-out session,
+  a cloud error or an empty cloud backup leaves the phone untouched
+  (`{ ok: false, error }`). Then it takes a "before restore" local snapshot (local
+  changes never pushed would otherwise be lost), clears the synced tables and
+  writes the cloud rows in one transaction with the sync guard raised, and moves
+  the cursor to the newest cloud timestamp. Restored rows are `synced`.
+
+### Local snapshots and the no-deletions rule
+
+The engine never sends deletions. [`snapshots.service.ts`](../src/services/snapshots.service.ts)
+keeps daily on-phone snapshots (VS-37), and restoring one would otherwise leave
+the cloud diverged: the restored rows keep their old `synced` status and
+timestamps, so they'd never push, while the cursor is already past the cloud's
+newer versions. So a snapshot restore ends with `markAllPending`
+([`dataTransfer.service.ts`](../src/services/dataTransfer.service.ts)): every row
+becomes `pending` with `updated_at = now`, the next sync pushes it, and it wins
+last-write-wins. Rows that exist only in the cloud (created after the snapshot)
+stay there; a later **Restore from cloud** brings them back.
 
 ### Triggers for a sync
 
@@ -130,9 +157,10 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 
 ## What syncs
 
-The 12 financial tables: `categories`, `expenses`, `income`, `allocations`,
-`funds`, `fund_transactions`, `projects`, `project_transactions`,
-`quick_add_templates`, `recurring_expenses`, `zero_days`, `debts`
+The 15 financial tables: `categories`, `accounts`, `expenses`, `income`,
+`allocations`, `category_budgets`, `funds`, `fund_transactions`, `projects`,
+`project_transactions`, `quick_add_templates`, `recurring_expenses`, `zero_days`,
+`debts`, `transfers`
 (`SYNCED_TABLES` in
 [`017_add_sync_metadata.ts`](../src/services/migrations/017_add_sync_metadata.ts)).
 
@@ -144,7 +172,7 @@ a later edit of that item would clear the link in the cloud); and deleted expens
 not synced anywhere (no tombstones), so undoing a purchase on one device reopens the
 item on the others while they keep the expense. **Before installing a build with migration 031, run
 [`supabase/patches/036_planned_purchases.sql`](../supabase/patches/036_planned_purchases.sql)**
-in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
+(or patch 037, which includes it) in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
 exist, every sync from that build fails, because a Supabase error on any synced
 table fails the whole sync.
 
@@ -162,7 +190,9 @@ table fails the whole sync.
 
 1. Install the app; the migration runner builds the local schema (empty data).
 2. Open **Settings → Cloud backup** and sign in with the same credentials.
-3. The next sync (`pullChanges`) restores every synced table from the cloud.
+3. The next sync (`pullChanges`) restores every synced table from the cloud. To
+   replace whatever is on the phone with the cloud copy instead of merging, use
+   **Backup & Restore → Restore from cloud** (`restoreFromCloud`).
 
 For the cleanest restore, pull **before** creating any local data on the new
 device, so independently-created singleton rows (funds, allocations) don't clash

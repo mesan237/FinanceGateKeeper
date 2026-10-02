@@ -1,53 +1,55 @@
 -- ============================================================
--- Finance Gatekeeper — Supabase cloud schema (VS-15)
+-- Finance Gatekeeper — Supabase patch: catch the cloud schema up
 -- Paste this entire file into the Supabase SQL editor and run.
 -- ============================================================
 --
--- This file SUPERSEDES the earlier integer-id schema. The VS-15 sync engine
--- (src/services/sync.ts) keys every cloud row on the portable `uuid` the client
--- generates — the local SQLite integer `id` is device-specific and is NEVER sent
--- to the cloud. The block below DROPs the old, incompatible tables and recreates
--- them uuid-keyed.
+-- Non-destructive and idempotent: brings a cloud project in ANY earlier state —
+-- empty, partially set up, or created from an older schema.sql — up to the
+-- current schema.sql without dropping anything, and is safe to run twice.
+-- It includes everything patch 036 does, so a project that never ran 036 only
+-- needs this one.
 --
--- ⚠️  DESTRUCTIVE: the DROP statements delete the listed tables and their data.
---     Safe during first-time setup (the tables are empty). Do NOT run this over a
---     project that already holds real synced data — run
---     supabase/patches/037_catch_up_schema.sql instead, which only creates what
---     an older cloud schema is missing.
+-- Why it exists: schema.sql was not updated when migrations 018–023 added
+-- synced tables and columns, so every project set up from it rejects the
+-- app's pushes with
+--   Could not find the '<column>' column of '<table>' in the schema cache
+-- and a sync error on any one table fails the whole sync.
 --
--- Model:
---   * Each table mirrors a local SQLite table (see src/services/migrations/),
---     keyed by `uuid` (text, primary key). The client upserts with
---     onConflict: 'uuid' and pulls with select().gt('updated_at', cursor).
---   * Foreign keys are stored as the referenced row's `uuid` (text), not an
---     integer id, so relationships survive a restore onto a new device.
---   * `user_id` defaults to auth.uid(); every table has an owner-only RLS policy.
---     The client never sends `user_id` — the default fills it on insert.
---   * `updated_at` is written by the CLIENT (last-write-wins). There is no
---     server-side updated_at trigger: a trigger would overwrite the client's
---     timestamp and break the pull's newer-than comparison.
---   * `users` is intentionally absent — settings/PIN state stays on the device.
---
--- Single-user assumption: built for one account. `uuid` is globally unique; the
--- default category tree uses deterministic uuids ('seed-category-<id>') that are
--- stable per install and expected to belong to a single account.
+--   1. Refuses to run if a table from the pre-VS-15 integer-id schema is still
+--      there (no `uuid` column): that layout cannot be upgraded in place — run
+--      schema.sql instead, which drops and recreates it.
+--   2. Creates every missing table (same definitions as schema.sql).
+--   3. Adds the columns later migrations introduced to tables that already
+--      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
+--      total_budget 027).
+--   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
--- Reset: drop the stale integer-id tables (and the old updated_at helper).
+-- 1. Guard against the old integer-id tables.
 -- ----------------------------------------------------------------
-drop table if exists
-  categories, funds, projects, accounts, expenses, income, allocations,
-  category_budgets, fund_transactions, project_transactions,
-  quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, users
-  cascade;
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'categories', 'funds', 'projects', 'accounts', 'expenses',
+    'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
+    'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
+    'planned_items', 'transfers'
+  ]
+  loop
+    if to_regclass('public.' || t) is not null and not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = t and column_name = 'uuid'
+    ) then
+      raise exception 'Table % uses the old integer-id layout (no uuid column). Run supabase/schema.sql instead.', t;
+    end if;
+  end loop;
+end $$;
 
-drop function if exists set_updated_at() cascade;
-
 -- ----------------------------------------------------------------
--- Tables (uuid-keyed, parents before children)
+-- 2. Create missing tables (parents before children).
 -- ----------------------------------------------------------------
-create table categories (
+create table if not exists categories (
   uuid        text primary key,
   user_id     uuid not null default auth.uid(),
   name        text not null,
@@ -58,7 +60,7 @@ create table categories (
   updated_at  text not null
 );
 
-create table funds (
+create table if not exists funds (
   uuid          text primary key,
   user_id       uuid not null default auth.uid(),
   type          text not null,
@@ -69,7 +71,7 @@ create table funds (
   updated_at    text not null
 );
 
-create table projects (
+create table if not exists projects (
   uuid          text primary key,
   user_id       uuid not null default auth.uid(),
   name          text not null,
@@ -83,7 +85,7 @@ create table projects (
   updated_at    text not null
 );
 
-create table accounts (
+create table if not exists accounts (
   uuid            text primary key,
   user_id         uuid not null default auth.uid(),
   name            text not null,
@@ -96,7 +98,7 @@ create table accounts (
   updated_at      text not null
 );
 
-create table expenses (
+create table if not exists expenses (
   uuid           text primary key,
   user_id        uuid not null default auth.uid(),
   amount         integer not null,
@@ -110,7 +112,7 @@ create table expenses (
   updated_at     text not null
 );
 
-create table income (
+create table if not exists income (
   uuid              text primary key,
   user_id           uuid not null default auth.uid(),
   amount            integer not null,
@@ -123,7 +125,7 @@ create table income (
   updated_at        text not null
 );
 
-create table allocations (
+create table if not exists allocations (
   uuid               text primary key,
   user_id            uuid not null default auth.uid(),
   month              text not null,
@@ -140,7 +142,7 @@ create table allocations (
   updated_at         text not null
 );
 
-create table category_budgets (
+create table if not exists category_budgets (
   uuid             text primary key,
   user_id          uuid not null default auth.uid(),
   month            text not null,
@@ -151,7 +153,7 @@ create table category_budgets (
   updated_at       text not null
 );
 
-create table fund_transactions (
+create table if not exists fund_transactions (
   uuid       text primary key,
   user_id    uuid not null default auth.uid(),
   fund_id    text not null,      -- uuid of the fund
@@ -164,7 +166,7 @@ create table fund_transactions (
   updated_at text not null
 );
 
-create table project_transactions (
+create table if not exists project_transactions (
   uuid       text primary key,
   user_id    uuid not null default auth.uid(),
   project_id text not null,      -- uuid of the project
@@ -176,7 +178,7 @@ create table project_transactions (
   updated_at text not null
 );
 
-create table quick_add_templates (
+create table if not exists quick_add_templates (
   uuid           text primary key,
   user_id        uuid not null default auth.uid(),
   label          text not null,
@@ -188,7 +190,7 @@ create table quick_add_templates (
   updated_at     text not null
 );
 
-create table recurring_expenses (
+create table if not exists recurring_expenses (
   uuid           text primary key,
   user_id        uuid not null default auth.uid(),
   label          text not null,
@@ -202,7 +204,7 @@ create table recurring_expenses (
   updated_at     text not null
 );
 
-create table zero_days (
+create table if not exists zero_days (
   uuid         text primary key,
   user_id      uuid not null default auth.uid(),
   date         text not null,
@@ -210,7 +212,7 @@ create table zero_days (
   updated_at   text not null
 );
 
-create table debts (
+create table if not exists debts (
   uuid        text primary key,
   user_id     uuid not null default auth.uid(),
   person_name text not null,
@@ -225,7 +227,7 @@ create table debts (
   updated_at  text not null
 );
 
-create table planned_lists (
+create table if not exists planned_lists (
   uuid       text primary key,
   user_id    uuid not null default auth.uid(),
   name       text not null,
@@ -233,7 +235,7 @@ create table planned_lists (
   updated_at text not null
 );
 
-create table planned_items (
+create table if not exists planned_items (
   uuid             text primary key,
   user_id          uuid not null default auth.uid(),
   list_id          text not null,   -- uuid of the planned list
@@ -247,7 +249,7 @@ create table planned_items (
   updated_at       text not null
 );
 
-create table transfers (
+create table if not exists transfers (
   uuid            text primary key,
   user_id         uuid not null default auth.uid(),
   from_account_id text not null,  -- uuid of the source account
@@ -260,20 +262,29 @@ create table transfers (
 );
 
 -- ----------------------------------------------------------------
--- Row-level security: each table is readable/writable only by its owner,
--- plus an index backing the pull cursor (user_id, updated_at).
+-- 3. Columns added after these tables first shipped.
+-- ----------------------------------------------------------------
+alter table projects             add column if not exists deleted_at text;
+alter table expenses             add column if not exists account_id text;
+alter table income               add column if not exists account_id text;
+alter table income               add column if not exists allocation_status text not null default 'allocated';
+alter table allocations          add column if not exists total_budget integer;
+alter table fund_transactions    add column if not exists account_id text;
+alter table project_transactions add column if not exists account_id text;
+
+-- ----------------------------------------------------------------
+-- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).
 -- ----------------------------------------------------------------
 do $$
 declare t text;
 begin
   foreach t in array array[
-    'categories','funds','projects','accounts','expenses','income','allocations',
-    'category_budgets','fund_transactions','project_transactions',
-    'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
-    'planned_lists','planned_items'
+    'categories', 'funds', 'projects', 'accounts', 'expenses',
+    'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
+    'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
+    'planned_items', 'transfers'
   ]
   loop
-    -- Defensive: ensure user_id exists even if an older table predates this run.
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists %1$I_owner on %1$I;', t);

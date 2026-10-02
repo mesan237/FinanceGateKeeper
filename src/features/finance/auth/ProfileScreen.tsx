@@ -13,7 +13,6 @@ import { AVATAR_PALETTE } from '@/constants/categoryIcons';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
-import { CloudAccountCard } from './CloudAccountCard';
 import { ProfileAvatar } from './ProfileAvatar';
 import { useProfile } from './auth.hooks';
 
@@ -151,7 +150,6 @@ export function ProfileScreen() {
           />
         </SectionCard>
 
-        <CloudAccountCard testIDPrefix="profile" />
       </ScrollView>
     </KeyboardAvoider>
   );

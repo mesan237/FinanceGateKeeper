@@ -21,6 +21,7 @@ import { ToastProvider } from '@/components/Toast';
 import { PushedScreensStack } from '@/components/PushedScreensStack';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
+import { useDailySnapshot } from '@/hooks/useDailySnapshot';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
 import { AuthScreen } from '@/features/finance/auth/AuthScreen';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
@@ -81,6 +82,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <AuthProvider>
           <AuthGate>
+            <DailySnapshot />
             <OnboardingGate
               ready={!settingsLoading && !!settings}
               complete={settings?.onboardingComplete ?? false}
@@ -174,3 +176,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
+/**
+ * Takes the day's automatic local snapshot (VS-37). Rendered inside `AuthGate`
+ * so it only runs once the app is unlocked, never behind the PIN screen.
+ */
+function DailySnapshot() {
+  useDailySnapshot();
+  return null;
+}
