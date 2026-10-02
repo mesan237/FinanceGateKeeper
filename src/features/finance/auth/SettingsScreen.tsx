@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -10,6 +10,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SectionCard } from '@/components/SectionCard';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { TimeField } from '@/components/TimeField';
+import { Toggle } from '@/components/Toggle';
 import { Typography } from '@/components/Typography';
 import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -158,10 +159,11 @@ export function SettingsScreen() {
           title={t('settings.notificationsTitle')}
           subtitle={t('settings.notificationsSubtitle')}
           right={
-            <Switch
+            <Toggle
               testID="settings-notifications-switch"
               value={settings.notificationsEnabled}
               onValueChange={toggleNotifications}
+              accessibilityLabel={t('settings.notificationsTitle')}
             />
           }
         />

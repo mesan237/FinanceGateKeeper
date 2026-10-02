@@ -55,7 +55,9 @@ describe('SettingsScreen', () => {
     renderSettings();
     // The reminder is a native time picker seeded from the saved HH:mm.
     expect(await screen.findByTestId('settings-reminder-time')).toBeTruthy();
-    expect(screen.getByTestId('settings-notifications-switch').props.value).toBe(true);
+    expect(
+      screen.getByTestId('settings-notifications-switch').props.accessibilityState,
+    ).toEqual(expect.objectContaining({ checked: true }));
   });
 
   it('saves a picked reminder time and reschedules — no free-text entry', async () => {
