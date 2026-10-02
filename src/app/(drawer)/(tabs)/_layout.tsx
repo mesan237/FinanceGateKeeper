@@ -1,8 +1,10 @@
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { PlatformPressable } from '@react-navigation/elements';
 import { DrawerActions } from '@react-navigation/native';
 import { Tabs, useNavigation } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
@@ -24,20 +26,34 @@ const HEADER_CONTENT_HEIGHT = 40;
 // both sides.
 const TAB_BAR_CONTENT_HEIGHT = 64;
 
-// The icon+label pair measures 44 inside the item (5 of built-in padding, the
-// 20 icon, the 14 label line, 5 again), so splitting the remaining 20 evenly
-// centres the pair in the taller strip.
-const TAB_ITEM_VERTICAL_PADDING = (TAB_BAR_CONTENT_HEIGHT - 44) / 2;
-
-// Pinned so the pair's height stays the 44 the padding above assumes, instead
-// of drifting with whatever line height the platform derives from the font.
+// Pinned so the label line is a known height instead of whatever the platform
+// derives from the font.
 const TAB_BAR_LABEL_LINE_HEIGHT = 14;
+
+// Space between the icon glyph and its label.
+const TAB_ICON_LABEL_GAP = 4;
 
 // Lucide ships no outline/filled pair, so the focused tab reads as a heavier
 // stroke plus the active tint rather than a different glyph.
 function tabIcon(name: IconName, focused: boolean, color: string) {
   return <Icon name={name} size={ICON_SIZE.md} color={color} strokeWidth={focused ? 2.5 : 2} />;
 }
+
+// React Navigation stacks the icon and label from the top of the pressable
+// (`justifyContent: 'flex-start'` plus 5 of padding) and applies
+// `tabBarItemStyle` to an outer wrapper it cannot reach, so padding there only
+// pushes the pair further down. Re-rendering the button lets the pair centre in
+// the strip, giving it the same room above the icon as below the label.
+function TabBarButton(props: BottomTabBarButtonProps) {
+  return <PlatformPressable {...props} style={[props.style, styles.tabButton]} />;
+}
+
+const styles = StyleSheet.create({
+  tabButton: {
+    justifyContent: 'center',
+    paddingVertical: 0,
+  },
+});
 
 function MenuIcon() {
   const navigation = useNavigation();
@@ -98,11 +114,12 @@ export default function TabsLayout() {
           shadowOpacity: 0,
           height: TAB_BAR_CONTENT_HEIGHT + insets.bottom,
         },
-        tabBarItemStyle: {
-          paddingTop: TAB_ITEM_VERTICAL_PADDING,
-          paddingBottom: TAB_ITEM_VERTICAL_PADDING,
-        },
+        tabBarButton: TabBarButton,
+        // The icon box defaults to 28 tall around a 20 glyph, which leaves dead
+        // space above the icon; fit it to the glyph so the centring is optical.
+        tabBarIconStyle: { height: ICON_SIZE.md },
         tabBarLabelStyle: {
+          marginTop: TAB_ICON_LABEL_GAP,
           fontSize: 11,
           lineHeight: TAB_BAR_LABEL_LINE_HEIGHT,
           fontFamily: FONT_FAMILY.WORK_SANS_MEDIUM,
