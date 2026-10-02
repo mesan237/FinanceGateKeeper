@@ -50,10 +50,13 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
-  it('leaves "Backup & Restore" disabled', () => {
-    renderDrawer();
+  it('navigates to /backup and closes the drawer when "Backup & Restore" is pressed', () => {
+    const { navigation } = renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });
-    expect(row.props.accessibilityState?.disabled).toBe(true);
+    expect(row.props.accessibilityState?.disabled).not.toBe(true);
+    fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/backup');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
   it('labels the menu in French when the app is in French', async () => {

@@ -1116,6 +1116,52 @@ account exists (it relies on foreign keys, and nothing in `database.ts` turns th
 that is worth confirming on a device); lists load once on mount rather than on focus; deleting an
 item has no confirmation; the purchase sheet can confirm before the default wallet has loaded.
 
+### VS-37: Backup & Restore ✅ Done
+
+**Priority:** High — user-requested; turns the drawer's disabled "Soon" row into a real safety net
+**Blocked by:** VS-15 (Cloud sync), VS-32 (Export & Import)
+**Plan:** `issues/ISSUE-035/implementation-plan.md`
+
+**Scope:**
+
+- One Backup & Restore screen from the drawer. **Cloud backup:** status, last
+  backup, *Back up now*, and *Restore from cloud* (replace this phone's data with
+  the cloud copy). **On this phone:** automatic snapshots restorable offline.
+- Automatic local snapshots: daily on first open, keep the last 7; manual and
+  "before restore" safety copies are kept separately.
+- Every restore first takes a "before restore" snapshot, so it can be undone.
+- A snapshot restore marks the restored rows pending with a fresh timestamp, so
+  the cloud converges on the next sync (the engine sends no deletions; documented).
+
+**TDD Anchor:**
+
+- Test: `snapshots.service` — one daily snapshot per day, pruned to 7, safety
+  copies spared.
+- Test: snapshot restore replaces data and leaves every row pending.
+- Test: `restoreFromCloud` repopulates from the cloud, refuses when signed out,
+  and is untouched on a cloud error.
+- Test: screen restores through a confirm modal; drawer row opens `/backup`.
+
+**Done when:** The drawer's Backup & Restore row opens a screen where the user
+can see when they were last backed up, take a backup, and restore from the cloud
+or from any of the last 7 daily snapshots, and every restore can be undone.
+
+**Status:** Done. `services/snapshots.service.ts` writes JSON snapshots to
+`documents/backups` (7 daily + 5 manual/before-restore, pruned separately; ids
+validated against a strict file-name pattern). `useDailySnapshot` runs on open and
+foreground inside the unlocked tree. A snapshot restore reads first, saves a
+"before restore" copy (sparing the restored one from pruning), then imports and
+marks every row pending in one transaction (`importData(..., { markPendingAt })`),
+so the cloud converges despite the engine sending no deletions.
+`sync.restoreFromCloud` fetches everything first and refuses with data untouched
+when signed out, offline or the cloud is empty, then replaces in one transaction
+under the sync guard. New `backup` slice + `/backup` route; drawer row live; en/fr
+`backup` namespace. No schema change, no new cross-feature edges. code-reviewer
+APPROVE WITH NITS; fixed: one restore at a time on the screen, atomic
+restore + pending-marking, restored snapshot never pruned, no double daily snapshot
+on cold start. Left as-is: raw cloud error text in the cloud card (same as
+`CloudAccountCard`); the first daily snapshot can land during onboarding.
+
 ---
 
 ## DEPENDENCY GRAPH

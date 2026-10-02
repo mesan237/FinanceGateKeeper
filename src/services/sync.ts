@@ -1,11 +1,12 @@
 import { execute, query, type SqlBindValue } from '@/services/database';
-import { SYNCED_TABLES } from '@/services/migrations/017_add_sync_metadata';
+import { SYNCED_TABLES, type SyncedTable } from '@/services/migrations/017_add_sync_metadata';
 import { applyCloudRow, sortForInsert, toCloudRow, type Row } from '@/services/sync.mapping';
-import type { SyncResult } from '@/services/sync.types';
+import { createSnapshot } from '@/services/snapshots.service';
+import type { CloudRestoreError, CloudRestoreResult, SyncResult } from '@/services/sync.types';
 import { getCurrentUserId, supabase } from '@/services/supabase';
 
 export { SYNCED_TABLES };
-export type { SyncResult };
+export type { CloudRestoreResult, SyncResult };
 
 const EPOCH = '1970-01-01T00:00:00.000Z';
 
@@ -129,5 +130,99 @@ export async function syncNow(): Promise<SyncResult> {
       lastSyncedAt: await getLastSyncedAt(),
       error: e instanceof Error ? e.message : String(e),
     };
+  }
+}
+
+function errorText(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+/** Fetches every synced table from the cloud, parents first. Throws on a cloud error. */
+async function fetchAllFromCloud(): Promise<Array<[SyncedTable, Row[]]>> {
+  const tables: Array<[SyncedTable, Row[]]> = [];
+  for (const table of SYNCED_TABLES) {
+    const { data, error } = await supabase.from(table).select();
+    if (error) throw new Error(error.message);
+    tables.push([table, sortForInsert(table, (data ?? []) as Row[])]);
+  }
+  return tables;
+}
+
+/**
+ * Clears every synced table and writes the cloud rows in, in one transaction
+ * with the sync guard raised, then points the pull cursor at the newest cloud
+ * timestamp. A single unmergeable row is skipped, as in `pullChanges`. Any other
+ * failure rolls the whole replace back. Returns the number of rows written.
+ */
+async function replaceWithCloudRows(tables: Array<[SyncedTable, Row[]]>): Promise<number> {
+  let restored = 0;
+  let maxSeen = EPOCH;
+  // `PRAGMA foreign_keys` can only change outside a transaction (see importData).
+  await execute('PRAGMA foreign_keys = OFF');
+  try {
+    await execute('BEGIN TRANSACTION');
+    try {
+      await setGuard(true);
+      for (const table of [...SYNCED_TABLES].reverse()) {
+        await execute(`DELETE FROM ${table}`);
+      }
+      for (const [table, rows] of tables) {
+        for (const cloud of rows) {
+          const updatedAt = cloud.updated_at;
+          if (typeof updatedAt === 'string' && updatedAt > maxSeen) maxSeen = updatedAt;
+          try {
+            if (await applyCloudRow(table, cloud)) restored += 1;
+          } catch {
+            // Skip one unmergeable row rather than abort the restore.
+          }
+        }
+      }
+      await setLastSyncedAt(maxSeen);
+      await setGuard(false);
+      await execute('COMMIT');
+    } catch (e) {
+      // Rolling back also restores the guard flag to its lowered state.
+      await execute('ROLLBACK');
+      throw e;
+    }
+  } finally {
+    await execute('PRAGMA foreign_keys = ON');
+  }
+  return restored;
+}
+
+/**
+ * Replaces this phone's synced data with the cloud copy. Everything is fetched
+ * first, so a cloud error, a signed-out session or an empty cloud backup leaves
+ * the phone untouched. Then a "before restore" snapshot of the local data is
+ * taken (local changes never pushed are otherwise lost), the local tables are
+ * cleared and refilled from the cloud, and the pull cursor moves to the newest
+ * cloud row. Never throws: failures come back as `{ ok: false, error }`.
+ */
+export async function restoreFromCloud(): Promise<CloudRestoreResult> {
+  const fail = async (error: CloudRestoreError, e?: unknown): Promise<CloudRestoreResult> => ({
+    ok: false,
+    restored: 0,
+    lastSyncedAt: await getLastSyncedAt(),
+    error,
+    ...(e === undefined ? {} : { message: errorText(e) }),
+  });
+
+  if (!(await getCurrentUserId())) return fail('not-signed-in');
+
+  let tables: Array<[SyncedTable, Row[]]>;
+  try {
+    tables = await fetchAllFromCloud();
+  } catch (e) {
+    return fail('cloud-error', e);
+  }
+  if (tables.every(([, rows]) => rows.length === 0)) return fail('cloud-empty');
+
+  try {
+    await createSnapshot('before-restore');
+    const restored = await replaceWithCloudRows(tables);
+    return { ok: true, restored, lastSyncedAt: await getLastSyncedAt() };
+  } catch (e) {
+    return fail('restore-failed', e);
   }
 }

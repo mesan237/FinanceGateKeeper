@@ -100,7 +100,7 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 ### The sync engine
 
 [`sync.ts`](../src/services/sync.ts) exposes `pushChanges`, `pullChanges`,
-`syncNow`, `getLastSyncedAt`.
+`syncNow`, `restoreFromCloud`, `getLastSyncedAt`.
 
 - **push** — for each table (parents first), select `sync_status = 'pending'`,
   translate FK ids → uuids, `upsert(onConflict: 'uuid')`, then mark the rows
@@ -114,6 +114,25 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 - **syncNow** — `push` then `pull`. Returns `{ ok: false }` (never throws) when
   signed out or when the cloud is unreachable, so callers surface state without
   try/catch. Pending rows survive a failed attempt.
+- **restoreFromCloud** (VS-37) — replaces the phone's synced data with the cloud
+  copy instead of merging. It fetches every table first, so a signed-out session,
+  a cloud error or an empty cloud backup leaves the phone untouched
+  (`{ ok: false, error }`). Then it takes a "before restore" local snapshot (local
+  changes never pushed would otherwise be lost), clears the synced tables and
+  writes the cloud rows in one transaction with the sync guard raised, and moves
+  the cursor to the newest cloud timestamp. Restored rows are `synced`.
+
+### Local snapshots and the no-deletions rule
+
+The engine never sends deletions. [`snapshots.service.ts`](../src/services/snapshots.service.ts)
+keeps daily on-phone snapshots (VS-37), and restoring one would otherwise leave
+the cloud diverged: the restored rows keep their old `synced` status and
+timestamps, so they'd never push, while the cursor is already past the cloud's
+newer versions. So a snapshot restore ends with `markAllPending`
+([`dataTransfer.service.ts`](../src/services/dataTransfer.service.ts)): every row
+becomes `pending` with `updated_at = now`, the next sync pushes it, and it wins
+last-write-wins. Rows that exist only in the cloud (created after the snapshot)
+stay there; a later **Restore from cloud** brings them back.
 
 ### Triggers for a sync
 
@@ -162,7 +181,9 @@ table fails the whole sync.
 
 1. Install the app; the migration runner builds the local schema (empty data).
 2. Open **Settings → Cloud backup** and sign in with the same credentials.
-3. The next sync (`pullChanges`) restores every synced table from the cloud.
+3. The next sync (`pullChanges`) restores every synced table from the cloud. To
+   replace whatever is on the phone with the cloud copy instead of merging, use
+   **Backup & Restore → Restore from cloud** (`restoreFromCloud`).
 
 For the cleanest restore, pull **before** creating any local data on the new
 device, so independently-created singleton rows (funds, allocations) don't clash

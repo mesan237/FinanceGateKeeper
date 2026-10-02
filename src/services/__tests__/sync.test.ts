@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import * as fakeSupabase from '@supabase/supabase-js';
+import { Directory, Paths } from 'expo-file-system';
 
 import { createBetterSqliteDriver, runMigrations, type SqliteDriver } from '@/services/database';
 import { migrations } from '@/services/migrations';
@@ -17,7 +18,15 @@ jest.mock('@/services/database', () => {
   };
 });
 
-import { getLastSyncedAt, pullChanges, pushChanges, syncNow } from '@/services/sync';
+import { listSnapshots } from '@/services/snapshots.service';
+import {
+  getLastSyncedAt,
+  pullChanges,
+  pushChanges,
+  restoreFromCloud,
+  syncNow,
+  SYNCED_TABLES,
+} from '@/services/sync';
 
 const cloud = fakeSupabase as unknown as {
   __reset(): void;
@@ -386,5 +395,108 @@ describe('syncNow', () => {
     expect(get<{ c: number }>('SELECT COUNT(*) AS c FROM income').c).toBe(2);
     expect(get<{ c: number }>('SELECT COUNT(*) AS c FROM debts').c).toBe(1);
     expect(await getLastSyncedAt()).toBeTruthy();
+  });
+});
+
+describe('restoreFromCloud', () => {
+  const incomeAmounts = () =>
+    all<{ amount: number }>('SELECT amount FROM income ORDER BY amount').map((r) => r.amount);
+
+  beforeEach(() => {
+    const backups = new Directory(Paths.document, 'backups');
+    if (backups.exists) backups.delete();
+  });
+
+  it('replaces local data with the cloud copy and resets the pull cursor', async () => {
+    insertIncome(5000);
+    await pushChanges();
+    run(`DELETE FROM income`);
+    insertIncome(7000); // a local change that was never pushed
+
+    const result = await restoreFromCloud();
+
+    expect(result.ok).toBe(true);
+    expect(result.restored).toBeGreaterThan(0);
+    expect(incomeAmounts()).toEqual([5000]);
+    const cloudMax = SYNCED_TABLES.flatMap((t) => cloud.__getTable(t))
+      .map((r) => r.updated_at as string)
+      .sort()
+      .pop();
+    expect(await getLastSyncedAt()).toBe(cloudMax);
+    expect(result.lastSyncedAt).toBe(cloudMax);
+  });
+
+  it('leaves every restored row synced, so the next sync pushes nothing', async () => {
+    insertIncome(5000);
+    await pushChanges();
+
+    await restoreFromCloud();
+
+    expect(get<{ c: number }>(`SELECT COUNT(*) AS c FROM income WHERE sync_status = 'pending'`).c).toBe(0);
+    expect((await pushChanges()).pushed).toBe(0);
+  });
+
+  it('keeps foreign keys intact (expense → category)', async () => {
+    const category = get<{ id: number; name: string }>(
+      `SELECT id, name FROM categories WHERE parent_id IS NULL LIMIT 1`,
+    );
+    run(
+      `INSERT INTO expenses (amount, category_id, date, created_at) VALUES (800, ?, '2026-06-01', '2026-06-01T00:00:00.000Z')`,
+      category.id,
+    );
+    await pushChanges();
+
+    await restoreFromCloud();
+
+    const restored = get<{ name: string }>(
+      `SELECT c.name AS name FROM expenses e JOIN categories c ON c.id = e.category_id`,
+    );
+    expect(restored.name).toBe(category.name);
+  });
+
+  it('takes a "before restore" snapshot of the local data first', async () => {
+    insertIncome(5000);
+    await pushChanges();
+    insertIncome(7000);
+
+    await restoreFromCloud();
+
+    const [snapshot] = await listSnapshots();
+    expect(snapshot.reason).toBe('before-restore');
+  });
+
+  it('refuses when signed out and leaves data untouched', async () => {
+    insertIncome(5000);
+    await pushChanges();
+    insertIncome(7000);
+    cloud.__setSession(null);
+
+    const result = await restoreFromCloud();
+
+    expect(result).toMatchObject({ ok: false, error: 'not-signed-in' });
+    expect(incomeAmounts()).toEqual([5000, 7000]);
+    expect(await listSnapshots()).toEqual([]);
+  });
+
+  it('leaves data untouched on a cloud error', async () => {
+    insertIncome(5000);
+    await pushChanges();
+    insertIncome(7000);
+    cloud.__fail('network down');
+
+    const result = await restoreFromCloud();
+
+    expect(result).toMatchObject({ ok: false, error: 'cloud-error', message: 'network down' });
+    expect(incomeAmounts()).toEqual([5000, 7000]);
+    expect(await listSnapshots()).toEqual([]);
+  });
+
+  it('refuses to wipe the phone when the cloud backup is empty', async () => {
+    insertIncome(5000);
+
+    const result = await restoreFromCloud();
+
+    expect(result).toMatchObject({ ok: false, error: 'cloud-empty' });
+    expect(incomeAmounts()).toEqual([5000]);
   });
 });

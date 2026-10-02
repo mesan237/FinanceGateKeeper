@@ -41,6 +41,9 @@ Implemented in VS-15 — full detail in [docs/CLOUD-SYNC.md](../../docs/CLOUD-SY
 - Conflict resolution: local always wins (last-write-wins; local breaks ties).
 - Sync triggers: on app open and foreground (`useBackgroundSync`) and manual "Sync Now". `users` is
   excluded from sync.
+- `restoreFromCloud` replaces local data with the cloud copy (VS-37). `snapshots.service.ts` keeps
+  daily on-phone snapshots; restoring one calls `markAllPending` so the cloud converges, since the
+  engine never sends deletions.
 
 ## Import Rules
 - This folder can import from `utils/`, `constants/`, `types/` only.

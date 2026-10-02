@@ -16,7 +16,7 @@ jest.mock('@/services/database', () => {
   };
 });
 
-import { exportData, importData } from '@/services/dataTransfer.service';
+import { exportData, importData, markAllPending } from '@/services/dataTransfer.service';
 import { ImportValidationError, type ExportPayload } from '@/services/dataTransfer.types';
 import { SYNCED_TABLES } from '@/services/migrations/017_add_sync_metadata';
 
@@ -237,5 +237,33 @@ describe('importData', () => {
       `SELECT COUNT(*) AS n FROM accounts`,
     );
     expect(accountsAfter).toBe(accountsBefore);
+  });
+});
+
+describe('markAllPending', () => {
+  it('marks every synced row pending with the given timestamp, leaving data columns alone', async () => {
+    use(target);
+    const categoryId = await firstSubcategoryId(target);
+    await target.driver.execute(
+      `INSERT INTO expenses (amount, category_id, date, created_at) VALUES (900, ?, '2026-07-01', '2026-07-01T00:00:00.000Z')`,
+      [categoryId],
+    );
+    for (const table of SYNCED_TABLES) {
+      await target.driver.execute(`UPDATE ${table} SET sync_status = 'synced'`);
+    }
+
+    await markAllPending('2026-10-02T09:00:00.000Z');
+
+    for (const table of SYNCED_TABLES) {
+      const rows = await target.driver.query<{ sync_status: string; updated_at: string }>(
+        `SELECT sync_status, updated_at FROM ${table}`,
+      );
+      for (const row of rows) {
+        expect(row.sync_status).toBe('pending');
+        expect(row.updated_at).toBe('2026-10-02T09:00:00.000Z');
+      }
+    }
+    const [expense] = await target.driver.query<{ amount: number }>(`SELECT amount FROM expenses`);
+    expect(expense.amount).toBe(900);
   });
 });
