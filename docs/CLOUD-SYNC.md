@@ -24,12 +24,20 @@ non-blocking. On a new device you sign in and pull your data back.
 
 2. **Apply the schema.** Open the Supabase SQL editor, paste the **entire**
    contents of [`supabase/schema.sql`](../supabase/schema.sql), and run it. It
-   drops any stale tables and recreates the 12 financial tables uuid-keyed with
+   drops any stale tables and recreates the 17 financial tables uuid-keyed with
    per-user row-level security.
 
    > ⚠️ The script begins with `DROP TABLE … CASCADE`. That is safe on a fresh
    > project but **destroys existing rows** — do not run it over a project that
    > already holds real synced data.
+
+   **Upgrading an existing project:** run
+   [`supabase/patches/037_catch_up_schema.sql`](../supabase/patches/037_catch_up_schema.sql)
+   instead. It creates any missing table (including patch 036's) and adds any
+   missing column, never drops anything, and is safe to re-run. A sync error like *"Could not find the 'deleted_at' column of 'projects' in the
+   schema cache"* means the cloud schema is behind and needs this script.
+   `src/services/__tests__/supabaseSchema.test.ts` fails whenever a migration
+   adds a synced column that `schema.sql` or patch 037 lacks.
 
 3. **Set env vars.** Copy [`.env.example`](../.env.example) to `.env` and fill in
    your project URL and anon key (Project Settings → API):
@@ -149,9 +157,10 @@ stay there; a later **Restore from cloud** brings them back.
 
 ## What syncs
 
-The 12 financial tables: `categories`, `expenses`, `income`, `allocations`,
-`funds`, `fund_transactions`, `projects`, `project_transactions`,
-`quick_add_templates`, `recurring_expenses`, `zero_days`, `debts`
+The 15 financial tables: `categories`, `accounts`, `expenses`, `income`,
+`allocations`, `category_budgets`, `funds`, `fund_transactions`, `projects`,
+`project_transactions`, `quick_add_templates`, `recurring_expenses`, `zero_days`,
+`debts`, `transfers`
 (`SYNCED_TABLES` in
 [`017_add_sync_metadata.ts`](../src/services/migrations/017_add_sync_metadata.ts)).
 
@@ -163,7 +172,7 @@ a later edit of that item would clear the link in the cloud); and deleted expens
 not synced anywhere (no tombstones), so undoing a purchase on one device reopens the
 item on the others while they keep the expense. **Before installing a build with migration 031, run
 [`supabase/patches/036_planned_purchases.sql`](../supabase/patches/036_planned_purchases.sql)**
-in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
+(or patch 037, which includes it) in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
 exist, every sync from that build fails, because a Supabase error on any synced
 table fails the whole sync.
 
