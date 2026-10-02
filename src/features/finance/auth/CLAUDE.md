@@ -29,6 +29,7 @@ device-only lock; the cloud identity (email/password) is separate, in
 ## Files
 - PIN/auth: `AuthProvider.tsx`, `AuthScreen.tsx`, `PinKeypad.tsx`, `ChangePinScreen.tsx`, `PinRecoveryScreen.tsx`.
 - Profile: `ProfileScreen.tsx`, `ProfileAvatar.tsx`, `auth.profile.ts`.
-- Shared: `CloudAccountCard.tsx` (cloud account UI, used by Settings + Profile),
-  `SettingsScreen.tsx`, `AppModeProvider.tsx`, `DailyReminderScheduler.tsx`, `reminder.ts`.
+- Shared: `SettingsScreen.tsx`, `AppModeProvider.tsx`, `DailyReminderScheduler.tsx`, `reminder.ts`.
 - Core: `auth.hooks.ts`, `auth.service.ts`, `auth.types.ts`.
+- The cloud account (sign in/up/out) is managed only on Backup & Restore
+  (`backup/CloudBackupCard.tsx`). `PinRecoveryScreen` signs in for PIN reset only.

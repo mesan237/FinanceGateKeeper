@@ -17,7 +17,7 @@ const mockCloud = {
   signedIn: false,
   status: 'idle' as const,
   lastSyncedAt: null as string | null,
-  error: null,
+  error: null as string | null,
   signIn: jest.fn(),
   signUp: jest.fn(),
   signOut: jest.fn(),
@@ -65,6 +65,7 @@ beforeEach(() => {
   mockCloud.signedIn = false;
   mockCloud.userEmail = null;
   mockCloud.lastSyncedAt = null;
+  mockCloud.error = null;
 });
 
 function signIn() {
@@ -158,13 +159,48 @@ describe('BackupScreen — on this phone', () => {
 });
 
 describe('BackupScreen — cloud backup', () => {
-  it('links a signed-out user to Settings to sign in', () => {
+  it('signs a signed-out user in right here, without leaving the screen', async () => {
+    mockCloud.signIn.mockResolvedValue(true);
     render(<BackupScreen />);
 
     expect(screen.queryByTestId('backup-cloud-restore')).toBeNull();
+    fireEvent.changeText(screen.getByTestId('backup-cloud-email'), 'me@example.com');
+    fireEvent.changeText(screen.getByTestId('backup-cloud-password'), 'pw123456');
     fireEvent.press(screen.getByTestId('backup-cloud-sign-in'));
 
-    expect(mockPush).toHaveBeenCalledWith('/settings');
+    await waitFor(() =>
+      expect(mockCloud.signIn).toHaveBeenCalledWith('me@example.com', 'pw123456'),
+    );
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('creates a cloud account with the entered credentials', async () => {
+    mockCloud.signUp.mockResolvedValue(true);
+    render(<BackupScreen />);
+
+    fireEvent.changeText(screen.getByTestId('backup-cloud-email'), 'new@example.com');
+    fireEvent.changeText(screen.getByTestId('backup-cloud-password'), 'pw123456');
+    fireEvent.press(screen.getByTestId('backup-cloud-sign-up'));
+
+    await waitFor(() =>
+      expect(mockCloud.signUp).toHaveBeenCalledWith('new@example.com', 'pw123456'),
+    );
+  });
+
+  it('shows why signing in failed', () => {
+    mockCloud.error = 'Invalid login credentials';
+    render(<BackupScreen />);
+
+    expect(screen.getByText('Invalid login credentials')).toBeTruthy();
+  });
+
+  it('signs out of the cloud account', async () => {
+    signIn();
+    render(<BackupScreen />);
+
+    fireEvent.press(screen.getByTestId('backup-cloud-sign-out'));
+
+    await waitFor(() => expect(mockCloud.signOut).toHaveBeenCalledTimes(1));
   });
 
   it('shows the account and backs up on demand when signed in', () => {
@@ -225,7 +261,8 @@ describe('BackupScreen — French', () => {
     expect(screen.getByText('Sauvegarde et restauration')).toBeTruthy();
     expect(screen.getByText('Quotidienne')).toBeTruthy();
     expect(screen.getByText('40 enregistrements · 4 Ko')).toBeTruthy();
-    expect(screen.getByText('Se connecter pour sauvegarder')).toBeTruthy();
+    expect(screen.getByText('Se connecter')).toBeTruthy();
+    expect(screen.getByText('Créer un compte')).toBeTruthy();
   });
 });
 

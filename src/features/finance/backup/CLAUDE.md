@@ -22,8 +22,9 @@ snapshots are JSON files in the app's private `documents/backups` folder.
 
 ## Files
 - `BackupScreen.tsx` — composes the two cards and the confirm modal.
-- `CloudBackupCard.tsx` — cloud status via `hooks/useCloudSync`; signed out it
-  links to Settings (the slice can't import `auth`'s `CloudAccountCard`).
+- `CloudBackupCard.tsx` — the only home of the cloud account, via
+  `hooks/useCloudSync`: sign-in/sign-up form when signed out; back up now,
+  restore from cloud and sign out when signed in.
 - `SnapshotList.tsx` — "Take a snapshot now" and the snapshot rows.
 - `ConfirmActionModal.tsx` — what a restore or delete will change.
 - `backup.hooks.ts` — `useSnapshots`, `useCloudRestore`.

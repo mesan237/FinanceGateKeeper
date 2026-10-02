@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -22,15 +21,14 @@ const CLOUD_ERROR_KEYS = {
 } as const satisfies Record<CloudRestoreError, string>;
 
 /**
- * Backup & Restore: the cloud backup (status, back up now, restore from cloud)
- * and the automatic on-phone snapshots (take one, restore one, delete one).
+ * Backup & Restore: the cloud backup and its account (sign in, back up now,
+ * restore from cloud, sign out) and the automatic on-phone snapshots (take one, restore one, delete one).
  * Every restore and delete goes through a confirm modal first, and every
  * restore saves a "before restore" snapshot, so it can be undone from the list.
  */
 export function BackupScreen() {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('backup');
-  const router = useRouter();
   const { show } = useToast();
   const cloud = useCloudSync();
   const snapshots = useSnapshots();
@@ -83,7 +81,6 @@ export function BackupScreen() {
         // Restores share one SQLite connection: never let two run at once.
         disabled={snapshots.isBusy}
         onRestore={() => setPending({ kind: 'restore-cloud' })}
-        onSignIn={() => router.push('/settings')}
       />
 
       <SnapshotList
