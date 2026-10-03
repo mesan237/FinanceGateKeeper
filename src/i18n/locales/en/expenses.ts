@@ -16,6 +16,8 @@ export const expenses = {
     account: 'Account',
     logged: 'Logged {{amount}}',
     loggedWithCategory: 'Logged {{amount}} · {{category}}',
+    unplanned: 'Unexpected',
+    unplannedHint: "Spending you didn't see coming",
   },
   log: {
     title: 'Log Expense',
@@ -32,6 +34,8 @@ export const expenses = {
     retry: 'Retry',
     empty: 'No transactions in {{month}}.',
     addTransaction: 'Add transaction',
+    unplannedFilter: 'Unexpected',
+    unplannedBadge: 'Unexpected',
   },
   picker: {
     subtitleRoot: 'Tap a category to see its subcategories',

@@ -23,6 +23,16 @@ export const reports: Translation<typeof en> = {
     owed: 'Emprunté',
     viewWeekly: 'Voir le rapport hebdomadaire →',
   },
+  unplanned: {
+    title: 'Imprévus',
+    count_one: '{{count}} imprévu',
+    count_other: '{{count}} imprévus',
+    share: '{{percent}} % des dépenses du mois',
+    shareUnderOne: 'Moins de 1 % des dépenses du mois',
+    previous: 'Mois dernier : {{count}} · {{amount}}',
+    none: 'Aucun imprévu ce mois-ci.',
+    hint: 'Activez « Imprévu » en saisissant une dépense pour la compter ici.',
+  },
   comparison: {
     title: 'Dépenses par rapport au mois précédent',
     empty: 'Aucune donnée de comparaison pour le mois dernier.',

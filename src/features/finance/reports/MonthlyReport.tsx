@@ -20,15 +20,16 @@ import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
 import { OptimizationSuggestions } from './OptimizationSuggestions';
 import { SpendingDonutChart } from './SpendingDonutChart';
+import { UnplannedCard } from './UnplannedCard';
 import { expenseSpentPct } from './reports.service';
 import { useMonthlyReport } from './reports.hooks';
 
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
- * expense performance, a category pie chart and breakdown, debt totals, an
- * optional month-over-month comparison, and
- * rule-based suggestions. Prev/next arrows browse months; "next" is disabled on
- * the current month. A link navigates to the weekly report.
+ * expense performance, the month's imprévus, a category pie chart and
+ * breakdown, debt totals, an optional month-over-month comparison, and
+ * rule-based suggestions. Prev/next arrows browse months; "next" is disabled
+ * on the current month. A link navigates to the weekly report.
  */
 export function MonthlyReport() {
   const styles = useThemedStyles(makeStyles);
@@ -92,6 +93,8 @@ export function MonthlyReport() {
               color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
             />
           </View>
+
+          <UnplannedCard summary={report.unplanned} />
 
           <View style={styles.section}>
             <Typography variant="subheading">{t('monthly.byCategory')}</Typography>

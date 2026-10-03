@@ -1,4 +1,7 @@
-import type { DayActivityStatus } from '@/features/finance/expenses/expenses.types';
+import type {
+  DayActivityStatus,
+  UnplannedTotals,
+} from '@/features/finance/expenses/expenses.types';
 
 export type PaceLevel = 'green' | 'yellow' | 'red';
 
@@ -35,6 +38,8 @@ export interface DashboardState {
   budget: BudgetSummary | null;
   /** Month-to-date income vs expenses. */
   cashflow: Cashflow | null;
+  /** The month's imprévus — expenses the user marked as unplanned (VS-38). */
+  unplanned: UnplannedTotals;
   /** Recommended daily expense spend (expense budget ÷ days in month). null
    * when no expense budget is set. */
   dailyPace: number | null;

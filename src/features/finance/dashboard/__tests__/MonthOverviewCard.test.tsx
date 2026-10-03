@@ -207,4 +207,26 @@ describe('MonthOverviewCard', () => {
     renderCard({ daysRemaining: 1 });
     expect(screen.getByText('1 jour restant')).toBeTruthy();
   });
+
+  describe('imprévus line', () => {
+    it('shows how many imprévus the month has and what they cost', () => {
+      renderCard({ unplanned: { count: 2, total: 10000 } });
+      expect(screen.getByTestId('month-overview-unplanned')).toHaveTextContent(
+        '2 unexpected expenses · 10 000 FCFA',
+      );
+    });
+
+    it('stays out of the way while the month has none', () => {
+      renderCard({ unplanned: { count: 0, total: 0 } });
+      expect(screen.queryByTestId('month-overview-unplanned')).toBeNull();
+    });
+
+    it('reads in French', async () => {
+      await i18n.changeLanguage('fr');
+      renderCard({ unplanned: { count: 1, total: 3000 } });
+      expect(screen.getByTestId('month-overview-unplanned')).toHaveTextContent(
+        '1 imprévu · 3 000 FCFA',
+      );
+    });
+  });
 });

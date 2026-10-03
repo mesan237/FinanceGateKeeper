@@ -12,6 +12,8 @@ export interface ExpenseEntry {
   accountId: number | null;
   /** Source wallet name, or null when `accountId` is null. */
   accountLabel: string | null;
+  /** Marked by the user as an imprévu — spending that caught them off guard. */
+  isUnplanned: boolean;
 }
 
 export interface IncomeEntry {

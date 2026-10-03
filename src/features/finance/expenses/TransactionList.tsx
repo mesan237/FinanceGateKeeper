@@ -17,6 +17,7 @@ import { monthLabel } from '@/utils/monthMath';
 import { CategoryChips } from './CategoryChips';
 import { TransactionRow } from './TransactionRow';
 import { useCategories, useTransactions } from './expenses.hooks';
+import type { FeedFilter } from './expenses.types';
 
 interface Section {
   title: string;
@@ -63,7 +64,8 @@ export interface TransactionListProps {
 
 /**
  * Unified income+expense feed grouped by calendar day, with month navigation.
- * The category chip row filters only expense rows; income rows always appear.
+ * The chip row filters by category (income rows always stay) or down to the
+ * imprévus alone.
  */
 export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   const styles = useThemedStyles(makeStyles);
@@ -71,8 +73,8 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
   const router = useRouter();
   const { t, i18n } = useTranslation(['expenses', 'common']);
   const [monthISO, setMonthISO] = useState(() => currentMonthISO());
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const { entries, loading, error, refresh } = useTransactions(monthISO, selectedCategoryId);
+  const [filter, setFilter] = useState<FeedFilter>(null);
+  const { entries, loading, error, refresh } = useTransactions(monthISO, filter);
   const { categories } = useCategories();
 
   // Re-fetch when the parent bumps the token (skip the initial 0 — the hook
@@ -140,8 +142,8 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
 
       <CategoryChips
         categories={categories}
-        selectedId={selectedCategoryId}
-        onSelect={setSelectedCategoryId}
+        selectedId={filter}
+        onSelect={setFilter}
       />
 
       {error ? (

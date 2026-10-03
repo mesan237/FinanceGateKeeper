@@ -95,6 +95,7 @@ export function DashboardScreen() {
             daysRemaining={state.daysRemaining}
             summary={state.budget}
             cashflow={state.cashflow}
+            unplanned={state.unplanned}
             onSetBudget={() =>
               router.push({ pathname: '/budget/plan', params: { month: state.monthISO } })
             }

@@ -66,11 +66,23 @@ export interface OptimizationSuggestion {
   message: string;
 }
 
+/** The month's imprévus: the expenses the user marked as unplanned (VS-38). */
+export interface UnplannedSummary {
+  count: number;
+  /** What they cost, in FCFA. */
+  total: number;
+  /** Their share of the month's spending, 0–100 and unrounded; 0 when nothing was spent. */
+  sharePct: number;
+  /** The previous month's figures, for comparison. */
+  previous: { count: number; total: number };
+}
+
 export interface MonthlyReport {
   month: string;
   incomeTotal: number;
   expensePerformance: ExpensePerformance;
   categoryBreakdown: CategorySpend[];
+  unplanned: UnplannedSummary;
   debtSummary: DebtSummaryData;
   /** null when there is no income/expense data for the previous month. */
   comparison: MonthComparison | null;

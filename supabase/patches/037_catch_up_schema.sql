@@ -21,7 +21,7 @@
 --   2. Creates every missing table (same definitions as schema.sql).
 --   3. Adds the columns later migrations introduced to tables that already
 --      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
---      total_budget 027).
+--      total_budget 027, expenses.is_unplanned 032).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -108,6 +108,7 @@ create table if not exists expenses (
   date           text not null,
   is_recurring   integer not null default 0,
   account_id     text,          -- uuid of the account, or null
+  is_unplanned   integer not null default 0,  -- the "imprévu" flag (VS-38)
   created_at     text not null,
   updated_at     text not null
 );
@@ -266,6 +267,7 @@ create table if not exists transfers (
 -- ----------------------------------------------------------------
 alter table projects             add column if not exists deleted_at text;
 alter table expenses             add column if not exists account_id text;
+alter table expenses             add column if not exists is_unplanned integer not null default 0;
 alter table income               add column if not exists account_id text;
 alter table income               add column if not exists allocation_status text not null default 'allocated';
 alter table allocations          add column if not exists total_budget integer;

@@ -15,6 +15,8 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { monthLabel } from '@/utils/monthMath';
 
+import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
+
 import type { BudgetSummary, Cashflow, PaceLevel } from './dashboard.types';
 
 /** Chip tone per pace level; the wording comes from `dashboard.pace`. */
@@ -31,6 +33,8 @@ export interface MonthOverviewCardProps {
   daysRemaining: number;
   summary: BudgetSummary;
   cashflow: Cashflow;
+  /** The month's imprévus; the line under the cashflow shows only when there are some. */
+  unplanned?: UnplannedTotals;
   /** Invoked by the no-budget prompt. The screen owns the navigation. */
   onSetBudget: () => void;
 }
@@ -53,6 +57,7 @@ export function MonthOverviewCard({
   daysRemaining,
   summary,
   cashflow,
+  unplanned,
   onSetBudget,
 }: MonthOverviewCardProps) {
   const styles = useThemedStyles(makeStyles);
@@ -141,6 +146,18 @@ export function MonthOverviewCard({
         <View style={styles.divider} />
         <CashflowStat label={t('month.net')} value={cashflow.net} color={netColor} testID="cashflow-net" />
       </View>
+
+      {unplanned && unplanned.count > 0 ? (
+        <View style={styles.unplannedRow}>
+          <View style={styles.unplannedDot} />
+          <Typography variant="muted" testID="month-overview-unplanned">
+            {t('month.unplanned', {
+              count: unplanned.count,
+              amount: formatCurrency(unplanned.total),
+            })}
+          </Typography>
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -248,6 +265,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'stretch',
     backgroundColor: c.BORDER,
     marginHorizontal: SPACING.md,
+  },
+  unplannedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  unplannedDot: {
+    width: 8,
+    height: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: c.WARNING,
   },
   cashflowAmount: {
     color: c.TEXT_PRIMARY,

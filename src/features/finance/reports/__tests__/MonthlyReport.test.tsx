@@ -43,6 +43,7 @@ function buildReport(overrides: Partial<MonthlyReportData> = {}): MonthlyReportD
       { categoryId: 1, categoryLabel: 'Food', amount: 33000, pct: 62.3 },
       { categoryId: 2, categoryLabel: 'Transport', amount: 20000, pct: 37.7 },
     ],
+    unplanned: { count: 0, total: 0, sharePct: 0, previous: { count: 0, total: 0 } },
     debtSummary: { totalLent: 30000, totalOwed: 12000 },
     comparison: null,
     suggestions: [],
@@ -99,7 +100,7 @@ describe('MonthlyReport', () => {
   it('renders the expense performance section with the segmented bar', async () => {
     render(<MonthlyReport />);
     await screen.findByText('June 2026');
-    expect(screen.getByText(/planned/i)).toBeTruthy();
+    expect(screen.getByText(/^planned$/i)).toBeTruthy();
     expect(screen.getByText(/actual spending/i)).toBeTruthy();
     expect(screen.getByText(/remaining budget/i)).toBeTruthy();
     expect(screen.getByText('207 000 FCFA')).toBeTruthy();
@@ -165,5 +166,59 @@ describe('MonthlyReport', () => {
     expect(screen.getByText('Dépenses par catégorie')).toBeTruthy();
     expect(screen.getAllByText('Alimentation').length).toBeGreaterThan(0);
     expect(screen.getByText('62 % du total')).toBeTruthy();
+  });
+
+  describe('imprévus card', () => {
+    const WITH_UNPLANNED = {
+      count: 3,
+      total: 21000,
+      sharePct: 40,
+      previous: { count: 1, total: 5000 },
+    };
+
+    it('shows how many imprévus the month had, their cost and their share', async () => {
+      mockGetMonthly.mockResolvedValue(buildReport({ unplanned: WITH_UNPLANNED }));
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText('3 unexpected expenses')).toBeTruthy();
+      expect(screen.getByTestId('unplanned-total')).toHaveTextContent('21 000 FCFA');
+      expect(screen.getByText("40% of this month's spending")).toBeTruthy();
+      expect(screen.getByText('Last month: 1 · 5 000 FCFA')).toBeTruthy();
+    });
+
+    it('says "under 1%" for a tiny share instead of a misleading 0%', async () => {
+      mockGetMonthly.mockResolvedValue(
+        buildReport({ unplanned: { ...WITH_UNPLANNED, count: 1, total: 100, sharePct: 0.2 } }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText("Under 1% of this month's spending")).toBeTruthy();
+    });
+
+    it('rounds an ordinary share to a whole percentage', async () => {
+      mockGetMonthly.mockResolvedValue(
+        buildReport({ unplanned: { ...WITH_UNPLANNED, sharePct: 33.4 } }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText("33% of this month's spending")).toBeTruthy();
+    });
+
+    it('says so when the month had no imprévus, and how to record one', async () => {
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText('No unexpected expenses this month.')).toBeTruthy();
+      expect(screen.getByText(/Turn on "Unexpected"/)).toBeTruthy();
+      expect(screen.queryByTestId('unplanned-total')).toBeNull();
+    });
+
+    it('reads in French', async () => {
+      await i18n.changeLanguage('fr');
+      mockGetMonthly.mockResolvedValue(buildReport({ unplanned: WITH_UNPLANNED }));
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText('3 imprévus')).toBeTruthy();
+      expect(screen.getByText('40 % des dépenses du mois')).toBeTruthy();
+    });
   });
 });

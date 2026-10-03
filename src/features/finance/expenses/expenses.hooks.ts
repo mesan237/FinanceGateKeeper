@@ -10,7 +10,8 @@ import * as expenseService from './expenses.service';
 import type {
   Category,
   DayActivityStatus,
-  Expense,
+  ExpenseEditableFields,
+  FeedFilter,
   NewCategory,
   NewQuickAddTemplate,
   NewRecurringExpense,
@@ -63,6 +64,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [subcategoryId, setSubcategoryId] = useState<number | null>(null);
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
+  const [isUnplanned, setIsUnplanned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
 
@@ -99,6 +101,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
         date,
         isRecurring: false,
         accountId,
+        isUnplanned,
       });
       setError(null);
       return id;
@@ -106,7 +109,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
-  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId]);
+  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned]);
 
   return {
     amount,
@@ -121,6 +124,8 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
     setDate,
     accountId,
     setAccountId,
+    isUnplanned,
+    setIsUnplanned,
     submit,
     validate,
     canSubmit,
@@ -131,16 +136,17 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
 
 /**
  * Loads the unified income+expense feed for a calendar month, re-querying
- * whenever `monthISO` or `categoryId` changes. An optional `categoryId` filter
- * is applied client-side: expense rows matching the category are kept; income
- * rows are always included regardless of the active category chip.
+ * whenever `monthISO` changes. The optional filter is applied client-side:
+ *
+ * - a category id keeps the matching expenses and every income row;
+ * - `'unplanned'` keeps only the expenses marked as imprévus.
  *
  * @param monthISO YYYY-MM string, e.g. "2026-06".
- * @param categoryId If set, hides expense rows that don't match this category.
+ * @param filter The active feed chip; null or omitted shows everything.
  */
 export function useTransactions(
   monthISO: string,
-  categoryId?: number | null,
+  filter?: FeedFilter,
 ): { entries: TransactionEntry[]; loading: boolean; error: string | null; refresh: () => void } {
   const [allEntries, setAllEntries] = useState<TransactionEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,13 +169,16 @@ export function useTransactions(
   }, [refresh]);
 
   const entries = useMemo(() => {
-    if (categoryId == null) return allEntries;
+    if (filter == null) return allEntries;
+    if (filter === 'unplanned') {
+      return allEntries.filter((e) => e.type === 'expense' && e.isUnplanned);
+    }
     // A category filter keeps all income and the matching expenses; transfers
     // (no category) drop out, like non-matching expenses.
     return allEntries.filter((e) =>
-      e.type === 'expense' ? e.categoryId === categoryId : e.type === 'income',
+      e.type === 'expense' ? e.categoryId === filter : e.type === 'income',
     );
-  }, [allEntries, categoryId]);
+  }, [allEntries, filter]);
 
   return { entries, loading, error, refresh };
 }
@@ -453,6 +462,8 @@ export function useExpenseEdit(id: number): {
   setDate: (v: string) => void;
   accountId: number | null;
   setAccountId: (v: number | null) => void;
+  isUnplanned: boolean;
+  setIsUnplanned: (v: boolean) => void;
   originalAmount: number | null;
   canSubmit: boolean;
   loading: boolean;
@@ -472,6 +483,8 @@ export function useExpenseEdit(id: number): {
   const [originalNote, setOriginalNote] = useState<string | null>(null);
   const [originalDate, setOriginalDate] = useState('');
   const [originalAccountId, setOriginalAccountId] = useState<number | null>(null);
+  const [isUnplanned, setIsUnplanned] = useState(false);
+  const [originalIsUnplanned, setOriginalIsUnplanned] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -495,6 +508,8 @@ export function useExpenseEdit(id: number): {
       setOriginalNote(expense.note ?? null);
       setOriginalDate(expense.date);
       setOriginalAccountId(expense.accountId);
+      setIsUnplanned(expense.isUnplanned);
+      setOriginalIsUnplanned(expense.isUnplanned);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.loadExpense', { ns: 'expenses' }));
@@ -513,7 +528,7 @@ export function useExpenseEdit(id: number): {
 
   const update = useCallback(async (): Promise<boolean> => {
     try {
-      const fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId'>> = {};
+      const fields: Partial<ExpenseEditableFields> = {};
       const newAmount = Math.trunc(numericAmount);
       if (newAmount !== originalAmount) fields.amount = newAmount;
       if (categoryId !== originalCategoryId) fields.categoryId = categoryId ?? undefined;
@@ -522,6 +537,7 @@ export function useExpenseEdit(id: number): {
       if (trimmedNote !== originalNote) fields.note = trimmedNote;
       if (date !== originalDate) fields.date = date;
       if (accountId !== originalAccountId) fields.accountId = accountId;
+      if (isUnplanned !== originalIsUnplanned) fields.isUnplanned = isUnplanned;
 
       await expenseService.updateExpense(id, fields);
       await load();
@@ -531,7 +547,7 @@ export function useExpenseEdit(id: number): {
       setError(e instanceof Error ? e.message : i18n.t('errors.updateExpense', { ns: 'expenses' }));
       return false;
     }
-  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, load]);
+  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, isUnplanned, originalIsUnplanned, load]);
 
   const remove = useCallback(async (): Promise<boolean> => {
     try {
@@ -556,6 +572,8 @@ export function useExpenseEdit(id: number): {
     setDate,
     accountId,
     setAccountId,
+    isUnplanned,
+    setIsUnplanned,
     originalAmount,
     canSubmit,
     loading,

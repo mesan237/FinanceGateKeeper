@@ -4,6 +4,7 @@ import {
   getExpensesByDateRange,
   getAllCategories,
 } from '@/features/finance/expenses/expenses.service';
+import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
 import { getIncomeByDateRange } from '@/features/finance/income/income.service';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
@@ -20,6 +21,7 @@ import type {
   MonthComparison,
   MonthlyReport,
   OptimizationSuggestion,
+  UnplannedSummary,
   WeeklyReport,
 } from './reports.types';
 
@@ -182,8 +184,32 @@ export function generateSuggestions(
 }
 
 /**
+ * Sums the month's imprévus from its already-loaded expenses, works out their
+ * share of `totalSpent`, and fetches the previous month's figures to compare.
+ */
+async function summariseUnplanned(
+  expenses: Expense[],
+  totalSpent: number,
+  previousMonthISO: string,
+): Promise<UnplannedSummary> {
+  const flagged = expenses.filter((e) => e.isUnplanned);
+  const total = sumAmounts(flagged);
+  const previous = await getUnplannedTotals(
+    `${previousMonthISO}-01`,
+    lastDayOfMonth(previousMonthISO),
+  );
+  return {
+    count: flagged.length,
+    total,
+    // Left unrounded: the card shows a tiny share as "under 1%", not 0%.
+    sharePct: totalSpent > 0 ? (total / totalSpent) * 100 : 0,
+    previous,
+  };
+}
+
+/**
  * Builds the full monthly report: income vs expenses, allocation performance,
- * category breakdown, debt summary, month-over-month
+ * category breakdown, the month's imprévus, debt summary, month-over-month
  * comparison, and optimization suggestions. The comparison (and its
  * suggestions) is omitted when neither month had any spending.
  */
@@ -203,6 +229,7 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
 
   const labelOf = categoryLabelResolver(categories);
   const actual = sumAmounts(expenses);
+  const unplanned = await summariseUnplanned(expenses, actual, prevMonthISO(monthISO));
 
   let comparison: MonthComparison | null = null;
   try {
@@ -221,6 +248,7 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
       remaining: planned - actual,
     },
     categoryBreakdown: rankedCategories(expenses, labelOf, actual, Number.POSITIVE_INFINITY),
+    unplanned,
     debtSummary: { totalLent: debt.lent, totalOwed: debt.owed },
     comparison,
     suggestions: generateSuggestions(comparison),
