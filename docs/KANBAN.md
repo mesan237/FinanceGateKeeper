@@ -1164,6 +1164,44 @@ on cold start. Left as-is: raw cloud error text in the cloud card (same as
 
 ---
 
+### VS-38: Imprévus — Mark and Count Unplanned Expenses ✅ Done
+
+**Priority:** High — user-requested; shows how much of the month went to surprises
+**Blocked by:** VS-03 (Expense logging), VS-14 (Reports), VS-15 (Cloud sync)
+**Plan:** `issues/ISSUE-036/implementation-plan.md`
+
+**Scope:**
+
+- An "Unexpected" (FR "Imprévu") switch on the expense log and detail screens,
+  off by default. It is a flag beside the category, not a category, so an
+  unexpected pharmacy bill still counts under Health.
+- An amber "Imprévu" badge on flagged rows in the Transactions feed, and an
+  "Imprévus" chip that filters the feed down to them.
+- A Reports card with the month's imprévus: count, total, share of spending,
+  and last month's figures beside them.
+- A line on the dashboard's month overview while the month has any.
+
+**TDD Anchor:**
+
+- Test: migration 032 adds `is_unplanned` (default 0) and flagging marks the row pending.
+- Test: `createExpense`/`updateExpense` store the flag; `getUnplannedTotals` counts and sums a range.
+- Test: the log/detail switch saves the flag; the feed badges and filters imprévus.
+- Test: the monthly report and dashboard carry the month's imprévus.
+
+**Done when:** The user can mark an expense as an imprévu when logging or editing
+it, spot it in the Transactions list, and read how many imprévus the month had
+and what they cost on Reports and the dashboard.
+
+**Status:** Done. Migration 032 adds `expenses.is_unplanned` and rebuilds the
+expenses update trigger; Supabase patch 038 (also folded into 037 and
+`schema.sql`) must be run before a build with migration 032 syncs. Quick-add
+tiles, recurring auto-logs and planned purchases log planned expenses; the user
+can flag one afterwards from its detail screen. Expenses logged before this
+slice read as planned. No new cross-feature edges (reports and dashboard
+already read `expenses`).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
