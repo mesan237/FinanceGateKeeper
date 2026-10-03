@@ -12,6 +12,7 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { CategoryPicker } from '@/features/finance/expenses/CategoryPicker';
 import { useCategories } from '@/features/finance/expenses/expenses.hooks';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
@@ -75,12 +76,17 @@ function ItemForm({ item, onClose, onSubmit, error }: ItemFormProps) {
   const [amount, setAmount] = useState(item ? String(item.estimatedAmount) : '');
   const [categoryId, setCategoryId] = useState<number | null>(item?.categoryId ?? null);
   const [plannedDate, setPlannedDate] = useState<string | null>(item?.plannedDate ?? null);
-  const [accountId, setAccountId] = useState<number | null>(item?.accountId ?? null);
+  const defaultAccountId = useDefaultAccountId();
+  const [chosenAccountId, setChosenAccountId] = useState<number | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; amount?: string; category?: string }>({});
   const [saving, setSaving] = useState(false);
   // Closes the window in which a fast double tap would save the item twice.
   const inFlight = useRef(false);
+
+  // The item's own wallet wins, then the default one — unless the user picked.
+  // The default loads asynchronously, so it is derived rather than seeded.
+  const accountId = chosenAccountId ?? item?.accountId ?? defaultAccountId;
 
   const handleSave = async () => {
     Keyboard.dismiss();
@@ -201,7 +207,7 @@ function ItemForm({ item, onClose, onSubmit, error }: ItemFormProps) {
         testID="item-account"
         label={t('item.accountLabel')}
         value={accountId}
-        onChange={setAccountId}
+        onChange={setChosenAccountId}
       />
 
       <FieldError message={error ?? undefined} testID="item-error" />
