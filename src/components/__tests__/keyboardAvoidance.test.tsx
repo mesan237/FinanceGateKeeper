@@ -49,13 +49,29 @@ describe.each(PLATFORMS)('keyboard avoidance on %s', (os) => {
     expect(screen.UNSAFE_getByType(ScrollView).props.keyboardShouldPersistTaps).toBe('handled');
   });
 
-  it('BottomSheet lifts its panel above the keyboard', () => {
+  it('BottomSheet lifts its panel by the keyboard height', () => {
+    mockKeyboardHeight.mockReturnValue(300);
     render(
       <BottomSheet visible onClose={jest.fn()} testID="sheet">
         <Text>field</Text>
       </BottomSheet>,
     );
-    expect(screen.UNSAFE_getByType(KeyboardAvoidingView).props.behavior).toBe('padding');
+    const lift = StyleSheet.flatten(screen.getByTestId('sheet-lift').props.style);
+    expect(lift.paddingBottom).toBe(300);
+  });
+
+  // KeyboardAvoidingView measured the overlap against a window that runs under
+  // the nav bar, and left the panel floating above the bottom once the keyboard
+  // closed. The lift now follows the keyboard height alone.
+  it('BottomSheet sits flush with the bottom edge once the keyboard is closed', () => {
+    render(
+      <BottomSheet visible onClose={jest.fn()} testID="sheet">
+        <Text>field</Text>
+      </BottomSheet>,
+    );
+    const lift = StyleSheet.flatten(screen.getByTestId('sheet-lift').props.style);
+    expect(lift.paddingBottom ?? 0).toBe(0);
+    expect(screen.UNSAFE_queryByType(KeyboardAvoidingView)).toBeNull();
   });
 
   it('Modal keeps a centred dialog clear of the keyboard and lets it scroll', () => {

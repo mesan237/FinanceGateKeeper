@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
   Pressable,
   ScrollView,
@@ -127,7 +126,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
 
   if (!mounted) return null;
 
-  // The panel is lifted above the keyboard by the avoider below, so what is left
+  // The panel is lifted above the keyboard (see the lift below), so what is left
   // for it is the window minus the keyboard. Without this cap a tall form would
   // be pushed past the top of the screen instead of scrolling.
   const maxHeight = Math.min(windowHeight * 0.92, windowHeight - keyboardHeight - insets.top - 12);
@@ -153,7 +152,14 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
           />
         </Animated.View>
 
-        <KeyboardAvoidingView behavior="padding" style={styles.avoider} pointerEvents="box-none">
+        {/* Lifted by the keyboard height itself, not KeyboardAvoidingView: that
+            measures the overlap against a window running under the nav bar and
+            left the panel floating above the bottom after the keyboard closed. */}
+        <View
+          testID={`${testID ?? 'bottom-sheet'}-lift`}
+          style={[styles.lift, keyboardHeight > 0 && { paddingBottom: keyboardHeight }]}
+          pointerEvents="box-none"
+        >
           <Animated.View
             testID={`${testID ?? 'bottom-sheet'}-panel`}
             style={[styles.sheet, { maxHeight }, panelStyle]}
@@ -173,7 +179,7 @@ export function BottomSheet({ visible, onClose, children, testID }: BottomSheetP
               <SheetHostContext.Provider value={host}>{children}</SheetHostContext.Provider>
             </ScrollView>
           </Animated.View>
-        </KeyboardAvoidingView>
+        </View>
 
         {/* The native Modal draws above the root toast viewport, so sheets
             mount their own — a toast fired while the sheet stays open (e.g.
@@ -202,7 +208,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backdropPress: {
     flex: 1,
   },
-  avoider: {
+  lift: {
     justifyContent: 'flex-end',
   },
   sheet: {
