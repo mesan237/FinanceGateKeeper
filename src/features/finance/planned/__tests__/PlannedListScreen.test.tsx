@@ -127,6 +127,13 @@ describe('PlannedListScreen', () => {
     expect(screen.getByText('Left to buy: 5 000 FCFA')).toBeTruthy();
   });
 
+  it('says everything is bought, with the count, once every item is ticked', () => {
+    setup([OIL_BOUGHT]);
+    render(<PlannedListScreen listId={7} />);
+
+    expect(screen.getByText('All bought · 1 item')).toBeTruthy();
+  });
+
   it('strikes a bought item through and shows what was actually paid', () => {
     setup([RICE, OIL_BOUGHT]);
     render(<PlannedListScreen listId={7} />);
@@ -334,9 +341,26 @@ describe('PlannedListScreen', () => {
       name: 'Rice',
       estimatedAmount: 5000,
       categoryId: 1,
-      accountId: null,
+      accountId: 1,
       plannedDate: null,
     });
+  });
+
+  it('keeps the account the user picks for a new item instead of the default', async () => {
+    const state = setup([]);
+    render(<PlannedListScreen listId={7} />);
+
+    fireEvent.press(screen.getByTestId('planned-add-item'));
+    fireEvent.changeText(screen.getByTestId('item-name'), 'Rice');
+    fireEvent.changeText(screen.getByTestId('item-amount'), '5000');
+    fireEvent.press(screen.getByTestId('item-category'));
+    fireEvent.press(screen.getByTestId('category-stub'));
+    fireEvent.press(screen.getByTestId('item-account'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('item-save'));
+    });
+
+    expect(state.add).toHaveBeenCalledWith(expect.objectContaining({ accountId: 2 }));
   });
 
   it('does not add an item without a name, amount and category', async () => {

@@ -8,8 +8,10 @@ export const planned = {
       'Plan what you want to buy. Tick an item off when you buy it and it is recorded as an expense.',
     add: 'New list',
     toBuy: '{{n}} to buy · {{amount}}',
-    allBought: 'Everything bought',
+    allBought_one: 'All bought · {{count}} item',
+    allBought_other: 'All bought · {{count}} items',
     noItems: 'No items yet',
+    created: 'Created {{date}}',
   },
   newList: {
     title: 'New list',

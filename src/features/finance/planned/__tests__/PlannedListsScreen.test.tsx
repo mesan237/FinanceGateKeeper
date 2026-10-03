@@ -21,11 +21,28 @@ const mockedUsePlannedLists = usePlannedLists as jest.MockedFunction<typeof useP
 const MARKET: PlannedList = {
   id: 1,
   name: 'Saturday market',
+  itemCount: 4,
   openCount: 3,
   openEstimate: 12500,
-  createdAt: '2026-09-30T00:00:00.000Z',
+  // Midday UTC, so the local calendar day is the 30th in any test time zone.
+  createdAt: '2026-09-30T12:00:00.000Z',
 };
-const DONE: PlannedList = { ...MARKET, id: 2, name: 'School', openCount: 0, openEstimate: 0 };
+const DONE: PlannedList = {
+  ...MARKET,
+  id: 2,
+  name: 'School',
+  itemCount: 2,
+  openCount: 0,
+  openEstimate: 0,
+};
+const EMPTY: PlannedList = {
+  ...MARKET,
+  id: 3,
+  name: 'Next week',
+  itemCount: 0,
+  openCount: 0,
+  openEstimate: 0,
+};
 
 function setup(lists: PlannedList[]) {
   const create = jest.fn().mockResolvedValue(true);
@@ -48,7 +65,29 @@ describe('PlannedListsScreen', () => {
 
     expect(screen.getByText('Saturday market')).toBeTruthy();
     expect(screen.getByText('3 to buy · 12 500 FCFA')).toBeTruthy();
-    expect(screen.getByText('Everything bought')).toBeTruthy();
+    expect(screen.getByText('All bought · 2 items')).toBeTruthy();
+  });
+
+  it('says a list is empty rather than that everything was bought', () => {
+    setup([EMPTY]);
+    render(<PlannedListsScreen />);
+
+    expect(screen.getByText('No items yet')).toBeTruthy();
+    expect(screen.queryByText(/All bought/)).toBeNull();
+  });
+
+  it('counts a single bought item in the singular', () => {
+    setup([{ ...DONE, itemCount: 1 }]);
+    render(<PlannedListsScreen />);
+
+    expect(screen.getByText('All bought · 1 item')).toBeTruthy();
+  });
+
+  it('shows the date each list was created', () => {
+    setup([MARKET]);
+    render(<PlannedListsScreen />);
+
+    expect(screen.getByText('Created 30 September 2026')).toBeTruthy();
   });
 
   it('opens a list when its row is tapped', () => {
@@ -101,6 +140,7 @@ describe('PlannedListsScreen', () => {
 
     expect(screen.getByText('Achats prévus')).toBeTruthy();
     expect(screen.getByText('3 à acheter · 12 500 FCFA')).toBeTruthy();
+    expect(screen.getByText('Créée le 30 septembre 2026')).toBeTruthy();
 
     await act(async () => {
       await i18n.changeLanguage('en');

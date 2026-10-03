@@ -2,6 +2,8 @@
 export interface PlannedList {
   id: number;
   name: string;
+  /** Every item on the list, bought or not — tells an empty list from a finished one. */
+  itemCount: number;
   /** Items not yet bought. */
   openCount: number;
   /** Sum of the estimates of the items not yet bought, in FCFA. */

@@ -11,8 +11,10 @@ export const planned: Translation<typeof en> = {
       "Prévoyez ce que vous voulez acheter. Cochez un article quand vous l'achetez : il est enregistré comme dépense.",
     add: 'Nouvelle liste',
     toBuy: '{{n}} à acheter · {{amount}}',
-    allBought: 'Tout est acheté',
+    allBought_one: 'Tout est acheté · {{count}} article',
+    allBought_other: 'Tout est acheté · {{count}} articles',
     noItems: 'Aucun article',
+    created: 'Créée le {{date}}',
   },
   newList: {
     title: 'Nouvelle liste',
