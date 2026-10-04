@@ -26,16 +26,30 @@ async function setLastSyncedAt(ts: string): Promise<void> {
   );
 }
 
-/** Raises/lowers the trigger-suppression flag around the engine's own writes. */
-async function setGuard(active: boolean): Promise<void> {
-  await execute('UPDATE _sync_guard SET active = ? WHERE id = 1', [active ? 1 : 0]);
+/** Rows per statement when marking pushed rows synced (2 bind values each). */
+const MARK_CHUNK = 400;
+
+/**
+ * Marks pushed rows synced, but only where `updated_at` still matches what was
+ * sent. A row the user edited during the upload has a newer stamp, so it stays
+ * pending and goes out on the next push.
+ */
+async function markSynced(table: SyncedTable, rows: Row[]): Promise<void> {
+  for (let i = 0; i < rows.length; i += MARK_CHUNK) {
+    const chunk = rows.slice(i, i + MARK_CHUNK);
+    const pairs = chunk.map(() => '(?, ?)').join(', ');
+    await execute(
+      `UPDATE ${table} SET sync_status = 'synced' WHERE (uuid, updated_at) IN (VALUES ${pairs})`,
+      chunk.flatMap((r) => [r.uuid, r.updated_at]) as SqlBindValue[],
+    );
+  }
 }
 
 /**
  * Pushes every locally-pending row to the cloud (parents first), then marks the
- * pushed rows synced. FK ids are translated to uuids on the way out. A cloud
- * error aborts the push and propagates — already-marked tables stay synced, the
- * rest stay pending for the next attempt.
+ * pushed rows synced unless they changed meanwhile. FK ids are translated to
+ * uuids on the way out. A cloud error aborts the push and propagates —
+ * already-marked tables stay synced, the rest stay pending for the next attempt.
  */
 export async function pushChanges(): Promise<{ pushed: number }> {
   let pushed = 0;
@@ -49,12 +63,7 @@ export async function pushChanges(): Promise<{ pushed: number }> {
     const { error } = await supabase.from(table).upsert(cloudRows, { onConflict: 'uuid' });
     if (error) throw new Error(error.message);
 
-    const uuids = rows.map((r) => r.uuid as string);
-    const placeholders = uuids.map(() => '?').join(', ');
-    await execute(
-      `UPDATE ${table} SET sync_status = 'synced' WHERE uuid IN (${placeholders})`,
-      uuids as SqlBindValue[],
-    );
+    await markSynced(table, rows);
     pushed += rows.length;
   }
   return { pushed };
@@ -71,26 +80,21 @@ export async function pullChanges(): Promise<{ pulled: number }> {
   let pulled = 0;
   let maxSeen = cursor;
 
-  await setGuard(true);
-  try {
-    for (const table of SYNCED_TABLES) {
-      const { data, error } = await supabase.from(table).select().gt('updated_at', cursor);
-      if (error) throw new Error(error.message);
+  for (const table of SYNCED_TABLES) {
+    const { data, error } = await supabase.from(table).select().gt('updated_at', cursor);
+    if (error) throw new Error(error.message);
 
-      const rows = sortForInsert(table, (data ?? []) as Row[]);
-      for (const cloud of rows) {
-        const updatedAt = cloud.updated_at as string | undefined;
-        if (typeof updatedAt === 'string' && updatedAt > maxSeen) maxSeen = updatedAt;
-        try {
-          if (await applyCloudRow(table, cloud)) pulled += 1;
-        } catch {
-          // Skip one unmergeable row (e.g. a natural-key clash from data created
-          // independently on two devices) instead of aborting the whole pull.
-        }
+    const rows = sortForInsert(table, (data ?? []) as Row[]);
+    for (const cloud of rows) {
+      const updatedAt = cloud.updated_at as string | undefined;
+      if (typeof updatedAt === 'string' && updatedAt > maxSeen) maxSeen = updatedAt;
+      try {
+        if (await applyCloudRow(table, cloud)) pulled += 1;
+      } catch {
+        // Skip one unmergeable row (e.g. a natural-key clash from data created
+        // independently on two devices) instead of aborting the whole pull.
       }
     }
-  } finally {
-    await setGuard(false);
   }
 
   // The cursor advances to the newest timestamp seen and the next pull uses a
@@ -102,7 +106,41 @@ export async function pullChanges(): Promise<{ pulled: number }> {
 }
 
 /**
- * Runs a full sync: push local changes, then pull cloud changes. Returns
+ * True when no synced table holds a record the user made: only the default
+ * categories and accounts a fresh install (or a reset) seeds. Seeded accounts
+ * get random uuids, so a phone in this state must never push before pulling.
+ */
+async function holdsOnlyInstallDefaults(): Promise<boolean> {
+  for (const table of SYNCED_TABLES) {
+    if (table === 'accounts') continue;
+    const where = table === 'categories' ? ' WHERE is_default = 0' : '';
+    const rows = await query<{ c: number }>(`SELECT COUNT(*) AS c FROM ${table}${where}`);
+    if ((rows[0]?.c ?? 0) > 0) return false;
+  }
+  return true;
+}
+
+/**
+ * On a phone's first sync (no pull cursor) with nothing but install defaults,
+ * replaces local data with a non-empty cloud backup instead of pushing those
+ * defaults over it. Returns the rows restored, or null when a normal sync
+ * should run instead. Throws on a cloud error.
+ */
+async function restoreIfFreshInstall(): Promise<number | null> {
+  if ((await getLastSyncedAt()) !== null) return null;
+  if (!(await holdsOnlyInstallDefaults())) return null;
+
+  const tables = await fetchAllFromCloud();
+  if (tables.every(([, rows]) => rows.length === 0)) return null;
+
+  await createSnapshot('before-restore');
+  return replaceWithCloudRows(tables);
+}
+
+/**
+ * Runs a full sync: push local changes, then pull cloud changes. On a freshly
+ * installed or reset phone with a cloud backup, restores that backup instead
+ * (see `restoreIfFreshInstall`). Returns
  * `{ ok: false }` (never throws) when signed out or when the cloud is
  * unreachable, so callers can surface the state without try/catch.
  */
@@ -119,6 +157,16 @@ export async function syncNow(): Promise<SyncResult> {
   }
 
   try {
+    const restored = await restoreIfFreshInstall();
+    if (restored !== null) {
+      return {
+        ok: true,
+        pushed: 0,
+        pulled: restored,
+        lastSyncedAt: await getLastSyncedAt(),
+        restoredFromCloud: true,
+      };
+    }
     const { pushed } = await pushChanges();
     const { pulled } = await pullChanges();
     return { ok: true, pushed, pulled, lastSyncedAt: await getLastSyncedAt() };
@@ -149,8 +197,8 @@ async function fetchAllFromCloud(): Promise<Array<[SyncedTable, Row[]]>> {
 }
 
 /**
- * Clears every synced table and writes the cloud rows in, in one transaction
- * with the sync guard raised, then points the pull cursor at the newest cloud
+ * Clears every synced table and writes the cloud rows in, in one transaction,
+ * then points the pull cursor at the newest cloud
  * timestamp. A single unmergeable row is skipped, as in `pullChanges`. Any other
  * failure rolls the whole replace back. Returns the number of rows written.
  */
@@ -162,7 +210,6 @@ async function replaceWithCloudRows(tables: Array<[SyncedTable, Row[]]>): Promis
   try {
     await execute('BEGIN TRANSACTION');
     try {
-      await setGuard(true);
       for (const table of [...SYNCED_TABLES].reverse()) {
         await execute(`DELETE FROM ${table}`);
       }
@@ -178,10 +225,8 @@ async function replaceWithCloudRows(tables: Array<[SyncedTable, Row[]]>): Promis
         }
       }
       await setLastSyncedAt(maxSeen);
-      await setGuard(false);
       await execute('COMMIT');
     } catch (e) {
-      // Rolling back also restores the guard flag to its lowered state.
       await execute('ROLLBACK');
       throw e;
     }

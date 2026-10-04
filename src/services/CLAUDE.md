@@ -35,7 +35,9 @@ Implemented in VS-15 — full detail in [docs/CLOUD-SYNC.md](../../docs/CLOUD-SY
 - Every synced table has `uuid` (the cloud key), `updated_at`, and `sync_status` (synced | pending)
   columns. `sync_status` is set to pending by SQLite triggers (`017_add_sync_metadata`), not by edits
   to feature services. The integer `id` stays local-only; foreign keys travel as uuids.
-- On push: send all records where `sync_status = pending` to Supabase (FK ids → uuids), then mark synced.
+- On push: send all records where `sync_status = pending` to Supabase (FK ids → uuids), then mark
+  synced only rows whose `updated_at` is unchanged. Never write `updated_at` from app code: the update
+  trigger reads a statement that sets it as a sync write and does not mark the row pending.
 - On pull: fetch records where `updated_at > lastPulledAt` (cursor in `sync_meta`), upsert locally
   (uuids → FK ids) when the incoming row is strictly newer.
 - Conflict resolution: local always wins (last-write-wins; local breaks ties).
@@ -44,6 +46,10 @@ Implemented in VS-15 — full detail in [docs/CLOUD-SYNC.md](../../docs/CLOUD-SY
 - `restoreFromCloud` replaces local data with the cloud copy (VS-37). `snapshots.service.ts` keeps
   daily on-phone snapshots; restoring one calls `markAllPending` so the cloud converges, since the
   engine never sends deletions.
+- First sync on a fresh or reset phone (no `lastPulledAt`, only seeded categories/accounts locally):
+  `syncNow` restores a non-empty cloud backup instead of pushing. The seeded accounts carry random
+  uuids, so pushing them first would duplicate every account and overwrite edited default categories.
+  A phone that already holds its own records still merges (push, then pull).
 
 ## Import Rules
 - This folder can import from `utils/`, `constants/`, `types/` only.

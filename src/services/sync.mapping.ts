@@ -81,8 +81,8 @@ export function sortForInsert(table: string, rows: Row[]): Row[] {
  * Applies a cloud row to the local table: FK uuids → local ids, then insert when
  * absent or overwrite when the cloud row is strictly newer (last-write-wins;
  * local breaks ties). Returns true when a write happened, false when the local
- * row was kept. Must run inside the sync guard so the dirty-marking triggers stay
- * suppressed (the row is already `synced`).
+ * row was kept. Every write sets the cloud `updated_at`, which is what keeps the
+ * dirty-marking triggers quiet (the row is already `synced`).
  */
 export async function applyCloudRow(table: string, cloud: Row): Promise<boolean> {
   const translated: Row = { ...cloud };

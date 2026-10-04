@@ -97,13 +97,17 @@ migration 017 installs per-table triggers:
 - `AFTER INSERT … WHEN NEW.uuid IS NULL` — a local insert arrives with no uuid, so
   the trigger stamps `uuid`/`updated_at` and marks it pending. Sync-side inserts
   supply their own uuid, so the trigger skips them.
-- `AFTER UPDATE OF <data columns>` — fires only when a real data column changes,
-  never when the engine writes the sync columns. So marking a row `synced` after a
-  push does **not** re-arm the dirty flag (no push/pull loop).
+- `AFTER UPDATE OF <data columns> … WHEN NEW.updated_at IS OLD.updated_at` — fires
+  only when a real data column changes, never when the engine writes the sync
+  columns, so marking a row `synced` after a push does **not** re-arm the dirty
+  flag (no push/pull loop). It also skips any statement that sets `updated_at`
+  itself. App code never does; a pull always does (to the cloud row's time), so
+  pull overwrites keep their cloud timestamp and synced status.
 
-Belt-and-braces, a one-row `_sync_guard` table is raised (`active = 1`) around the
-engine's own pull writes; the trigger `WHEN` clause checks it, so pull overwrites
-keep their cloud timestamp and synced status instead of bouncing back as pending.
+Until migrations 034/035 both triggers also checked a one-row `_sync_guard` flag
+the engine raised for a whole pull. A row the user saved in that window got no
+uuid (the cloud then rejected every push with "null value in column uuid"), and
+an edit was never marked pending. The table still exists but nothing reads it.
 
 ### The sync engine
 
@@ -112,7 +116,8 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
 
 - **push** — for each table (parents first), select `sync_status = 'pending'`,
   translate FK ids → uuids, `upsert(onConflict: 'uuid')`, then mark the rows
-  `synced`. A cloud error aborts and propagates; already-marked tables stay
+  `synced` where `updated_at` still matches what was sent (a row edited during the
+  upload stays pending). A cloud error aborts and propagates; already-marked tables stay
   synced, the rest stay pending for the next attempt.
 - **pull** — for each table (parents first), `select().gt('updated_at', cursor)`,
   translate FK uuids → local ids, and apply each row: insert when absent, or
@@ -127,7 +132,7 @@ keep their cloud timestamp and synced status instead of bouncing back as pending
   a cloud error or an empty cloud backup leaves the phone untouched
   (`{ ok: false, error }`). Then it takes a "before restore" local snapshot (local
   changes never pushed would otherwise be lost), clears the synced tables and
-  writes the cloud rows in one transaction with the sync guard raised, and moves
+  writes the cloud rows in one transaction, and moves
   the cursor to the newest cloud timestamp. Restored rows are `synced`.
 
 ### Local snapshots and the no-deletions rule
@@ -186,17 +191,22 @@ table fails the whole sync.
 
 ---
 
-## Recovery flow (new device)
+## Recovery flow (new device or reset)
 
-1. Install the app; the migration runner builds the local schema (empty data).
-2. Open **Settings → Cloud backup** and sign in with the same credentials.
-3. The next sync (`pullChanges`) restores every synced table from the cloud. To
-   replace whatever is on the phone with the cloud copy instead of merging, use
-   **Backup & Restore → Restore from cloud** (`restoreFromCloud`).
+1. Install the app (or wipe it from the PIN recovery screen); the migration
+   runner builds the local schema with the seeded categories and accounts.
+2. Sign in on **Backup & Restore** with the same credentials. After a PIN-recovery
+   wipe the session survives, so this step is skipped.
+3. The next sync sees a phone that has never pulled (`lastPulledAt` unset) and
+   holds nothing but those seeds, so `syncNow` replaces local data with the cloud
+   backup instead of pushing (after a "before restore" snapshot). Pushing first
+   would upload the seeded accounts under fresh random uuids, which duplicates
+   every account, and would overwrite edited default categories with factory
+   copies. An empty cloud backup falls through to a normal push.
 
-For the cleanest restore, pull **before** creating any local data on the new
-device, so independently-created singleton rows (funds, allocations) don't clash
-with the cloud copies (see Limitations).
+A phone that already holds records of its own still merges on its first sync
+(push, then pull). To replace its data with the cloud copy instead, use
+**Backup & Restore → Restore from cloud** (`restoreFromCloud`).
 
 ---
 

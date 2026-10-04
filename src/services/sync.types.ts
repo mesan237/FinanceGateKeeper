@@ -5,6 +5,11 @@ export interface SyncResult {
   pulled: number;
   lastSyncedAt: string | null;
   error?: string;
+  /**
+   * True when this was the phone's first sync and it held only the install
+   * defaults, so the cloud copy replaced local data instead of being merged.
+   */
+  restoredFromCloud?: boolean;
 }
 
 /** Why a cloud restore was refused or failed; data is untouched in every case. */
