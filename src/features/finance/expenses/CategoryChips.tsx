@@ -6,7 +6,7 @@ import { Typography } from '@/components/Typography';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
-import { RADIUS } from '@/constants/layout';
+import { RADIUS, SPACING } from '@/constants/layout';
 
 import type { Category, FeedFilter } from './expenses.types';
 
@@ -32,7 +32,9 @@ function Chip({ label, active, onPress, warning = false, testID }: ChipProps) {
       hitSlop={{ top: 6, bottom: 6 }}
       style={[styles.chip, warning && styles.chipWarning, active && activeStyle]}
     >
-      <Typography style={active ? styles.chipTextActive : idleText}>{label}</Typography>
+      <Typography style={[styles.chipText, active ? styles.chipTextActive : idleText]}>
+        {label}
+      </Typography>
     </Pressable>
   );
 }
@@ -79,14 +81,20 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  // The row bleeds through the screen's gutter (TransactionList pads by
+  // SPACING.lg) so pills scroll off the screen edge instead of being cut at an
+  // invisible line; the content padding puts the first and last pill back on
+  // the gutter.
   scroll: {
     flexGrow: 0,
     marginBottom: 8,
+    marginHorizontal: -SPACING.lg,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingHorizontal: SPACING.lg,
   },
   chip: {
     paddingVertical: 8,
@@ -95,6 +103,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.BACKGROUND,
     borderWidth: 1,
     borderColor: c.BORDER,
+  },
+  // Android pads custom fonts with extra room above the text (Work Sans has a
+  // tall ascender), which sat the label low in the pill. Dropping that padding
+  // and fixing the line height centres it.
+  chipText: {
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    lineHeight: 20,
   },
   chipActive: {
     backgroundColor: c.PRIMARY_GREEN,
