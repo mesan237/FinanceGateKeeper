@@ -178,8 +178,9 @@ function ItemForm({ item, onClose, onSubmit, error }: ItemFormProps) {
       </View>
 
       <View>
-        <Typography variant="muted" style={styles.label}>
-          {t('item.dateLabel')}
+        <Typography variant="muted">{t('item.dateLabel')}</Typography>
+        <Typography variant="muted" style={[styles.label, styles.hint]}>
+          {t('item.dateHint')}
         </Typography>
         {plannedDate === null ? (
           <Button
@@ -238,6 +239,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { gap: 10 },
     label: { marginBottom: 6 },
+    hint: { fontSize: 12 },
     trigger: {
       flexDirection: 'row',
       alignItems: 'center',

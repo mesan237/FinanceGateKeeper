@@ -31,6 +31,7 @@ import { migration as addUserLanguage } from '@/services/migrations/029_add_user
 import { migration as createPlannedTables } from '@/services/migrations/030_create_planned_tables';
 import { migration as syncPlannedTables } from '@/services/migrations/031_sync_planned_tables';
 import { migration as addExpenseIsUnplanned } from '@/services/migrations/032_add_expense_is_unplanned';
+import { migration as addPlannedListDueDate } from '@/services/migrations/033_add_planned_list_due_date';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -65,4 +66,5 @@ export const migrations: ReadonlyArray<Migration> = [
   createPlannedTables,
   syncPlannedTables,
   addExpenseIsUnplanned,
+  addPlannedListDueDate,
 ];

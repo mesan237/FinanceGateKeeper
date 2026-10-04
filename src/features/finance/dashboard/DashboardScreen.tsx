@@ -19,6 +19,7 @@ import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
 
 import { MonthOverviewCard } from './MonthOverviewCard';
+import { PlannedDueCard } from './PlannedDueCard';
 import { QuickActionBar } from './QuickActionBar';
 import { TodaySpendingCard } from './TodaySpendingCard';
 import { WalletsCard } from './WalletsCard';
@@ -110,6 +111,9 @@ export function DashboardScreen() {
           onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
           onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
+
+        {/* Planned purchases coming due — hidden while nothing is (VS-39). */}
+        <PlannedDueCard />
 
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />

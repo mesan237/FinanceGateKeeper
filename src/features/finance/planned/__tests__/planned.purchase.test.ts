@@ -72,7 +72,7 @@ async function expectRejection(promise: Promise<unknown>): Promise<void> {
 
 /** A list holding one 5 000 FCFA rice item; returns the item's id and its list id. */
 async function seedRice(): Promise<{ itemId: number; listId: number }> {
-  const listId = await createList('Market');
+  const listId = await createList('Market', '2026-10-10');
   const itemId = await createItem({
     listId,
     name: 'Rice',

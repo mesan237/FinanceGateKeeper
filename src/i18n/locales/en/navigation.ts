@@ -7,6 +7,10 @@ export const navigation = {
     reports: 'Reports',
   },
   openMenu: 'Open menu',
+  attention: {
+    overdue: '{{count}} overdue',
+    soon: '{{count}} due soon',
+  },
   drawer: {
     preferences: 'Preferences',
     management: 'Management',

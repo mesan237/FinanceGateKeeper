@@ -230,6 +230,7 @@ create table planned_lists (
   uuid       text primary key,
   user_id    uuid not null default auth.uid(),
   name       text not null,
+  due_date   text,             -- the shopping day (VS-39), or null on older lists
   created_at text not null,
   updated_at text not null
 );

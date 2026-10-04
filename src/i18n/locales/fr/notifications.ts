@@ -27,4 +27,14 @@ export const notifications: Translation<typeof en> = {
     bodyDueSoon: '{{person}} — {{amount}} à rembourser le {{date}}.',
     bodyOverdue: '{{person}} — {{amount}} en retard (échéance le {{date}}).',
   },
+  plannedDue: {
+    title: 'Achat prévu',
+    body: 'Vous avez des achats prévus bientôt.',
+    bodySoon_one: '{{list}} : {{count}} article à acheter avant le {{date}} ({{amount}}).',
+    bodySoon_other: '{{list}} : {{count}} articles à acheter avant le {{date}} ({{amount}}).',
+    bodyToday_one: "{{list}} : {{count}} article à acheter aujourd'hui ({{amount}}).",
+    bodyToday_other: "{{list}} : {{count}} articles à acheter aujourd'hui ({{amount}}).",
+    bodyOverdue_one: '{{list}} : {{count}} article toujours à acheter, prévu le {{date}}.',
+    bodyOverdue_other: '{{list}} : {{count}} articles toujours à acheter, prévus le {{date}}.',
+  },
 };

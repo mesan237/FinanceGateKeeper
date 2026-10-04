@@ -103,6 +103,10 @@ function setup(items: PlannedItem[], error: string | null = null): HookState {
   };
   mockedUsePlannedItems.mockReturnValue({
     listName: 'Saturday market',
+    // Far ahead, so no due badge or postpone action crowds these tests.
+    listDueDate: '2099-01-01',
+    setDueDate: jest.fn().mockResolvedValue(true),
+    postpone: jest.fn().mockResolvedValue(true),
     loading: false,
     error,
     refresh: jest.fn(),

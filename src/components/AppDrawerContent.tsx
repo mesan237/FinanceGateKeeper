@@ -6,8 +6,11 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { AttentionDot, attentionHint } from '@/components/AttentionDot';
+import { useAttention } from '@/components/AttentionProvider';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
+import { ATTENTION_PLANNED } from '@/constants/attention';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import type { navigation } from '@/i18n/locales/en/navigation';
 import { useThemedStyles, type ThemeColors } from '@/theme';
@@ -26,6 +29,8 @@ interface DrawerRow {
   onPress?: () => void;
   /** Marks a planned destination that has no screen yet — rendered disabled. */
   soon?: boolean;
+  /** `AttentionProvider` section whose counts light this row's dot. */
+  attentionKey?: string;
 }
 
 interface DrawerSection {
@@ -44,7 +49,7 @@ const SECTIONS: DrawerSection[] = [
       { labelKey: 'accounts', icon: 'wallet', route: '/accounts' },
       { labelKey: 'categories', icon: 'categories', route: '/expenses/categories' },
       { labelKey: 'debts', icon: 'debt', route: '/debt' },
-      { labelKey: 'planned', icon: 'planned', route: '/planned' },
+      { labelKey: 'planned', icon: 'planned', route: '/planned', attentionKey: ATTENTION_PLANNED },
       { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
       { labelKey: 'backupRestore', icon: 'backup', route: '/backup' },
       { labelKey: 'deleteReset', icon: 'delete', soon: true },
@@ -128,10 +133,13 @@ function DrawerItem({
   onPress: () => void;
   styles: ReturnType<typeof makeStyles>;
 }) {
+  // Reads '' for rows without a key, which nothing publishes under.
+  const attention = useAttention(row.attentionKey ?? '');
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityHint={attentionHint(attention)}
       accessibilityState={{ disabled: !!row.soon }}
       disabled={row.soon}
       onPress={onPress}
@@ -139,6 +147,7 @@ function DrawerItem({
     >
       <Icon name={row.icon} size={ICON_SIZE.md} />
       <Typography style={row.soon ? styles.rowLabelDisabled : styles.rowLabel}>{label}</Typography>
+      <AttentionDot counts={attention} testID={`drawer-dot-${row.attentionKey}`} />
       {row.soon ? (
         <Typography variant="label" style={styles.soonTag}>
           {soonLabel}
