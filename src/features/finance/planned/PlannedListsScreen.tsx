@@ -11,6 +11,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDateLong, toISODate } from '@/utils/formatDate';
 
 import { NewListSheet } from './NewListSheet';
 import { usePlannedLists } from './planned.hooks';
@@ -59,16 +60,22 @@ export function PlannedListsScreen() {
 
 function ListCard({ list, onPress }: { list: PlannedList; onPress: () => void }) {
   const { t } = useTranslation('planned');
+  // "All bought" only once there is something to have bought; an empty list says so.
   const summary =
-    list.openCount > 0
-      ? t('lists.toBuy', { n: list.openCount, amount: formatCurrency(list.openEstimate) })
-      : t('lists.allBought');
+    list.itemCount === 0
+      ? t('lists.noItems')
+      : list.openCount > 0
+        ? t('lists.toBuy', { n: list.openCount, amount: formatCurrency(list.openEstimate) })
+        : t('lists.allBought', { count: list.itemCount });
+  // `createdAt` is a UTC timestamp; show the calendar day it was on the phone.
+  const created = formatDateLong(toISODate(new Date(list.createdAt)));
 
   return (
     <Pressable testID={`planned-list-${list.id}`} accessibilityRole="button" onPress={onPress}>
       <Card>
         <Typography variant="subheading">{list.name}</Typography>
         <Typography variant="muted">{summary}</Typography>
+        <Typography variant="muted">{t('lists.created', { date: created })}</Typography>
       </Card>
     </Pressable>
   );

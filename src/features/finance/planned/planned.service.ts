@@ -61,15 +61,20 @@ async function lastInsertId(): Promise<number> {
 interface ListRow {
   id: number;
   name: string;
+  item_count: number;
   open_count: number;
   open_estimate: number;
   created_at: string;
 }
 
-/** Every list, oldest first, each with how many items are still to buy and their estimate. */
+/**
+ * Every list, oldest first, each with its total item count, how many items are
+ * still to buy and their estimate.
+ */
 export async function getLists(): Promise<PlannedList[]> {
   const rows = await query<ListRow>(
     `SELECT l.id, l.name, l.created_at,
+            COUNT(i.id) AS item_count,
             COALESCE(SUM(CASE WHEN i.id IS NOT NULL AND e.id IS NULL THEN 1 ELSE 0 END), 0)
               AS open_count,
             COALESCE(SUM(CASE WHEN i.id IS NOT NULL AND e.id IS NULL
@@ -83,6 +88,7 @@ export async function getLists(): Promise<PlannedList[]> {
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
+    itemCount: r.item_count,
     openCount: r.open_count,
     openEstimate: r.open_estimate,
     createdAt: r.created_at,

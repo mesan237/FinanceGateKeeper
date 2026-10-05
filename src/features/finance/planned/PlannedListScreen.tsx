@@ -120,7 +120,7 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
           <Typography variant="muted">
             {leftToBuy > 0
               ? t('list.leftToBuy', { amount: formatCurrency(leftToBuy) })
-              : t('lists.allBought')}
+              : t('lists.allBought', { count: items.length })}
           </Typography>
           <ScrollView contentContainerStyle={styles.list}>
             {items.map((item) => (

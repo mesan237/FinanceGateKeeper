@@ -61,6 +61,7 @@ describe('lists', () => {
     expect(lists[0]).toMatchObject({
       id,
       name: 'Saturday market',
+      itemCount: 0,
       openCount: 0,
       openEstimate: 0,
     });
@@ -89,7 +90,11 @@ describe('lists', () => {
     await addRice(id);
     await createItem({ listId: id, name: 'Oil', estimatedAmount: 2500, categoryId: FOOD });
 
-    expect((await getLists())[0]).toMatchObject({ openCount: 2, openEstimate: 7500 });
+    expect((await getLists())[0]).toMatchObject({
+      itemCount: 2,
+      openCount: 2,
+      openEstimate: 7500,
+    });
   });
 
   it('deletes a list together with its items', async () => {
