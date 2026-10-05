@@ -51,6 +51,7 @@ const STORED_EXPENSE = {
   note: 'lunch',
   date: '2026-06-10',
   isRecurring: false,
+  isUnplanned: false,
   createdAt: '2026-06-10T10:00:00.000Z',
 };
 
@@ -168,5 +169,25 @@ describe('ExpenseDetailScreen', () => {
 
     await waitFor(() => expect(mockUpdateExpense).toHaveBeenCalledTimes(1));
     expect(mockCheck).not.toHaveBeenCalled();
+  });
+
+  it('shows the stored imprévu flag on the Unplanned switch', async () => {
+    mockGetExpenseById.mockResolvedValue({ ...STORED_EXPENSE, isUnplanned: true });
+    render(<ExpenseDetailScreen expenseId={5} />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Unexpected' })).toBeChecked(),
+    );
+  });
+
+  it('marks an existing expense as an imprévu on save', async () => {
+    render(<ExpenseDetailScreen expenseId={5} />);
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+
+    fireEvent.press(screen.getByRole('switch', { name: 'Unexpected' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockUpdateExpense).toHaveBeenCalledTimes(1));
+    expect(mockUpdateExpense).toHaveBeenCalledWith(5, { isUnplanned: true });
   });
 });

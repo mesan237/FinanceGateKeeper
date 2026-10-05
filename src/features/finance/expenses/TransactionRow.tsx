@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/Icon';
@@ -54,6 +55,17 @@ function RowIcon({ entry }: RowIconProps) {
   );
 }
 
+/** The amber "Imprévu" tag on an expense the user marked as unplanned. */
+function UnplannedBadge({ id }: { id: number }) {
+  const styles = useThemedStyles(makeStyles);
+  const { t } = useTranslation('expenses');
+  return (
+    <View testID={`tx-unplanned-badge-${id}`} style={styles.badge}>
+      <Typography style={styles.badgeText}>{t('list.unplannedBadge')}</Typography>
+    </View>
+  );
+}
+
 export interface TransactionRowProps {
   item: TransactionEntry;
   /** Called with the expense id when an expense row is tapped (opens detail). */
@@ -94,7 +106,12 @@ export function TransactionRow({ item, onPressExpense, onPressIncome }: Transact
     <>
       <RowIcon entry={item} />
       <View style={styles.label}>
-        <Typography>{label}</Typography>
+        <View style={styles.titleRow}>
+          <Typography style={styles.title} numberOfLines={1}>
+            {label}
+          </Typography>
+          {item.type === 'expense' && item.isUnplanned ? <UnplannedBadge id={item.id} /> : null}
+        </View>
         {item.accountLabel ? (
           <Typography
             testID={`tx-account-chip-${item.type}-${item.id}`}
@@ -163,6 +180,25 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   label: {
     flex: 1,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  title: {
+    flexShrink: 1,
+  },
+  badge: {
+    backgroundColor: c.WARNING_LIGHT,
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  badgeText: {
+    color: c.WARNING_TEXT,
+    fontSize: 11,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   accountChip: {
     fontSize: 11,

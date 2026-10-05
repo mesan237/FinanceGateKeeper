@@ -112,14 +112,14 @@ describe('useTransactions', () => {
     id: 1, amount: 1000, date: '2026-06-01',
     categoryId: 3, categoryLabel: 'Food',
     subcategoryId: null, subcategoryLabel: null, note: null,
-    accountId: null, accountLabel: null,
+    accountId: null, accountLabel: null, isUnplanned: false,
   };
   const TRANSPORT_ENTRY = {
     type: 'expense' as const,
     id: 2, amount: 2000, date: '2026-06-01',
     categoryId: 5, categoryLabel: 'Transport',
     subcategoryId: null, subcategoryLabel: null, note: null,
-    accountId: null, accountLabel: null,
+    accountId: null, accountLabel: null, isUnplanned: false,
   };
   const INCOME_ENTRY = {
     type: 'income' as const,
@@ -200,6 +200,7 @@ const STORED_EXPENSE = {
   date: '2026-06-10',
   isRecurring: false,
   accountId: null,
+  isUnplanned: false,
   createdAt: '2026-06-10T10:00:00.000Z',
 };
 

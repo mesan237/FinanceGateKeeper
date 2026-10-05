@@ -19,6 +19,8 @@ export const expenses: Translation<typeof en> = {
     account: 'Compte',
     logged: '{{amount}} enregistré',
     loggedWithCategory: '{{amount}} enregistré · {{category}}',
+    unplanned: 'Imprévu',
+    unplannedHint: "Une dépense que vous n'aviez pas prévue",
   },
   log: {
     title: 'Nouvelle dépense',
@@ -34,6 +36,8 @@ export const expenses: Translation<typeof en> = {
     all: 'Toutes',
     retry: 'Réessayer',
     empty: 'Aucune transaction en {{month}}.',
+    unplannedFilter: 'Imprévus',
+    unplannedBadge: 'Imprévu',
     addTransaction: 'Ajouter une transaction',
   },
   picker: {

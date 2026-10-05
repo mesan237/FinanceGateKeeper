@@ -20,6 +20,8 @@ export const dashboard: Translation<typeof en> = {
     setBudget: 'Fixez un budget mensuel pour suivre ceci',
     in: 'Entrées',
     out: 'Sorties',
+    unplanned_one: '{{count}} imprévu · {{amount}}',
+    unplanned_other: '{{count}} imprévus · {{amount}}',
     net: 'Solde',
   },
   today: {

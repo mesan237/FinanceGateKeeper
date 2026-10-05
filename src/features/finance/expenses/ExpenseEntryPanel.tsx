@@ -23,6 +23,7 @@ import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { CategoryPicker } from './CategoryPicker';
+import { UnplannedToggle } from './UnplannedToggle';
 import { useExpenseLog, type ControlledField } from './expenses.hooks';
 
 export interface ExpenseEntryPanelProps {
@@ -37,11 +38,11 @@ export interface ExpenseEntryPanelProps {
 }
 
 /**
- * The expense entry form body: amount, category (via the modal picker), an
- * optional note, and a date defaulting to today. Runs the over-budget check
- * before saving. The caller decides what happens on success (navigate away or
- * close a sheet) via `onSaved` — used by both `ExpenseLogScreen` and the unified
- * `AddTransactionSheet`.
+ * The expense entry form body: amount, category (via the modal picker), the
+ * "Unplanned" (imprévu) switch, an optional note, and a date defaulting to
+ * today. Runs the over-budget check before saving. The caller decides what
+ * happens on success (navigate away or close a sheet) via `onSaved` — used by
+ * both `ExpenseLogScreen` and the unified `AddTransactionSheet`.
  */
 export function ExpenseEntryPanel({
   onSaved,
@@ -148,6 +149,12 @@ export function ExpenseEntryPanel({
         <Icon name="forward" size={18} color={c.TEXT_MUTED} />
       </Pressable>
       <FieldError message={log.fieldErrors.category} testID="expense-category-error" />
+
+      <UnplannedToggle
+        testID="expense-unplanned"
+        value={log.isUnplanned}
+        onValueChange={log.setIsUnplanned}
+      />
 
       <View>
         <Typography variant="muted" style={styles.noteLabel}>

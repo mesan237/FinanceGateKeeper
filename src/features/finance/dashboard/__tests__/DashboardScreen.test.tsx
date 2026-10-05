@@ -52,6 +52,7 @@ const FULL_STATE: DashboardState = {
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: MOCK_BUDGET,
   cashflow: { income: 100000, expenses: 20000, net: 80000 },
+  unplanned: { count: 0, total: 0 },
   dailyPace: 2167,
 };
 
@@ -63,6 +64,7 @@ const BARE_STATE: DashboardState = {
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
   budget: null,
   cashflow: null,
+  unplanned: { count: 0, total: 0 },
   dailyPace: null,
 };
 

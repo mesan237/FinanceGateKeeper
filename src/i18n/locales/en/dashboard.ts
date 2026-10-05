@@ -18,6 +18,8 @@ export const dashboard = {
     in: 'In',
     out: 'Out',
     net: 'Net',
+    unplanned_one: '{{count}} unexpected expense · {{amount}}',
+    unplanned_other: '{{count}} unexpected expenses · {{amount}}',
   },
   today: {
     title: "Today's Spending",

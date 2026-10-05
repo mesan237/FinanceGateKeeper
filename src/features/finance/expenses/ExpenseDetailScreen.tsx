@@ -21,6 +21,7 @@ import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.env
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
+import { UnplannedToggle } from './UnplannedToggle';
 import { useCategories, useExpenseEdit } from './expenses.hooks';
 
 export interface ExpenseDetailScreenProps {
@@ -29,7 +30,8 @@ export interface ExpenseDetailScreenProps {
 
 /**
  * Pre-filled edit form for an existing expense. Allows updating amount,
- * category, subcategory, note, and date, or deleting the expense entirely.
+ * category, subcategory, the imprévu flag, note, and date, or deleting the
+ * expense entirely.
  */
 export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   const styles = useThemedStyles(makeStyles);
@@ -106,6 +108,12 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
             label={categoryLabel ?? t('selectCategory')}
             variant="secondary"
             onPress={() => setPickerVisible(true)}
+          />
+
+          <UnplannedToggle
+            testID="expense-unplanned"
+            value={edit.isUnplanned}
+            onValueChange={edit.setIsUnplanned}
           />
 
           <TextInput

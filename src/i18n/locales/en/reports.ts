@@ -20,6 +20,16 @@ export const reports = {
     owed: 'Owed',
     viewWeekly: 'View Weekly Report →',
   },
+  unplanned: {
+    title: 'Unexpected expenses',
+    count_one: '{{count}} unexpected expense',
+    count_other: '{{count}} unexpected expenses',
+    share: "{{percent}}% of this month's spending",
+    shareUnderOne: "Under 1% of this month's spending",
+    previous: 'Last month: {{count}} · {{amount}}',
+    none: 'No unexpected expenses this month.',
+    hint: 'Turn on "Unexpected" when you log an expense to count it here.',
+  },
   comparison: {
     title: 'Spending vs previous month',
     empty: 'No comparison data for last month.',

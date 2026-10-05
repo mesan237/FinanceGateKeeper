@@ -9,6 +9,10 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   getExpensesByDateRange: jest.fn(),
   getAllCategories: jest.fn(),
 }));
+// The imprévus summary (VS-38) has its own suite; here it reports none.
+jest.mock('@/features/finance/expenses/expenses.unplanned', () => ({
+  getUnplannedTotals: jest.fn().mockResolvedValue({ count: 0, total: 0 }),
+}));
 jest.mock('@/features/finance/income/income.service', () => ({
   getIncomeByDateRange: jest.fn(),
 }));
@@ -60,6 +64,7 @@ function expense(partial: Partial<Expense> & Pick<Expense, 'amount' | 'categoryI
     subcategoryId: null,
     note: null,
     isRecurring: false,
+    isUnplanned: false,
     accountId: null,
     createdAt: '2026-06-01T00:00:00.000Z',
     ...partial,

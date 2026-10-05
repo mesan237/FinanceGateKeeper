@@ -33,17 +33,42 @@ export interface Expense {
   isRecurring: boolean;
   /** Source wallet, or null for legacy/unattributed expenses (VS-18). */
   accountId: number | null;
+  /**
+   * The user's "imprévu" mark: spending that caught them off guard (VS-38).
+   * A flag beside the category, never a category of its own.
+   */
+  isUnplanned: boolean;
   createdAt: string;
 }
 
 /**
  * The shape accepted by `createExpense` — id and createdAt are assigned on
- * insert. `accountId` is optional so existing callers (quick-add, recurring
- * auto-log) need not supply a wallet.
+ * insert. `accountId` and `isUnplanned` are optional so existing callers
+ * (quick-add, recurring auto-log, planned purchases) need not supply them; an
+ * expense is planned unless marked otherwise.
  */
-export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId'> & {
+export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnplanned'> & {
   accountId?: number | null;
+  isUnplanned?: boolean;
 };
+
+/** The fields `updateExpense` may change on an existing expense. */
+export type ExpenseEditableFields = Pick<
+  Expense,
+  'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId' | 'isUnplanned'
+>;
+
+/** How many imprévus a period holds and what they cost, in FCFA. */
+export interface UnplannedTotals {
+  count: number;
+  total: number;
+}
+
+/**
+ * The active chip on the transaction feed: a parent category id, `'unplanned'`
+ * for the imprévus only, or null for everything.
+ */
+export type FeedFilter = number | 'unplanned' | null;
 
 /** Filter applied to the transaction list. All fields are optional. */
 export interface TransactionFilter {

@@ -8,37 +8,46 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { RADIUS } from '@/constants/layout';
 
-import type { Category } from './expenses.types';
+import type { Category, FeedFilter } from './expenses.types';
 
 interface ChipProps {
   label: string;
   active: boolean;
   onPress: () => void;
+  /** The amber imprévu style instead of the green category one. */
+  warning?: boolean;
+  testID?: string;
 }
 
-function Chip({ label, active, onPress }: ChipProps) {
+function Chip({ label, active, onPress, warning = false, testID }: ChipProps) {
   const styles = useThemedStyles(makeStyles);
+  const activeStyle = warning ? styles.chipWarningActive : styles.chipActive;
+  const idleText = warning ? styles.chipTextWarning : undefined;
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
       hitSlop={{ top: 6, bottom: 6 }}
-      style={[styles.chip, active && styles.chipActive]}
+      style={[styles.chip, warning && styles.chipWarning, active && activeStyle]}
     >
-      <Typography style={active ? styles.chipTextActive : undefined}>{label}</Typography>
+      <Typography style={active ? styles.chipTextActive : idleText}>{label}</Typography>
     </Pressable>
   );
 }
 
 export interface CategoryChipsProps {
   categories: Category[];
-  /** The active category filter, or null for "All". */
-  selectedId: number | null;
-  onSelect: (id: number | null) => void;
+  /** The active feed filter: a category id, the imprévus, or null for "All". */
+  selectedId: FeedFilter;
+  onSelect: (filter: FeedFilter) => void;
 }
 
-/** The horizontal category filter row above the transaction feed. */
+/**
+ * The horizontal filter row above the transaction feed: All, then the imprévus
+ * (amber, so they stand apart from the categories), then each category.
+ */
 export function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('expenses');
@@ -50,6 +59,13 @@ export function CategoryChips({ categories, selectedId, onSelect }: CategoryChip
       contentContainerStyle={styles.content}
     >
       <Chip label={t('list.all')} active={selectedId === null} onPress={() => onSelect(null)} />
+      <Chip
+        testID="filter-unplanned"
+        label={t('list.unplannedFilter')}
+        active={selectedId === 'unplanned'}
+        onPress={() => onSelect('unplanned')}
+        warning
+      />
       {categories.map((cat) => (
         <Chip
           key={cat.id}
@@ -86,5 +102,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   chipTextActive: {
     color: c.TEXT_INVERSE,
+  },
+  chipWarning: {
+    borderColor: c.WARNING,
+  },
+  chipWarningActive: {
+    backgroundColor: c.WARNING,
+    borderColor: c.WARNING,
+  },
+  chipTextWarning: {
+    color: c.WARNING_TEXT,
   },
 });

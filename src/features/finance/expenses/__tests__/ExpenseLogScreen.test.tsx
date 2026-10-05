@@ -212,4 +212,28 @@ describe('ExpenseLogScreen', () => {
     expect(mockedCreate).not.toHaveBeenCalled();
     await waitFor(() => expect(screen.queryByTestId('over-budget-proceed')).toBeNull());
   });
+
+  it('saves an expense as planned when the Unplanned switch is left off', async () => {
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+    await selectFoodRestaurant();
+
+    expect(screen.getByRole('switch', { name: 'Unexpected' })).not.toBeChecked();
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({ isUnplanned: false }));
+  });
+
+  it('saves an expense as an imprévu when the Unplanned switch is on', async () => {
+    render(<ExpenseLogScreen />);
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '1500');
+    await selectFoodRestaurant();
+
+    fireEvent.press(screen.getByRole('switch', { name: 'Unexpected' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
+    expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({ isUnplanned: true }));
+  });
 });

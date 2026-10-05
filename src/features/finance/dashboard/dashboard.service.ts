@@ -1,8 +1,9 @@
 import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
 import * as budgetService from '@/features/finance/budget/budget.service';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
+import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
 import { toISODate } from '@/utils/formatDate';
-import { daysInMonth, daysRemainingInMonth } from '@/utils/monthMath';
+import { daysInMonth, daysRemainingInMonth, lastDayOfMonth } from '@/utils/monthMath';
 
 import type {
   BudgetSummary,
@@ -83,7 +84,7 @@ export function dailyBudgetPace(expenseBudget: number, monthISO: string): number
 
 /**
  * Aggregates the dashboard state for `monthISO` — today's spending, zero-day
- * status, and the budget, fund, and project figures.
+ * status, the budget and cashflow figures, and the month's imprévus.
  *
  * Budget data used to be conditional on control mode; with learning mode gone
  * (VS-34) it always loads.
@@ -95,9 +96,10 @@ export async function getDashboardSnapshot(
   todayISO: string = toISODate(new Date()),
 ): Promise<DashboardState> {
   // One range query covers both the 7-day trend and today's total (its last bucket).
-  const [recentExpenses, zeroDay] = await Promise.all([
+  const [recentExpenses, zeroDay, unplanned] = await Promise.all([
     expensesService.getExpensesByDateRange(isoDaysBefore(todayISO, TREND_DAYS - 1), todayISO),
     expensesService.getDayActivityStatus(todayISO),
+    getUnplannedTotals(`${monthISO}-01`, lastDayOfMonth(monthISO)),
   ]);
 
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
@@ -136,6 +138,7 @@ export async function getDashboardSnapshot(
     zeroDay,
     budget,
     cashflow,
+    unplanned,
     dailyPace,
   };
 }

@@ -54,6 +54,7 @@ const EXPENSE_TODAY: TransactionEntry = {
   note: null,
   accountId: null,
   accountLabel: null,
+  isUnplanned: false,
 };
 
 const INCOME_TODAY: TransactionEntry = {
@@ -80,6 +81,7 @@ const EXPENSE_YESTERDAY: TransactionEntry = {
   note: null,
   accountId: null,
   accountLabel: null,
+  isUnplanned: false,
 };
 
 const EXPENSE_OTHER_MONTH: TransactionEntry = {
@@ -94,6 +96,7 @@ const EXPENSE_OTHER_MONTH: TransactionEntry = {
   note: null,
   accountId: null,
   accountLabel: null,
+  isUnplanned: false,
 };
 
 beforeEach(() => {
@@ -380,5 +383,52 @@ describe('TransactionList', () => {
     await i18n.changeLanguage('fr');
     render(<TransactionList />);
     expect(await screen.findByText('Aucune transaction en Juin 2026.')).toBeTruthy();
+  });
+
+  describe('imprévus', () => {
+    const UNPLANNED_TODAY: TransactionEntry = { ...EXPENSE_TODAY, id: 30, isUnplanned: true };
+
+    it('badges the expenses marked unplanned, and only those', async () => {
+      mockGetFeed.mockResolvedValue([UNPLANNED_TODAY, EXPENSE_TODAY]);
+      render(<TransactionList />);
+
+      expect(await screen.findByTestId('tx-unplanned-badge-30')).toBeTruthy();
+      expect(screen.queryByTestId('tx-unplanned-badge-1')).toBeNull();
+    });
+
+    it('the Unplanned chip shows only the imprévus', async () => {
+      mockGetFeed.mockResolvedValue([UNPLANNED_TODAY, EXPENSE_TODAY, INCOME_TODAY]);
+      render(<TransactionList />);
+      await screen.findByTestId('tx-row-expense-30');
+
+      fireEvent.press(screen.getByTestId('filter-unplanned'));
+
+      await waitFor(() => expect(screen.queryByTestId('tx-row-expense-1')).toBeNull());
+      expect(screen.queryByTestId('tx-row-income-10')).toBeNull();
+      expect(screen.getByTestId('tx-row-expense-30')).toBeTruthy();
+      expect(screen.getByTestId('filter-unplanned')).toBeSelected();
+    });
+
+    it('All brings every row back after filtering the imprévus', async () => {
+      mockGetFeed.mockResolvedValue([UNPLANNED_TODAY, EXPENSE_TODAY, INCOME_TODAY]);
+      render(<TransactionList />);
+      await screen.findByTestId('tx-row-expense-30');
+
+      fireEvent.press(screen.getByTestId('filter-unplanned'));
+      await waitFor(() => expect(screen.queryByTestId('tx-row-expense-1')).toBeNull());
+      fireEvent.press(screen.getByRole('button', { name: 'All' }));
+
+      expect(await screen.findByTestId('tx-row-expense-1')).toBeTruthy();
+      expect(screen.getByTestId('tx-row-income-10')).toBeTruthy();
+    });
+
+    it('labels the badge and the chip in French', async () => {
+      await i18n.changeLanguage('fr');
+      mockGetFeed.mockResolvedValue([UNPLANNED_TODAY]);
+      render(<TransactionList />);
+
+      expect(await screen.findByText('Imprévu')).toBeTruthy();
+      expect(screen.getByText('Imprévus')).toBeTruthy();
+    });
   });
 });

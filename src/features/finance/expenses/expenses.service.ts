@@ -8,6 +8,7 @@ import type {
   Category,
   DayActivityStatus,
   Expense,
+  ExpenseEditableFields,
   Frequency,
   NewCategory,
   NewExpense,
@@ -33,6 +34,7 @@ interface ExpenseRow {
   date: string;
   is_recurring: number;
   account_id: number | null;
+  is_unplanned: number;
   created_at: string;
 }
 
@@ -45,7 +47,7 @@ interface CategoryRow {
 }
 
 const EXPENSE_COLUMNS =
-  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, created_at';
+  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at';
 const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
@@ -59,6 +61,7 @@ function mapExpense(row: ExpenseRow): Expense {
     date: row.date,
     isRecurring: row.is_recurring === 1,
     accountId: row.account_id,
+    isUnplanned: row.is_unplanned === 1,
     createdAt: row.created_at,
   };
 }
@@ -90,8 +93,8 @@ export async function createExpense(input: NewExpense): Promise<number> {
 
   await execute(
     `INSERT INTO expenses
-       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.amount,
       input.categoryId,
@@ -100,6 +103,7 @@ export async function createExpense(input: NewExpense): Promise<number> {
       input.date,
       input.isRecurring ? 1 : 0,
       input.accountId ?? null,
+      input.isUnplanned ? 1 : 0,
       new Date().toISOString(),
     ],
   );
@@ -709,7 +713,7 @@ export async function getExpenseById(id: number): Promise<Expense | null> {
  */
 export async function updateExpense(
   id: number,
-  fields: Partial<Pick<Expense, 'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId'>>,
+  fields: Partial<ExpenseEditableFields>,
 ): Promise<void> {
   const sets: string[] = [];
   const params: (string | number | null)[] = [];
@@ -740,6 +744,10 @@ export async function updateExpense(
   if ('accountId' in fields) {
     sets.push('account_id = ?');
     params.push(fields.accountId ?? null);
+  }
+  if (fields.isUnplanned !== undefined) {
+    sets.push('is_unplanned = ?');
+    params.push(fields.isUnplanned ? 1 : 0);
   }
   if (sets.length === 0) return;
 
