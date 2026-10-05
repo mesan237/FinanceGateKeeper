@@ -24,4 +24,14 @@ export const notifications = {
     bodyDueSoon: '{{person}} — {{amount}} is due on {{date}}.',
     bodyOverdue: '{{person}} — {{amount}} is overdue (was due {{date}}).',
   },
+  plannedDue: {
+    title: 'Planned purchase',
+    body: 'You have planned purchases coming up.',
+    bodySoon_one: '{{list}}: {{count}} item to buy by {{date}} ({{amount}}).',
+    bodySoon_other: '{{list}}: {{count}} items to buy by {{date}} ({{amount}}).',
+    bodyToday_one: '{{list}}: {{count}} item to buy today ({{amount}}).',
+    bodyToday_other: '{{list}}: {{count}} items to buy today ({{amount}}).',
+    bodyOverdue_one: '{{list}}: {{count}} item still to buy — it was due {{date}}.',
+    bodyOverdue_other: '{{list}}: {{count}} items still to buy — they were due {{date}}.',
+  },
 };

@@ -13,13 +13,15 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDateLong, toISODate } from '@/utils/formatDate';
 
+import { DueBadge } from './DueBadge';
 import { NewListSheet } from './NewListSheet';
 import { usePlannedLists } from './planned.hooks';
 import type { PlannedList } from './planned.types';
 
 /**
  * The shopping lists: each with how many items are still to buy and their
- * estimated total. Tapping a list opens it; "New list" names a fresh one.
+ * estimated total, plus when it is due. Tapping a list opens it; "New list"
+ * starts a fresh one with its name and shopping day.
  * Reached from the drawer.
  */
 export function PlannedListsScreen() {
@@ -59,6 +61,7 @@ export function PlannedListsScreen() {
 }
 
 function ListCard({ list, onPress }: { list: PlannedList; onPress: () => void }) {
+  const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('planned');
   // "All bought" only once there is something to have bought; an empty list says so.
   const summary =
@@ -72,8 +75,16 @@ function ListCard({ list, onPress }: { list: PlannedList; onPress: () => void })
 
   return (
     <Pressable testID={`planned-list-${list.id}`} accessibilityRole="button" onPress={onPress}>
-      <Card>
-        <Typography variant="subheading">{list.name}</Typography>
+      <Card style={styles.card}>
+        <View style={styles.titleRow}>
+          <Typography variant="subheading" style={styles.title}>
+            {list.name}
+          </Typography>
+          {/* A finished or empty list has nothing left to be late with. */}
+          {list.openCount > 0 || list.dueDate === null ? (
+            <DueBadge dateISO={list.dueDate} testID={`planned-list-due-${list.id}`} />
+          ) : null}
+        </View>
         <Typography variant="muted">{summary}</Typography>
         <Typography variant="muted">{t('lists.created', { date: created })}</Typography>
       </Card>
@@ -85,5 +96,8 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, padding: 16, gap: 12 },
     list: { gap: 12 },
+    card: { gap: 4 },
+    titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    title: { flex: 1 },
     error: { color: c.DANGER },
   });

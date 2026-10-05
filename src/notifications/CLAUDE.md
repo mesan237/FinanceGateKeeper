@@ -14,6 +14,7 @@ notifications/
     ├── zeroDayCheck.ts        — Zero-day confirmation prompt
     ├── overBudget.ts          — Over-budget warning (in-app, not push)
     ├── debtDueDate.ts         — Debt approaching/overdue reminder
+    ├── plannedDue.ts          — Planned purchase due soon / today / overdue (scheduled, VS-39)
     └── projectTimeline.ts     — Project timeline shift alert
 ```
 
@@ -24,6 +25,7 @@ notifications/
 - Over-budget alert is in-app only (modal), not a push notification. The trigger file just formats the message.
 - Daily reminder defaults to 21:00 local time. Configurable in settings.
 - Debt reminders fire 3 days before due date, then daily after due date until settled.
+- Planned-purchase reminders: 09:00 three days before a list's day, 09:00 on the day, then the next 09:00 while overdue. One per list and day; re-planned (cancel + schedule) on every open, foreground and planned change.
 
 ## Import Rules
 - This folder can import from `utils/`, `constants/`, `types/` only.

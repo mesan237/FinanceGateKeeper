@@ -44,6 +44,12 @@ Three layers — never violate these:
 - `planned` → `expenses` (ticking an item creates the expense, unticking deletes it, VS-36), `accounts` (AccountPicker on the purchase sheet). Nothing depends on `planned`: planned items never affect the budget
 All other cross-feature imports are forbidden.
 
+**Attention counts (VS-39).** A feature that needs to surface "something here needs you"
+outside itself publishes counts to the shared `components/AttentionProvider` under a key
+from `constants/attention`. `planned` does this from its root `PlannedReminderScheduler`;
+the drawer dot, the menu button and the dashboard's `PlannedDueCard` read the key from
+`components/`. Nobody imports `planned`, so the graph above is unchanged.
+
 The list covers **source** imports. Service tests that seed an in-memory database may
 import another slice's `create*` helper to build fixtures (`budget` and `dashboard`
 tests call `income.service.createIncome`); that is fixture setup, not a runtime

@@ -20,9 +20,16 @@ export const dashboard: Translation<typeof en> = {
     setBudget: 'Fixez un budget mensuel pour suivre ceci',
     in: 'Entrées',
     out: 'Sorties',
+    net: 'Solde',
     unplanned_one: '{{count}} imprévu · {{amount}}',
     unplanned_other: '{{count}} imprévus · {{amount}}',
-    net: 'Solde',
+  },
+  planned: {
+    dueSoon_one: '{{count}} achat prévu à venir',
+    dueSoon_other: '{{count}} achats prévus à venir',
+    overdue_one: '{{count}} achat prévu en retard',
+    overdue_other: '{{count}} achats prévus en retard',
+    open: 'Ouvrir les achats prévus',
   },
   today: {
     title: "Dépenses d'aujourd'hui",

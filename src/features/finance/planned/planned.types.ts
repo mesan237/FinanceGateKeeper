@@ -8,7 +8,31 @@ export interface PlannedList {
   openCount: number;
   /** Sum of the estimates of the items not yet bought, in FCFA. */
   openEstimate: number;
+  /**
+   * The shopping day, `YYYY-MM-DD`. Required for new lists; null only on lists
+   * made before due dates existed. Items without their own date fall due with it.
+   */
+  dueDate: string | null;
   createdAt: string;
+}
+
+/** An open item with the date it falls due — its own date, else its list's. */
+export interface DueItem {
+  id: number;
+  listId: number;
+  listName: string;
+  name: string;
+  estimatedAmount: number;
+  /** `YYYY-MM-DD`. */
+  dueDate: string;
+}
+
+/** How many open items need attention, for the drawer dot and the dashboard. */
+export interface PlannedAttention {
+  /** Due today or within the warning window. */
+  dueSoon: number;
+  /** Past their date and still not bought. */
+  overdue: number;
 }
 
 /** One thing to buy. Bought exactly when `expenseId` points at an existing expense. */
@@ -20,7 +44,10 @@ export interface PlannedItem {
   categoryId: number;
   /** Suggested wallet, editable when the item is bought. */
   accountId: number | null;
-  /** Informational only — planned items never affect the budget. */
+  /**
+   * The item's own date, overriding its list's due date; null means it falls
+   * due with the list. Planned items never affect the budget.
+   */
   plannedDate: string | null;
   expenseId: number | null;
   isBought: boolean;

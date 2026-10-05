@@ -21,7 +21,8 @@
 --   2. Creates every missing table (same definitions as schema.sql).
 --   3. Adds the columns later migrations introduced to tables that already
 --      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
---      total_budget 027, expenses.is_unplanned 032).
+--      total_budget 027, expenses.is_unplanned 032,
+--      planned_lists.due_date 033).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -232,6 +233,7 @@ create table if not exists planned_lists (
   uuid       text primary key,
   user_id    uuid not null default auth.uid(),
   name       text not null,
+  due_date   text,             -- the shopping day (VS-39), or null on older lists
   created_at text not null,
   updated_at text not null
 );
@@ -273,6 +275,7 @@ alter table income               add column if not exists allocation_status text
 alter table allocations          add column if not exists total_budget integer;
 alter table fund_transactions    add column if not exists account_id text;
 alter table project_transactions add column if not exists account_id text;
+alter table planned_lists        add column if not exists due_date text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

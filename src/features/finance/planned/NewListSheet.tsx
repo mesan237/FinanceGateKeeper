@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
+import { DateField } from '@/components/DateField';
 import { FieldError } from '@/components/FieldError';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
@@ -12,10 +13,13 @@ export interface NewListSheetProps {
   visible: boolean;
   onClose: () => void;
   /** Creates the list; resolves `true` on success (the sheet then closes). */
-  onCreate: (name: string) => Promise<boolean>;
+  onCreate: (name: string, dueDate: string) => Promise<boolean>;
 }
 
-/** A one-field sheet for naming a new shopping list. */
+/**
+ * The sheet for starting a shopping list: its name and the day the user plans
+ * to shop. Both are required — the day is what the reminders count down to.
+ */
 export function NewListSheet({ visible, onClose, onCreate }: NewListSheetProps) {
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="new-list-sheet">
@@ -27,17 +31,22 @@ export function NewListSheet({ visible, onClose, onCreate }: NewListSheetProps) 
 function NewListForm({ onClose, onCreate }: Omit<NewListSheetProps, 'visible'>) {
   const { t } = useTranslation('planned');
   const [name, setName] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  // Starts empty: the user picks the day rather than accepting a default.
+  const [dueDate, setDueDate] = useState('');
+  const [errors, setErrors] = useState<{ name?: string; dueDate?: string }>({});
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
-    if (name.trim() === '') {
-      setError(t('errors.nameRequired'));
-      return;
-    }
+    const next = {
+      name: name.trim() === '' ? t('errors.nameRequired') : undefined,
+      dueDate: dueDate === '' ? t('errors.dueDateRequired') : undefined,
+    };
+    setErrors(next);
+    if (next.name || next.dueDate) return;
+
     setSaving(true);
     try {
-      if (await onCreate(name)) onClose();
+      if (await onCreate(name, dueDate)) onClose();
     } finally {
       setSaving(false);
     }
@@ -55,15 +64,29 @@ function NewListForm({ onClose, onCreate }: Omit<NewListSheetProps, 'visible'>) 
           value={name}
           onChangeText={(text) => {
             setName(text);
-            setError(null);
+            setErrors((prev) => ({ ...prev, name: undefined }));
           }}
           placeholder={t('newList.namePlaceholder')}
           accessibilityLabel={t('newList.nameLabel')}
           autoFocus
           returnKeyType="done"
-          onSubmitEditing={handleCreate}
         />
-        <FieldError message={error ?? undefined} testID="new-list-name-error" />
+        <FieldError message={errors.name} testID="new-list-name-error" />
+      </View>
+      <View>
+        <Typography variant="muted" style={styles.label}>
+          {t('newList.dueLabel')}
+        </Typography>
+        <DateField
+          testID="new-list-date"
+          value={dueDate}
+          onChange={(iso) => {
+            setDueDate(iso);
+            setErrors((prev) => ({ ...prev, dueDate: undefined }));
+          }}
+          accessibilityLabel={t('newList.dueLabel')}
+        />
+        <FieldError message={errors.dueDate} testID="new-list-date-error" />
       </View>
       <Button
         testID="new-list-create"

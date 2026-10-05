@@ -1202,6 +1202,45 @@ already read `expenses`).
 
 ---
 
+### VS-39: Planned Purchases — Due Dates, Reminders and the Drawer Dot ✅ Done
+
+**Priority:** High — user-requested; planned purchases were easy to forget
+**Blocked by:** VS-36 (Planned purchases)
+**Plan:** `issues/ISSUE-037/implementation-plan.md`
+
+**Scope:**
+
+- Every list has a required shopping day; items fall due with it unless they
+  carry their own date.
+- Due badges on lists and items: "Due in 2 days" / "Due today" (amber),
+  "Overdue by 3 days" (red); quiet while the day is further off.
+- Postpone an item due soon or overdue: one day, one week, or a picked date.
+- Phone reminders: 09:00 three days before, 09:00 on the day, the next 09:00
+  while overdue.
+- A dot on the drawer's Planned purchases row and on the menu button, and a
+  dashboard card, while anything is due soon or overdue.
+
+**TDD Anchor:**
+
+- Test: migration 033 adds `due_date` and changing it marks the list pending.
+- Test: `createList`/`setListDueDate` require a date; `getDueItems` dates items by their own date, else the list's.
+- Test: `planReminders` schedules the heads-up, the day and the overdue nudge; reconcile replaces only planned reminders.
+- Test: the new-list sheet refuses a list without a day; badges, postpone and the dots render from the counts.
+
+**Done when:** A list cannot be created without a shopping day, and as that day
+approaches the user is reminded on the phone, sees a dot in the menu and a card
+on the dashboard, and can postpone what they will not buy yet.
+
+**Status:** Done. Migration 033 adds `planned_lists.due_date` (nullable: older
+lists show "No due date" and ask for one); Supabase patch 039 (folded into 037
+and `schema.sql`) must run before a build with migration 033 syncs.
+`PlannedReminderScheduler` at the root re-plans reminders on open, foreground and
+every planned change, and publishes counts to the shared `AttentionProvider`,
+which the drawer, `MenuButton` and `PlannedDueCard` read — no new cross-feature
+edges. Reminders mirror the debt ones and do not check the notifications setting.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

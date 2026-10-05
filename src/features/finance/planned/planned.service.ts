@@ -38,6 +38,11 @@ function assertOptionalDate(date: string | null | undefined): void {
   if (date != null && !ISO_DATE.test(date)) throw new Error(err('dateFormat'));
 }
 
+/** Throws unless `date` matches `YYYY-MM-DD`; a list's due date is required. */
+function assertDueDate(date: string): void {
+  if (!ISO_DATE.test(date)) throw new Error(err('dueDateRequired'));
+}
+
 /** Throws unless a list with `id` exists. */
 async function assertListExists(id: number): Promise<void> {
   const [row] = await query<{ id: number }>('SELECT id FROM planned_lists WHERE id = ?', [id]);
@@ -64,16 +69,17 @@ interface ListRow {
   item_count: number;
   open_count: number;
   open_estimate: number;
+  due_date: string | null;
   created_at: string;
 }
 
 /**
- * Every list, oldest first, each with its total item count, how many items are
- * still to buy and their estimate.
+ * Every list, oldest first, each with its due date, total item count, how many
+ * items are still to buy and their estimate.
  */
 export async function getLists(): Promise<PlannedList[]> {
   const rows = await query<ListRow>(
-    `SELECT l.id, l.name, l.created_at,
+    `SELECT l.id, l.name, l.due_date, l.created_at,
             COUNT(i.id) AS item_count,
             COALESCE(SUM(CASE WHEN i.id IS NOT NULL AND e.id IS NULL THEN 1 ELSE 0 END), 0)
               AS open_count,
@@ -91,22 +97,36 @@ export async function getLists(): Promise<PlannedList[]> {
     itemCount: r.item_count,
     openCount: r.open_count,
     openEstimate: r.open_estimate,
+    dueDate: r.due_date,
     createdAt: r.created_at,
   }));
 }
 
 /**
- * Creates a list and returns its id.
+ * Creates a list due on `dueDate` (`YYYY-MM-DD`) and returns its id.
  *
- * @throws if `name` is blank.
+ * @throws if `name` is blank or `dueDate` is missing or malformed.
  */
-export async function createList(name: string): Promise<number> {
+export async function createList(name: string, dueDate: string): Promise<number> {
   const clean = cleanName(name);
-  await execute('INSERT INTO planned_lists (name, created_at) VALUES (?, ?)', [
+  assertDueDate(dueDate);
+  await execute('INSERT INTO planned_lists (name, due_date, created_at) VALUES (?, ?, ?)', [
     clean,
+    dueDate,
     new Date().toISOString(),
   ]);
   return lastInsertId();
+}
+
+/**
+ * Moves a list to a new due date. A due date can be changed but never cleared.
+ *
+ * @throws if `dueDate` is missing or malformed, or the list does not exist.
+ */
+export async function setListDueDate(id: number, dueDate: string): Promise<void> {
+  assertDueDate(dueDate);
+  await assertListExists(id);
+  await execute('UPDATE planned_lists SET due_date = ? WHERE id = ?', [dueDate, id]);
 }
 
 /**

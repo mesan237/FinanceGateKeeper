@@ -54,7 +54,7 @@ function addRice(listId: number, extra: Partial<Parameters<typeof createItem>[0]
 
 describe('lists', () => {
   it('creates a list that starts with no items', async () => {
-    const id = await createList('Saturday market');
+    const id = await createList('Saturday market', '2026-10-10');
 
     const lists = await getLists();
     expect(lists).toHaveLength(1);
@@ -68,14 +68,14 @@ describe('lists', () => {
   });
 
   it('trims the name and rejects a blank one', async () => {
-    await createList('  Market  ');
+    await createList('  Market  ', '2026-10-10');
     expect((await getLists())[0].name).toBe('Market');
 
-    await expect(createList('   ')).rejects.toThrow();
+    await expect(createList('   ', '2026-10-10')).rejects.toThrow();
   });
 
   it('renames a list', async () => {
-    const id = await createList('Market');
+    const id = await createList('Market', '2026-10-10');
     await renameList(id, 'Back to school');
 
     expect((await getLists())[0].name).toBe('Back to school');
@@ -86,7 +86,7 @@ describe('lists', () => {
   });
 
   it('summarises the open items of each list', async () => {
-    const id = await createList('Market');
+    const id = await createList('Market', '2026-10-10');
     await addRice(id);
     await createItem({ listId: id, name: 'Oil', estimatedAmount: 2500, categoryId: FOOD });
 
@@ -98,7 +98,7 @@ describe('lists', () => {
   });
 
   it('deletes a list together with its items', async () => {
-    const id = await createList('Market');
+    const id = await createList('Market', '2026-10-10');
     await addRice(id);
 
     await deleteList(id);
@@ -114,7 +114,7 @@ describe('lists', () => {
 
 describe('items', () => {
   it('creates an item that starts out planned', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     const id = await addRice(listId, { plannedDate: '2026-10-03', accountId: 1 });
 
     const [item] = await getItems(listId);
@@ -133,7 +133,7 @@ describe('items', () => {
   });
 
   it('leaves the date and account empty when they are not given', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     await addRice(listId);
 
     const [item] = await getItems(listId);
@@ -142,7 +142,7 @@ describe('items', () => {
   });
 
   it('rejects an estimate that is zero, negative or fractional', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
 
     await expect(addRice(listId, { estimatedAmount: 0 })).rejects.toThrow();
     await expect(addRice(listId, { estimatedAmount: -5 })).rejects.toThrow();
@@ -150,7 +150,7 @@ describe('items', () => {
   });
 
   it('rejects an item without a name', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
 
     await expect(addRice(listId, { name: ' ' })).rejects.toThrow();
   });
@@ -160,13 +160,13 @@ describe('items', () => {
   });
 
   it('rejects a malformed planned date', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
 
     await expect(addRice(listId, { plannedDate: '03/10/2026' })).rejects.toThrow();
   });
 
   it('returns items in the order they were added', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     await addRice(listId);
     await createItem({ listId, name: 'Taxi', estimatedAmount: 1000, categoryId: TRANSPORT });
 
@@ -174,8 +174,8 @@ describe('items', () => {
   });
 
   it('only returns the items of the requested list', async () => {
-    const a = await createList('A');
-    const b = await createList('B');
+    const a = await createList('A', '2026-10-10');
+    const b = await createList('B', '2026-10-10');
     await addRice(a);
     await createItem({ listId: b, name: 'Taxi', estimatedAmount: 1000, categoryId: TRANSPORT });
 
@@ -183,7 +183,7 @@ describe('items', () => {
   });
 
   it('updates only the fields that are passed', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     const id = await addRice(listId, { plannedDate: '2026-10-03' });
 
     await updateItem(id, { estimatedAmount: 5500 });
@@ -197,7 +197,7 @@ describe('items', () => {
   });
 
   it('clears the planned date when it is set to null', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     const id = await addRice(listId, { plannedDate: '2026-10-03' });
 
     await updateItem(id, { plannedDate: null });
@@ -206,7 +206,7 @@ describe('items', () => {
   });
 
   it('applies the same validation when updating', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     const id = await addRice(listId);
 
     await expect(updateItem(id, { estimatedAmount: 0 })).rejects.toThrow();
@@ -218,7 +218,7 @@ describe('items', () => {
   });
 
   it('deletes an item', async () => {
-    const listId = await createList('Market');
+    const listId = await createList('Market', '2026-10-10');
     const id = await addRice(listId);
 
     await deleteItem(id);

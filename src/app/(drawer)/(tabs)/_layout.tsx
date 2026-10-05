@@ -1,13 +1,13 @@
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { PlatformPressable } from '@react-navigation/elements';
-import { DrawerActions } from '@react-navigation/native';
-import { Tabs, useNavigation } from 'expo-router';
+import { Tabs } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/Icon';
+import { MenuButton } from '@/components/MenuButton';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { useTheme } from '@/theme';
@@ -55,23 +55,6 @@ const styles = StyleSheet.create({
   },
 });
 
-function MenuIcon() {
-  const navigation = useNavigation();
-  const c = useTheme();
-  const { t } = useTranslation('navigation');
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={t('openMenu')}
-      onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-      hitSlop={12}
-      style={{ marginLeft: 16 }}
-    >
-      <Icon name="menu" size={ICON_SIZE.md} color={c.TEXT_PRIMARY} />
-    </Pressable>
-  );
-}
-
 export default function TabsLayout() {
   const c = useTheme();
   // Subscribing re-renders the navigator's titles when the language changes.
@@ -84,7 +67,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
-        headerLeft: () => <MenuIcon />,
+        headerLeft: () => <MenuButton />,
         headerTitleAlign: 'center',
         // The parent SafeAreaView already clears the status bar, so zero out
         // React Navigation's own status-bar spacer. Left in, it padded the top

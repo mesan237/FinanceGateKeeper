@@ -18,12 +18,15 @@ jest.mock('@/services/database', () => {
   };
 });
 
+import { onPlannedChange } from '@/features/finance/planned/planned.events';
 import { usePlannedItems, usePlannedLists } from '@/features/finance/planned/planned.hooks';
 
 let sqlite: Database.Database;
 
 const FOOD = 1;
 const CASH = 1;
+// Far ahead, so postponing counts from the list's date rather than today's.
+const DUE = '2099-01-10';
 
 beforeEach(async () => {
   sqlite = new Database(':memory:');
@@ -46,7 +49,7 @@ describe('usePlannedLists', () => {
 
     let ok = false;
     await act(async () => {
-      ok = await result.current.create('Saturday market');
+      ok = await result.current.create('Saturday market', DUE);
     });
 
     expect(ok).toBe(true);
@@ -59,7 +62,7 @@ describe('usePlannedLists', () => {
 
     let ok = true;
     await act(async () => {
-      ok = await result.current.create('  ');
+      ok = await result.current.create('  ', DUE);
     });
 
     expect(ok).toBe(false);
@@ -72,7 +75,7 @@ describe('usePlannedItems', () => {
     const lists = renderHook(() => usePlannedLists());
     await waitFor(() => expect(lists.result.current.loading).toBe(false));
     await act(async () => {
-      await lists.result.current.create('Market');
+      await lists.result.current.create('Market', DUE);
     });
     const listId = lists.result.current.lists[0].id;
 
@@ -139,5 +142,68 @@ describe('usePlannedItems', () => {
 
     expect(ok).toBe(true);
     expect(sqlite.prepare('SELECT COUNT(*) AS n FROM planned_lists').get()).toEqual({ n: 0 });
+  });
+});
+
+describe('due dates', () => {
+  async function setup() {
+    const lists = renderHook(() => usePlannedLists());
+    await waitFor(() => expect(lists.result.current.loading).toBe(false));
+    await act(async () => {
+      await lists.result.current.create('Market', DUE);
+    });
+    const listId = lists.result.current.lists[0].id;
+    const items = renderHook(() => usePlannedItems(listId));
+    await waitFor(() => expect(items.result.current.loading).toBe(false));
+    await act(async () => {
+      await items.result.current.add({ name: 'Rice', estimatedAmount: 5000, categoryId: FOOD });
+    });
+    return items;
+  }
+
+  it("exposes the list's due date", async () => {
+    const { result } = await setup();
+    expect(result.current.listDueDate).toBe(DUE);
+  });
+
+  it('moves the list to a new due date', async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.setDueDate('2099-02-01');
+    });
+    expect(result.current.listDueDate).toBe('2099-02-01');
+  });
+
+  it("postpones an item from the list's date by the chosen number of days", async () => {
+    const { result } = await setup();
+    await act(async () => {
+      await result.current.postpone(result.current.items[0], 7);
+    });
+    expect(result.current.items[0].plannedDate).toBe('2099-01-17');
+  });
+
+  it('announces every change so the reminders and the dot can catch up', async () => {
+    const { result } = await setup();
+    const listener = jest.fn();
+    const unsubscribe = onPlannedChange(listener);
+
+    await act(async () => {
+      await result.current.postpone(result.current.items[0], 1);
+    });
+    unsubscribe();
+
+    expect(listener).toHaveBeenCalled();
+  });
+
+  it('refreshes the lists screen when a list changes inside it', async () => {
+    const { result } = await setup();
+    const lists = renderHook(() => usePlannedLists());
+    await waitFor(() => expect(lists.result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.setDueDate('2099-03-01');
+    });
+
+    await waitFor(() => expect(lists.result.current.lists[0].dueDate).toBe('2099-03-01'));
   });
 });

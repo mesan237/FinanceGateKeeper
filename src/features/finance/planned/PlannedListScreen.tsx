@@ -15,9 +15,12 @@ import { useCategories } from '@/features/finance/expenses/expenses.hooks';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { ListDueField } from './ListDueField';
 import { PlannedItemRow } from './PlannedItemRow';
 import { PlannedItemSheet, type PlannedItemValues } from './PlannedItemSheet';
+import { PostponeSheet } from './PostponeSheet';
 import { PurchaseConfirmSheet } from './PurchaseConfirmSheet';
+import { effectiveDueDate } from './planned.due';
 import { usePlannedItems } from './planned.hooks';
 import type { PlannedItem } from './planned.types';
 
@@ -29,7 +32,9 @@ export interface PlannedListScreenProps {
  * One shopping list. Ticking an open item opens the purchase sheet, where the
  * user confirms the price actually paid; that records an expense and strikes
  * the item through. Ticking a bought item asks before undoing the purchase.
- * Planned items never touch the budget — only the expense a tick creates does.
+ * The list's shopping day sits at the top; items due soon or overdue can be
+ * postponed. Planned items never touch the budget — only the expense a tick
+ * creates does.
  */
 export function PlannedListScreen({ listId }: PlannedListScreenProps) {
   const styles = useThemedStyles(makeStyles);
@@ -39,6 +44,7 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
   const { displayLabelFor } = useCategories();
   const {
     listName,
+    listDueDate,
     items,
     loading,
     error,
@@ -48,11 +54,14 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
     remove,
     buy,
     unbuy,
+    setDueDate,
+    postpone,
     removeList,
   } = usePlannedItems(listId);
 
   const [buying, setBuying] = useState<PlannedItem | null>(null);
   const [undoing, setUndoing] = useState<PlannedItem | null>(null);
+  const [postponing, setPostponing] = useState<PlannedItem | null>(null);
   const [editing, setEditing] = useState<PlannedItem | null>(null);
   const [itemSheetOpen, setItemSheetOpen] = useState(false);
   const [deletingList, setDeletingList] = useState(false);
@@ -107,6 +116,14 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
         }
       />
 
+      {loading ? null : (
+        <ListDueField
+          dueDate={listDueDate}
+          onChange={(date) => void setDueDate(date)}
+          hasOpenItems={items.some((i) => !i.isBought)}
+        />
+      )}
+
       {loading ? (
         <LoadingState />
       ) : items.length === 0 ? (
@@ -128,6 +145,11 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
                 key={item.id}
                 item={item}
                 categoryLabel={displayLabelFor(item.categoryId, null)}
+                dueDate={effectiveDueDate(item.plannedDate, listDueDate)}
+                onPostpone={() => {
+                  clearError();
+                  setPostponing(item);
+                }}
                 onToggle={() => {
                   clearError();
                   if (item.isBought) setUndoing(item);
@@ -166,6 +188,13 @@ export function PlannedListScreen({ listId }: PlannedListScreenProps) {
         }}
         onConfirm={handleConfirmPurchase}
         error={error}
+      />
+
+      <PostponeSheet
+        item={postponing}
+        onClose={() => setPostponing(null)}
+        onPostpone={postpone}
+        onPickDate={(item, date) => update(item.id, { plannedDate: date })}
       />
 
       <Modal visible={undoing !== null} onRequestClose={() => setUndoing(null)}>

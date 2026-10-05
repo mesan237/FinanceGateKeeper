@@ -148,14 +148,15 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
 
 const NOW = `strftime('%Y-%m-%dT%H:%M:%fZ','now')`;
 const NEW_UUID = `lower(hex(randomblob(16)))`;
-const GUARD_OFF = `(SELECT active FROM _sync_guard WHERE id = 1) = 0`;
 
 /**
  * Creates (replacing any existing) the dirty-marking `AFTER UPDATE OF` trigger
  * for a table over the given data columns. Exported so migration 021 can rebuild
  * the child-table triggers once `account_id` exists. Fires only when a data
- * column changes (not the sync columns), and only while the sync engine is not
- * mid-write — so a pull keeps its cloud timestamp instead of re-marking pending.
+ * column changes (not the sync columns), and only when the statement left
+ * `updated_at` alone. App code never writes `updated_at`; the sync engine always
+ * sets it to the cloud row's time, so a pull keeps that timestamp while an edit
+ * the user saves mid-pull is still marked pending (see migration 035).
  */
 export async function createUpdateTrigger(
   db: SqliteDriver,
@@ -166,7 +167,7 @@ export async function createUpdateTrigger(
   await db.execute(
     `CREATE TRIGGER trg_${table}_upd
        AFTER UPDATE OF ${dataColumns.join(', ')} ON ${table}
-       WHEN ${GUARD_OFF}
+       WHEN NEW.updated_at IS OLD.updated_at
      BEGIN
        UPDATE ${table}
          SET updated_at = ${NOW}, sync_status = 'pending'
@@ -202,27 +203,35 @@ export async function addSyncColumns(db: SqliteDriver, table: SyncedTable): Prom
     `CREATE INDEX IF NOT EXISTS idx_${table}_sync_status ON ${table}(sync_status)`,
   );
 
-  // Local inserts arrive with a NULL uuid → stamp + mark pending. Sync inserts
-  // supply their own uuid, so the WHEN guard skips them. The _sync_guard flag is
-  // a second belt-and-braces suppression the engine raises around its writes.
+  await createInsertTrigger(db, table);
+  await createUpdateTrigger(db, table, DATA_COLUMNS[table]);
+}
+
+/**
+ * Creates (replacing any existing) the `AFTER INSERT` trigger that stamps a
+ * locally inserted row with a uuid and marks it pending. Sync inserts supply
+ * their own uuid, so `NEW.uuid IS NULL` alone tells them apart. It deliberately
+ * ignores `_sync_guard`: the guard is raised for a whole pull, and a row the
+ * user saves meanwhile must still get its cloud key (see migration 034).
+ */
+export async function createInsertTrigger(db: SqliteDriver, table: string): Promise<void> {
+  await db.execute(`DROP TRIGGER IF EXISTS trg_${table}_ins`);
   await db.execute(
-    `CREATE TRIGGER IF NOT EXISTS trg_${table}_ins
+    `CREATE TRIGGER trg_${table}_ins
        AFTER INSERT ON ${table}
-       WHEN NEW.uuid IS NULL AND ${GUARD_OFF}
+       WHEN NEW.uuid IS NULL
      BEGIN
        UPDATE ${table}
          SET uuid = ${NEW_UUID}, updated_at = ${NOW}, sync_status = 'pending'
          WHERE rowid = NEW.rowid;
      END`,
   );
-
-  await createUpdateTrigger(db, table, DATA_COLUMNS[table]);
 }
 
 /**
  * Adds per-record sync metadata (`uuid`, `updated_at`, `sync_status`) plus
- * dirty-marking triggers to every synced table, the `_sync_guard` flag the sync
- * engine uses to suppress those triggers during its own writes, and the
+ * dirty-marking triggers to every synced table, the `_sync_guard` flag (no
+ * longer read since migrations 034/035, kept so old databases match), and the
  * `sync_meta` key/value store that holds the `lastPulledAt` cursor.
  */
 export const migration: Migration = {

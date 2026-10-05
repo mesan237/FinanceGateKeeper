@@ -21,6 +21,13 @@ export const dashboard = {
     unplanned_one: '{{count}} unexpected expense · {{amount}}',
     unplanned_other: '{{count}} unexpected expenses · {{amount}}',
   },
+  planned: {
+    dueSoon_one: '{{count}} planned purchase due soon',
+    dueSoon_other: '{{count}} planned purchases due soon',
+    overdue_one: '{{count}} planned purchase overdue',
+    overdue_other: '{{count}} planned purchases overdue',
+    open: 'Open planned purchases',
+  },
   today: {
     title: "Today's Spending",
     overPace: 'Over your daily pace of {{amount}}',

@@ -11,6 +11,10 @@ export const navigation: Translation<typeof en> = {
     reports: 'Rapports',
   },
   openMenu: 'Ouvrir le menu',
+  attention: {
+    overdue: '{{count}} en retard',
+    soon: '{{count}} à venir',
+  },
   drawer: {
     preferences: 'Préférences',
     management: 'Gestion',
