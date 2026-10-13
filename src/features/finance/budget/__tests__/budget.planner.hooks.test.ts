@@ -46,7 +46,7 @@ const FOOD = 1;
 const TRANSPORT = 5;
 
 function category(id: number, name: string): Category {
-  return { id, name, parentId: null, isDefault: true, isHidden: false };
+  return { id, name, parentId: null, isDefault: true, isHidden: false, costType: null };
 }
 
 /** Wires the default mock responses; individual tests override what they care about. */

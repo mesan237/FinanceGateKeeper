@@ -22,7 +22,7 @@
 --   3. Adds the columns later migrations introduced to tables that already
 --      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
 --      total_budget 027, expenses.is_unplanned 032,
---      planned_lists.due_date 033).
+--      planned_lists.due_date 033, categories.cost_type 036).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -58,6 +58,7 @@ create table if not exists categories (
   is_default  integer not null default 0,
   sort_order  integer not null default 0,
   is_hidden   integer not null default 0,
+  cost_type   text,            -- 'fixed' | 'variable', or null = variable / inherit (VS-41)
   updated_at  text not null
 );
 
@@ -276,6 +277,7 @@ alter table allocations          add column if not exists total_budget integer;
 alter table fund_transactions    add column if not exists account_id text;
 alter table project_transactions add column if not exists account_id text;
 alter table planned_lists        add column if not exists due_date text;
+alter table categories           add column if not exists cost_type text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

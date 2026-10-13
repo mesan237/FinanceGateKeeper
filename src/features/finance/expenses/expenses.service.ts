@@ -44,11 +44,12 @@ interface CategoryRow {
   parent_id: number | null;
   is_default: number;
   is_hidden: number;
+  cost_type: Category['costType'];
 }
 
 const EXPENSE_COLUMNS =
   'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at';
-const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden';
+const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden, cost_type';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
 function mapExpense(row: ExpenseRow): Expense {
@@ -73,6 +74,7 @@ function mapCategory(row: CategoryRow): Category {
     parentId: row.parent_id,
     isDefault: row.is_default === 1,
     isHidden: row.is_hidden === 1,
+    costType: row.cost_type,
   };
 }
 

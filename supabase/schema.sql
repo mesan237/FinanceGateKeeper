@@ -55,6 +55,7 @@ create table categories (
   is_default  integer not null default 0,
   sort_order  integer not null default 0,
   is_hidden   integer not null default 0,
+  cost_type   text,            -- 'fixed' | 'variable', or null = variable / inherit (VS-41)
   updated_at  text not null
 );
 

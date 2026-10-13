@@ -35,7 +35,8 @@ describe('migration 035 — edits saved during a sync still sync', () => {
     await runMigrations(driver, migrations.filter((m) => m.id < 35));
     const before = watchedColumns();
 
-    await runMigrations(driver, migrations);
+    // Only 035 itself: later migrations may legitimately watch new columns.
+    await runMigrations(driver, migrations.filter((m) => m.id <= 35));
 
     expect(watchedColumns()).toEqual(before);
   });

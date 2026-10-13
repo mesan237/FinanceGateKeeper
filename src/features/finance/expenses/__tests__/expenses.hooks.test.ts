@@ -12,8 +12,8 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   deleteExpense: jest.fn().mockResolvedValue(undefined),
   createCategory: jest.fn().mockResolvedValue(99),
   getAllCategories: jest.fn().mockResolvedValue([
-    { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
-    { id: 2, name: 'Restaurant', parentId: 1, isDefault: true, isHidden: false },
+    { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null },
+    { id: 2, name: 'Restaurant', parentId: 1, isDefault: true, isHidden: false, costType: null },
   ]),
   getDayActivityStatus: jest.fn().mockResolvedValue({
     hasExpenses: false,
@@ -160,8 +160,8 @@ describe('useCategories', () => {
 
   it('excludes hidden parents from `categories` but keeps them in `managedCategories`', async () => {
     mocked.getAllCategories.mockResolvedValue([
-      { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
-      { id: 5, name: 'Archived', parentId: null, isDefault: false, isHidden: true },
+      { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null },
+      { id: 5, name: 'Archived', parentId: null, isDefault: false, isHidden: true, costType: null },
     ]);
     const { result } = renderHook(() => useCategories());
     await waitFor(() => expect(result.current.managedCategories).toHaveLength(2));
@@ -173,11 +173,11 @@ describe('useCategories', () => {
   it('addCategory creates then re-fetches the updated list', async () => {
     mocked.getAllCategories
       .mockResolvedValueOnce([
-        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
+        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null },
       ])
       .mockResolvedValueOnce([
-        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
-        { id: 6, name: 'Freelance', parentId: null, isDefault: false, isHidden: false },
+        { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null },
+        { id: 6, name: 'Freelance', parentId: null, isDefault: false, isHidden: false, costType: null },
       ]);
     const { result } = renderHook(() => useCategories());
     await waitFor(() => expect(result.current.categories).toHaveLength(1));

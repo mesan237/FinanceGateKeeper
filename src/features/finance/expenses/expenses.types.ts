@@ -2,12 +2,17 @@
  * A spending category. Parents have `parentId === null`; subcategories carry
  * the id of their parent. Both live in the same `categories` table.
  */
+/** Whether a category's spending is a fixed commitment or variable day-to-day spend (VS-41). */
+export type CostType = 'fixed' | 'variable';
+
 export interface Category {
   id: number;
   name: string;
   parentId: number | null;
   isDefault: boolean;
   isHidden: boolean;
+  /** Stored tag; null on a parent reads as variable, on a subcategory inherits the parent. */
+  costType: CostType | null;
 }
 
 /** Input for creating a category (parent when `parentId` is null) or subcategory. */
