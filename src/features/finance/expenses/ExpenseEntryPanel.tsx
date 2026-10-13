@@ -24,6 +24,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 import { CategoryPicker } from './CategoryPicker';
 import { UnplannedToggle } from './UnplannedToggle';
+import { monthOf } from './expenses.budgetDelta';
 import { useExpenseLog, type ControlledField } from './expenses.hooks';
 
 export interface ExpenseEntryPanelProps {
@@ -97,19 +98,21 @@ export function ExpenseEntryPanel({
     // Surface every missing field inline instead of silently ignoring the tap.
     if (!log.validate()) return;
     const amountFCFA = Math.trunc(Number(log.amount));
+    // A back-dated expense counts against the month it is dated in (VS-40).
+    const month = monthOf(log.date);
 
     // The category envelope is checked first: "3,000 over your Food budget"
     // points at a specific decision, where the month-wide warning only says
     // that something, somewhere, is too much.
     if (log.categoryId !== null) {
-      const categoryResult = await checkCategory(log.categoryId, amountFCFA);
+      const categoryResult = await checkCategory(log.categoryId, amountFCFA, month);
       if (categoryResult.isOver) {
         setBreach({ overage: categoryResult.overage, categoryName: categoryResult.categoryName });
         return;
       }
     }
 
-    const result = await check(amountFCFA);
+    const result = await check(amountFCFA, month);
     if (result.isOver) {
       setBreach({ overage: result.overage });
       return;

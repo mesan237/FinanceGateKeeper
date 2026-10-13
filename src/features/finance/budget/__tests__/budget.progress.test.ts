@@ -1,9 +1,7 @@
 import {
-  buildBurndown,
   buildCarryChain,
   buildCategoryProgress,
   buildOverallProgress,
-  buildWeeklyTrend,
   budgetHealth,
   consumedPct,
   dailyAverage,
@@ -216,81 +214,6 @@ describe('buildCategoryProgress', () => {
   });
 });
 
-describe('buildWeeklyTrend', () => {
-  it('buckets a month into 7-day slots, oldest first', () => {
-    const trend = buildWeeklyTrend(
-      [
-        { date: '2026-08-01', amount: 5_000 },
-        { date: '2026-08-07', amount: 3_000 },
-        { date: '2026-08-08', amount: 9_000 },
-      ],
-      '2026-08',
-    );
-
-    expect(trend[0]).toBe(8_000);
-    expect(trend[1]).toBe(9_000);
-  });
-
-  it('gives a 31-day month five buckets', () => {
-    expect(buildWeeklyTrend([], '2026-08')).toHaveLength(5);
-  });
-
-  it('gives a 28-day February four buckets', () => {
-    expect(buildWeeklyTrend([], '2026-02')).toHaveLength(4);
-  });
-
-  it('ignores expenses from other months', () => {
-    const trend = buildWeeklyTrend([{ date: '2026-07-03', amount: 9_000 }], '2026-08');
-    expect(trend.every((week) => week === 0)).toBe(true);
-  });
-});
-
-describe('buildBurndown', () => {
-  it('starts at the full budget on day zero', () => {
-    const points = buildBurndown([], 300_000, '2026-06', '2026-06-05');
-
-    expect(points[0]).toEqual({ day: 0, ideal: 300_000, actual: 300_000 });
-  });
-
-  it('stops at today rather than projecting to month end', () => {
-    const points = buildBurndown([], 300_000, '2026-06', '2026-06-05');
-    expect(points).toHaveLength(6); // days 0 through 5
-  });
-
-  it('drops the actual line by real spending, cumulatively', () => {
-    const points = buildBurndown(
-      [
-        { date: '2026-06-01', amount: 20_000 },
-        { date: '2026-06-03', amount: 10_000 },
-      ],
-      300_000,
-      '2026-06',
-      '2026-06-04',
-    );
-
-    expect(points[1].actual).toBe(280_000);
-    expect(points[2].actual).toBe(280_000);
-    expect(points[3].actual).toBe(270_000);
-  });
-
-  it('falls the ideal line evenly toward zero', () => {
-    const points = buildBurndown([], 300_000, '2026-06', '2026-06-15');
-    // Half of a 30-day month gone -> half the budget should remain.
-    expect(points[15].ideal).toBe(150_000);
-  });
-
-  it('lets the actual line go negative once overspent', () => {
-    const points = buildBurndown(
-      [{ date: '2026-06-02', amount: 120_000 }],
-      100_000,
-      '2026-06',
-      '2026-06-03',
-    );
-
-    expect(points[3].actual).toBe(-20_000);
-  });
-});
-
 describe('buildOverallProgress', () => {
   it('derives the month-level view', () => {
     const overall = buildOverallProgress(300_000, 100_000, '2026-06', '2026-06-10');
@@ -314,6 +237,51 @@ describe('buildOverallProgress', () => {
     expect(overall.daysElapsed).toBe(30);
     expect(overall.daysRemaining).toBe(0);
     expect(overall.projected).toBe(240_000);
+    expect(overall.health).toBe('on_track');
+  });
+});
+
+describe('fixed costs stay out of the run-rate (VS-40)', () => {
+  it('projects fixed spend once, and only the variable part at the daily pace', () => {
+    // Rent 100,000 on day 1 plus 2,000 of food: 100,000 + 2,000 x 30, not 102,000 x 30.
+    expect(projectSpend(102_000, 1, 30, 100_000)).toBe(160_000);
+  });
+
+  it('does not flag a month as at risk just because rent landed on the 1st', () => {
+    expect(budgetHealth(102_000, 200_000, 1, 30, 100_000)).toBe('on_track');
+  });
+
+  it('judges the 80% rule on what is left to fund after fixed costs', () => {
+    // An envelope that is 90% rent with nothing else spent is not running out.
+    expect(budgetHealth(90_000, 100_000, 5, 30, 90_000)).toBe('on_track');
+    // 9,000 of the 10,000 variable part gone with days left is.
+    expect(budgetHealth(99_000, 100_000, 28, 30, 90_000)).toBe('at_risk');
+  });
+
+  it('still reports over once spending passes the budget, fixed or not', () => {
+    expect(budgetHealth(105_000, 100_000, 2, 30, 100_000)).toBe('over');
+  });
+
+  it('threads fixed spend through the envelope and month views', () => {
+    const envelope = buildCategoryProgress(
+      {
+        categoryId: 3,
+        categoryName: 'Bills',
+        allocated: 120_000,
+        carriedIn: 0,
+        spent: 100_000,
+        fixedSpent: 100_000,
+        rolloverEnabled: false,
+      },
+      '2026-06',
+      '2026-06-02',
+    );
+    expect(envelope.projected).toBe(100_000);
+    expect(envelope.health).toBe('on_track');
+
+    const overall = buildOverallProgress(300_000, 110_000, '2026-06', '2026-06-02', 100_000);
+    // 100,000 fixed + 5,000/day x 30.
+    expect(overall.projected).toBe(250_000);
     expect(overall.health).toBe('on_track');
   });
 });

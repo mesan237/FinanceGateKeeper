@@ -465,6 +465,9 @@ export function useExpenseEdit(id: number): {
   isUnplanned: boolean;
   setIsUnplanned: (v: boolean) => void;
   originalAmount: number | null;
+  /** The stored category and date, so budget checks know where the old amount sits. */
+  originalCategoryId: number | null;
+  originalDate: string;
   canSubmit: boolean;
   loading: boolean;
   error: string | null;
@@ -575,6 +578,8 @@ export function useExpenseEdit(id: number): {
     isUnplanned,
     setIsUnplanned,
     originalAmount,
+    originalCategoryId,
+    originalDate,
     canSubmit,
     loading,
     error,

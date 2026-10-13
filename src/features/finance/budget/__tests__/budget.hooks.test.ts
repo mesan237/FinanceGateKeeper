@@ -92,4 +92,15 @@ describe('useOverBudgetCheck', () => {
 
     expect(mockedCheckOverBudget).toHaveBeenCalledWith(currentMonthISO(), 100);
   });
+
+  it('checks the month passed to check() over the hook default, for back-dated expenses', async () => {
+    mockedCheckOverBudget.mockResolvedValue({ ...OVER, isOver: false, overage: 0 });
+    const { result } = renderHook(() => useOverBudgetCheck());
+
+    await act(async () => {
+      await result.current.check(100, '2026-03');
+    });
+
+    expect(mockedCheckOverBudget).toHaveBeenCalledWith('2026-03', 100);
+  });
 });

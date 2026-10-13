@@ -7,6 +7,7 @@ import { prevMonthISO } from '@/utils/monthMath';
 import {
   getCarriedIn,
   getCategoryBudgets,
+  getFixedSpendByCategory,
   getSpendByCategory,
   getTotalBudget,
 } from './budget.envelopes';
@@ -68,9 +69,10 @@ export async function buildCategoryProgressList(
   monthISO: string,
   todayISO: string,
 ): Promise<CategoryBudgetProgress[]> {
-  const [budgets, spendByCategory, carried, categories] = await Promise.all([
+  const [budgets, spendByCategory, fixedByCategory, carried, categories] = await Promise.all([
     getCategoryBudgets(monthISO),
     getSpendByCategory(monthISO),
+    getFixedSpendByCategory(monthISO),
     getCarriedIn(monthISO),
     getAllCategories(),
   ]);
@@ -90,6 +92,7 @@ export async function buildCategoryProgressList(
           allocated: budget?.allocatedAmount ?? 0,
           carriedIn: carried.get(categoryId) ?? 0,
           spent: spendByCategory.get(categoryId) ?? 0,
+          fixedSpent: fixedByCategory.get(categoryId) ?? 0,
           rolloverEnabled: budget?.rolloverEnabled ?? false,
         },
         monthISO,
@@ -118,14 +121,23 @@ export async function getBudgetOverview(
   todayISO: string = toISODate(new Date()),
 ): Promise<BudgetOverview> {
   const monthly = await getMonthlyBudget(monthISO);
-  const [plan, categories] = await Promise.all([
+  const [plan, categories, fixedByCategory] = await Promise.all([
     buildMonthlyPlan(monthISO, monthly.incomeTotal),
     buildCategoryProgressList(monthISO, todayISO),
+    getFixedSpendByCategory(monthISO),
   ]);
 
   const totalCarried = categories.reduce((sum, c) => sum + c.carriedIn, 0);
   const available = plan.totalBudget + totalCarried;
-  const overall = buildOverallProgress(available, monthly.expensesLogged, monthISO, todayISO);
+  // Recurring bills are projected once, not at the daily pace (VS-40).
+  const fixedSpent = [...fixedByCategory.values()].reduce((sum, v) => sum + v, 0);
+  const overall = buildOverallProgress(
+    available,
+    monthly.expensesLogged,
+    monthISO,
+    todayISO,
+    fixedSpent,
+  );
 
   return {
     month: monthISO,

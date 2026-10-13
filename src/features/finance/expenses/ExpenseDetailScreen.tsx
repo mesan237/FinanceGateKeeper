@@ -22,6 +22,7 @@ import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
 import { UnplannedToggle } from './UnplannedToggle';
+import { editBudgetDeltas } from './expenses.budgetDelta';
 import { useCategories, useExpenseEdit } from './expenses.hooks';
 
 export interface ExpenseDetailScreenProps {
@@ -59,23 +60,29 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
   }, [edit.loading, edit.categoryId, edit.subcategoryId, categoriesLoading, displayLabelFor]);
 
   const handleSave = async () => {
-    const newAmount = Math.trunc(Number(edit.amount));
-    const amountChanged = edit.originalAmount !== null && newAmount !== edit.originalAmount;
-    if (amountChanged && newAmount > (edit.originalAmount ?? 0)) {
-      // The envelope check compares against spending that already includes this
-      // expense's old amount, so it is asked about the *increase* only.
-      const increase = newAmount - (edit.originalAmount ?? 0);
-      if (edit.categoryId !== null) {
-        const categoryResult = await checkCategory(edit.categoryId, increase);
-        if (categoryResult.isOver) {
-          setBreach({
-            overage: categoryResult.overage,
-            categoryName: categoryResult.categoryName,
-          });
-          return;
-        }
+    // Spending in the database still includes this expense's old amount, in its
+    // old month and category, so each check is asked only about what the edit
+    // adds where it lands — in the expense's own month, not today's (VS-40).
+    // With nothing loaded there is nothing to compare, so the save goes ahead.
+    const deltas =
+      edit.originalAmount === null
+        ? null
+        : editBudgetDeltas(
+            { amount: edit.originalAmount, categoryId: edit.originalCategoryId, date: edit.originalDate },
+            { amount: Math.trunc(Number(edit.amount)), categoryId: edit.categoryId, date: edit.date },
+          );
+    if (deltas && deltas.categoryIncrease > 0 && edit.categoryId !== null) {
+      const categoryResult = await checkCategory(edit.categoryId, deltas.categoryIncrease, deltas.month);
+      if (categoryResult.isOver) {
+        setBreach({
+          overage: categoryResult.overage,
+          categoryName: categoryResult.categoryName,
+        });
+        return;
       }
-      const result = await check(newAmount);
+    }
+    if (deltas && deltas.monthIncrease > 0) {
+      const result = await check(deltas.monthIncrease, deltas.month);
       if (result.isOver) {
         setBreach({ overage: result.overage });
         return;

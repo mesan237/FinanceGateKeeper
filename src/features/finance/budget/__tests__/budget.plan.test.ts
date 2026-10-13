@@ -121,6 +121,29 @@ describe('buildMonthlyPlan', () => {
 });
 
 describe('getBudgetOverview', () => {
+  it('does not read rent auto-logged on the 1st as a month at risk (VS-40)', async () => {
+    await ensureMonthRow('2026-08');
+    await setTotalBudget('2026-08', 300_000);
+    await setCategoryBudget('2026-08', TRANSPORT, 120_000);
+    await createExpense({
+      amount: 100_000,
+      categoryId: TRANSPORT,
+      subcategoryId: null,
+      note: null,
+      date: '2026-08-01',
+      isRecurring: true,
+    });
+    await spend('2026-08', '02', 4_000);
+
+    const overview = await getBudgetOverview('2026-08', '2026-08-02');
+
+    // 100,000 once + 2,000/day x 31 — not 52,000/day x 31.
+    expect(overview.projected).toBe(162_000);
+    expect(overview.health).toBe('on_track');
+    const bills = overview.categories.find((c) => c.categoryId === TRANSPORT)!;
+    expect(bills.health).toBe('on_track');
+  });
+
   it('marks a month with no total and no envelopes as unplanned', async () => {
     const overview = await getBudgetOverview('2026-08', '2026-08-10');
     expect(overview.isUnplanned).toBe(true);

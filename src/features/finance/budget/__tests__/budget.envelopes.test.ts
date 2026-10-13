@@ -22,6 +22,7 @@ import {
   copyBudgetsFromMonth,
   getCarriedIn,
   getCategoryBudgets,
+  getFixedSpendByCategory,
   getSpendByCategory,
   getTotalBudget,
   moveBudget,
@@ -315,5 +316,19 @@ describe('copyBudgetsFromMonth', () => {
 
   it('copies nothing from an empty month', async () => {
     expect(await copyBudgetsFromMonth('2026-07', '2026-08')).toBe(0);
+  });
+});
+
+describe('getFixedSpendByCategory (VS-40)', () => {
+  it('sums only the recurring expenses of the month, by category', async () => {
+    const base = { subcategoryId: null, note: null };
+    await createExpense({ ...base, amount: 100_000, categoryId: FOOD, date: '2026-08-01', isRecurring: true });
+    await createExpense({ ...base, amount: 5_000, categoryId: FOOD, date: '2026-08-02', isRecurring: false });
+    await createExpense({ ...base, amount: 9_000, categoryId: TRANSPORT, date: '2026-07-31', isRecurring: true });
+
+    const fixed = await getFixedSpendByCategory('2026-08');
+
+    expect(fixed.get(FOOD)).toBe(100_000);
+    expect(fixed.has(TRANSPORT)).toBe(false);
   });
 });
