@@ -1241,6 +1241,55 @@ edges. Reminders mirror the debt ones and do not check the notifications setting
 
 ---
 
+### VS-40: Financial Integrity — Budget Checks, Shared Health, Fixed-Cost Projection 🔄 In Progress
+
+**Priority:** Critical — Phase 1a of the progression plan
+**Blocked by:** VS-33 (Envelopes), VS-34 (Refocus)
+**Audit:** `docs/finance-gatekeeper-audit/` (FINANCIAL_LOGIC §4.2, §4.6, §4.7, §4.4 copy)
+
+**Scope:**
+
+Fix the budget defects that need no migration and no product decision, before
+anything builds on these figures.
+
+- **Edit check counts the old amount twice.** Editing 10,000 → 12,000 was checked
+  as +12,000 against a month that already held the 10,000. A pure
+  `expenses.budgetDelta.editBudgetDeltas` now hands each check only what the edit
+  adds where it lands: the difference when month and category are unchanged,
+  the full amount when the expense moves to another category or month.
+- **Checks use the expense's own month.** `useOverBudgetCheck` and
+  `useCategoryOverBudgetCheck` take an optional month per call; the log panel and
+  the detail screen pass the expense's date month, so a back-dated expense is no
+  longer checked against today's budget.
+- **One health rule.** The dashboard dropped its own 75% threshold and reads the
+  Budget tab's `getBudgetOverview` (same total, same carry, same `budgetHealth`),
+  mapped to green/yellow/red by `paceFromHealth`.
+- **Fixed costs projected once.** `projectSpend`/`budgetHealth` take the month's
+  recurring spend (`getFixedSpendByCategory`, `is_recurring = 1`) and extrapolate
+  only the variable part; the 80% rule reads the variable budget. Rent on the 1st
+  no longer makes the month "at risk".
+- **Copy.** The planner no longer promises an "income split" that VS-34 parked.
+- `budget.progress.ts` split: the chart series moved to `budget.trend.ts` (300-line rule).
+
+**TDD Anchor:**
+
+- Test: `editBudgetDeltas` — same placement → difference; new category or month → full amount.
+- Test: hooks — a month passed to `check` wins over the hook default.
+- Test: `ExpenseDetailScreen` — raising 2,000 → 5,000 checks +3,000 in the expense's month.
+- Test: `budgetHealth`/`projectSpend` — rent on day 1 stays on track; the variable part still trips the 80% rule.
+- Test: `getBudgetOverview` — a recurring 100,000 on the 1st projects 162,000, not 1,612,000.
+- Test: dashboard — 40% spent by the 8th is yellow, matching the Budget tab.
+
+**Done when:** an edit or back-dated expense warns only about money it actually
+adds to the month it lands in, the Dashboard and Budget tab never disagree on a
+month's health, and a month with rent paid on the 1st reads on track.
+
+**Not in this slice (Phase 1b, needs migrations or decisions):** wallets on
+recurring and quick-add expenses, dated opening balances, transfer edit/delete,
+debt payments that move money, refunds, the averaging divisor and month completeness.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
