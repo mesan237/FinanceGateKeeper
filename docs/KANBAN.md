@@ -1290,6 +1290,52 @@ debt payments that move money, refunds, the averaging divisor and month complete
 
 ---
 
+### VS-41: Your Typical Month — Fixed vs Variable Spending 🔄 In Progress
+
+**Priority:** High — user-requested; Phase 1b item #6 of the progression plan
+**Blocked by:** VS-40 (Financial integrity), VS-38 (Imprévus)
+
+**Scope:**
+
+Three months of real spending, shown so the user can see what is a commitment
+and what a new habit could change.
+
+- **Fixed or variable categories.** Migration 036 adds nullable
+  `categories.cost_type` (`fixed` | `variable`): null on a parent reads as
+  variable, null on a subcategory inherits the parent. The default Bills starts
+  fixed. A Fixed/Variable chip on every row of Categories flips it; a
+  subcategory flipped back to its parent's type clears its override.
+- **Complete months.** `expenses.coverage`: a day counts when it holds an
+  expense or a confirmed zero-spend day; a month is complete from 80% of its
+  days. A mid-month start or a skipped fortnight is left out, not guessed at.
+- **Honest averages.** The planner's "Use my averages" divides by the complete
+  months in the window, zeros included — one annual 120,000 bill now suggests
+  40,000 a month, not 120,000.
+- **Reports card "Your typical month"** for the three months before this one:
+  the average month, split fixed / variable / unexpected (imprévus first, then
+  recurring bills as fixed, then the category tag); the top variable categories
+  with their cheapest and dearest month; and what matching the cheapest month in
+  every variable category would keep. Before any month is complete it shows
+  how far each month is from counting. Reloads on focus.
+- Supabase patch 040 (folded into 037 and `schema.sql`) must be run before a
+  build with migration 036 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 036 tags Bills fixed, leaves the rest null, rejects other values, marks a re-tag pending.
+- Test: `costTypeResolver` — sub override wins, untagged sub inherits, unknown reads variable.
+- Test: `monthCoverage` — 80% threshold; mid-month start incomplete; days counted once.
+- Test: `suggestFromHistory` — zeros count; annual bill spread; incomplete months ignored.
+- Test: `buildSpendingProfile` — split, recurring as fixed, ranking with range, incomplete months excluded.
+- Test: `CategoryManager` chip and `TypicalMonthCard` states; Reports loads the profile on focus.
+
+**Done when:** after a fully logged month, Reports shows what a typical month
+costs, how much of it is fixed, which variable categories cost the most and how
+much matching the user's own cheapest month would keep — and Categories lets the
+user say what is fixed.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
