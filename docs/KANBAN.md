@@ -1336,6 +1336,49 @@ user say what is fixed.
 
 ---
 
+### VS-42: Wallet Integrity — Template Wallets and Balance Checks 🔄 In Progress
+
+**Priority:** Critical — Phase 1b items #1 and #2 (user choices 1.A, 2.A)
+**Blocked by:** VS-41 (stacked branch), VS-18 (Accounts)
+
+**Scope:**
+
+Make wallet balances something the user can trust.
+
+- **Template wallets.** Migration 037 adds nullable `account_id` to
+  `quick_add_templates` and `recurring_expenses`; both forms gain the account
+  picker, new templates start on the default wallet, and every tap or
+  auto-logged occurrence is debited from it. Older templates stay unassigned
+  until the user picks one — nothing is guessed.
+- **Balance checks.** New synced table `balance_checks` (account, balance,
+  difference, date, note, soft-delete `deleted_at`). "Confirm balance" on the
+  account screen pins the wallet to what it actually holds; the balance is then
+  that figure plus only what happened after it (later date, or same date saved
+  later), so back-logging older entries no longer shifts it. The history shows
+  each check with the correction it made; tapping one removes it.
+- **Unassigned spending.** Accounts says how many expenses (and how much) no
+  wallet accounts for, instead of silently leaving them out.
+- Migrations 034/035 now skip tables a later migration creates (fresh installs
+  run them before `balance_checks` exists).
+- Supabase patch 041 (folded into 037 and `schema.sql`) must run before a build
+  with migration 037 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 037 — template wallet changes and check soft-deletes mark rows pending; checks get a uuid.
+- Test: templates — a tap and each recurring occurrence are logged on the template's wallet; no wallet stays null.
+- Test: `getAccountBalance` — confirmed figure + later flows; back-logged older entries ignored; same-day ordering; latest check wins; removal falls back.
+- Test: screens — new templates default to the default wallet; edits keep theirs; Confirm balance saves the typed figure; history signs the correction; unassigned card.
+
+**Done when:** rent auto-logged from MoMo lowers the MoMo balance, the user can
+tell the app what a wallet really holds and have it stick, and Accounts says
+how much spending no wallet covers.
+
+**Known limitation:** once a wallet has a balance check, editing its opening
+balance has no effect on the balance (the check supersedes it).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
