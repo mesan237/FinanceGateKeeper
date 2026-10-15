@@ -75,7 +75,47 @@ export function useAccountDetail(id: number) {
     void refresh();
   }, [refresh]);
 
-  return { account, balance, history, loading, error, refresh };
+  // Balance checks (VS-42): pin the wallet to what it actually holds today, or
+  // drop a check. Both re-read the balance and history.
+  const confirm = useCallback(
+    async (actual: number) => {
+      await service.confirmBalance(id, actual);
+      await refresh();
+    },
+    [id, refresh],
+  );
+  const removeCheck = useCallback(
+    async (checkId: number) => {
+      await service.removeBalanceCheck(checkId);
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { account, balance, history, loading, error, refresh, confirm, removeCheck };
+}
+
+/**
+ * How much spending no wallet accounts for (VS-42), loaded once. Failures read
+ * as none: this is a hint, not a figure anything else depends on.
+ */
+export function useUnassignedSpending() {
+  const [unassigned, setUnassigned] = useState({ count: 0, total: 0 });
+
+  useEffect(() => {
+    let cancelled = false;
+    service
+      .getUnassignedSpending()
+      .then((value) => {
+        if (!cancelled) setUnassigned(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return unassigned;
 }
 
 /**

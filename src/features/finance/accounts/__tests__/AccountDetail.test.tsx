@@ -9,6 +9,8 @@ jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getAccountBalance: jest.fn(),
   getAccountHistory: jest.fn(),
   getAccountStats: jest.fn(),
+  confirmBalance: jest.fn().mockResolvedValue(undefined),
+  removeBalanceCheck: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { AccountDetail } from '@/features/finance/accounts/AccountDetail';
@@ -71,5 +73,46 @@ describe('AccountDetail', () => {
     await waitFor(() => expect(screen.getByTestId('edit-account-button')).toBeTruthy());
     fireEvent.press(screen.getByTestId('edit-account-button'));
     expect(mockPush).toHaveBeenCalledWith('/accounts/create?id=1');
+  });
+
+  describe('balance checks (VS-42)', () => {
+    it('confirms what the wallet actually holds, starting from the computed balance', async () => {
+      render(<AccountDetail accountId={1} />);
+      await waitFor(() => expect(screen.getByText('3 000 FCFA')).toBeTruthy());
+
+      fireEvent.press(screen.getByTestId('confirm-balance-button'));
+      const input = await screen.findByTestId('confirm-balance-amount');
+      expect(input.props.value).toBe('3 000');
+
+      fireEvent.changeText(input, '2500');
+      fireEvent.press(screen.getByTestId('confirm-balance-save'));
+
+      await waitFor(() => expect(mocked.confirmBalance).toHaveBeenCalledWith(1, 2500));
+      // The screen re-reads the balance once the check is saved.
+      await waitFor(() => expect(mocked.getAccountBalance).toHaveBeenCalledTimes(2));
+    });
+
+    it('shows a balance check in the history with the correction it made', async () => {
+      mocked.getAccountHistory.mockResolvedValue([
+        { kind: 'balance_check', refId: 7, label: 'Balance confirmed: 1 500 FCFA', amount: -1500, date: '2026-06-11' },
+        ...HISTORY,
+      ]);
+      render(<AccountDetail accountId={1} />);
+
+      expect(await screen.findByText('Balance confirmed: 1 500 FCFA')).toBeTruthy();
+      expect(screen.getByTestId('history-amount-balance_check-7')).toHaveTextContent('−1 500 FCFA');
+    });
+
+    it('removes a balance check after confirmation', async () => {
+      mocked.getAccountHistory.mockResolvedValue([
+        { kind: 'balance_check', refId: 7, label: 'Balance confirmed: 1 500 FCFA', amount: 0, date: '2026-06-11' },
+      ]);
+      render(<AccountDetail accountId={1} />);
+
+      fireEvent.press(await screen.findByText('Balance confirmed: 1 500 FCFA'));
+      fireEvent.press(await screen.findByTestId('remove-check-confirm'));
+
+      await waitFor(() => expect(mocked.removeBalanceCheck).toHaveBeenCalledWith(7));
+    });
   });
 });

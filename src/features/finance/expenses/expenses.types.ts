@@ -100,12 +100,20 @@ export interface QuickAddTemplate {
   amount: number;
   categoryId: number;
   subcategoryId: number | null;
+  /** Wallet each tap is paid from, or null when none is set (VS-42). */
+  accountId: number | null;
   sortOrder: number;
   createdAt: string;
 }
 
-/** Input for `createQuickAddTemplate` — id, sortOrder, and createdAt are assigned on insert. */
-export type NewQuickAddTemplate = Omit<QuickAddTemplate, 'id' | 'sortOrder' | 'createdAt'>;
+/**
+ * Input for `createQuickAddTemplate` — id, sortOrder, and createdAt are assigned
+ * on insert. `accountId` is optional and defaults to no wallet.
+ */
+export type NewQuickAddTemplate = Omit<
+  QuickAddTemplate,
+  'id' | 'sortOrder' | 'createdAt' | 'accountId'
+> & { accountId?: number | null };
 
 /**
  * A registered recurring expense. The auto-logger inserts an expense and
@@ -121,11 +129,18 @@ export interface RecurringExpense {
   frequency: Frequency;
   nextDueDate: string;
   isActive: boolean;
+  /** Wallet each occurrence is paid from, or null when none is set (VS-42). */
+  accountId: number | null;
   createdAt: string;
 }
 
-/** Input for `createRecurringExpense` — id and createdAt are assigned on insert. */
-export type NewRecurringExpense = Omit<RecurringExpense, 'id' | 'createdAt'>;
+/**
+ * Input for `createRecurringExpense` — id and createdAt are assigned on insert.
+ * `accountId` is optional and defaults to no wallet.
+ */
+export type NewRecurringExpense = Omit<RecurringExpense, 'id' | 'createdAt' | 'accountId'> & {
+  accountId?: number | null;
+};
 
 /**
  * A confirmed zero-day: a calendar day the user explicitly marked as "I spent

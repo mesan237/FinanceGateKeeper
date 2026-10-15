@@ -59,11 +59,13 @@ export type AccountHistoryKind =
   | 'transfer_in'
   | 'transfer_out'
   | 'fund_contribution'
-  | 'project_contribution';
+  | 'project_contribution'
+  | 'balance_check';
 
 /**
- * A single row in an account's history. `amount` is always positive; `kind`
- * carries the direction (credits vs debits) so the UI can sign and colour it.
+ * A single row in an account's history. `amount` is positive and `kind`
+ * carries the direction (credits vs debits) so the UI can sign and colour it —
+ * except a `balance_check`, whose `amount` is the signed correction it made.
  */
 export interface AccountHistoryEntry {
   kind: AccountHistoryKind;
@@ -71,4 +73,21 @@ export interface AccountHistoryEntry {
   label: string;
   amount: number;
   date: string; // YYYY-MM-DD
+}
+
+/**
+ * "My MoMo actually shows 43,500 today" (VS-42). A check pins the wallet's
+ * balance at `date`; later transactions move it from there.
+ */
+export interface BalanceCheck {
+  id: number;
+  accountId: number;
+  /** What the wallet actually held, whole FCFA. */
+  balance: number;
+  /** How far off the app was when the check was made (confirmed − computed). */
+  difference: number;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  note: string | null;
+  createdAt: string;
 }

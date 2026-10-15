@@ -3,6 +3,7 @@ import type { Migration } from '@/services/database';
 import {
   createInsertTrigger,
   SYNCED_TABLES,
+  tableExists,
 } from '@/services/migrations/017_add_sync_metadata';
 
 /**
@@ -24,6 +25,8 @@ export const migration: Migration = {
   async up(db) {
     await db.execute('UPDATE _sync_guard SET active = 0 WHERE id = 1');
     for (const table of SYNCED_TABLES) {
+      // A table a later migration creates gets its trigger there instead.
+      if (!(await tableExists(db, table))) continue;
       await createInsertTrigger(db, table);
       await db.execute(
         `UPDATE ${table}
