@@ -2,8 +2,6 @@ import {
   daysElapsedInMonth,
   daysInMonth,
   daysRemainingInMonth,
-  weekIndexOfDate,
-  weeksInMonth,
 } from '@/utils/monthMath';
 
 import type { BudgetHealth, CategoryBudgetProgress } from './budget.types';
@@ -45,10 +43,20 @@ export function dailyAverage(spent: number, daysElapsed: number): number {
 /**
  * Where this month lands if the current run-rate holds to the last day. This is
  * the figure that turns "62% consumed on the 12th" into an actual warning.
+ *
+ * `fixedSpent` is the part of `spent` that does not recur daily — recurring
+ * bills such as rent (VS-40). It is counted once rather than extrapolated, so
+ * rent paid on the 1st does not project as thirty rents.
  */
-export function projectSpend(spent: number, daysElapsed: number, totalDays: number): number {
+export function projectSpend(
+  spent: number,
+  daysElapsed: number,
+  totalDays: number,
+  fixedSpent: number = 0,
+): number {
   if (daysElapsed <= 0) return 0;
-  return dailyAverage(spent, daysElapsed) * totalDays;
+  const fixed = Math.min(Math.max(0, fixedSpent), spent);
+  return fixed + dailyAverage(spent - fixed, daysElapsed) * totalDays;
 }
 
 /**
@@ -85,85 +93,37 @@ export function safeDailySpend(remaining: number, daysRemaining: number): number
  * 6th of the month is a problem, and a flat percentage test cannot see it.
  * Landing exactly on budget is not over (`>`, not `>=`), matching
  * `checkOverBudget`.
+ *
+ * Fixed costs (`fixedSpent`) are projected once, and the consumption rule looks
+ * only at the variable part of the budget — what is still left to fund day by
+ * day (VS-40). An envelope that is mostly rent is not "running out" because the
+ * rent was paid.
  */
 export function budgetHealth(
   spent: number,
   available: number,
   daysElapsed: number,
   totalDays: number,
+  fixedSpent: number = 0,
 ): BudgetHealth {
   if (available <= 0) return 'on_track';
   if (spent > available) return 'over';
 
-  const projected = projectSpend(spent, daysElapsed, totalDays);
+  const projected = projectSpend(spent, daysElapsed, totalDays, fixedSpent);
   if (projected > available) return 'at_risk';
 
+  const fixed = Math.min(Math.max(0, fixedSpent), spent);
+  const variableBudget = available - fixed;
   const daysLeft = totalDays - daysElapsed;
-  if (daysLeft > 0 && consumedPct(spent, available) >= AT_RISK_CONSUMED_PCT) return 'at_risk';
+  if (
+    daysLeft > 0 &&
+    variableBudget > 0 &&
+    consumedPct(spent - fixed, variableBudget) >= AT_RISK_CONSUMED_PCT
+  ) {
+    return 'at_risk';
+  }
 
   return 'on_track';
-}
-
-/**
- * Buckets a month's expenses into 7-day slots, oldest first, for the weekly
- * trend bars. Days 1–7 form week 1, 8–14 week 2, and so on — so a bar lines up
- * with "the first week of the month" as a person reads a budget, not with ISO
- * week numbering (which would split week 1 across two months).
- *
- * @param expenses Any rows carrying a `YYYY-MM-DD` date and an amount.
- * @param monthISO The month to bucket; dates outside it are ignored.
- */
-export function buildWeeklyTrend(
-  expenses: ReadonlyArray<{ date: string; amount: number }>,
-  monthISO: string,
-): number[] {
-  const buckets = new Array<number>(weeksInMonth(monthISO)).fill(0);
-  for (const expense of expenses) {
-    if (!expense.date.startsWith(monthISO)) continue;
-    const index = weekIndexOfDate(expense.date);
-    if (index < buckets.length) buckets[index] += expense.amount;
-  }
-  return buckets;
-}
-
-/**
- * The ideal-versus-actual burn-down of remaining budget, one point per elapsed
- * day (plus day 0 at the full budget).
- *
- * `ideal` falls in a straight line to zero across the whole month; `actual`
- * follows real spending and stops at today. The gap between the two lines is
- * the single clearest read of "am I ahead or behind", which no percentage can
- * convey on its own.
- *
- * @returns Points for days 0…elapsed. `actual` may go negative once overspent.
- */
-export function buildBurndown(
-  expenses: ReadonlyArray<{ date: string; amount: number }>,
-  available: number,
-  monthISO: string,
-  todayISO: string,
-): { day: number; ideal: number; actual: number }[] {
-  const totalDays = daysInMonth(monthISO);
-  const elapsed = daysElapsedInMonth(monthISO, todayISO);
-
-  const spentOnDay = new Array<number>(totalDays + 1).fill(0);
-  for (const expense of expenses) {
-    if (!expense.date.startsWith(monthISO)) continue;
-    const day = Number(expense.date.slice(8, 10));
-    if (day >= 1 && day <= totalDays) spentOnDay[day] += expense.amount;
-  }
-
-  const points: { day: number; ideal: number; actual: number }[] = [];
-  let cumulative = 0;
-  for (let day = 0; day <= elapsed; day += 1) {
-    cumulative += spentOnDay[day] ?? 0;
-    points.push({
-      day,
-      ideal: available - (available * day) / totalDays,
-      actual: available - cumulative,
-    });
-  }
-  return points;
 }
 
 /** One month's raw envelope facts, as the carry chain consumes them. */
@@ -217,6 +177,8 @@ export interface CategoryProgressInput {
   allocated: number;
   carriedIn: number;
   spent: number;
+  /** The recurring part of `spent`, projected once rather than daily (VS-40). */
+  fixedSpent?: number;
   rolloverEnabled: boolean;
 }
 
@@ -244,10 +206,10 @@ export function buildCategoryProgress(
     remaining: available - input.spent,
     consumedPct: consumedPct(input.spent, available),
     dailyAverage: dailyAverage(input.spent, elapsed),
-    projected: projectSpend(input.spent, elapsed, totalDays),
+    projected: projectSpend(input.spent, elapsed, totalDays, input.fixedSpent),
     expectedToDate: expectedToDate(available, elapsed, totalDays),
     rolloverEnabled: input.rolloverEnabled,
-    health: budgetHealth(input.spent, available, elapsed, totalDays),
+    health: budgetHealth(input.spent, available, elapsed, totalDays, input.fixedSpent),
   };
 }
 
@@ -268,13 +230,15 @@ export interface OverallProgress {
 /**
  * The same derivation as {@link buildCategoryProgress}, applied to the month as
  * a whole. Kept as one function so the hero and the envelopes can never drift
- * into disagreeing about what "at risk" means.
+ * into disagreeing about what "at risk" means. `fixedSpent` is the month's
+ * recurring spend, projected once (VS-40).
  */
 export function buildOverallProgress(
   available: number,
   spent: number,
   monthISO: string,
   todayISO: string,
+  fixedSpent: number = 0,
 ): OverallProgress {
   const totalDays = daysInMonth(monthISO);
   const elapsed = daysElapsedInMonth(monthISO, todayISO);
@@ -285,11 +249,11 @@ export function buildOverallProgress(
     remaining,
     consumedPct: consumedPct(spent, available),
     dailyAverage: dailyAverage(spent, elapsed),
-    projected: projectSpend(spent, elapsed, totalDays),
+    projected: projectSpend(spent, elapsed, totalDays, fixedSpent),
     expectedToDate: expectedToDate(available, elapsed, totalDays),
     safeDailySpend: safeDailySpend(remaining, daysRemainingInMonth(monthISO, todayISO)),
     daysElapsed: elapsed,
     daysRemaining: daysRemainingInMonth(monthISO, todayISO),
-    health: budgetHealth(spent, available, elapsed, totalDays),
+    health: budgetHealth(spent, available, elapsed, totalDays, fixedSpent),
   };
 }

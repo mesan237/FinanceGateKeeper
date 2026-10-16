@@ -14,18 +14,9 @@ jest.mock('@/features/finance/budget/budget.hooks', () => ({
 // The per-category envelope guard (VS-33) runs before the month-wide one.
 // These suites exercise the month-wide path, so it always reports "not over"
 // and the save falls through to `mockCheck`.
+const mockCheckCategory = jest.fn();
 jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
-  useCategoryOverBudgetCheck: () => ({
-    check: jest.fn().mockResolvedValue({
-      isOver: false,
-      overage: 0,
-      remaining: 0,
-      expenseBudget: 0,
-      categoryId: 0,
-      categoryName: '',
-      hasBudget: false,
-    }),
-  }),
+  useCategoryOverBudgetCheck: () => ({ check: mockCheckCategory }),
 }));
 
 
@@ -70,6 +61,12 @@ beforeEach(() => {
   mockDeleteExpense.mockResolvedValue(undefined);
   mockGetAllCategories.mockResolvedValue(CATEGORIES);
   mockCheck.mockResolvedValue(NOT_OVER);
+  mockCheckCategory.mockResolvedValue({
+    ...NOT_OVER,
+    categoryId: 0,
+    categoryName: '',
+    hasBudget: false,
+  });
 });
 
 describe('ExpenseDetailScreen', () => {
@@ -189,5 +186,18 @@ describe('ExpenseDetailScreen', () => {
 
     await waitFor(() => expect(mockUpdateExpense).toHaveBeenCalledTimes(1));
     expect(mockUpdateExpense).toHaveBeenCalledWith(5, { isUnplanned: true });
+  });
+
+  it("asks both budget checks about the increase only, in the expense's own month (VS-40)", async () => {
+    render(<ExpenseDetailScreen expenseId={5} />);
+
+    await waitFor(() => expect(screen.getByDisplayValue('2 000')).toBeTruthy());
+    fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '5000');
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mockUpdateExpense).toHaveBeenCalledTimes(1));
+    // The stored 2 000 is already counted in June, so only the 3 000 rise is new.
+    expect(mockCheckCategory).toHaveBeenCalledWith(1, 3000, '2026-06');
+    expect(mockCheck).toHaveBeenCalledWith(3000, '2026-06');
   });
 });

@@ -24,7 +24,7 @@ import {
   suggestFromHistory,
 } from '@/features/finance/budget/budget.plan';
 import { ensureMonthRow } from '@/features/finance/budget/budget.service';
-import { createExpense } from '@/features/finance/expenses/expenses.service';
+import { confirmZeroDay, createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 
 let sqlite: Database.Database;
@@ -121,6 +121,29 @@ describe('buildMonthlyPlan', () => {
 });
 
 describe('getBudgetOverview', () => {
+  it('does not read rent auto-logged on the 1st as a month at risk (VS-40)', async () => {
+    await ensureMonthRow('2026-08');
+    await setTotalBudget('2026-08', 300_000);
+    await setCategoryBudget('2026-08', TRANSPORT, 120_000);
+    await createExpense({
+      amount: 100_000,
+      categoryId: TRANSPORT,
+      subcategoryId: null,
+      note: null,
+      date: '2026-08-01',
+      isRecurring: true,
+    });
+    await spend('2026-08', '02', 4_000);
+
+    const overview = await getBudgetOverview('2026-08', '2026-08-02');
+
+    // 100,000 once + 2,000/day x 31 — not 52,000/day x 31.
+    expect(overview.projected).toBe(162_000);
+    expect(overview.health).toBe('on_track');
+    const bills = overview.categories.find((c) => c.categoryId === TRANSPORT)!;
+    expect(bills.health).toBe('on_track');
+  });
+
   it('marks a month with no total and no envelopes as unplanned', async () => {
     const overview = await getBudgetOverview('2026-08', '2026-08-10');
     expect(overview.isUnplanned).toBe(true);
@@ -217,27 +240,55 @@ describe('getBudgetOverview', () => {
 });
 
 describe('suggestFromHistory', () => {
-  it('averages the months that actually had spending', async () => {
+  /** Confirms a zero-spend day for every day of the month, so it counts as complete. */
+  async function logWholeMonth(month: string): Promise<void> {
+    const days = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+    for (let d = 1; d <= days; d += 1) await confirmZeroDay(`${month}-${String(d).padStart(2, '0')}`);
+  }
+
+  it('averages over complete months, counting a month without the category as zero (VS-41)', async () => {
+    await logWholeMonth('2026-06');
+    await logWholeMonth('2026-07');
     await spend('2026-06', '10', 30_000, FOOD);
-    await spend('2026-07', '10', 50_000, FOOD);
 
     const suggestions = await suggestFromHistory('2026-08', 3);
 
-    // 80,000 over the two months with data — not divided by the full 3-month window.
-    expect(suggestions.get(FOOD)).toBe(40_000);
+    // 30,000 across two complete months — July genuinely had no food spend.
+    expect(suggestions.get(FOOD)).toBe(15_000);
+  });
+
+  it('spreads an annual bill over the months observed instead of repeating it monthly', async () => {
+    await logWholeMonth('2026-05');
+    await logWholeMonth('2026-06');
+    await logWholeMonth('2026-07');
+    await spend('2026-06', '10', 120_000, TRANSPORT);
+
+    expect((await suggestFromHistory('2026-08', 3)).get(TRANSPORT)).toBe(40_000);
+  });
+
+  it('leaves out months too sparsely logged to trust', async () => {
+    await spend('2026-06', '10', 90_000, FOOD);
+    await logWholeMonth('2026-07');
+    await spend('2026-07', '10', 30_000, FOOD);
+
+    expect((await suggestFromHistory('2026-08', 3)).get(FOOD)).toBe(30_000);
+  });
+
+  it('suggests nothing until at least one month is complete', async () => {
+    await spend('2026-07', '10', 30_000, FOOD);
+
+    expect((await suggestFromHistory('2026-08', 3)).size).toBe(0);
   });
 
   it('ignores the month being planned', async () => {
+    await logWholeMonth('2026-08');
     await spend('2026-08', '02', 90_000, FOOD);
 
     expect((await suggestFromHistory('2026-08', 3)).size).toBe(0);
   });
 
-  it('returns nothing with no history', async () => {
-    expect((await suggestFromHistory('2026-08', 3)).size).toBe(0);
-  });
-
   it('respects the lookback window', async () => {
+    await logWholeMonth('2026-04');
     await spend('2026-04', '10', 90_000, FOOD);
 
     // April is four months before August — outside a 3-month window.

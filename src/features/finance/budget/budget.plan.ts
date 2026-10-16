@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 
+import { getMonthCoverage } from '@/features/finance/expenses/expenses.coverage';
 import { getAllCategories, getCategories } from '@/features/finance/expenses/expenses.service';
 import { toISODate } from '@/utils/formatDate';
 import { prevMonthISO } from '@/utils/monthMath';
@@ -7,6 +8,7 @@ import { prevMonthISO } from '@/utils/monthMath';
 import {
   getCarriedIn,
   getCategoryBudgets,
+  getFixedSpendByCategory,
   getSpendByCategory,
   getTotalBudget,
 } from './budget.envelopes';
@@ -68,9 +70,10 @@ export async function buildCategoryProgressList(
   monthISO: string,
   todayISO: string,
 ): Promise<CategoryBudgetProgress[]> {
-  const [budgets, spendByCategory, carried, categories] = await Promise.all([
+  const [budgets, spendByCategory, fixedByCategory, carried, categories] = await Promise.all([
     getCategoryBudgets(monthISO),
     getSpendByCategory(monthISO),
+    getFixedSpendByCategory(monthISO),
     getCarriedIn(monthISO),
     getAllCategories(),
   ]);
@@ -90,6 +93,7 @@ export async function buildCategoryProgressList(
           allocated: budget?.allocatedAmount ?? 0,
           carriedIn: carried.get(categoryId) ?? 0,
           spent: spendByCategory.get(categoryId) ?? 0,
+          fixedSpent: fixedByCategory.get(categoryId) ?? 0,
           rolloverEnabled: budget?.rolloverEnabled ?? false,
         },
         monthISO,
@@ -118,14 +122,23 @@ export async function getBudgetOverview(
   todayISO: string = toISODate(new Date()),
 ): Promise<BudgetOverview> {
   const monthly = await getMonthlyBudget(monthISO);
-  const [plan, categories] = await Promise.all([
+  const [plan, categories, fixedByCategory] = await Promise.all([
     buildMonthlyPlan(monthISO, monthly.incomeTotal),
     buildCategoryProgressList(monthISO, todayISO),
+    getFixedSpendByCategory(monthISO),
   ]);
 
   const totalCarried = categories.reduce((sum, c) => sum + c.carriedIn, 0);
   const available = plan.totalBudget + totalCarried;
-  const overall = buildOverallProgress(available, monthly.expensesLogged, monthISO, todayISO);
+  // Recurring bills are projected once, not at the daily pace (VS-40).
+  const fixedSpent = [...fixedByCategory.values()].reduce((sum, v) => sum + v, 0);
+  const overall = buildOverallProgress(
+    available,
+    monthly.expensesLogged,
+    monthISO,
+    todayISO,
+    fixedSpent,
+  );
 
   return {
     month: monthISO,
@@ -143,12 +156,15 @@ export async function getBudgetOverview(
  * `monthISO` — the "budget from what you actually spend" suggestion that
  * removes the blank-page problem on a first plan.
  *
- * The average divides by the number of months that actually had spending, not
- * by `lookback`. Dividing by the full window would halve the suggestion for
- * someone one month into using the app, and a suggestion that is reliably too
- * low teaches the user to ignore suggestions.
+ * Only **complete** months count (see `expenses.coverage`), and every complete
+ * month counts — a month with no spend in a category contributes a real zero
+ * (VS-41). Dividing by "months that had spend" instead turned one annual
+ * 120,000 bill into a 120,000 suggestion every month, and a half-logged first
+ * month made the user look frugal. An incomplete month is left out entirely
+ * rather than guessed at.
  *
- * @returns Category id → suggested whole-FCFA amount. Empty with no history.
+ * @returns Category id → suggested whole-FCFA amount. Empty until at least one
+ *   month in the window is complete.
  */
 export async function suggestFromHistory(
   monthISO: string,
@@ -161,22 +177,22 @@ export async function suggestFromHistory(
     months.push(cursor);
   }
 
-  const perMonth = await Promise.all(months.map(getSpendByCategory));
+  const coverage = await Promise.all(months.map(getMonthCoverage));
+  const complete = coverage.filter((c) => c.isComplete).map((c) => c.month);
+  if (complete.length === 0) return new Map();
 
-  const totals = new Map<number, { sum: number; months: number }>();
+  const perMonth = await Promise.all(complete.map(getSpendByCategory));
+
+  const totals = new Map<number, number>();
   for (const spend of perMonth) {
     for (const [categoryId, amount] of spend) {
-      if (amount <= 0) continue;
-      const entry = totals.get(categoryId) ?? { sum: 0, months: 0 };
-      entry.sum += amount;
-      entry.months += 1;
-      totals.set(categoryId, entry);
+      totals.set(categoryId, (totals.get(categoryId) ?? 0) + amount);
     }
   }
 
   const suggestions = new Map<number, number>();
-  for (const [categoryId, { sum, months: n }] of totals) {
-    suggestions.set(categoryId, Math.round(sum / n));
+  for (const [categoryId, sum] of totals) {
+    if (sum > 0) suggestions.set(categoryId, Math.round(sum / complete.length));
   }
   return suggestions;
 }

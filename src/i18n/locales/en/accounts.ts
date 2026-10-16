@@ -18,12 +18,26 @@ export const accounts = {
     add: 'Add account',
     statIn: '↑ {{percent}}% in',
     statOut: '↓ {{percent}}% out',
+    unassigned_one: '{{count}} expense ({{amount}}) is not linked to an account.',
+    unassigned_other: '{{count}} expenses ({{amount}}) are not linked to an account.',
+    unassignedHint:
+      'Account balances leave them out. Pick an account on the expense, or on its quick-add or recurring template.',
   },
   detail: {
     fallbackTitle: 'Account',
     balance: 'Balance',
     empty: 'No transactions yet.',
     invalidId: 'Invalid account id.',
+    confirmBalance: 'Confirm balance',
+  },
+  check: {
+    title: 'What does {{name}} hold today?',
+    hint: 'Enter the real balance. Later entries count from this figure; older ones you add afterwards will not change it.',
+    amount: 'Actual balance',
+    save: 'Confirm',
+    removeTitle: 'Remove this balance check?',
+    removeBody: 'The balance will be worked out from the transactions again.',
+    remove: 'Remove',
   },
   history: {
     income: 'Income',
@@ -32,6 +46,7 @@ export const accounts = {
     transferFrom: 'Transfer from {{account}}',
     fundDeposit: 'Fund deposit',
     projectContribution: 'Project contribution',
+    balanceCheck: 'Balance confirmed: {{amount}}',
   },
   form: {
     editTitle: 'Edit Account',
@@ -65,6 +80,8 @@ export const accounts = {
   },
   errors: {
     saveFailed: 'Failed to save account.',
+    balanceWhole: 'Enter the balance in whole FCFA.',
+    balanceDate: 'Pick a valid date for the balance.',
     loadAccounts: 'Failed to load accounts.',
     loadAccount: 'Failed to load account.',
     loadStats: 'Failed to load stats.',

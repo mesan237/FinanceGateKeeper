@@ -24,7 +24,7 @@ import {
   daysInMonth,
   daysRemainingInMonth,
   getDashboardSnapshot,
-  paceIndicator,
+  paceFromHealth,
   spentPct,
 } from '@/features/finance/dashboard/dashboard.service';
 
@@ -43,32 +43,13 @@ afterEach(() => {
   mockState.driver = null;
 });
 
-// ---- paceIndicator (pure) ---------------------------------------------------
+// ---- paceFromHealth (pure) ------------------------------------------------
 
-describe('paceIndicator', () => {
-  it('returns green when under 75% spent', () => {
-    expect(paceIndicator(50, 100, 10)).toBe('green');
-  });
-
-  it('returns yellow when >= 75% spent with days remaining', () => {
-    expect(paceIndicator(75, 100, 10)).toBe('yellow');
-    expect(paceIndicator(80, 100, 1)).toBe('yellow');
-  });
-
-  it('returns red when over budget', () => {
-    expect(paceIndicator(101, 100, 10)).toBe('red');
-  });
-
-  it('returns green when exactly at budget (not strictly over)', () => {
-    expect(paceIndicator(100, 100, 10)).toBe('green');
-  });
-
-  it('returns green when 75%+ spent but no days remaining', () => {
-    expect(paceIndicator(75, 100, 0)).toBe('green');
-  });
-
-  it('returns green when budget is zero', () => {
-    expect(paceIndicator(0, 0, 10)).toBe('green');
+describe('paceFromHealth (VS-40)', () => {
+  it('maps the shared budget health verdict onto the dashboard colours', () => {
+    expect(paceFromHealth('on_track')).toBe('green');
+    expect(paceFromHealth('at_risk')).toBe('yellow');
+    expect(paceFromHealth('over')).toBe('red');
   });
 });
 
@@ -278,6 +259,22 @@ describe('getDashboardSnapshot', () => {
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
     expect(state.budget!.pace).toBe('red');
+  });
+
+  it('agrees with the Budget tab: a run-rate that overshoots is yellow even under 75% (VS-40)', async () => {
+    await createIncome({ amount: 100000, source: 'salary', note: null, date: '2026-06-01' });
+    // 40% spent by the 8th projects to 150 000 against 100 000.
+    await createExpense({
+      amount: 40000,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: TODAY,
+      isRecurring: false,
+    });
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+    expect(state.budget!.pace).toBe('yellow');
   });
 
   it('returns zeroDay with no activity when nothing is logged', async () => {

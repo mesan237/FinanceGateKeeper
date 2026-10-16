@@ -178,6 +178,19 @@ export async function getSpendByCategory(monthISO: string): Promise<Map<number, 
 }
 
 /**
+ * Recurring (fixed) spend per category for one month — the auto-logged bills
+ * that the pace projection counts once instead of extrapolating (VS-40).
+ */
+export async function getFixedSpendByCategory(monthISO: string): Promise<Map<number, number>> {
+  const rows = await query<{ category_id: number; total: number }>(
+    `SELECT category_id, COALESCE(SUM(amount), 0) AS total
+       FROM expenses WHERE date LIKE ? AND is_recurring = 1 GROUP BY category_id`,
+    [`${monthISO}-%`],
+  );
+  return new Map(rows.map((r) => [r.category_id, r.total]));
+}
+
+/**
  * Spend per (month, category) up to and including `monthISO`, keyed
  * `"YYYY-MM:categoryId"`. One query feeds every category's carry chain, so
  * replaying history costs no extra round-trips per category.

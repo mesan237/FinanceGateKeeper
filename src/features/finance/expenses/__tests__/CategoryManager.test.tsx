@@ -3,13 +3,14 @@ import React from 'react';
 
 import type { Category } from '@/features/finance/expenses/expenses.types';
 
-const FOOD: Category = { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false };
+const FOOD: Category = { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null };
 const RESTAURANT: Category = {
   id: 2,
   name: 'Restaurant',
   parentId: 1,
   isDefault: true,
   isHidden: false,
+  costType: null,
 };
 const TRANSPORT: Category = {
   id: 3,
@@ -17,6 +18,7 @@ const TRANSPORT: Category = {
   parentId: null,
   isDefault: true,
   isHidden: false,
+  costType: null,
 };
 const FREELANCE: Category = {
   id: 4,
@@ -24,6 +26,7 @@ const FREELANCE: Category = {
   parentId: null,
   isDefault: false,
   isHidden: false,
+  costType: null,
 };
 
 const BASE = [FOOD, RESTAURANT, TRANSPORT, FREELANCE];
@@ -37,7 +40,14 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   reorderCategories: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Only the write is mocked; the inheritance rules run for real.
+jest.mock('@/features/finance/expenses/expenses.costType', () => ({
+  ...jest.requireActual('@/features/finance/expenses/expenses.costType'),
+  setCategoryCostType: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { CategoryManager } from '@/features/finance/expenses/CategoryManager';
+import { setCategoryCostType } from '@/features/finance/expenses/expenses.costType';
 import i18n from '@/i18n';
 import {
   createCategory,
@@ -74,7 +84,7 @@ describe('CategoryManager', () => {
       .mockResolvedValueOnce(BASE)
       .mockResolvedValueOnce([
         ...BASE,
-        { id: 7, name: 'Investments', parentId: null, isDefault: false, isHidden: false },
+        { id: 7, name: 'Investments', parentId: null, isDefault: false, isHidden: false, costType: null },
       ]);
     render(<CategoryManager />);
     await screen.findByText('Food');
@@ -162,5 +172,48 @@ describe('CategoryManager', () => {
 
     await waitFor(() => expect(screen.queryByTestId('edit-input-1')).toBeNull());
     expect(mockedRename).not.toHaveBeenCalled();
+  });
+
+  describe('fixed or variable (VS-41)', () => {
+    it('marks an untagged parent variable, and tapping makes it fixed', async () => {
+      render(<CategoryManager />);
+      fireEvent.press(await screen.findByTestId('toggle-1'));
+
+      const chip = await screen.findByTestId('cost-type-1');
+      expect(chip).toHaveTextContent('Variable');
+
+      fireEvent.press(chip);
+      await waitFor(() => expect(setCategoryCostType).toHaveBeenCalledWith(1, 'fixed'));
+    });
+
+    it('stores a fixed parent going back to variable as untagged', async () => {
+      mockedGetAll.mockResolvedValue([{ ...FOOD, costType: 'fixed' }, RESTAURANT, TRANSPORT, FREELANCE]);
+      render(<CategoryManager />);
+      fireEvent.press(await screen.findByTestId('toggle-1'));
+
+      fireEvent.press(await screen.findByTestId('cost-type-1'));
+      await waitFor(() => expect(setCategoryCostType).toHaveBeenCalledWith(1, null));
+    });
+
+    it('shows a subcategory inheriting its parent, and an override that differs from it', async () => {
+      mockedGetAll.mockResolvedValue([{ ...FOOD, costType: 'fixed' }, RESTAURANT, TRANSPORT, FREELANCE]);
+      render(<CategoryManager />);
+      fireEvent.press(await screen.findByTestId('toggle-1'));
+
+      const chip = await screen.findByTestId('cost-type-2');
+      expect(chip).toHaveTextContent('Fixed');
+
+      fireEvent.press(chip);
+      await waitFor(() => expect(setCategoryCostType).toHaveBeenCalledWith(2, 'variable'));
+    });
+
+    it('clears a subcategory override that toggles back to its parent', async () => {
+      mockedGetAll.mockResolvedValue([FOOD, { ...RESTAURANT, costType: 'fixed' }, TRANSPORT, FREELANCE]);
+      render(<CategoryManager />);
+      fireEvent.press(await screen.findByTestId('toggle-1'));
+
+      fireEvent.press(await screen.findByTestId('cost-type-2'));
+      await waitFor(() => expect(setCategoryCostType).toHaveBeenCalledWith(2, null));
+    });
   });
 });

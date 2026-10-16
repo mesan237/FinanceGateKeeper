@@ -8,6 +8,7 @@ jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getAccounts: jest.fn(),
   getAccountBalance: jest.fn(),
   getAccountStats: jest.fn(),
+  getUnassignedSpending: jest.fn(),
 }));
 
 import { AccountsOverview } from '@/features/finance/accounts/AccountsOverview';
@@ -43,6 +44,7 @@ beforeEach(() => {
   mocked.getAccounts.mockResolvedValue([CASH, MTN]); // active only
   mocked.getAccountBalance.mockImplementation(async (id: number) => (id === 1 ? 5000 : 2000));
   mocked.getAccountStats.mockResolvedValue(STATS);
+  mocked.getUnassignedSpending.mockResolvedValue({ count: 0, total: 0 });
 });
 
 describe('AccountsOverview', () => {
@@ -76,5 +78,22 @@ describe('AccountsOverview', () => {
     expect(screen.getByText('Comptes')).toBeTruthy();
     expect(screen.getAllByText('Dépenses').length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.getAllByText('↑ 80 % entrées').length).toBeGreaterThan(0));
+  });
+
+  describe('spending no wallet accounts for (VS-42)', () => {
+    it('says how much spending sits outside every wallet', async () => {
+      mocked.getUnassignedSpending.mockResolvedValue({ count: 4, total: 12_000 });
+      render(<AccountsOverview />);
+
+      expect(await screen.findByTestId('unassigned-spending')).toBeTruthy();
+      expect(screen.getByText('4 expenses (12 000 FCFA) are not linked to an account.')).toBeTruthy();
+    });
+
+    it('stays quiet when every expense has a wallet', async () => {
+      render(<AccountsOverview />);
+      await waitFor(() => expect(screen.getByText('Cash')).toBeTruthy());
+
+      expect(screen.queryByTestId('unassigned-spending')).toBeNull();
+    });
   });
 });

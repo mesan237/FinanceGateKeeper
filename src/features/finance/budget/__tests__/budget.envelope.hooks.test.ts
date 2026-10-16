@@ -184,4 +184,21 @@ describe('useCategoryOverBudgetCheck', () => {
     expect(check.categoryName).toBe('Food');
     expect(check.overage).toBe(3_000);
   });
+
+  it('checks the month passed to check() over the hook default, for back-dated expenses', async () => {
+    mockedCheckCategory.mockResolvedValue({
+      isOver: false,
+      overage: 0,
+      remaining: 2_000,
+      expenseBudget: 20_000,
+      categoryId: 1,
+      categoryName: 'Food',
+      hasBudget: true,
+    });
+
+    const { result } = renderHook(() => useCategoryOverBudgetCheck('2026-08'));
+    await result.current.check(1, 5_000, '2026-07');
+
+    expect(mockedCheckCategory).toHaveBeenCalledWith('2026-07', 1, 5_000);
+  });
 });

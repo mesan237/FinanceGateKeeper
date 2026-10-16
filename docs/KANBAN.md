@@ -1241,6 +1241,144 @@ edges. Reminders mirror the debt ones and do not check the notifications setting
 
 ---
 
+### VS-40: Financial Integrity — Budget Checks, Shared Health, Fixed-Cost Projection 🔄 In Progress
+
+**Priority:** Critical — Phase 1a of the progression plan
+**Blocked by:** VS-33 (Envelopes), VS-34 (Refocus)
+**Audit:** `docs/finance-gatekeeper-audit/` (FINANCIAL_LOGIC §4.2, §4.6, §4.7, §4.4 copy)
+
+**Scope:**
+
+Fix the budget defects that need no migration and no product decision, before
+anything builds on these figures.
+
+- **Edit check counts the old amount twice.** Editing 10,000 → 12,000 was checked
+  as +12,000 against a month that already held the 10,000. A pure
+  `expenses.budgetDelta.editBudgetDeltas` now hands each check only what the edit
+  adds where it lands: the difference when month and category are unchanged,
+  the full amount when the expense moves to another category or month.
+- **Checks use the expense's own month.** `useOverBudgetCheck` and
+  `useCategoryOverBudgetCheck` take an optional month per call; the log panel and
+  the detail screen pass the expense's date month, so a back-dated expense is no
+  longer checked against today's budget.
+- **One health rule.** The dashboard dropped its own 75% threshold and reads the
+  Budget tab's `getBudgetOverview` (same total, same carry, same `budgetHealth`),
+  mapped to green/yellow/red by `paceFromHealth`.
+- **Fixed costs projected once.** `projectSpend`/`budgetHealth` take the month's
+  recurring spend (`getFixedSpendByCategory`, `is_recurring = 1`) and extrapolate
+  only the variable part; the 80% rule reads the variable budget. Rent on the 1st
+  no longer makes the month "at risk".
+- **Copy.** The planner no longer promises an "income split" that VS-34 parked.
+- `budget.progress.ts` split: the chart series moved to `budget.trend.ts` (300-line rule).
+
+**TDD Anchor:**
+
+- Test: `editBudgetDeltas` — same placement → difference; new category or month → full amount.
+- Test: hooks — a month passed to `check` wins over the hook default.
+- Test: `ExpenseDetailScreen` — raising 2,000 → 5,000 checks +3,000 in the expense's month.
+- Test: `budgetHealth`/`projectSpend` — rent on day 1 stays on track; the variable part still trips the 80% rule.
+- Test: `getBudgetOverview` — a recurring 100,000 on the 1st projects 162,000, not 1,612,000.
+- Test: dashboard — 40% spent by the 8th is yellow, matching the Budget tab.
+
+**Done when:** an edit or back-dated expense warns only about money it actually
+adds to the month it lands in, the Dashboard and Budget tab never disagree on a
+month's health, and a month with rent paid on the 1st reads on track.
+
+**Not in this slice (Phase 1b, needs migrations or decisions):** wallets on
+recurring and quick-add expenses, dated opening balances, transfer edit/delete,
+debt payments that move money, refunds, the averaging divisor and month completeness.
+
+---
+
+### VS-41: Your Typical Month — Fixed vs Variable Spending 🔄 In Progress
+
+**Priority:** High — user-requested; Phase 1b item #6 of the progression plan
+**Blocked by:** VS-40 (Financial integrity), VS-38 (Imprévus)
+
+**Scope:**
+
+Three months of real spending, shown so the user can see what is a commitment
+and what a new habit could change.
+
+- **Fixed or variable categories.** Migration 036 adds nullable
+  `categories.cost_type` (`fixed` | `variable`): null on a parent reads as
+  variable, null on a subcategory inherits the parent. The default Bills starts
+  fixed. A Fixed/Variable chip on every row of Categories flips it; a
+  subcategory flipped back to its parent's type clears its override.
+- **Complete months.** `expenses.coverage`: a day counts when it holds an
+  expense or a confirmed zero-spend day; a month is complete from 80% of its
+  days. A mid-month start or a skipped fortnight is left out, not guessed at.
+- **Honest averages.** The planner's "Use my averages" divides by the complete
+  months in the window, zeros included — one annual 120,000 bill now suggests
+  40,000 a month, not 120,000.
+- **Reports card "Your typical month"** for the three months before this one:
+  the average month, split fixed / variable / unexpected (imprévus first, then
+  recurring bills as fixed, then the category tag); the top variable categories
+  with their cheapest and dearest month; and what matching the cheapest month in
+  every variable category would keep. Before any month is complete it shows
+  how far each month is from counting. Reloads on focus.
+- Supabase patch 040 (folded into 037 and `schema.sql`) must be run before a
+  build with migration 036 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 036 tags Bills fixed, leaves the rest null, rejects other values, marks a re-tag pending.
+- Test: `costTypeResolver` — sub override wins, untagged sub inherits, unknown reads variable.
+- Test: `monthCoverage` — 80% threshold; mid-month start incomplete; days counted once.
+- Test: `suggestFromHistory` — zeros count; annual bill spread; incomplete months ignored.
+- Test: `buildSpendingProfile` — split, recurring as fixed, ranking with range, incomplete months excluded.
+- Test: `CategoryManager` chip and `TypicalMonthCard` states; Reports loads the profile on focus.
+
+**Done when:** after a fully logged month, Reports shows what a typical month
+costs, how much of it is fixed, which variable categories cost the most and how
+much matching the user's own cheapest month would keep — and Categories lets the
+user say what is fixed.
+
+---
+
+### VS-42: Wallet Integrity — Template Wallets and Balance Checks 🔄 In Progress
+
+**Priority:** Critical — Phase 1b items #1 and #2 (user choices 1.A, 2.A)
+**Blocked by:** VS-41 (stacked branch), VS-18 (Accounts)
+
+**Scope:**
+
+Make wallet balances something the user can trust.
+
+- **Template wallets.** Migration 037 adds nullable `account_id` to
+  `quick_add_templates` and `recurring_expenses`; both forms gain the account
+  picker, new templates start on the default wallet, and every tap or
+  auto-logged occurrence is debited from it. Older templates stay unassigned
+  until the user picks one — nothing is guessed.
+- **Balance checks.** New synced table `balance_checks` (account, balance,
+  difference, date, note, soft-delete `deleted_at`). "Confirm balance" on the
+  account screen pins the wallet to what it actually holds; the balance is then
+  that figure plus only what happened after it (later date, or same date saved
+  later), so back-logging older entries no longer shifts it. The history shows
+  each check with the correction it made; tapping one removes it.
+- **Unassigned spending.** Accounts says how many expenses (and how much) no
+  wallet accounts for, instead of silently leaving them out.
+- Migrations 034/035 now skip tables a later migration creates (fresh installs
+  run them before `balance_checks` exists).
+- Supabase patch 041 (folded into 037 and `schema.sql`) must run before a build
+  with migration 037 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 037 — template wallet changes and check soft-deletes mark rows pending; checks get a uuid.
+- Test: templates — a tap and each recurring occurrence are logged on the template's wallet; no wallet stays null.
+- Test: `getAccountBalance` — confirmed figure + later flows; back-logged older entries ignored; same-day ordering; latest check wins; removal falls back.
+- Test: screens — new templates default to the default wallet; edits keep theirs; Confirm balance saves the typed figure; history signs the correction; unassigned card.
+
+**Done when:** rent auto-logged from MoMo lowers the MoMo balance, the user can
+tell the app what a wallet really holds and have it stick, and Accounts says
+how much spending no wallet covers.
+
+**Known limitation:** once a wallet has a balance check, editing its opening
+balance has no effect on the balance (the check supersedes it).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

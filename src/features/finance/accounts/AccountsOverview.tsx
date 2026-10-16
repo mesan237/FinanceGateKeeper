@@ -14,7 +14,7 @@ import { currentMonthISO } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 import { ACCOUNT_TYPE_ICON, accountPurposeLabel } from './accountIcons';
-import { useAccountStats, useAccounts } from './accounts.hooks';
+import { useAccountStats, useAccounts, useUnassignedSpending } from './accounts.hooks';
 import type { Account } from './accounts.types';
 
 function AccountCard({ account, balance }: { account: Account; balance: number }) {
@@ -62,6 +62,7 @@ export function AccountsOverview() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { accounts, balances, loading } = useAccounts();
+  const unassigned = useUnassignedSpending();
   const { t } = useTranslation('accounts');
 
   return (
@@ -74,6 +75,18 @@ export function AccountsOverview() {
         {accounts.map((account) => (
           <AccountCard key={account.id} account={account} balance={balances[account.id] ?? 0} />
         ))}
+        {unassigned.count > 0 ? (
+          // Spending no account covers, said plainly rather than hidden (VS-42).
+          <Card testID="unassigned-spending" style={styles.unassigned}>
+            <Typography>
+              {t('overview.unassigned', {
+                count: unassigned.count,
+                amount: formatCurrency(unassigned.total),
+              })}
+            </Typography>
+            <Typography variant="muted">{t('overview.unassignedHint')}</Typography>
+          </Card>
+        ) : null}
         <Button
           testID="add-account-button"
           label={t('overview.add')}
@@ -94,4 +107,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   badge: { color: c.PRIMARY_GREEN },
   statsRow: { flexDirection: 'row', gap: 16 },
   statIn: { color: c.SUCCESS_TEXT },
+  unassigned: { gap: 4, borderLeftWidth: 3, borderLeftColor: c.WARNING },
 });

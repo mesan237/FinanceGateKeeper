@@ -42,13 +42,15 @@ export function useBudgetStatus(monthISO: string) {
  * which asks the budget service whether logging `amount` this month would
  * exceed the month's spending budget. Not a mount-loading hook — callers
  * run it on demand at save time, with the typed amount. `monthISO` defaults to
- * the current month.
+ * the current month; a month passed to `check` wins over it, so a back-dated
+ * expense is checked against the month it lands in (VS-40).
  */
 export function useOverBudgetCheck(monthISO?: string) {
   const month = monthISO ?? currentMonthISO();
 
   const check = useCallback(
-    (amount: number): Promise<OverBudgetCheck> => checkOverBudget(month, amount),
+    (amount: number, forMonth?: string): Promise<OverBudgetCheck> =>
+      checkOverBudget(forMonth ?? month, amount),
     [month],
   );
 

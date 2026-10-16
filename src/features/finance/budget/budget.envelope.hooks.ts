@@ -95,19 +95,20 @@ export function useEnvelopeActions(monthISO: string) {
 
 /**
  * Imperative per-category guard for the expense screens. Exposes
- * `check(categoryId, amount)`, which reports whether logging `amount` would push
- * that category past its envelope.
+ * `check(categoryId, amount, month?)`, which reports whether logging `amount`
+ * would push that category past its envelope.
  *
- * Unlike `useOverBudgetCheck` this binds the moment an envelope exists — it does
- * not wait for the month's income split to be locked, because a category budget
- * is a number the user typed on purpose. `monthISO` defaults to the current month.
+ * It binds the moment an envelope exists, because a category budget is a number
+ * the user typed on purpose. `monthISO` defaults to the current month; a month
+ * passed to `check` wins over it, so a back-dated expense is checked against the
+ * envelope of the month it lands in (VS-40).
  */
 export function useCategoryOverBudgetCheck(monthISO?: string) {
   const month = monthISO ?? currentMonthISO();
 
   const check = useCallback(
-    (categoryId: number, amount: number): Promise<CategoryBudgetCheck> =>
-      checkCategoryBudget(month, categoryId, amount),
+    (categoryId: number, amount: number, forMonth?: string): Promise<CategoryBudgetCheck> =>
+      checkCategoryBudget(forMonth ?? month, categoryId, amount),
     [month],
   );
 

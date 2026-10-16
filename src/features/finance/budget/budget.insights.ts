@@ -14,7 +14,7 @@ import {
 } from '@/utils/monthMath';
 
 import { getSpendByCategory } from './budget.envelopes';
-import { buildBurndown, buildWeeklyTrend } from './budget.progress';
+import { buildBurndown, buildWeeklyTrend } from './budget.trend';
 import type { CategoryBudgetProgress } from './budget.types';
 
 /**

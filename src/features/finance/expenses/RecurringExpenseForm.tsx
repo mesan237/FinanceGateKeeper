@@ -12,6 +12,9 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { toISODate } from '@/utils/formatDate';
 
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
+
 import { CategoryPicker } from './CategoryPicker';
 import { useCategories } from './expenses.hooks';
 import type { Frequency, NewRecurringExpense, RecurringExpense } from './expenses.types';
@@ -45,6 +48,9 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The wallet each occurrence is paid from (VS-42). New ones start on the default.
+  const defaultAccountId = useDefaultAccountId();
+  const [accountId, setAccountId] = useState<number | null>(null);
 
   // Re-seed the form whenever it opens (prefilled in edit mode, defaults in create).
   useEffect(() => {
@@ -58,6 +64,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       setCategoryId(recurring.categoryId);
       setSubcategoryId(recurring.subcategoryId);
       setCategoryLabel(displayLabelFor(recurring.categoryId, recurring.subcategoryId));
+      setAccountId(recurring.accountId);
     } else {
       setLabel('');
       setAmount('');
@@ -66,8 +73,9 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       setCategoryId(null);
       setSubcategoryId(null);
       setCategoryLabel(null);
+      setAccountId(defaultAccountId);
     }
-  }, [visible, recurring, displayLabelFor]);
+  }, [visible, recurring, displayLabelFor, defaultAccountId]);
 
   const handleSave = async () => {
     const numericAmount = Number(amount);
@@ -89,6 +97,7 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
       frequency,
       nextDueDate,
       isActive: recurring ? recurring.isActive : true,
+      accountId,
     });
     onClose();
   };
@@ -143,6 +152,13 @@ export function RecurringExpenseForm({ visible, recurring, onSave, onClose }: Re
         <Button
           label={categoryLabel ?? t('selectCategory')}
           onPress={() => setPickerVisible(true)}
+        />
+
+        <AccountPicker
+          testID="recurring-account"
+          label={t('entry.account')}
+          value={accountId}
+          onChange={setAccountId}
         />
 
         {error ? <Typography style={styles.error}>{error}</Typography> : null}

@@ -3,6 +3,21 @@ import React from 'react';
 
 import type { QuickAddTemplate } from '@/features/finance/expenses/expenses.types';
 
+// Two wallets; Cash is the default a new template starts on (VS-42).
+jest.mock('@/features/finance/accounts/accounts.hooks', () => ({
+  useAccounts: () => ({
+    accounts: [
+      { id: 1, name: 'Cash', type: 'cash', purpose: 'spending', openingBalance: 0, isDefault: true, isActive: true, createdAt: '' },
+      { id: 2, name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', openingBalance: 0, isDefault: false, isActive: true, createdAt: '' },
+    ],
+    balances: new Map(),
+    loading: false,
+    error: null,
+    refresh: jest.fn(),
+  }),
+  useDefaultAccountId: () => 1,
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
@@ -39,6 +54,7 @@ const TAXI: QuickAddTemplate = {
   amount: 500,
   categoryId: 5,
   subcategoryId: 6,
+  accountId: null,
   sortOrder: 0,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
@@ -48,6 +64,7 @@ const LUNCH: QuickAddTemplate = {
   amount: 1500,
   categoryId: 1,
   subcategoryId: 3,
+  accountId: null,
   sortOrder: 1,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
@@ -157,7 +174,8 @@ describe('QuickAddScreen', () => {
 
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
     expect(mockedCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Snack 200', amount: 200, categoryId: 1 }),
+      // A new template starts on the default wallet, so its taps reduce a balance (VS-42).
+      expect.objectContaining({ label: 'Snack 200', amount: 200, categoryId: 1, accountId: 1 }),
     );
   });
 

@@ -51,7 +51,7 @@ const FOOD = 1;
 const TRANSPORT = 5;
 
 function category(id: number, name: string): Category {
-  return { id, name, parentId: null, isDefault: true, isHidden: false };
+  return { id, name, parentId: null, isDefault: true, isHidden: false, costType: null };
 }
 
 function setup(options: { isExplicit?: boolean; totalBudget?: number } = {}) {
@@ -148,16 +148,17 @@ describe('BudgetPlannerScreen', () => {
     expect(screen.queryByTestId('planner-over-warning')).toBeNull();
   });
 
-  it('explains that the total follows the income split when none is set', async () => {
+  it("explains that the total follows this month's income when none is set (VS-40)", async () => {
     setup({ isExplicit: false, totalBudget: 260_000 });
     await renderPlanner();
 
+    // There is no income split since VS-34 — the copy must not promise one.
     expect(screen.getByTestId('planner-total-hint')).toHaveTextContent(
-      'Following your income split — 260 000 FCFA.',
+      "Following this month's income — 260 000 FCFA.",
     );
   });
 
-  it('offers the income-split shortcut only once a manual total is set', async () => {
+  it("offers the month's-income shortcut only once a manual total is set", async () => {
     setup({ isExplicit: false, totalBudget: 260_000 });
     await renderPlanner();
     expect(screen.queryByTestId('planner-use-derived')).toBeNull();
@@ -165,6 +166,7 @@ describe('BudgetPlannerScreen', () => {
     fireEvent.changeText(screen.getByTestId('planner-total'), '300000');
 
     await waitFor(() => expect(screen.getByTestId('planner-use-derived')).toBeTruthy());
+    expect(screen.getByText("Use this month's income")).toBeTruthy();
   });
 
   it('offers the averages shortcut only when there is history to average', async () => {

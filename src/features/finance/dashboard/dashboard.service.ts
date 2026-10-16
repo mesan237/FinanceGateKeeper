@@ -1,5 +1,5 @@
-import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
-import * as budgetService from '@/features/finance/budget/budget.service';
+import { getBudgetOverview } from '@/features/finance/budget/budget.plan';
+import type { BudgetHealth } from '@/features/finance/budget/budget.types';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
 import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
 import { toISODate } from '@/utils/formatDate';
@@ -12,19 +12,20 @@ import type {
   PaceLevel,
 } from './dashboard.types';
 
+/** Dashboard colour for each budget health verdict. */
+const PACE_BY_HEALTH: Record<BudgetHealth, PaceLevel> = {
+  on_track: 'green',
+  at_risk: 'yellow',
+  over: 'red',
+};
+
 /**
- * Derives a budget-pace colour from how much of the expense allocation has
- * been spent and how many days remain in the month. Pure — no DB access.
- *
- * - `red`    — spent strictly exceeds the budget.
- * - `yellow` — spent is 75–99% of the budget with days still remaining
- *              (a warning that the budget is nearly exhausted before month end).
- * - `green`  — everything else (on track, exactly at budget, or no budget set).
+ * Maps the Budget tab's health verdict onto the dashboard's pace colour (VS-40).
+ * The dashboard used to run its own 75% threshold, so the same month could read
+ * "at risk" on Budget and green here; now both screens share one rule. Pure.
  */
-export function paceIndicator(spent: number, budget: number, daysRemaining: number): PaceLevel {
-  if (spent > budget) return 'red';
-  if (budget > 0 && spent < budget && spent / budget >= 0.75 && daysRemaining > 0) return 'yellow';
-  return 'green';
+export function paceFromHealth(health: BudgetHealth): PaceLevel {
+  return PACE_BY_HEALTH[health];
 }
 
 /** Number of calendar days covered by the dashboard's spending sparkline. */
@@ -105,27 +106,27 @@ export async function getDashboardSnapshot(
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
   const todaySpending = spendingTrend[spendingTrend.length - 1];
 
-  const monthlyBudget = await budgetService.getMonthlyBudget(monthISO);
-  // The same resolution the Budget tab uses — an explicit total when the user
-  // set one, the month's income otherwise. Reading `incomeTotal` directly here
-  // would make the dashboard hero disagree with the tab it summarises.
-  const plan = await buildMonthlyPlan(monthISO, monthlyBudget.incomeTotal);
-  const expenseBudget = plan.totalBudget;
+  // The Budget tab's own overview, so the dashboard summary can never disagree
+  // with the tab it summarises: the same total (explicit, else the month's
+  // income), the same rollover carry, and the same health verdict (VS-40).
+  const overview = await getBudgetOverview(monthISO, todayISO);
+  const expenseBudget = overview.available;
+  const incomeTotal = overview.plan.derivedTotal;
 
   const daysRemaining = daysRemainingInMonth(monthISO, todayISO);
 
   const budget: BudgetSummary = {
     expenseBudget,
-    expensesLogged: monthlyBudget.expensesLogged,
-    expensesRemaining: expenseBudget - monthlyBudget.expensesLogged,
-    spentPct: spentPct(monthlyBudget.expensesLogged, expenseBudget),
-    pace: paceIndicator(monthlyBudget.expensesLogged, expenseBudget, daysRemaining),
+    expensesLogged: overview.spent,
+    expensesRemaining: overview.remaining,
+    spentPct: spentPct(overview.spent, expenseBudget),
+    pace: paceFromHealth(overview.health),
   };
 
   const cashflow: Cashflow = {
-    income: monthlyBudget.incomeTotal,
-    expenses: monthlyBudget.expensesLogged,
-    net: monthlyBudget.incomeTotal - monthlyBudget.expensesLogged,
+    income: incomeTotal,
+    expenses: overview.spent,
+    net: incomeTotal - overview.spent,
   };
 
   const dailyPace = dailyBudgetPace(expenseBudget, monthISO);

@@ -48,6 +48,11 @@ export const expenses: Translation<typeof en> = {
   },
   manager: {
     title: 'Catégories',
+    costType: {
+      fixed: 'Fixe',
+      variable: 'Variable',
+      label: '{{name}} : dépense {{type}}. Touchez pour changer.',
+    },
     newCategory: '+ Nouvelle catégorie',
     addSubcategory: '+ Ajouter une sous-catégorie',
     hiddenName: '{{name}} (masquée)',

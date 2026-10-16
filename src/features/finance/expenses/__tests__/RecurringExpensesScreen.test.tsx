@@ -3,6 +3,21 @@ import React from 'react';
 
 import type { RecurringExpense } from '@/features/finance/expenses/expenses.types';
 
+// Two wallets; Cash is the default a new template starts on (VS-42).
+jest.mock('@/features/finance/accounts/accounts.hooks', () => ({
+  useAccounts: () => ({
+    accounts: [
+      { id: 1, name: 'Cash', type: 'cash', purpose: 'spending', openingBalance: 0, isDefault: true, isActive: true, createdAt: '' },
+      { id: 2, name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', openingBalance: 0, isDefault: false, isActive: true, createdAt: '' },
+    ],
+    balances: new Map(),
+    loading: false,
+    error: null,
+    refresh: jest.fn(),
+  }),
+  useDefaultAccountId: () => 1,
+}));
+
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
 }));
@@ -16,6 +31,7 @@ const RENT: RecurringExpense = {
   frequency: 'monthly',
   nextDueDate: '2026-07-01',
   isActive: true,
+  accountId: null,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
 const PHONE: RecurringExpense = {
@@ -27,6 +43,7 @@ const PHONE: RecurringExpense = {
   frequency: 'weekly',
   nextDueDate: '2026-06-15',
   isActive: false,
+  accountId: null,
   createdAt: '2026-06-01T00:00:00.000Z',
 };
 
@@ -44,9 +61,11 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 
 import { RecurringExpensesScreen } from '@/features/finance/expenses/RecurringExpensesScreen';
 import {
+  createRecurringExpense,
   getRecurringExpenses,
   setRecurringActive,
   skipRecurringOccurrence,
+  updateRecurringExpense,
 } from '@/features/finance/expenses/expenses.service';
 
 const mockedGet = getRecurringExpenses as jest.MockedFunction<typeof getRecurringExpenses>;
@@ -87,5 +106,32 @@ describe('RecurringExpensesScreen', () => {
     fireEvent.press(await screen.findByTestId('recurring-add-btn'));
 
     expect(screen.getByTestId('recurring-label-input')).toBeTruthy();
+  });
+
+  it('saves a new recurring expense on the default wallet (VS-42)', async () => {
+    render(<RecurringExpensesScreen />);
+    fireEvent.press(await screen.findByTestId('recurring-add-btn'));
+
+    fireEvent.changeText(screen.getByTestId('recurring-label-input'), 'Rent');
+    fireEvent.changeText(screen.getByTestId('recurring-amount-input'), '100000');
+    fireEvent.press(screen.getByText('Select category'));
+    fireEvent.press(await screen.findByText('Bills'));
+    fireEvent.press(await screen.findByText('Use Bills'));
+    fireEvent.press(screen.getByTestId('recurring-save'));
+
+    await waitFor(() => expect(createRecurringExpense).toHaveBeenCalledTimes(1));
+    expect(createRecurringExpense).toHaveBeenCalledWith(
+      expect.objectContaining({ label: 'Rent', amount: 100_000, categoryId: 9, accountId: 1 }),
+    );
+  });
+
+  it('keeps the wallet of a recurring expense being edited', async () => {
+    mockedGet.mockResolvedValue([{ ...RENT, accountId: 2 }, PHONE]);
+    render(<RecurringExpensesScreen />);
+    fireEvent.press(await screen.findByTestId('recurring-edit-1'));
+    fireEvent.press(screen.getByTestId('recurring-save'));
+
+    await waitFor(() => expect(updateRecurringExpense).toHaveBeenCalledTimes(1));
+    expect(updateRecurringExpense).toHaveBeenCalledWith(1, expect.objectContaining({ accountId: 2 }));
   });
 });

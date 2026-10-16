@@ -28,6 +28,7 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
 }));
 
 import { ExpenseLogScreen } from '@/features/finance/expenses/ExpenseLogScreen';
+import { currentMonthISO } from '@/utils/formatDate';
 import { createExpense, getAllCategories } from '@/features/finance/expenses/expenses.service';
 
 const mockedCreate = createExpense as jest.MockedFunction<typeof createExpense>;
@@ -132,7 +133,7 @@ describe('ExpenseLogScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(mockCheck).toHaveBeenCalledWith(1500));
+    await waitFor(() => expect(mockCheck).toHaveBeenCalledWith(1500, currentMonthISO()));
     await waitFor(() => expect(mockedCreate).toHaveBeenCalledTimes(1));
     expect(screen.queryByTestId('over-budget-proceed')).toBeNull();
   });
@@ -163,7 +164,7 @@ describe('ExpenseLogScreen', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(mockCategoryCheck).toHaveBeenCalledWith(1, 1500));
+    await waitFor(() => expect(mockCategoryCheck).toHaveBeenCalledWith(1, 1500, currentMonthISO()));
   });
 
   it('names the category when its envelope is the one being broken', async () => {
