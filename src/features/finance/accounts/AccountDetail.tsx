@@ -1,10 +1,11 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
+import { Modal } from '@/components/Modal';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
@@ -14,8 +15,9 @@ import type { IconName } from '@/constants/icons';
 import { currentMonthISO, formatDateShort } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { ConfirmBalanceSheet } from './ConfirmBalanceSheet';
 import { useAccountDetail, useAccountStats } from './accounts.hooks';
-import type { AccountHistoryKind } from './accounts.types';
+import type { AccountHistoryEntry, AccountHistoryKind } from './accounts.types';
 
 export interface AccountDetailProps {
   accountId: number;
@@ -31,7 +33,24 @@ const KIND_ICON: Record<AccountHistoryKind, IconName> = {
   transfer_out: 'transfer',
   fund_contribution: 'budget',
   project_contribution: 'projects',
+  balance_check: 'check',
 };
+
+/**
+ * The signed amount a history row shows. Every kind but a balance check carries
+ * a positive amount and its direction in `kind`; a check carries the signed
+ * correction it made (VS-42).
+ */
+function signedAmount(entry: AccountHistoryEntry): { credit: boolean; text: string } {
+  if (entry.kind === 'balance_check') {
+    return {
+      credit: entry.amount >= 0,
+      text: `${entry.amount >= 0 ? '+' : '−'}${formatCurrency(Math.abs(entry.amount))}`,
+    };
+  }
+  const credit = CREDIT_KINDS.includes(entry.kind);
+  return { credit, text: `${credit ? '+' : '−'}${formatCurrency(entry.amount)}` };
+}
 
 /**
  * One wallet's detail: a balance hero, this month's income/expense share, and a
@@ -43,8 +62,10 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
   const c = useTheme();
   const router = useRouter();
   const { t } = useTranslation(['accounts', 'common']);
-  const { account, balance, history, loading } = useAccountDetail(accountId);
+  const { account, balance, history, loading, confirm, removeCheck } = useAccountDetail(accountId);
   const { stats } = useAccountStats(accountId, currentMonthISO());
+  const [confirming, setConfirming] = useState(false);
+  const [checkToRemove, setCheckToRemove] = useState<number | null>(null);
 
   return (
     <View style={styles.container}>
@@ -72,6 +93,13 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
             {t('overview.statOut', { percent: stats?.expensePercent ?? 0 })}
           </Typography>
         </View>
+        <Button
+          testID="confirm-balance-button"
+          label={t('detail.confirmBalance')}
+          variant="secondary"
+          compact
+          onPress={() => setConfirming(true)}
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.list}>
@@ -79,23 +107,57 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
           <Typography variant="muted">{t('detail.empty')}</Typography>
         ) : null}
         {history.map((entry) => {
-
-          const credit = CREDIT_KINDS.includes(entry.kind);
+          const { credit, text } = signedAmount(entry);
+          const isCheck = entry.kind === 'balance_check';
           return (
-            <View key={`${entry.kind}-${entry.refId}`} style={styles.row}>
+            <Pressable
+              key={`${entry.kind}-${entry.refId}`}
+              style={styles.row}
+              disabled={!isCheck}
+              accessibilityRole={isCheck ? 'button' : undefined}
+              onPress={() => setCheckToRemove(entry.refId)}
+            >
               <Icon name={KIND_ICON[entry.kind]} size={20} color={credit ? c.SUCCESS : c.TEXT_MUTED} />
               <View style={styles.rowBody}>
                 <Typography>{entry.label}</Typography>
                 <Typography variant="muted">{formatDateShort(entry.date)}</Typography>
               </View>
-              <Typography style={credit ? styles.amountCredit : styles.amountDebit}>
-                {credit ? '+' : '−'}
-                {formatCurrency(entry.amount)}
+              <Typography
+                testID={`history-amount-${entry.kind}-${entry.refId}`}
+                style={credit ? styles.amountCredit : styles.amountDebit}
+              >
+                {text}
               </Typography>
-            </View>
+            </Pressable>
           );
         })}
       </ScrollView>
+
+      <ConfirmBalanceSheet
+        visible={confirming}
+        name={account?.name ?? ''}
+        balance={balance}
+        onConfirm={confirm}
+        onClose={() => setConfirming(false)}
+      />
+
+      <Modal visible={checkToRemove !== null} onRequestClose={() => setCheckToRemove(null)}>
+        <View style={styles.modal}>
+          <Typography variant="subheading">{t('check.removeTitle')}</Typography>
+          <Typography variant="muted">{t('check.removeBody')}</Typography>
+          <Button
+            testID="remove-check-confirm"
+            label={t('check.remove')}
+            variant="danger"
+            onPress={async () => {
+              const id = checkToRemove;
+              setCheckToRemove(null);
+              if (id !== null) await removeCheck(id);
+            }}
+          />
+          <Button label={t('common:actions.cancel')} onPress={() => setCheckToRemove(null)} />
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -111,4 +173,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   rowBody: { flex: 1 },
   amountCredit: { color: c.SUCCESS_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   amountDebit: { color: c.DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  modal: { gap: 12 },
 });

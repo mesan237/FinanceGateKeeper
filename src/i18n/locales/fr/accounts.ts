@@ -21,12 +21,26 @@ export const accounts: Translation<typeof en> = {
     add: 'Ajouter un compte',
     statIn: '↑ {{percent}} % entrées',
     statOut: '↓ {{percent}} % sorties',
+    unassigned_one: '{{count}} dépense ({{amount}}) n’est liée à aucun compte.',
+    unassigned_other: '{{count}} dépenses ({{amount}}) ne sont liées à aucun compte.',
+    unassignedHint:
+      'Les soldes des comptes les ignorent. Choisissez un compte sur la dépense, ou sur son raccourci ou sa dépense récurrente.',
   },
   detail: {
     fallbackTitle: 'Compte',
     balance: 'Solde',
     empty: 'Aucune transaction pour le moment.',
     invalidId: 'Identifiant de compte invalide.',
+    confirmBalance: 'Confirmer le solde',
+  },
+  check: {
+    title: 'Que contient {{name}} aujourd’hui ?',
+    hint: 'Saisissez le solde réel. Les opérations suivantes partent de ce montant ; celles plus anciennes ajoutées ensuite ne le changeront pas.',
+    amount: 'Solde réel',
+    save: 'Confirmer',
+    removeTitle: 'Supprimer ce solde confirmé ?',
+    removeBody: 'Le solde sera de nouveau calculé à partir des opérations.',
+    remove: 'Supprimer',
   },
   history: {
     income: 'Revenu',
@@ -35,6 +49,7 @@ export const accounts: Translation<typeof en> = {
     transferFrom: 'Virement depuis {{account}}',
     fundDeposit: 'Dépôt sur un fonds',
     projectContribution: 'Contribution à un projet',
+    balanceCheck: 'Solde confirmé : {{amount}}',
   },
   form: {
     editTitle: 'Modifier le compte',
@@ -68,6 +83,8 @@ export const accounts: Translation<typeof en> = {
   },
   errors: {
     saveFailed: "Impossible d'enregistrer le compte.",
+    balanceWhole: 'Saisissez le solde en FCFA entiers.',
+    balanceDate: 'Choisissez une date valide pour le solde.',
     loadAccounts: 'Impossible de charger les comptes.',
     loadAccount: 'Impossible de charger le compte.',
     loadStats: 'Impossible de charger les statistiques.',

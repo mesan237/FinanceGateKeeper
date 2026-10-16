@@ -9,7 +9,9 @@ export {
   getAccountBalance,
   getAccountStats,
   getAccountHistory,
+  getUnassignedSpending,
 } from './accounts.balance';
+export { confirmBalance, getBalanceChecks, removeBalanceCheck } from './accounts.checks';
 
 interface AccountRow {
   id: number;

@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, users
+  planned_lists, planned_items, balance_checks, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -185,6 +185,7 @@ create table quick_add_templates (
   amount         integer not null,
   category_id    text,           -- uuid of the category
   subcategory_id text,           -- uuid of the subcategory, or null
+  account_id     text,           -- uuid of the wallet it is paid from, or null (VS-42)
   sort_order     integer not null default 0,
   created_at     text not null,
   updated_at     text not null
@@ -197,6 +198,7 @@ create table recurring_expenses (
   amount         integer not null,
   category_id    text,           -- uuid of the category
   subcategory_id text,           -- uuid of the subcategory, or null
+  account_id     text,           -- uuid of the wallet it is paid from, or null (VS-42)
   frequency      text not null,
   next_due_date  text not null,
   is_active      integer not null default 1,
@@ -262,6 +264,19 @@ create table transfers (
   updated_at      text not null
 );
 
+create table balance_checks (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  account_id  text not null,     -- uuid of the wallet
+  balance     integer not null,  -- what the wallet actually held at `date` (VS-42)
+  difference  integer not null default 0,
+  date        text not null,
+  note        text,
+  created_at  text not null,
+  deleted_at  text,
+  updated_at  text not null
+);
+
 -- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
@@ -273,7 +288,7 @@ begin
     'categories','funds','projects','accounts','expenses','income','allocations',
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
-    'planned_lists','planned_items'
+    'planned_lists','planned_items','balance_checks'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.
