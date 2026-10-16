@@ -72,19 +72,26 @@ export interface TransactionRowProps {
   onPressExpense: (id: number) => void;
   /** Called with the income id when an income row is tapped (opens detail, VS-20). */
   onPressIncome: (id: number) => void;
+  /** Called with the transfer id when a transfer row is tapped (opens edit, VS-43). */
+  onPressTransfer?: (id: number) => void;
 }
 
 /**
- * One feed row. Expense and income rows are tappable (their detail screens);
- * transfers are display-only. Direction is carried by the signed, coloured
+ * One feed row. Every row is tappable: expenses and income open their detail
+ * screens, transfers open the transfer form in edit mode (VS-43). Direction is carried by the signed, coloured
  * amount — +green income, −red expense, muted transfers.
  */
-export function TransactionRow({ item, onPressExpense, onPressIncome }: TransactionRowProps) {
+export function TransactionRow({ item, onPressExpense, onPressIncome, onPressTransfer }: TransactionRowProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   if (item.type === 'transfer') {
     return (
-      <View testID={`tx-row-transfer-${item.id}`} style={styles.row}>
+      <Pressable
+        testID={`tx-row-transfer-${item.id}`}
+        style={styles.row}
+        accessibilityRole="button"
+        onPress={() => onPressTransfer?.(item.id)}
+      >
         <View style={[styles.iconBox, styles.iconBoxTransfer]}>
           <Icon name="transfer" size={18} color={c.TEXT_MUTED} />
         </View>
@@ -92,7 +99,7 @@ export function TransactionRow({ item, onPressExpense, onPressIncome }: Transact
           {item.fromAccountName} → {item.toAccountName}
         </Typography>
         <Typography style={styles.amountTransfer}>{formatCurrency(item.amount)}</Typography>
-      </View>
+      </Pressable>
     );
   }
 

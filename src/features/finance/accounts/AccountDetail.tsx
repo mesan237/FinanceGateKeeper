@@ -108,14 +108,18 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
         ) : null}
         {history.map((entry) => {
           const { credit, text } = signedAmount(entry);
+          // A balance check can be removed; a transfer opens for editing (VS-43).
           const isCheck = entry.kind === 'balance_check';
+          const isTransfer = entry.kind === 'transfer_in' || entry.kind === 'transfer_out';
           return (
             <Pressable
               key={`${entry.kind}-${entry.refId}`}
               style={styles.row}
-              disabled={!isCheck}
-              accessibilityRole={isCheck ? 'button' : undefined}
-              onPress={() => setCheckToRemove(entry.refId)}
+              disabled={!isCheck && !isTransfer}
+              accessibilityRole={isCheck || isTransfer ? 'button' : undefined}
+              onPress={() =>
+                isCheck ? setCheckToRemove(entry.refId) : router.push(`/transfers/${entry.refId}`)
+              }
             >
               <Icon name={KIND_ICON[entry.kind]} size={20} color={credit ? c.SUCCESS : c.TEXT_MUTED} />
               <View style={styles.rowBody}>

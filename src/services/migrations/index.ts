@@ -36,6 +36,7 @@ import { migration as stampUuidsDuringSync } from '@/services/migrations/034_sta
 import { migration as markEditsDuringSync } from '@/services/migrations/035_mark_edits_during_sync';
 import { migration as addCategoryCostType } from '@/services/migrations/036_add_category_cost_type';
 import { migration as walletIntegrity } from '@/services/migrations/037_wallet_integrity';
+import { migration as transferSoftDelete } from '@/services/migrations/038_transfer_soft_delete';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -75,4 +76,5 @@ export const migrations: ReadonlyArray<Migration> = [
   markEditsDuringSync,
   addCategoryCostType,
   walletIntegrity,
+  transferSoftDelete,
 ];

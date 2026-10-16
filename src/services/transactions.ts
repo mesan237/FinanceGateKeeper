@@ -85,7 +85,7 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
      FROM transfers t
      JOIN accounts af ON t.from_account_id = af.id
      JOIN accounts at2 ON t.to_account_id = at2.id
-     WHERE t.date LIKE ?`,
+     WHERE t.date LIKE ? AND t.deleted_at IS NULL`,
     [pattern],
   );
 

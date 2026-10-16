@@ -23,7 +23,8 @@
 --      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
 --      total_budget 027, expenses.is_unplanned 032,
 --      planned_lists.due_date 033, categories.cost_type 036,
---      quick_add_templates/recurring_expenses.account_id 037).
+--      quick_add_templates/recurring_expenses.account_id 037,
+--      transfers.deleted_at 038).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -265,6 +266,7 @@ create table if not exists transfers (
   date            text not null,
   note            text,
   created_at      text not null,
+  deleted_at      text,           -- set when removed; removals sync, deletions do not (VS-43)
   updated_at      text not null
 );
 
@@ -296,6 +298,7 @@ alter table planned_lists        add column if not exists due_date text;
 alter table categories           add column if not exists cost_type text;
 alter table quick_add_templates  add column if not exists account_id text;
 alter table recurring_expenses   add column if not exists account_id text;
+alter table transfers            add column if not exists deleted_at text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

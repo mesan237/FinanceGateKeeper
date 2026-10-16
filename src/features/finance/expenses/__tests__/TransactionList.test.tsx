@@ -323,6 +323,10 @@ describe('TransactionList', () => {
 
     await waitFor(() => expect(screen.getByTestId('tx-row-transfer-7')).toBeTruthy());
     expect(screen.getByText('Cash → MTN MoMo')).toBeTruthy();
+
+    // Transfers can be corrected now, so their rows open the edit screen (VS-43).
+    fireEvent.press(screen.getByTestId('tx-row-transfer-7'));
+    expect(mockPush).toHaveBeenCalledWith('/transfers/7');
   });
 
   it('re-fetches when the tab regains focus, so an edit/delete on the detail screen shows up', async () => {

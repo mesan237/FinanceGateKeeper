@@ -179,8 +179,11 @@ export function useAccountStats(id: number, monthISO: string) {
  * Drives the transfer form. The from-account defaults to the user's default
  * account once accounts load; the date defaults to today. `canSubmit` requires
  * two distinct accounts and a positive amount. `submit` returns true on success.
+ *
+ * With `transferId` the form edits that transfer instead (VS-43): it loads the
+ * stored fields, `submit` saves the correction, and `remove` deletes it.
  */
-export function useTransferLog() {
+export function useTransferLog(transferId?: number) {
   const [fromId, setFromId] = useState<number | null>(null);
   const [toId, setToId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
@@ -192,6 +195,20 @@ export function useTransferLog() {
     let cancelled = false;
     void (async () => {
       try {
+        if (transferId !== undefined) {
+          const existing = await service.getTransferById(transferId);
+          if (cancelled) return;
+          if (!existing) {
+            setError(i18n.t('errors.transferNotFound', { ns: 'accounts' }));
+            return;
+          }
+          setFromId(existing.fromAccountId);
+          setToId(existing.toAccountId);
+          setAmount(String(existing.amount));
+          setDate(existing.date);
+          setNote(existing.note ?? '');
+          return;
+        }
         const accounts = await service.getAccounts();
         const def = accounts.find((a) => a.isDefault) ?? accounts[0];
         if (!cancelled && def) setFromId(def.id);
@@ -202,7 +219,7 @@ export function useTransferLog() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [transferId]);
 
   const numericAmount = Math.trunc(Number(amount));
   const canSubmit = useMemo(
@@ -218,13 +235,34 @@ export function useTransferLog() {
   const submit = useCallback(async (): Promise<boolean> => {
     if (fromId === null || toId === null) return false;
     try {
-      await service.logTransfer(fromId, toId, numericAmount, date, note.trim() || undefined);
+      if (transferId !== undefined) {
+        await service.updateTransfer(transferId, {
+          fromAccountId: fromId,
+          toAccountId: toId,
+          amount: numericAmount,
+          date,
+          note: note.trim() || null,
+        });
+      } else {
+        await service.logTransfer(fromId, toId, numericAmount, date, note.trim() || undefined);
+      }
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.logTransfer', { ns: 'accounts' }));
       return false;
     }
-  }, [fromId, toId, numericAmount, date, note]);
+  }, [transferId, fromId, toId, numericAmount, date, note]);
+
+  const remove = useCallback(async (): Promise<boolean> => {
+    if (transferId === undefined) return false;
+    try {
+      await service.removeTransfer(transferId);
+      return true;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : i18n.t('errors.logTransfer', { ns: 'accounts' }));
+      return false;
+    }
+  }, [transferId]);
 
   return {
     fromId,
@@ -240,5 +278,7 @@ export function useTransferLog() {
     canSubmit,
     error,
     submit,
+    remove,
+    isEditing: transferId !== undefined,
   };
 }

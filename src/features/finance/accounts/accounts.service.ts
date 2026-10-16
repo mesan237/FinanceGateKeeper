@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 
+import { mapTransfer, type TransferRow } from './accounts.transfers';
 import type { Account, NewAccountFields, AccountPatch, Transfer } from './accounts.types';
 
 export {
@@ -12,6 +13,7 @@ export {
   getUnassignedSpending,
 } from './accounts.balance';
 export { confirmBalance, getBalanceChecks, removeBalanceCheck } from './accounts.checks';
+export { getTransferById, removeTransfer, updateTransfer } from './accounts.transfers';
 
 interface AccountRow {
   id: number;
@@ -21,16 +23,6 @@ interface AccountRow {
   opening_balance: number;
   is_default: number;
   is_active: number;
-  created_at: string;
-}
-
-interface TransferRow {
-  id: number;
-  from_account_id: number;
-  to_account_id: number;
-  amount: number;
-  date: string;
-  note: string | null;
   created_at: string;
 }
 
@@ -46,18 +38,6 @@ function mapAccount(row: AccountRow): Account {
     openingBalance: row.opening_balance,
     isDefault: row.is_default === 1,
     isActive: row.is_active === 1,
-    createdAt: row.created_at,
-  };
-}
-
-function mapTransfer(row: TransferRow): Transfer {
-  return {
-    id: row.id,
-    fromAccountId: row.from_account_id,
-    toAccountId: row.to_account_id,
-    amount: row.amount,
-    date: row.date,
-    note: row.note,
     createdAt: row.created_at,
   };
 }
@@ -215,7 +195,7 @@ export async function logTransfer(
 export async function getTransfers(monthISO: string): Promise<Transfer[]> {
   const rows = await query<TransferRow>(
     `SELECT id, from_account_id, to_account_id, amount, date, note, created_at
-     FROM transfers WHERE date LIKE ? ORDER BY date DESC, id DESC`,
+     FROM transfers WHERE date LIKE ? AND deleted_at IS NULL ORDER BY date DESC, id DESC`,
     [`${monthISO}-%`],
   );
   return rows.map(mapTransfer);
