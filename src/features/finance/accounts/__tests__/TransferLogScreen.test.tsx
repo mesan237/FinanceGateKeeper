@@ -11,6 +11,9 @@ jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getAccounts: jest.fn(),
   getAccountBalance: jest.fn(),
   logTransfer: jest.fn(),
+  getTransferById: jest.fn(),
+  updateTransfer: jest.fn().mockResolvedValue(undefined),
+  removeTransfer: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { TransferLogScreen } from '@/features/finance/accounts/TransferLogScreen';
@@ -82,5 +85,60 @@ describe('TransferLogScreen', () => {
       expect(mocked.logTransfer).toHaveBeenCalledWith(1, 2, 3000, expect.any(String), undefined),
     );
     expect(mockBack).toHaveBeenCalled();
+  });
+
+  describe('editing a transfer (VS-43)', () => {
+    beforeEach(() => {
+      mocked.getTransferById.mockResolvedValue({
+        id: 7,
+        fromAccountId: 1,
+        toAccountId: 2,
+        amount: 3000,
+        date: '2026-06-10',
+        note: 'Top-up',
+        createdAt: '2026-06-10T00:00:00Z',
+      });
+    });
+
+    it('opens pre-filled and saves the correction', async () => {
+      render(<TransferLogScreen transferId={7} />);
+
+      expect(await screen.findByText('Edit Transfer')).toBeTruthy();
+      await waitFor(() => expect(screen.getByTestId('transfer-amount').props.value).toBe('3000'));
+      expect(screen.getByTestId('transfer-note').props.value).toBe('Top-up');
+
+      fireEvent.changeText(screen.getByTestId('transfer-amount'), '3500');
+      fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() =>
+        expect(mocked.updateTransfer).toHaveBeenCalledWith(7, {
+          fromAccountId: 1,
+          toAccountId: 2,
+          amount: 3500,
+          date: '2026-06-10',
+          note: 'Top-up',
+        }),
+      );
+      expect(mocked.logTransfer).not.toHaveBeenCalled();
+      await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    });
+
+    it('removes the transfer after confirmation', async () => {
+      render(<TransferLogScreen transferId={7} />);
+      await waitFor(() => expect(screen.getByTestId('transfer-amount').props.value).toBe('3000'));
+
+      fireEvent.press(screen.getByTestId('transfer-delete'));
+      fireEvent.press(await screen.findByTestId('transfer-delete-confirm'));
+
+      await waitFor(() => expect(mocked.removeTransfer).toHaveBeenCalledWith(7));
+      await waitFor(() => expect(mockBack).toHaveBeenCalled());
+    });
+
+    it('offers no Delete while logging a new transfer', async () => {
+      render(<TransferLogScreen />);
+      await screen.findByTestId('transfer-from-trigger');
+
+      expect(screen.queryByTestId('transfer-delete')).toBeNull();
+    });
   });
 });

@@ -80,6 +80,12 @@ export const accounts: Translation<typeof en> = {
     notePlaceholder: 'Note (facultatif)',
     note: 'Note',
     logged: 'Virement enregistré',
+    editTitle: 'Modifier le virement',
+    updated: 'Virement modifié',
+    removed: 'Virement supprimé',
+    delete: 'Supprimer le virement',
+    deleteTitle: 'Supprimer ce virement ?',
+    deleteBody: 'Les soldes des deux comptes reviennent à ce qu’ils étaient sans lui.',
   },
   errors: {
     saveFailed: "Impossible d'enregistrer le compte.",
@@ -95,5 +101,7 @@ export const accounts: Translation<typeof en> = {
     notExist: "Le compte {{id}} n'existe pas.",
     sameAccount: 'Impossible de virer vers le même compte.',
     transferAmount: 'Le montant du virement doit être un entier positif.',
+    transferDate: 'Choisissez une date valide pour le virement.',
+    transferNotFound: "Ce virement n'existe plus.",
   },
 };

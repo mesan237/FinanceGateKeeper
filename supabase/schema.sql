@@ -261,6 +261,7 @@ create table transfers (
   date            text not null,
   note            text,
   created_at      text not null,
+  deleted_at      text,           -- set when removed; removals sync, deletions do not (VS-43)
   updated_at      text not null
 );
 

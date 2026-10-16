@@ -77,6 +77,12 @@ export const accounts = {
     notePlaceholder: 'Note (optional)',
     note: 'Note',
     logged: 'Transfer logged',
+    editTitle: 'Edit Transfer',
+    updated: 'Transfer updated',
+    removed: 'Transfer removed',
+    delete: 'Delete transfer',
+    deleteTitle: 'Delete this transfer?',
+    deleteBody: 'Both account balances go back to what they were without it.',
   },
   errors: {
     saveFailed: 'Failed to save account.',
@@ -92,5 +98,7 @@ export const accounts = {
     notExist: 'Account {{id}} does not exist.',
     sameAccount: 'Cannot transfer to the same account.',
     transferAmount: 'Transfer amount must be a positive integer.',
+    transferDate: 'Pick a valid date for the transfer.',
+    transferNotFound: 'This transfer no longer exists.',
   },
 };

@@ -53,8 +53,8 @@ export async function getAccountBalance(id: number): Promise<number> {
   const parts = [
     { sign: '+', table: 'income', ...flow('account_id') },
     { sign: '-', table: 'expenses', ...flow('account_id') },
-    { sign: '+', table: 'transfers', ...flow('to_account_id') },
-    { sign: '-', table: 'transfers', ...flow('from_account_id') },
+    { sign: '+', table: 'transfers', ...flow('to_account_id', ' AND deleted_at IS NULL') },
+    { sign: '-', table: 'transfers', ...flow('from_account_id', ' AND deleted_at IS NULL') },
     { sign: '-', table: 'fund_transactions', ...flow('account_id', " AND direction = 'deposit'") },
     { sign: '-', table: 'project_transactions', ...flow('account_id', " AND source = 'manual'") },
   ];
@@ -144,10 +144,12 @@ export async function getAccountHistory(id: number): Promise<AccountHistoryEntry
        FROM expenses e LEFT JOIN categories c ON e.category_id = c.id WHERE e.account_id = ?
      UNION ALL
      SELECT 'transfer_out' AS kind, t.id AS ref_id, a.name AS label, t.amount AS amount, t.date AS date
-       FROM transfers t JOIN accounts a ON t.to_account_id = a.id WHERE t.from_account_id = ?
+       FROM transfers t JOIN accounts a ON t.to_account_id = a.id
+       WHERE t.from_account_id = ? AND t.deleted_at IS NULL
      UNION ALL
      SELECT 'transfer_in' AS kind, t.id AS ref_id, a.name AS label, t.amount AS amount, t.date AS date
-       FROM transfers t JOIN accounts a ON t.from_account_id = a.id WHERE t.to_account_id = ?
+       FROM transfers t JOIN accounts a ON t.from_account_id = a.id
+       WHERE t.to_account_id = ? AND t.deleted_at IS NULL
      UNION ALL
      SELECT 'fund_contribution' AS kind, f.id AS ref_id, f.reason AS label, f.amount AS amount, f.date AS date
        FROM fund_transactions f WHERE f.account_id = ? AND f.direction = 'deposit'

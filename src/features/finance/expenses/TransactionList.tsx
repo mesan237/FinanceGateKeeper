@@ -184,6 +184,7 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
               item={item}
               onPressExpense={(id) => router.push(`/expenses/${id}`)}
               onPressIncome={(id) => router.push(`/income/${id}`)}
+              onPressTransfer={(id) => router.push(`/transfers/${id}`)}
             />
           )}
         />

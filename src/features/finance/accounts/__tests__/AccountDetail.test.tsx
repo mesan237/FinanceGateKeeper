@@ -115,4 +115,12 @@ describe('AccountDetail', () => {
       await waitFor(() => expect(mocked.removeBalanceCheck).toHaveBeenCalledWith(7));
     });
   });
+
+  it('opens a transfer from the history for editing (VS-43)', async () => {
+    render(<AccountDetail accountId={1} />);
+
+    fireEvent.press(await screen.findByText('Transfer to MTN MoMo'));
+
+    expect(mockPush).toHaveBeenCalledWith('/transfers/12');
+  });
 });

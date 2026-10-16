@@ -40,6 +40,11 @@ export interface AccountStats {
   expensePercent: number; // 0–100
 }
 
+/** Every editable field of a transfer, as `updateTransfer` replaces them (VS-43). */
+export type TransferPatch = Pick<Transfer, 'fromAccountId' | 'toAccountId' | 'amount' | 'date'> & {
+  note?: string | null;
+};
+
 /** Fields the account form collects when creating a wallet. */
 export interface NewAccountFields {
   name: string;
