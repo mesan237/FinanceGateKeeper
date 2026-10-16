@@ -38,6 +38,7 @@ import { migration as addCategoryCostType } from '@/services/migrations/036_add_
 import { migration as walletIntegrity } from '@/services/migrations/037_wallet_integrity';
 import { migration as transferSoftDelete } from '@/services/migrations/038_transfer_soft_delete';
 import { migration as debtPayments } from '@/services/migrations/039_debt_payments';
+import { migration as expenseRefunds } from '@/services/migrations/040_expense_refunds';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -79,4 +80,5 @@ export const migrations: ReadonlyArray<Migration> = [
   walletIntegrity,
   transferSoftDelete,
   debtPayments,
+  expenseRefunds,
 ];

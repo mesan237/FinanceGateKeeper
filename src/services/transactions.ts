@@ -16,6 +16,7 @@ interface UnifiedRow {
   account_id: number | null;
   account_label: string | null;
   is_unplanned: number;
+  refund_of: number | null;
 }
 
 interface TransferRow {
@@ -52,7 +53,8 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
        NULL             AS source,
        e.account_id     AS account_id,
        ea.name          AS account_label,
-       e.is_unplanned   AS is_unplanned
+       e.is_unplanned   AS is_unplanned,
+       e.refund_of      AS refund_of
      FROM expenses e
      JOIN categories c ON e.category_id = c.id
      LEFT JOIN categories sc ON e.subcategory_id = sc.id
@@ -72,7 +74,8 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
        i.source AS source,
        i.account_id AS account_id,
        ia.name      AS account_label,
-       0            AS is_unplanned
+       0            AS is_unplanned,
+       NULL         AS refund_of
      FROM income i
      LEFT JOIN accounts ia ON i.account_id = ia.id
      WHERE i.date LIKE ?`,
@@ -104,6 +107,7 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
         accountId: row.account_id,
         accountLabel: row.account_label,
         isUnplanned: row.is_unplanned === 1,
+        refundOf: row.refund_of,
       };
     }
     const source = row.source!;

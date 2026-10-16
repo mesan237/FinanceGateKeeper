@@ -24,7 +24,8 @@
 --      total_budget 027, expenses.is_unplanned 032,
 --      planned_lists.due_date 033, categories.cost_type 036,
 --      quick_add_templates/recurring_expenses.account_id 037,
---      transfers.deleted_at 038, debts.account_id/deleted_at 039).
+--      transfers.deleted_at 038, debts.account_id/deleted_at 039,
+--      expenses.refund_of 040).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -113,6 +114,7 @@ create table if not exists expenses (
   is_recurring   integer not null default 0,
   account_id     text,          -- uuid of the account, or null
   is_unplanned   integer not null default 0,  -- the "imprévu" flag (VS-38)
+  refund_of      text,           -- uuid of the expense this refunds; amount is negative (VS-45)
   created_at     text not null,
   updated_at     text not null
 );
@@ -316,6 +318,7 @@ alter table recurring_expenses   add column if not exists account_id text;
 alter table transfers            add column if not exists deleted_at text;
 alter table debts                add column if not exists account_id text;
 alter table debts                add column if not exists deleted_at text;
+alter table expenses             add column if not exists refund_of text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

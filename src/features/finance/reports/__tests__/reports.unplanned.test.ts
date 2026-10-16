@@ -38,6 +38,7 @@ function expense(amount: number, isUnplanned = false): Expense {
     note: null,
     date: '2026-06-05',
     isRecurring: false,
+    refundOf: null,
     isUnplanned,
     accountId: null,
     createdAt: '2026-06-05T00:00:00.000Z',

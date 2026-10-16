@@ -1452,6 +1452,45 @@ counts as income or spending.
 
 ---
 
+### VS-45: Refunds 🔄 In Progress
+
+**Priority:** Medium — Phase 1b item #5 (user choice 5.A); closes Phase 1b
+**Blocked by:** VS-44
+
+**Scope:**
+
+Money that comes back for a purchase used to be either edited into the
+original (losing the month it arrived) or logged as income (inflating income).
+
+- Migration 040 adds `expenses.refund_of`. A refund is an expense row with a
+  **negative** amount in the purchase's category, dated the day the money came
+  back and credited to an account. Every total that sums expenses — month
+  spend, envelopes, reports, the typical month, account balances — nets it out
+  in the month of the refund with no second ledger.
+- `expenses.refunds`: record (capped at what is left to refund; only a purchase
+  can be refunded), list, remove. Deleting a purchase deletes its refunds; a
+  purchase cannot be edited below what was refunded; a refund row cannot be
+  edited directly.
+- Feed: a refund reads "Refund · Food +5 000" and opens its purchase. The
+  expense detail gains a Refunds section and a "Record refund" sheet.
+- The report donut leaves out a category that refunds turned negative.
+- Supabase patch 044 (folded into 037 and `schema.sql`) must run before a build
+  with migration 040 syncs.
+
+**TDD Anchor:**
+
+- Test: `recordRefund` — category, month and account effects; over-refund, refund-of-refund and bad input rejected.
+- Test: removal undoes it; deleting a purchase takes its refunds; edit guards.
+- Test: feed row and tap target; donut skips negative categories; refunds section states.
+
+**Done when:** a returned pair of shoes shows as money back in the month it
+came, in the right category and account, without touching income.
+
+**Known limitation:** a refund of an imprévu is not itself flagged, so the
+month's imprévus total is not reduced (the month's spending is).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

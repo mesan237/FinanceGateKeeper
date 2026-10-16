@@ -14,6 +14,8 @@ export interface ExpenseEntry {
   accountLabel: string | null;
   /** Marked by the user as an imprévu — spending that caught them off guard. */
   isUnplanned: boolean;
+  /** On a refund row (negative amount): the purchase it refunds (VS-45). */
+  refundOf: number | null;
 }
 
 export interface IncomeEntry {

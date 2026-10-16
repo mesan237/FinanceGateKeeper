@@ -64,6 +64,7 @@ function expense(partial: Partial<Expense> & Pick<Expense, 'amount' | 'categoryI
     subcategoryId: null,
     note: null,
     isRecurring: false,
+    refundOf: null,
     isUnplanned: false,
     accountId: null,
     createdAt: '2026-06-01T00:00:00.000Z',

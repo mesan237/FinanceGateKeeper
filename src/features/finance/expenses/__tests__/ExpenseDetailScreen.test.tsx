@@ -20,6 +20,13 @@ jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
 }));
 
 
+// The refunds section reads its own data; these suites are about the purchase.
+jest.mock('@/features/finance/expenses/expenses.refunds', () => ({
+  getRefunds: jest.fn().mockResolvedValue([]),
+  recordRefund: jest.fn(),
+  removeRefund: jest.fn(),
+}));
+
 const mockGetExpenseById = jest.fn();
 const mockUpdateExpense = jest.fn();
 const mockDeleteExpense = jest.fn();

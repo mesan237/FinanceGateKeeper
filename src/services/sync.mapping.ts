@@ -12,7 +12,14 @@ export type Row = Record<string, unknown>;
  */
 export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
   categories: { parent_id: 'categories' },
-  expenses: { category_id: 'categories', subcategory_id: 'categories', account_id: 'accounts' },
+  // `refund_of` points at another expense (VS-45); `sortForInsert` inserts
+  // purchases before the refunds that reference them.
+  expenses: {
+    category_id: 'categories',
+    subcategory_id: 'categories',
+    account_id: 'accounts',
+    refund_of: 'expenses',
+  },
   income: { account_id: 'accounts' },
   category_budgets: { category_id: 'categories' },
   planned_items: {
