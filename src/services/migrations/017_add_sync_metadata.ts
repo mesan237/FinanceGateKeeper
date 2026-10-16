@@ -25,6 +25,7 @@ export const SYNCED_TABLES = [
   'transfers',
   'planned_lists',
   'planned_items',
+  'balance_checks',
 ] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
@@ -39,6 +40,7 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'category_budgets',
   'planned_lists',
   'planned_items',
+  'balance_checks',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -133,6 +135,7 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'created_at',
   ],
   zero_days: ['date', 'confirmed_at'],
+  balance_checks: ['account_id', 'balance', 'difference', 'date', 'note', 'created_at', 'deleted_at'],
   debts: [
     'person_name',
     'amount',
@@ -174,6 +177,19 @@ export async function createUpdateTrigger(
          WHERE rowid = NEW.rowid;
      END`,
   );
+}
+
+/**
+ * Whether `table` exists yet. Migrations that loop over `SYNCED_TABLES` use it
+ * to skip tables a later migration creates, since a fresh install runs them in
+ * order (VS-42 added `balance_checks` after 034/035 were written).
+ */
+export async function tableExists(db: SqliteDriver, table: string): Promise<boolean> {
+  const rows = await db.query<{ n: number }>(
+    `SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name = ?`,
+    [table],
+  );
+  return (rows[0]?.n ?? 0) > 0;
 }
 
 export async function addSyncColumns(db: SqliteDriver, table: SyncedTable): Promise<void> {

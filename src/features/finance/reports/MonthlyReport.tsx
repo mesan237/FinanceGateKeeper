@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
@@ -20,9 +20,10 @@ import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
 import { OptimizationSuggestions } from './OptimizationSuggestions';
 import { SpendingDonutChart } from './SpendingDonutChart';
+import { TypicalMonthCard } from './TypicalMonthCard';
 import { UnplannedCard } from './UnplannedCard';
 import { expenseSpentPct } from './reports.service';
-import { useMonthlyReport } from './reports.hooks';
+import { useMonthlyReport, useSpendingProfile } from './reports.hooks';
 
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
@@ -38,9 +39,19 @@ export function MonthlyReport() {
   const { t } = useTranslation('reports');
   const { report, monthISO, loading, error, goToPrevMonth, goToNextMonth, isCurrentMonth } =
     useMonthlyReport();
+  // The typical month is not tied to the month being browsed; it is reloaded on
+  // focus so a category re-tagged as fixed or variable shows on return (VS-41).
+  const { profile, refresh: refreshProfile } = useSpendingProfile();
+  useFocusEffect(
+    useCallback(() => {
+      void refreshProfile();
+    }, [refreshProfile]),
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      {profile ? <TypicalMonthCard profile={profile} /> : null}
+
       <NavArrows
         label={monthLabel(monthISO)}
         onPrev={goToPrevMonth}

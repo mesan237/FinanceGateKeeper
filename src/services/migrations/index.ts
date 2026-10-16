@@ -34,6 +34,8 @@ import { migration as addExpenseIsUnplanned } from '@/services/migrations/032_ad
 import { migration as addPlannedListDueDate } from '@/services/migrations/033_add_planned_list_due_date';
 import { migration as stampUuidsDuringSync } from '@/services/migrations/034_stamp_uuids_during_sync';
 import { migration as markEditsDuringSync } from '@/services/migrations/035_mark_edits_during_sync';
+import { migration as addCategoryCostType } from '@/services/migrations/036_add_category_cost_type';
+import { migration as walletIntegrity } from '@/services/migrations/037_wallet_integrity';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -71,4 +73,6 @@ export const migrations: ReadonlyArray<Migration> = [
   addPlannedListDueDate,
   stampUuidsDuringSync,
   markEditsDuringSync,
+  addCategoryCostType,
+  walletIntegrity,
 ];

@@ -85,9 +85,9 @@ function income(amount: number, date: string): Income {
 }
 
 const CATEGORIES: Category[] = [
-  { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false },
-  { id: 2, name: 'Transport', parentId: null, isDefault: true, isHidden: false },
-  { id: 3, name: 'Shopping', parentId: null, isDefault: true, isHidden: false },
+  { id: 1, name: 'Food', parentId: null, isDefault: true, isHidden: false, costType: null },
+  { id: 2, name: 'Transport', parentId: null, isDefault: true, isHidden: false, costType: null },
+  { id: 3, name: 'Shopping', parentId: null, isDefault: true, isHidden: false, costType: null },
 ];
 
 beforeEach(() => {

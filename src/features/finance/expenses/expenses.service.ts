@@ -44,11 +44,12 @@ interface CategoryRow {
   parent_id: number | null;
   is_default: number;
   is_hidden: number;
+  cost_type: Category['costType'];
 }
 
 const EXPENSE_COLUMNS =
   'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at';
-const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden';
+const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden, cost_type';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
 function mapExpense(row: ExpenseRow): Expense {
@@ -73,6 +74,7 @@ function mapCategory(row: CategoryRow): Category {
     parentId: row.parent_id,
     isDefault: row.is_default === 1,
     isHidden: row.is_hidden === 1,
+    costType: row.cost_type,
   };
 }
 
@@ -295,6 +297,7 @@ interface QuickAddTemplateRow {
   amount: number;
   category_id: number;
   subcategory_id: number | null;
+  account_id: number | null;
   sort_order: number;
   created_at: string;
 }
@@ -308,13 +311,14 @@ interface RecurringExpenseRow {
   frequency: Frequency;
   next_due_date: string;
   is_active: number;
+  account_id: number | null;
   created_at: string;
 }
 
 const QUICK_ADD_COLUMNS =
-  'id, label, amount, category_id, subcategory_id, sort_order, created_at';
+  'id, label, amount, category_id, subcategory_id, account_id, sort_order, created_at';
 const RECURRING_COLUMNS =
-  'id, label, amount, category_id, subcategory_id, frequency, next_due_date, is_active, created_at';
+  'id, label, amount, category_id, subcategory_id, frequency, next_due_date, is_active, account_id, created_at';
 
 const FREQUENCY_SET: ReadonlySet<string> = new Set<Frequency>(['monthly', 'weekly']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -326,6 +330,7 @@ function mapQuickAddTemplate(row: QuickAddTemplateRow): QuickAddTemplate {
     amount: row.amount,
     categoryId: row.category_id,
     subcategoryId: row.subcategory_id,
+    accountId: row.account_id,
     sortOrder: row.sort_order,
     createdAt: row.created_at,
   };
@@ -341,6 +346,7 @@ function mapRecurringExpense(row: RecurringExpenseRow): RecurringExpense {
     frequency: row.frequency,
     nextDueDate: row.next_due_date,
     isActive: row.is_active === 1,
+    accountId: row.account_id,
     createdAt: row.created_at,
   };
 }
@@ -427,9 +433,17 @@ export async function createQuickAddTemplate(input: NewQuickAddTemplate): Promis
   );
   await execute(
     `INSERT INTO quick_add_templates
-       (label, amount, category_id, subcategory_id, sort_order, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [label, input.amount, input.categoryId, input.subcategoryId ?? null, next, new Date().toISOString()],
+       (label, amount, category_id, subcategory_id, account_id, sort_order, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      label,
+      input.amount,
+      input.categoryId,
+      input.subcategoryId ?? null,
+      input.accountId ?? null,
+      next,
+      new Date().toISOString(),
+    ],
   );
   const [row] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');
   return row.id;
@@ -474,6 +488,10 @@ export async function updateQuickAddTemplate(
     sets.push('subcategory_id = ?');
     params.push(patch.subcategoryId);
   }
+  if (patch.accountId !== undefined) {
+    sets.push('account_id = ?');
+    params.push(patch.accountId);
+  }
   if (sets.length === 0) return;
 
   params.push(id);
@@ -507,6 +525,7 @@ export async function logFromQuickAddTemplate(id: number, dateISO?: string): Pro
     note: null,
     date: dateISO ?? toISODate(new Date()),
     isRecurring: false,
+    accountId: row.account_id,
   });
 }
 
@@ -525,8 +544,8 @@ export async function createRecurringExpense(input: NewRecurringExpense): Promis
 
   await execute(
     `INSERT INTO recurring_expenses
-       (label, amount, category_id, subcategory_id, frequency, next_due_date, is_active, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+       (label, amount, category_id, subcategory_id, frequency, next_due_date, is_active, account_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       label,
       input.amount,
@@ -535,6 +554,7 @@ export async function createRecurringExpense(input: NewRecurringExpense): Promis
       input.frequency,
       input.nextDueDate,
       input.isActive ? 1 : 0,
+      input.accountId ?? null,
       new Date().toISOString(),
     ],
   );
@@ -593,6 +613,10 @@ export async function updateRecurringExpense(
   if (patch.isActive !== undefined) {
     sets.push('is_active = ?');
     params.push(patch.isActive ? 1 : 0);
+  }
+  if (patch.accountId !== undefined) {
+    sets.push('account_id = ?');
+    params.push(patch.accountId);
   }
   if (sets.length === 0) return;
 
@@ -667,14 +691,15 @@ export async function runRecurringAutoLog(
       try {
         await execute(
           `INSERT INTO expenses
-             (amount, category_id, subcategory_id, note, date, is_recurring, created_at)
-           VALUES (?, ?, ?, ?, ?, 1, ?)`,
+             (amount, category_id, subcategory_id, note, date, is_recurring, account_id, created_at)
+           VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
           [
             row.amount,
             row.category_id,
             row.subcategory_id,
             null,
             dueDate,
+            row.account_id,
             new Date().toISOString(),
           ],
         );

@@ -22,7 +22,8 @@
 --   3. Adds the columns later migrations introduced to tables that already
 --      existed (account_id 019, allocation_status 022, projects.deleted_at 023,
 --      total_budget 027, expenses.is_unplanned 032,
---      planned_lists.due_date 033).
+--      planned_lists.due_date 033, categories.cost_type 036,
+--      quick_add_templates/recurring_expenses.account_id 037).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -35,7 +36,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers'
+    'planned_items', 'transfers', 'balance_checks'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -58,6 +59,7 @@ create table if not exists categories (
   is_default  integer not null default 0,
   sort_order  integer not null default 0,
   is_hidden   integer not null default 0,
+  cost_type   text,            -- 'fixed' | 'variable', or null = variable / inherit (VS-41)
   updated_at  text not null
 );
 
@@ -187,6 +189,7 @@ create table if not exists quick_add_templates (
   amount         integer not null,
   category_id    text,           -- uuid of the category
   subcategory_id text,           -- uuid of the subcategory, or null
+  account_id     text,           -- uuid of the wallet it is paid from, or null (VS-42)
   sort_order     integer not null default 0,
   created_at     text not null,
   updated_at     text not null
@@ -199,6 +202,7 @@ create table if not exists recurring_expenses (
   amount         integer not null,
   category_id    text,           -- uuid of the category
   subcategory_id text,           -- uuid of the subcategory, or null
+  account_id     text,           -- uuid of the wallet it is paid from, or null (VS-42)
   frequency      text not null,
   next_due_date  text not null,
   is_active      integer not null default 1,
@@ -264,6 +268,19 @@ create table if not exists transfers (
   updated_at      text not null
 );
 
+create table if not exists balance_checks (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  account_id  text not null,     -- uuid of the wallet
+  balance     integer not null,  -- what the wallet actually held at `date` (VS-42)
+  difference  integer not null default 0,
+  date        text not null,
+  note        text,
+  created_at  text not null,
+  deleted_at  text,
+  updated_at  text not null
+);
+
 -- ----------------------------------------------------------------
 -- 3. Columns added after these tables first shipped.
 -- ----------------------------------------------------------------
@@ -276,6 +293,9 @@ alter table allocations          add column if not exists total_budget integer;
 alter table fund_transactions    add column if not exists account_id text;
 alter table project_transactions add column if not exists account_id text;
 alter table planned_lists        add column if not exists due_date text;
+alter table categories           add column if not exists cost_type text;
+alter table quick_add_templates  add column if not exists account_id text;
+alter table recurring_expenses   add column if not exists account_id text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).
@@ -287,7 +307,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers'
+    'planned_items', 'transfers', 'balance_checks'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

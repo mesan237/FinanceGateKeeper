@@ -17,6 +17,7 @@ import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { CategoryFormModal } from './CategoryFormModal';
+import { CostTypeToggle } from './CostTypeToggle';
 import { useCategories } from './expenses.hooks';
 import type { Category } from './expenses.types';
 
@@ -37,8 +38,27 @@ interface AddTarget {
 export function CategoryManager() {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation(['expenses', 'common']);
-  const { managedCategories, subcategoriesOf, addCategory, rename, remove, toggleHidden, reorder } =
-    useCategories();
+  const {
+    managedCategories,
+    subcategoriesOf,
+    addCategory,
+    rename,
+    remove,
+    toggleHidden,
+    costTypeOf,
+    toggleCostType,
+    reorder,
+  } = useCategories();
+
+  // The Fixed / Variable chip for a row; subcategories show what they inherit.
+  const renderCostType = (cat: Category) => (
+    <CostTypeToggle
+      testID={`cost-type-${cat.id}`}
+      costType={costTypeOf(cat)}
+      name={displayCategoryName(cat.name, cat.isDefault)}
+      onToggle={() => toggleCostType(cat)}
+    />
+  );
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftName, setDraftName] = useState('');
@@ -123,6 +143,7 @@ export function CategoryManager() {
             />
           ) : (
             <>
+              {renderCostType(cat)}
               <IconButton
                 icon="edit"
                 accessibilityLabel={t('manager.rename', { name: displayCategoryName(cat.name, cat.isDefault) })}
@@ -210,6 +231,7 @@ export function CategoryManager() {
                 <>
                   {editing ? null : (
                     <View style={styles.toolbar}>
+                      {renderCostType(parent)}
                       <IconButton
                         icon="edit"
                         accessibilityLabel={t('manager.rename', { name: displayCategoryName(parent.name, parent.isDefault) })}

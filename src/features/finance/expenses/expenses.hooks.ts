@@ -6,6 +6,7 @@ import { getTransactionFeed } from '@/services/transactions';
 import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
 
+import { effectiveCostType, setCategoryCostType, toggledCostTypeTag } from './expenses.costType';
 import * as expenseService from './expenses.service';
 import type {
   Category,
@@ -286,6 +287,18 @@ export function useCategories() {
     [refresh],
   );
 
+  // Flips a category between fixed and variable (VS-41). The stored tag is
+  // worked out from the whole tree so a subcategory falls back to inheriting.
+  const costTypeOf = useCallback((category: Category) => effectiveCostType(category, all), [all]);
+
+  const toggleCostType = useCallback(
+    async (category: Category) => {
+      await setCategoryCostType(category.id, toggledCostTypeTag(category, all));
+      await refresh();
+    },
+    [all, refresh],
+  );
+
   const reorder = useCallback(
     async (orderedIds: number[]) => {
       await expenseService.reorderCategories(orderedIds);
@@ -306,6 +319,8 @@ export function useCategories() {
     rename,
     remove,
     toggleHidden,
+    costTypeOf,
+    toggleCostType,
     reorder,
   };
 }

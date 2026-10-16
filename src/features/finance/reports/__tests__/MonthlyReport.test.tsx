@@ -7,8 +7,19 @@ import type {
 } from '@/features/finance/reports/reports.types';
 
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn() }),
+jest.mock('expo-router', () => {
+  const { useEffect } = jest.requireActual<typeof import('react')>('react');
+  return {
+    useRouter: () => ({ push: mockPush, back: jest.fn(), replace: jest.fn() }),
+    // Runs the focus callback once on mount, as a first focus would.
+    useFocusEffect: (callback: () => void) => useEffect(callback, [callback]),
+  };
+});
+
+const mockGetProfile = jest.fn();
+jest.mock('@/features/finance/reports/reports.profile', () => ({
+  ...jest.requireActual('@/features/finance/reports/reports.profile'),
+  getSpendingProfile: () => mockGetProfile(),
 }));
 
 jest.mock('@/features/finance/reports/reports.service', () => ({
@@ -54,6 +65,8 @@ function buildReport(overrides: Partial<MonthlyReportData> = {}): MonthlyReportD
 beforeEach(() => {
   jest.clearAllMocks();
   mockGetMonthly.mockResolvedValue(buildReport());
+  // No profile by default: the other suites are about the month's report.
+  mockGetProfile.mockResolvedValue(null);
 });
 
 // This suite asserts on calendar labels and on "the current month", so it pins
@@ -220,5 +233,20 @@ describe('MonthlyReport', () => {
       expect(await screen.findByText('3 imprévus')).toBeTruthy();
       expect(screen.getByText('40 % des dépenses du mois')).toBeTruthy();
     });
+  });
+
+  it('shows "your typical month", loaded when the tab comes into focus (VS-41)', async () => {
+    mockGetMonthly.mockResolvedValue(buildReport());
+    mockGetProfile.mockResolvedValue({
+      months: [{ month: '2026-05', coverage: 0.9, isComplete: true }],
+      average: { total: 150_000, fixed: 100_000, variable: 50_000, unexpected: 0 },
+      variableCategories: [],
+      fixedCategories: [],
+    });
+
+    render(<MonthlyReport />);
+
+    expect(await screen.findByTestId('typical-month-card')).toBeTruthy();
+    expect(screen.getByTestId('typical-total')).toHaveTextContent('150 000 FCFA a month');
   });
 });

@@ -45,6 +45,11 @@ export const expenses = {
   },
   manager: {
     title: 'Categories',
+    costType: {
+      fixed: 'Fixed',
+      variable: 'Variable',
+      label: '{{name}}: {{type}} spending. Tap to change.',
+    },
     newCategory: '+ New category',
     addSubcategory: '+ Add subcategory',
     hiddenName: '{{name}} (hidden)',

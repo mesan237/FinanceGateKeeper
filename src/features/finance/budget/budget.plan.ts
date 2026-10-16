@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 
+import { getMonthCoverage } from '@/features/finance/expenses/expenses.coverage';
 import { getAllCategories, getCategories } from '@/features/finance/expenses/expenses.service';
 import { toISODate } from '@/utils/formatDate';
 import { prevMonthISO } from '@/utils/monthMath';
@@ -155,12 +156,15 @@ export async function getBudgetOverview(
  * `monthISO` — the "budget from what you actually spend" suggestion that
  * removes the blank-page problem on a first plan.
  *
- * The average divides by the number of months that actually had spending, not
- * by `lookback`. Dividing by the full window would halve the suggestion for
- * someone one month into using the app, and a suggestion that is reliably too
- * low teaches the user to ignore suggestions.
+ * Only **complete** months count (see `expenses.coverage`), and every complete
+ * month counts — a month with no spend in a category contributes a real zero
+ * (VS-41). Dividing by "months that had spend" instead turned one annual
+ * 120,000 bill into a 120,000 suggestion every month, and a half-logged first
+ * month made the user look frugal. An incomplete month is left out entirely
+ * rather than guessed at.
  *
- * @returns Category id → suggested whole-FCFA amount. Empty with no history.
+ * @returns Category id → suggested whole-FCFA amount. Empty until at least one
+ *   month in the window is complete.
  */
 export async function suggestFromHistory(
   monthISO: string,
@@ -173,22 +177,22 @@ export async function suggestFromHistory(
     months.push(cursor);
   }
 
-  const perMonth = await Promise.all(months.map(getSpendByCategory));
+  const coverage = await Promise.all(months.map(getMonthCoverage));
+  const complete = coverage.filter((c) => c.isComplete).map((c) => c.month);
+  if (complete.length === 0) return new Map();
 
-  const totals = new Map<number, { sum: number; months: number }>();
+  const perMonth = await Promise.all(complete.map(getSpendByCategory));
+
+  const totals = new Map<number, number>();
   for (const spend of perMonth) {
     for (const [categoryId, amount] of spend) {
-      if (amount <= 0) continue;
-      const entry = totals.get(categoryId) ?? { sum: 0, months: 0 };
-      entry.sum += amount;
-      entry.months += 1;
-      totals.set(categoryId, entry);
+      totals.set(categoryId, (totals.get(categoryId) ?? 0) + amount);
     }
   }
 
   const suggestions = new Map<number, number>();
-  for (const [categoryId, { sum, months: n }] of totals) {
-    suggestions.set(categoryId, Math.round(sum / n));
+  for (const [categoryId, sum] of totals) {
+    if (sum > 0) suggestions.set(categoryId, Math.round(sum / complete.length));
   }
   return suggestions;
 }

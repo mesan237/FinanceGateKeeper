@@ -24,7 +24,9 @@ function watchedColumns(): Record<string, string> {
   for (const table of SYNCED_TABLES) {
     const row = sqlite
       .prepare(`SELECT sql FROM sqlite_master WHERE type = 'trigger' AND name = ?`)
-      .get(`trg_${table}_upd`) as { sql: string };
+      .get(`trg_${table}_upd`) as { sql: string } | undefined;
+    // Tables a later migration creates have no trigger yet at 035.
+    if (!row) continue;
     out[table] = /AFTER UPDATE OF (.+?) ON/s.exec(row.sql)![1];
   }
   return out;
@@ -35,7 +37,8 @@ describe('migration 035 — edits saved during a sync still sync', () => {
     await runMigrations(driver, migrations.filter((m) => m.id < 35));
     const before = watchedColumns();
 
-    await runMigrations(driver, migrations);
+    // Only 035 itself: later migrations may legitimately watch new columns.
+    await runMigrations(driver, migrations.filter((m) => m.id <= 35));
 
     expect(watchedColumns()).toEqual(before);
   });

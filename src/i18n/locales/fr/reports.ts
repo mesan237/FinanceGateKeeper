@@ -33,6 +33,25 @@ export const reports: Translation<typeof en> = {
     none: 'Aucun imprévu ce mois-ci.',
     hint: 'Activez « Imprévu » en saisissant une dépense pour la compter ici.',
   },
+  typical: {
+    title: 'Votre mois type',
+    perMonth: '{{amount}} par mois',
+    basedOn_one: 'Sur {{count}} mois complet : {{months}}.',
+    basedOn_other: 'Sur {{count}} mois complets : {{months}}.',
+    fixed: 'Fixe',
+    variable: 'Variable',
+    unexpected: 'Imprévus',
+    actTitle: 'Là où de nouvelles habitudes paient',
+    range: 'De {{low}} à {{high}} par mois',
+    potential:
+      'Dépenser comme votre mois le moins cher dans chaque catégorie variable vous ferait garder {{amount}} par mois.',
+    fixedList: 'Charges fixes : {{names}}.',
+    notEnough: "Pas encore assez d'historique",
+    notEnoughHint:
+      "Un mois compte dès que {{percent}} % de ses jours sont saisis, avec une dépense ou une journée sans dépense confirmée.",
+    coverage: '{{month}} : {{percent}} % saisi',
+    tagHint: 'Définir les catégories fixes ou variables',
+  },
   comparison: {
     title: 'Dépenses par rapport au mois précédent',
     empty: 'Aucune donnée de comparaison pour le mois dernier.',

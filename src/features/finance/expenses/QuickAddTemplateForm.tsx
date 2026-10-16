@@ -8,6 +8,8 @@ import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
 import { useCategories } from './expenses.hooks';
@@ -44,6 +46,9 @@ export function QuickAddTemplateForm({
   const [categoryLabel, setCategoryLabel] = useState<string | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The wallet each tap is paid from (VS-42). New templates start on the default.
+  const defaultAccountId = useDefaultAccountId();
+  const [accountId, setAccountId] = useState<number | null>(null);
 
   // Re-seed the form whenever it opens (prefilled in edit mode, blank in create).
   useEffect(() => {
@@ -55,14 +60,16 @@ export function QuickAddTemplateForm({
       setCategoryId(template.categoryId);
       setSubcategoryId(template.subcategoryId);
       setCategoryLabel(displayLabelFor(template.categoryId, template.subcategoryId));
+      setAccountId(template.accountId);
     } else {
       setLabel('');
       setAmount('');
       setCategoryId(null);
       setSubcategoryId(null);
       setCategoryLabel(null);
+      setAccountId(defaultAccountId);
     }
-  }, [visible, template, displayLabelFor]);
+  }, [visible, template, displayLabelFor, defaultAccountId]);
 
   const handleSave = async () => {
     const numericAmount = Number(amount);
@@ -75,6 +82,7 @@ export function QuickAddTemplateForm({
       amount: Math.trunc(numericAmount),
       categoryId,
       subcategoryId,
+      accountId,
     });
     onClose();
   };
@@ -111,6 +119,13 @@ export function QuickAddTemplateForm({
         <Button
           label={categoryLabel ?? t('selectCategory')}
           onPress={() => setPickerVisible(true)}
+        />
+
+        <AccountPicker
+          testID="quick-add-account"
+          label={t('entry.account')}
+          value={accountId}
+          onChange={setAccountId}
         />
 
         {error ? <Typography style={styles.error}>{error}</Typography> : null}

@@ -4,6 +4,7 @@ import {
   createUpdateTrigger,
   DATA_COLUMNS,
   SYNCED_TABLES,
+  tableExists,
   type SyncedTable,
 } from '@/services/migrations/017_add_sync_metadata';
 
@@ -36,6 +37,8 @@ export const migration: Migration = {
   name: '035_mark_edits_during_sync',
   async up(db) {
     for (const table of SYNCED_TABLES) {
+      // A table a later migration creates gets its trigger there instead.
+      if (!(await tableExists(db, table))) continue;
       await createUpdateTrigger(db, table, [
         ...DATA_COLUMNS[table],
         ...(APPENDED_COLUMNS[table] ?? []),

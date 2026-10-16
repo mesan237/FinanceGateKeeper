@@ -88,3 +88,51 @@ export interface MonthlyReport {
   comparison: MonthComparison | null;
   suggestions: OptimizationSuggestion[];
 }
+
+// ---- VS-41: the typical month ------------------------------------------------
+
+/** How an expense counts in the typical month: a commitment, a choice, or a surprise. */
+export type SpendKind = 'fixed' | 'variable' | 'unexpected';
+
+/** One month of the observation window and whether it is complete enough to trust. */
+export interface ProfileMonth {
+  /** `YYYY-MM`. */
+  month: string;
+  /** Share of the month's days with an expense or a zero-spend confirmation, 0–1. */
+  coverage: number;
+  isComplete: boolean;
+}
+
+/** A category's monthly spend across the complete months of the window. */
+export interface ProfileCategory {
+  categoryId: number;
+  categoryLabel: string;
+  /** Average per complete month, whole FCFA. */
+  average: number;
+  /** The cheapest and dearest complete month — the room a habit change can win back. */
+  lowest: number;
+  highest: number;
+}
+
+/** Average monthly spend, split by kind. `total` is the sum of the three. */
+export interface ProfileAverage {
+  total: number;
+  fixed: number;
+  variable: number;
+  unexpected: number;
+}
+
+/**
+ * "Your typical month": what the last complete months actually cost, and which
+ * part of it is fixed versus open to new habits. `average` is null until at
+ * least one month in the window is complete.
+ */
+export interface SpendingProfile {
+  /** The observation window, oldest first. */
+  months: ProfileMonth[];
+  average: ProfileAverage | null;
+  /** Variable categories, highest average first — where behaviour can change. */
+  variableCategories: ProfileCategory[];
+  /** Fixed categories, highest average first. */
+  fixedCategories: ProfileCategory[];
+}
