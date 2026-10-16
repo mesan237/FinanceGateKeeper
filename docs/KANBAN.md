@@ -1379,6 +1379,37 @@ balance has no effect on the balance (the check supersedes it).
 
 ---
 
+### VS-43: Edit and Remove Transfers 🔄 In Progress
+
+**Priority:** High — Phase 1b item #3 (user choice 3.A)
+**Blocked by:** VS-42 (Wallet integrity)
+
+**Scope:**
+
+A transfer logged with the wrong amount or wallet used to be permanent.
+
+- Migration 038 adds `transfers.deleted_at`; removal is a soft delete so it
+  syncs instead of resurrecting on the next restore. Every read — balances,
+  account history, the monthly list, the Transactions feed — skips removed rows.
+- `accounts.transfers`: `getTransferById`, `updateTransfer` (validated like a
+  new transfer), `removeTransfer`.
+- Transfer rows in the feed and in an account's history open
+  `/transfers/[id]`: the transfer form pre-filled, with a confirm-guarded Delete.
+- Supabase patch 042 (folded into 037 and `schema.sql`) must run before a build
+  with migration 038 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 038 — soft delete and edits mark the row pending.
+- Test: `updateTransfer` moves both balances; rejects same wallet, bad amount or date, removed transfers.
+- Test: `removeTransfer` drops the transfer from balances, history, monthly list and feed, keeping the row.
+- Test: screens — edit mode pre-fills and saves; Delete confirms; feed and history rows open the edit route.
+
+**Done when:** a mistaken transfer can be corrected or removed from where the
+user sees it, both wallet balances follow, and the change reaches the cloud.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
