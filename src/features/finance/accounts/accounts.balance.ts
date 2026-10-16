@@ -32,7 +32,9 @@ async function latestCheck(id: number): Promise<Checkpoint | null> {
 /**
  * Computes a wallet's live balance from its transaction history — never stored.
  * Adds income credits and transfers in; subtracts expense debits, transfers
- * out, manual fund deposits, and manual project contributions. Rows with a NULL
+ * out, manual fund deposits, and manual project contributions. Debts move it
+ * too (VS-44): a loan given lowers the wallet it left and a loan received
+ * raises the one it landed in; repayments move money back. Rows with a NULL
  * `account_id` (legacy entries and automated allocation deposits) are excluded
  * because they touch no real wallet.
  *
@@ -44,12 +46,18 @@ async function latestCheck(id: number): Promise<Checkpoint | null> {
  */
 export async function getAccountBalance(id: number): Promise<number> {
   const check = await latestCheck(id);
-  const after = check ? ' AND (date > ? OR (date = ? AND created_at > ?))' : '';
   const afterParams = check ? [check.date, check.date, check.created_at] : [];
-  const flow = (owner: string, extra = '') => ({
-    sql: `${owner} = ?${extra}${after}`,
+  // `col` qualifies the columns when the source is a join (repayments need
+  // their debt's direction).
+  const flow = (owner: string, extra = '', col = '') => ({
+    col,
+    sql:
+      `${col}${owner} = ?${extra}` +
+      (check ? ` AND (${col}date > ? OR (${col}date = ? AND ${col}created_at > ?))` : ''),
     params: [id, ...afterParams],
   });
+  const payments = 'debt_payments p JOIN debts d ON d.id = p.debt_id';
+  const livePayment = ' AND p.deleted_at IS NULL AND d.deleted_at IS NULL';
   const parts = [
     { sign: '+', table: 'income', ...flow('account_id') },
     { sign: '-', table: 'expenses', ...flow('account_id') },
@@ -57,13 +65,17 @@ export async function getAccountBalance(id: number): Promise<number> {
     { sign: '-', table: 'transfers', ...flow('from_account_id', ' AND deleted_at IS NULL') },
     { sign: '-', table: 'fund_transactions', ...flow('account_id', " AND direction = 'deposit'") },
     { sign: '-', table: 'project_transactions', ...flow('account_id', " AND source = 'manual'") },
+    { sign: '-', table: 'debts', ...flow('account_id', " AND deleted_at IS NULL AND direction = 'lent'") },
+    { sign: '+', table: 'debts', ...flow('account_id', " AND deleted_at IS NULL AND direction = 'owed'") },
+    { sign: '+', table: payments, ...flow('account_id', `${livePayment} AND d.direction = 'lent'`, 'p.') },
+    { sign: '-', table: payments, ...flow('account_id', `${livePayment} AND d.direction = 'owed'`, 'p.') },
   ];
 
   const base = check
     ? { sql: '?', params: [check.balance] }
     : { sql: '(SELECT opening_balance FROM accounts WHERE id = ?)', params: [id] };
   const sum = parts
-    .map((p) => `${p.sign} COALESCE((SELECT SUM(amount) FROM ${p.table} WHERE ${p.sql}), 0)`)
+    .map((p) => `${p.sign} COALESCE((SELECT SUM(${p.col}amount) FROM ${p.table} WHERE ${p.sql}), 0)`)
     .join(' ');
 
   const rows = await query<{ balance: number }>(
@@ -160,8 +172,17 @@ export async function getAccountHistory(id: number): Promise<AccountHistoryEntry
      SELECT 'balance_check' AS kind, b.id AS ref_id, CAST(b.balance AS TEXT) AS label,
             b.difference AS amount, b.date AS date
        FROM balance_checks b WHERE b.account_id = ? AND b.deleted_at IS NULL
+     UNION ALL
+     SELECT CASE d.direction WHEN 'lent' THEN 'debt_lent' ELSE 'debt_borrowed' END AS kind,
+            d.id AS ref_id, d.person_name AS label, d.amount AS amount, d.date AS date
+       FROM debts d WHERE d.account_id = ? AND d.deleted_at IS NULL
+     UNION ALL
+     SELECT CASE d.direction WHEN 'lent' THEN 'debt_repaid_to_me' ELSE 'debt_repaid_by_me' END AS kind,
+            p.id AS ref_id, d.person_name AS label, p.amount AS amount, p.date AS date
+       FROM debt_payments p JOIN debts d ON d.id = p.debt_id
+       WHERE p.account_id = ? AND p.deleted_at IS NULL AND d.deleted_at IS NULL
      ORDER BY date DESC, ref_id DESC`,
-    [id, id, id, id, id, id, id],
+    [id, id, id, id, id, id, id, id, id],
   );
   return rows.map((row) => ({
     kind: row.kind,
@@ -173,8 +194,13 @@ export async function getAccountHistory(id: number): Promise<AccountHistoryEntry
 }
 
 /** A history-row label in the active UI language; `account` names a transfer's counterpart. */
-function history(key: keyof (typeof accountsCopy)['history'], account = '', amount = ''): string {
-  return i18n.t(`history.${key}`, { ns: 'accounts', account, amount });
+function history(
+  key: keyof (typeof accountsCopy)['history'],
+  account = '',
+  amount = '',
+  person = '',
+): string {
+  return i18n.t(`history.${key}`, { ns: 'accounts', account, amount, person });
 }
 
 function labelFor(row: HistoryRow): string {
@@ -193,5 +219,13 @@ function labelFor(row: HistoryRow): string {
       return history('projectContribution');
     case 'balance_check':
       return history('balanceCheck', '', formatCurrency(Number(row.label ?? 0)));
+    case 'debt_lent':
+      return history('lentTo', '', '', row.label ?? '');
+    case 'debt_borrowed':
+      return history('borrowedFrom', '', '', row.label ?? '');
+    case 'debt_repaid_to_me':
+      return history('repaidToMe', '', '', row.label ?? '');
+    case 'debt_repaid_by_me':
+      return history('repaidByMe', '', '', row.label ?? '');
   }
 }

@@ -19,6 +19,12 @@ export interface Debt {
   /** ISO timestamp set when the debt is settled; `null` while pending. */
   settledAt: string | null;
   createdAt: string;
+  /** Wallet the loan itself went through, or null when it moved no wallet (VS-44). */
+  accountId: number | null;
+  /** Sum of live repayments. */
+  paid: number;
+  /** What is still owed: `amount - paid` while pending, 0 once settled. */
+  outstanding: number;
 }
 
 /** What the create form supplies; `status` defaults to pending in the service. */
@@ -30,6 +36,8 @@ export interface NewDebt {
   note?: string | null;
   /** Defaults to today (`YYYY-MM-DD`) when omitted. */
   date?: string;
+  /** Wallet the loan went through; omitted or null moves no wallet (VS-44). */
+  accountId?: number | null;
 }
 
 /** Fields the edit form may change on a debt. */
@@ -37,6 +45,29 @@ export interface DebtPatch {
   personName?: string;
   amount?: number;
   dueDate?: string | null;
+  note?: string | null;
+  accountId?: number | null;
+}
+
+/** One repayment of a debt (VS-44). */
+export interface DebtPayment {
+  id: number;
+  debtId: number;
+  amount: number;
+  /** Wallet the money went through, or null. */
+  accountId: number | null;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  note: string | null;
+  createdAt: string;
+}
+
+/** What `recordDebtPayment` takes. */
+export interface NewDebtPayment {
+  amount: number;
+  accountId: number | null;
+  /** `YYYY-MM-DD`. */
+  date: string;
   note?: string | null;
 }
 

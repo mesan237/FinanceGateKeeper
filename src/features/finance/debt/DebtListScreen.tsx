@@ -88,7 +88,11 @@ function DebtRow({ debt, onPress }: DebtRowProps) {
           <Typography variant="subheading">{debt.personName}</Typography>
           <Typography variant="muted">{t(`statuses.${debt.status}`)}</Typography>
         </View>
-        <Typography>{formatCurrency(debt.amount)}</Typography>
+        {/* What is still owed; the original amount once repayments have started (VS-44). */}
+        <Typography>{formatCurrency(settled ? debt.amount : debt.outstanding)}</Typography>
+        {!settled && debt.paid > 0 ? (
+          <Typography variant="muted">{t('list.ofAmount', { amount: formatCurrency(debt.amount) })}</Typography>
+        ) : null}
         {debt.dueDate ? (
           <Typography variant="muted" style={styles.due}>
             {t('due', { date: formatDateShort(debt.dueDate) })}

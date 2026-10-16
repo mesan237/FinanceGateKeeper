@@ -50,6 +50,10 @@ export const accounts: Translation<typeof en> = {
     fundDeposit: 'Dépôt sur un fonds',
     projectContribution: 'Contribution à un projet',
     balanceCheck: 'Solde confirmé : {{amount}}',
+    lentTo: 'Prêté à {{person}}',
+    borrowedFrom: 'Emprunté à {{person}}',
+    repaidToMe: 'Remboursement de {{person}}',
+    repaidByMe: 'Remboursement à {{person}}',
   },
   form: {
     editTitle: 'Modifier le compte',

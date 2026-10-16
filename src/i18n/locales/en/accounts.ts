@@ -47,6 +47,10 @@ export const accounts = {
     fundDeposit: 'Fund deposit',
     projectContribution: 'Project contribution',
     balanceCheck: 'Balance confirmed: {{amount}}',
+    lentTo: 'Lent to {{person}}',
+    borrowedFrom: 'Borrowed from {{person}}',
+    repaidToMe: 'Repayment from {{person}}',
+    repaidByMe: 'Repayment to {{person}}',
   },
   form: {
     editTitle: 'Edit Account',

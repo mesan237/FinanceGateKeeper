@@ -41,5 +41,6 @@ export const dataTransfer: Translation<typeof en> = {
     planned_lists: "Listes d’achats",
     planned_items: "Articles prévus",
     balance_checks: "Soldes confirmés",
+    debt_payments: "Remboursements",
   },
 };
