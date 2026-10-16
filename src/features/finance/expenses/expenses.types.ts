@@ -43,7 +43,36 @@ export interface Expense {
    * A flag beside the category, never a category of its own.
    */
   isUnplanned: boolean;
+  /**
+   * Set on a refund row: the purchase it refunds (VS-45). A refund row carries
+   * a negative amount in the purchase's category; null on every purchase.
+   */
+  refundOf: number | null;
   createdAt: string;
+}
+
+/** Money that came back for a purchase (VS-45). `amount` is positive here. */
+export interface Refund {
+  /** The refund row's own expense id. */
+  id: number;
+  /** The purchase it refunds. */
+  expenseId: number;
+  amount: number;
+  /** Account the money came back into, or null. */
+  accountId: number | null;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  note: string | null;
+  createdAt: string;
+}
+
+/** What `recordRefund` takes. */
+export interface NewRefund {
+  amount: number;
+  accountId: number | null;
+  /** `YYYY-MM-DD`. */
+  date: string;
+  note?: string | null;
 }
 
 /**
@@ -52,7 +81,7 @@ export interface Expense {
  * (quick-add, recurring auto-log, planned purchases) need not supply them; an
  * expense is planned unless marked otherwise.
  */
-export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnplanned'> & {
+export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnplanned' | 'refundOf'> & {
   accountId?: number | null;
   isUnplanned?: boolean;
 };

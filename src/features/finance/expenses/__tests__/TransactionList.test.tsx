@@ -55,6 +55,7 @@ const EXPENSE_TODAY: TransactionEntry = {
   accountId: null,
   accountLabel: null,
   isUnplanned: false,
+  refundOf: null,
 };
 
 const INCOME_TODAY: TransactionEntry = {
@@ -82,6 +83,7 @@ const EXPENSE_YESTERDAY: TransactionEntry = {
   accountId: null,
   accountLabel: null,
   isUnplanned: false,
+  refundOf: null,
 };
 
 const EXPENSE_OTHER_MONTH: TransactionEntry = {
@@ -97,6 +99,7 @@ const EXPENSE_OTHER_MONTH: TransactionEntry = {
   accountId: null,
   accountLabel: null,
   isUnplanned: false,
+  refundOf: null,
 };
 
 beforeEach(() => {
@@ -434,5 +437,18 @@ describe('TransactionList', () => {
       expect(await screen.findByText('Imprévu')).toBeTruthy();
       expect(screen.getByText('Imprévus')).toBeTruthy();
     });
+  });
+
+  it('shows a refund as money coming back, and opens the purchase it refunds (VS-45)', async () => {
+    const refund: TransactionEntry = { ...EXPENSE_TODAY, id: 9, amount: -1500, refundOf: 1 };
+    mockGetFeed.mockResolvedValue([refund]);
+    render(<TransactionList />);
+
+    const row = await screen.findByTestId('tx-row-expense-9');
+    expect(row).toHaveTextContent(/Refund · Food/);
+    expect(row).toHaveTextContent(/\+1 500 FCFA/);
+
+    fireEvent.press(row);
+    expect(mockPush).toHaveBeenCalledWith('/expenses/1');
   });
 });

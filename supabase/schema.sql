@@ -108,6 +108,7 @@ create table expenses (
   is_recurring   integer not null default 0,
   account_id     text,          -- uuid of the account, or null
   is_unplanned   integer not null default 0,  -- the "imprévu" flag (VS-38)
+  refund_of      text,           -- uuid of the expense this refunds; amount is negative (VS-45)
   created_at     text not null,
   updated_at     text not null
 );

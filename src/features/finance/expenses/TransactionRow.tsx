@@ -84,6 +84,7 @@ export interface TransactionRowProps {
 export function TransactionRow({ item, onPressExpense, onPressIncome, onPressTransfer }: TransactionRowProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
+  const { t } = useTranslation('expenses');
   if (item.type === 'transfer') {
     return (
       <Pressable
@@ -104,9 +105,17 @@ export function TransactionRow({ item, onPressExpense, onPressIncome, onPressTra
   }
 
   const isIncome = item.type === 'income';
+  // A refund is money coming back for a purchase (VS-45): shown as a credit,
+  // and tapping it opens the purchase, where refunds are managed.
+  const refundOf = item.type === 'expense' ? item.refundOf : null;
+  const isCredit = isIncome || refundOf !== null;
+  const category =
+    item.type === 'expense' ? displayCategoryName(item.subcategoryLabel ?? item.categoryLabel) : '';
   const label =
     item.type === 'expense'
-      ? displayCategoryName(item.subcategoryLabel ?? item.categoryLabel)
+      ? refundOf !== null
+        ? t('list.refundLabel', { category })
+        : category
       : item.sourceLabel;
 
   const content = (
@@ -129,8 +138,10 @@ export function TransactionRow({ item, onPressExpense, onPressIncome, onPressTra
           </Typography>
         ) : null}
       </View>
-      <Typography style={isIncome ? styles.amountIncome : styles.amountExpense}>
-        {isIncome ? `+${formatCurrency(item.amount)}` : `−${formatCurrency(item.amount)}`}
+      <Typography style={isCredit ? styles.amountIncome : styles.amountExpense}>
+        {isCredit
+          ? `+${formatCurrency(Math.abs(item.amount))}`
+          : `−${formatCurrency(item.amount)}`}
       </Typography>
     </>
   );
@@ -150,7 +161,7 @@ export function TransactionRow({ item, onPressExpense, onPressIncome, onPressTra
   return (
     <Pressable
       testID={`tx-row-expense-${item.id}`}
-      onPress={() => onPressExpense(item.id)}
+      onPress={() => onPressExpense(refundOf ?? item.id)}
       style={styles.row}
     >
       {content}

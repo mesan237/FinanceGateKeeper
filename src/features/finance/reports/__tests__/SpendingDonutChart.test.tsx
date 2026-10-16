@@ -27,4 +27,14 @@ describe('SpendingDonutChart', () => {
     render(<SpendingDonutChart data={[]} />);
     expect(screen.getByText(/no data/i)).toBeTruthy();
   });
+
+  it('leaves out a category that refunds turned negative for the month (VS-45)', () => {
+    render(
+      <SpendingDonutChart
+        data={[...DATA, { categoryId: 3, categoryLabel: 'Shopping', amount: -2000, pct: -20 }]}
+      />,
+    );
+    expect(screen.getAllByTestId(/^donut-slice-/).length).toBe(2);
+    expect(screen.getByText('10 000')).toBeTruthy();
+  });
 });

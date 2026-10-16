@@ -41,11 +41,14 @@ export function SpendingDonutChart({ data, size = SIZE }: SpendingDonutChartProp
     );
   }
 
-  const total = data.reduce((sum, d) => sum + d.amount, 0);
+  // A category that refunds turned negative for the month has no share of the
+  // ring to draw (VS-45); it still appears in the breakdown rows.
+  const shown = data.filter((d) => d.amount > 0);
+  const total = shown.reduce((sum, d) => sum + d.amount, 0);
 
   // Lay each arc end-to-end around the ring, accumulating the start offset.
   let offset = 0;
-  const slices = data.map((d, i) => {
+  const slices = shown.map((d, i) => {
     const fraction = total > 0 ? d.amount / total : 0;
     const arc = fraction * CIRCUMFERENCE;
     const slice = {

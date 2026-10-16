@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 
+import { getRefundedTotal } from './expenses.refunds';
 import type { expenses as expenseCopy } from '@/i18n/locales/en/expenses';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
@@ -35,6 +36,7 @@ interface ExpenseRow {
   is_recurring: number;
   account_id: number | null;
   is_unplanned: number;
+  refund_of: number | null;
   created_at: string;
 }
 
@@ -48,7 +50,7 @@ interface CategoryRow {
 }
 
 const EXPENSE_COLUMNS =
-  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at';
+  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, refund_of, created_at';
 const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden, cost_type';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
@@ -63,6 +65,7 @@ function mapExpense(row: ExpenseRow): Expense {
     isRecurring: row.is_recurring === 1,
     accountId: row.account_id,
     isUnplanned: row.is_unplanned === 1,
+    refundOf: row.refund_of,
     createdAt: row.created_at,
   };
 }
@@ -776,8 +779,17 @@ export async function updateExpense(
   }
   if (sets.length === 0) return;
 
-  const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
+  const [existing] = await query<{ id: number; refund_of: number | null }>(
+    'SELECT id, refund_of FROM expenses WHERE id = ?',
+    [id],
+  );
   if (!existing) throw new Error(err('expenseNotFound'));
+  // A refund row is managed from its purchase; a purchase cannot shrink below
+  // what has already been refunded (VS-45).
+  if (existing.refund_of !== null) throw new Error(err('refundNotEditable'));
+  if (fields.amount !== undefined && fields.amount < (await getRefundedTotal(id))) {
+    throw new Error(err('belowRefunded'));
+  }
 
   params.push(id);
   await execute(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`, params);
@@ -789,6 +801,8 @@ export async function updateExpense(
 export async function deleteExpense(id: number): Promise<void> {
   const [existing] = await query<{ id: number }>('SELECT id FROM expenses WHERE id = ?', [id]);
   if (!existing) throw new Error(err('expenseNotFound'));
+  // A purchase's refunds go with it: they only exist because of it (VS-45).
+  await execute('DELETE FROM expenses WHERE refund_of = ?', [id]);
   await execute('DELETE FROM expenses WHERE id = ?', [id]);
 }
 

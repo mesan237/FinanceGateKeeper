@@ -21,6 +21,7 @@ import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.env
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
 
 import { CategoryPicker } from './CategoryPicker';
+import { ExpenseRefunds } from './ExpenseRefunds';
 import { UnplannedToggle } from './UnplannedToggle';
 import { editBudgetDeltas } from './expenses.budgetDelta';
 import { useCategories, useExpenseEdit } from './expenses.hooks';
@@ -150,6 +151,11 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
               <Icon name="alert" size={ICON_SIZE.sm} color={c.DANGER} />
               <Typography style={styles.error}>{edit.error}</Typography>
             </View>
+          ) : null}
+
+          {/* Money that came back for this purchase (VS-45). */}
+          {edit.originalAmount !== null ? (
+            <ExpenseRefunds expenseId={expenseId} amount={edit.originalAmount} accountId={edit.accountId} />
           ) : null}
 
           <Button
