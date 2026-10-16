@@ -12,6 +12,7 @@ are implemented.
 | **Unassigned spending** | Expenses with no wallet (legacy, or from a template without one). Left out of every wallet balance and shown as a count and total on Accounts | Today (VS-42) | `accounts.balance.getUnassignedSpending` |
 | **Debt outstanding** | What is still owed on a pending debt: its amount less its live repayments. Settled debts owe nothing | Today (VS-44) | `debt.service` (`outstanding`) |
 | **Repayment** | Money paid back on a debt, through an account or none. Moves account balances; never income or spending | Today (VS-44) | `debt.payments` |
+| **Refund** | Money back for a purchase: a negative expense row linked to it, in its category, dated when the money came back. Lowers that month's spending; never income | Today (VS-45) | `expenses.refunds` |
 | **Cash on hand** | Sum of all active wallet balances | Planned | — |
 | **Month income** | Income dated in the month, all sources and wallets | Today | `budget.service.getIncomeMonthlyTotal` |
 | **Month spend** | Expenses dated in the month. Transfers are never spend | Today | `budget.service.getExpensesMonthlyTotal` |
