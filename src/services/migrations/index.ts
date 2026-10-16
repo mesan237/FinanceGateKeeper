@@ -37,6 +37,7 @@ import { migration as markEditsDuringSync } from '@/services/migrations/035_mark
 import { migration as addCategoryCostType } from '@/services/migrations/036_add_category_cost_type';
 import { migration as walletIntegrity } from '@/services/migrations/037_wallet_integrity';
 import { migration as transferSoftDelete } from '@/services/migrations/038_transfer_soft_delete';
+import { migration as debtPayments } from '@/services/migrations/039_debt_payments';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -77,4 +78,5 @@ export const migrations: ReadonlyArray<Migration> = [
   addCategoryCostType,
   walletIntegrity,
   transferSoftDelete,
+  debtPayments,
 ];

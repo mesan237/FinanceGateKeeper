@@ -29,6 +29,9 @@ const JEAN: Debt = {
   note: null,
   settledAt: null,
   createdAt: '2026-06-01T00:00:00.000Z',
+  accountId: null,
+  paid: 0,
+  outstanding: 15000,
 };
 const PAUL_SETTLED: Debt = {
   id: 2,
@@ -41,6 +44,9 @@ const PAUL_SETTLED: Debt = {
   note: null,
   settledAt: '2026-05-20T00:00:00.000Z',
   createdAt: '2026-05-01T00:00:00.000Z',
+  accountId: null,
+  paid: 0,
+  outstanding: 0,
 };
 const AWA: Debt = {
   id: 3,
@@ -53,6 +59,9 @@ const AWA: Debt = {
   note: null,
   settledAt: null,
   createdAt: '2026-06-02T00:00:00.000Z',
+  accountId: null,
+  paid: 0,
+  outstanding: 40000,
 };
 
 function stateFor(direction: 'lent' | 'owed'): ReturnType<typeof useDebts> {

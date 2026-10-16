@@ -8,8 +8,17 @@ import {
 } from '@/notifications/notifications.service';
 import { buildDebtDueAlert } from '@/notifications/triggers/debtDueDate';
 
+import { getDebtPayments, recordDebtPayment, removeDebtPayment } from './debt.payments';
 import * as debtService from './debt.service';
-import type { Debt, DebtDirection, DebtPatch, DebtReminder, OutstandingTotals } from './debt.types';
+import type {
+  Debt,
+  DebtDirection,
+  DebtPatch,
+  DebtPayment,
+  DebtReminder,
+  NewDebtPayment,
+  OutstandingTotals,
+} from './debt.types';
 
 const EMPTY_TOTALS: OutstandingTotals = { lent: 0, owed: 0 };
 
@@ -73,18 +82,22 @@ export function useDebts(direction: DebtDirection) {
 }
 
 /**
- * Loads a single debt and exposes `settle`/`update`/`remove` mutations that
- * re-fetch on success.
+ * Loads a single debt with its repayments and exposes `recordPayment`,
+ * `removePayment`, `update` and `remove`; each re-fetches on success.
+ * Settling is a repayment of what is still owed (VS-44).
  */
 export function useDebtDetail(id: number) {
   const [debt, setDebt] = useState<Debt | null>(null);
+  const [payments, setPayments] = useState<DebtPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      setDebt(await debtService.getDebtById(id));
+      const [loaded, repayments] = await Promise.all([debtService.getDebtById(id), getDebtPayments(id)]);
+      setDebt(loaded);
+      setPayments(repayments);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.loadDebt', { ns: 'debt' }));
@@ -97,14 +110,31 @@ export function useDebtDetail(id: number) {
     void refresh();
   }, [refresh]);
 
-  const settle = useCallback(async (): Promise<void> => {
-    try {
-      await debtService.settleDebt(id);
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : i18n.t('errors.settleFailed', { ns: 'debt' }));
-    }
-  }, [id, refresh]);
+  const recordPayment = useCallback(
+    async (payment: NewDebtPayment): Promise<boolean> => {
+      try {
+        await recordDebtPayment(id, payment);
+        await refresh();
+        return true;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : i18n.t('errors.paymentFailed', { ns: 'debt' }));
+        return false;
+      }
+    },
+    [id, refresh],
+  );
+
+  const removePayment = useCallback(
+    async (paymentId: number): Promise<void> => {
+      try {
+        await removeDebtPayment(paymentId);
+        await refresh();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : i18n.t('errors.paymentFailed', { ns: 'debt' }));
+      }
+    },
+    [refresh],
+  );
 
   const update = useCallback(
     async (patch: DebtPatch): Promise<void> => {
@@ -126,7 +156,7 @@ export function useDebtDetail(id: number) {
     }
   }, [id]);
 
-  return { debt, loading, error, refresh, settle, update, remove };
+  return { debt, payments, loading, error, refresh, recordPayment, removePayment, update, remove };
 }
 
 /** Cancels every previously scheduled debt due-date notification. */

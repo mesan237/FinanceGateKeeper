@@ -37,5 +37,6 @@ export const dataTransfer = {
     planned_lists: "Planned lists",
     planned_items: "Planned items",
     balance_checks: "Balance checks",
+    debt_payments: "Debt repayments",
   },
 };

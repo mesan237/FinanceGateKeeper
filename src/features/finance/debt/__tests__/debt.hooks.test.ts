@@ -12,6 +12,12 @@ jest.mock('@/features/finance/debt/debt.service', () => ({
   deleteDebt: jest.fn(),
 }));
 
+jest.mock('@/features/finance/debt/debt.payments', () => ({
+  getDebtPayments: jest.fn().mockResolvedValue([]),
+  recordDebtPayment: jest.fn().mockResolvedValue(undefined),
+  removeDebtPayment: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/notifications/notifications.service', () => ({
   scheduleNotification: jest.fn(),
   getScheduledNotifications: jest.fn(),
@@ -52,6 +58,9 @@ const JEAN: Debt = {
   note: null,
   settledAt: null,
   createdAt: '2026-06-01T00:00:00.000Z',
+  accountId: null,
+  paid: 0,
+  outstanding: 15000,
 };
 
 beforeEach(() => {
@@ -125,5 +134,36 @@ describe('useDebtReminders', () => {
     renderHook(() => useDebtReminders());
     await waitFor(() => expect(mockedCancel).toHaveBeenCalledWith('old-1'));
     expect(mockedCancel).not.toHaveBeenCalledWith('keep');
+  });
+});
+
+describe('useDebtDetail repayments (VS-44)', () => {
+  it('records a repayment through the service, then re-reads the debt and its repayments', async () => {
+    const payments = jest.requireMock('@/features/finance/debt/debt.payments');
+    const { result } = renderHook(() => useDebtDetail(1));
+    await waitFor(() => expect(result.current.debt).not.toBeNull());
+
+    let ok = false;
+    await act(async () => {
+      ok = await result.current.recordPayment({ amount: 5000, accountId: 2, date: '2026-06-05' });
+    });
+
+    expect(ok).toBe(true);
+    expect(payments.recordDebtPayment).toHaveBeenCalledWith(1, { amount: 5000, accountId: 2, date: '2026-06-05' });
+    expect(payments.getDebtPayments).toHaveBeenCalledTimes(2);
+    expect(mockedGetById).toHaveBeenCalledTimes(2);
+  });
+
+  it('removes a repayment and re-reads', async () => {
+    const payments = jest.requireMock('@/features/finance/debt/debt.payments');
+    const { result } = renderHook(() => useDebtDetail(1));
+    await waitFor(() => expect(result.current.debt).not.toBeNull());
+
+    await act(async () => {
+      await result.current.removePayment(3);
+    });
+
+    expect(payments.removeDebtPayment).toHaveBeenCalledWith(3);
+    expect(mockedGetById).toHaveBeenCalledTimes(2);
   });
 });

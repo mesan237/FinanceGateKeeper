@@ -6,6 +6,21 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
 }));
 
+// Two wallets; Cash is the default (VS-44).
+jest.mock('@/features/finance/accounts/accounts.hooks', () => ({
+  useAccounts: () => ({
+    accounts: [
+      { id: 1, name: 'Cash', type: 'cash', purpose: 'spending', openingBalance: 0, isDefault: true, isActive: true, createdAt: '' },
+      { id: 2, name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', openingBalance: 0, isDefault: false, isActive: true, createdAt: '' },
+    ],
+    balances: {},
+    loading: false,
+    error: null,
+    refresh: jest.fn(),
+  }),
+  useDefaultAccountId: () => 1,
+}));
+
 jest.mock('@/features/finance/debt/debt.service', () => ({
   createDebt: jest.fn(),
 }));
@@ -61,6 +76,8 @@ describe('DebtForm', () => {
         direction: 'lent',
         dueDate: '2026-06-15',
         note: null,
+        // The loan leaves the default account unless the user says otherwise (VS-44).
+        accountId: 1,
       }),
     );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/debt'));
@@ -85,5 +102,17 @@ describe('DebtForm', () => {
     fireEvent.changeText(screen.getByTestId('debt-person'), 'X');
     fireEvent.changeText(screen.getByTestId('debt-amount'), '0');
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('records a debt that moved through no account (VS-44)', async () => {
+    render(<DebtForm />);
+    fireEvent.changeText(screen.getByTestId('debt-person'), 'Paul');
+    fireEvent.changeText(screen.getByTestId('debt-amount'), '10000');
+    fireEvent.press(screen.getByRole('switch', { name: 'Through an account' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({ personName: 'Paul', accountId: null })),
+    );
   });
 });

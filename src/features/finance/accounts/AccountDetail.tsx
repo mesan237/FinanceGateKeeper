@@ -24,7 +24,7 @@ export interface AccountDetailProps {
 }
 
 /** Whether a history entry adds to (credit) or subtracts from (debit) the balance. */
-const CREDIT_KINDS: AccountHistoryKind[] = ['income', 'transfer_in'];
+const CREDIT_KINDS: AccountHistoryKind[] = ['income', 'transfer_in', 'debt_borrowed', 'debt_repaid_to_me'];
 
 const KIND_ICON: Record<AccountHistoryKind, IconName> = {
   income: 'income',
@@ -34,6 +34,10 @@ const KIND_ICON: Record<AccountHistoryKind, IconName> = {
   fund_contribution: 'budget',
   project_contribution: 'projects',
   balance_check: 'check',
+  debt_lent: 'debt',
+  debt_borrowed: 'debt',
+  debt_repaid_to_me: 'debt',
+  debt_repaid_by_me: 'debt',
 };
 
 /**

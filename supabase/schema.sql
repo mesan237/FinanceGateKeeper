@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, users
+  planned_lists, planned_items, balance_checks, debt_payments, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -225,7 +225,22 @@ create table debts (
   status      text not null default 'pending',
   note        text,
   settled_at  text,
+  account_id  text,            -- uuid of the wallet the loan went through, or null (VS-44)
+  deleted_at  text,            -- set when removed; removals sync, deletions do not
   created_at  text not null,
+  updated_at  text not null
+);
+
+create table debt_payments (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  debt_id     text not null,     -- uuid of the debt (VS-44)
+  amount      integer not null,
+  account_id  text,              -- uuid of the wallet it went through, or null
+  date        text not null,
+  note        text,
+  created_at  text not null,
+  deleted_at  text,
   updated_at  text not null
 );
 
@@ -289,7 +304,7 @@ begin
     'categories','funds','projects','accounts','expenses','income','allocations',
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
-    'planned_lists','planned_items','balance_checks'
+    'planned_lists','planned_items','balance_checks','debt_payments'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

@@ -22,6 +22,7 @@ export const SYNCED_TABLES = [
   'recurring_expenses',
   'zero_days',
   'debts',
+  'debt_payments',
   'transfers',
   'planned_lists',
   'planned_items',
@@ -41,6 +42,7 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'planned_lists',
   'planned_items',
   'balance_checks',
+  'debt_payments',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -136,6 +138,7 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
   ],
   zero_days: ['date', 'confirmed_at'],
   balance_checks: ['account_id', 'balance', 'difference', 'date', 'note', 'created_at', 'deleted_at'],
+  debt_payments: ['debt_id', 'amount', 'account_id', 'date', 'note', 'created_at', 'deleted_at'],
   debts: [
     'person_name',
     'amount',

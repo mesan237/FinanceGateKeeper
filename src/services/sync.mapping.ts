@@ -32,6 +32,8 @@ export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
     account_id: 'accounts',
   },
   balance_checks: { account_id: 'accounts' },
+  debts: { account_id: 'accounts' },
+  debt_payments: { debt_id: 'debts', account_id: 'accounts' },
   fund_transactions: { fund_id: 'funds', account_id: 'accounts' },
   project_transactions: { project_id: 'projects', account_id: 'accounts' },
   transfers: { from_account_id: 'accounts', to_account_id: 'accounts' },

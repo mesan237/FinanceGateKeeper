@@ -1410,6 +1410,48 @@ user sees it, both wallet balances follow, and the change reaches the cloud.
 
 ---
 
+### VS-44: Debts That Move Money — Repayments and History 🔄 In Progress
+
+**Priority:** High — Phase 1b item #4 (user choice 4.A)
+**Blocked by:** VS-43 (stacked branch), VS-11 (People ledger)
+
+**Scope:**
+
+A debt used to be a note: lending 50,000 from MoMo left MoMo untouched, and
+the only repayment was "settled" in one step.
+
+- Migration 039: `debts.account_id` (the account the loan went through) and
+  `debts.deleted_at` (soft delete — a debt now moves money, so a resurrected one
+  would move it again); new synced table `debt_payments` (debt, amount, account,
+  date, note, soft delete).
+- Account balances: a loan given lowers its account, a loan received raises it;
+  a repayment moves money back. Never income or spending — no budget, average
+  or report total reads these tables. Account history names each movement
+  ("Lent to Marie", "Repayment from Marie").
+- `debt.payments`: record (validated against what is still owed; paying the
+  rest settles the debt), list, remove (reopens a settled debt). `settleDebt`
+  records the remaining amount as the final repayment.
+- Outstanding totals, reminders and the list show what is still owed.
+- UI: "Through an account" + account picker on the debt form; the detail
+  screen shows repaid / still owed, the repayments (tap to remove) and "Record
+  repayment", a sheet that starts from what is still owed.
+- New approved edge `debt → accounts` (CLAUDE.md, ARCHITECTURE.md).
+- Supabase patch 043 (folded into 037 and `schema.sql`) must run before a build
+  with migration 039 syncs.
+
+**TDD Anchor:**
+
+- Test: migration 039 — account and soft delete sync; repayments get a uuid; amounts must be positive.
+- Test: `debt.payments` — partial repayment, auto-settle, over-payment rejected, removal reopens.
+- Test: `getAccountBalance` — lend/borrow/repay in both directions; no account moves nothing; removals undo.
+- Test: screens — form default account and "no account"; repayment sheet; repayment list and removal.
+
+**Done when:** lending from MoMo lowers MoMo, each repayment raises it back,
+a debt can be repaid in instalments with its history kept, and none of it
+counts as income or spending.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

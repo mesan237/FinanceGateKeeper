@@ -65,7 +65,11 @@ export type AccountHistoryKind =
   | 'transfer_out'
   | 'fund_contribution'
   | 'project_contribution'
-  | 'balance_check';
+  | 'balance_check'
+  | 'debt_lent'
+  | 'debt_borrowed'
+  | 'debt_repaid_to_me'
+  | 'debt_repaid_by_me';
 
 /**
  * A single row in an account's history. `amount` is positive and `kind`

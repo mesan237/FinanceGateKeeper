@@ -15,7 +15,9 @@ import { Typography } from '@/components/Typography';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
+import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 
+import { WalletField } from './WalletField';
 import { createDebt } from './debt.service';
 
 /**
@@ -37,6 +39,11 @@ export function DebtForm() {
   const [note, setNote] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // The account the loan went through (VS-44). Untouched, it follows the
+  // default account; switched off, the loan moves no account.
+  const defaultAccountId = useDefaultAccountId();
+  const [chosenAccountId, setChosenAccountId] = useState<number | null | undefined>(undefined);
+  const accountId = chosenAccountId === undefined ? defaultAccountId : chosenAccountId;
 
   const parsedAmount = Number(amount);
   const canSubmit =
@@ -52,6 +59,7 @@ export function DebtForm() {
         direction,
         dueDate: due === '' ? null : due,
         note: note.trim() === '' ? null : note.trim(),
+        accountId,
       });
       router.replace('/debt');
     } catch (e) {
@@ -118,6 +126,13 @@ export function DebtForm() {
               accessibilityLabel={t('form.note')}
             />
           </View>
+
+          <WalletField
+            testID="debt-wallet"
+            value={accountId}
+            onChange={setChosenAccountId}
+            label={t(direction === 'lent' ? 'form.paidFrom' : 'form.receivedIn')}
+          />
 
           {error ? <Typography style={styles.error}>{error}</Typography> : null}
         </View>

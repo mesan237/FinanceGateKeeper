@@ -24,7 +24,7 @@
 --      total_budget 027, expenses.is_unplanned 032,
 --      planned_lists.due_date 033, categories.cost_type 036,
 --      quick_add_templates/recurring_expenses.account_id 037,
---      transfers.deleted_at 038).
+--      transfers.deleted_at 038, debts.account_id/deleted_at 039).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -37,7 +37,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -230,7 +230,22 @@ create table if not exists debts (
   status      text not null default 'pending',
   note        text,
   settled_at  text,
+  account_id  text,            -- uuid of the wallet the loan went through, or null (VS-44)
+  deleted_at  text,            -- set when removed; removals sync, deletions do not
   created_at  text not null,
+  updated_at  text not null
+);
+
+create table if not exists debt_payments (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  debt_id     text not null,     -- uuid of the debt (VS-44)
+  amount      integer not null,
+  account_id  text,              -- uuid of the wallet it went through, or null
+  date        text not null,
+  note        text,
+  created_at  text not null,
+  deleted_at  text,
   updated_at  text not null
 );
 
@@ -299,6 +314,8 @@ alter table categories           add column if not exists cost_type text;
 alter table quick_add_templates  add column if not exists account_id text;
 alter table recurring_expenses   add column if not exists account_id text;
 alter table transfers            add column if not exists deleted_at text;
+alter table debts                add column if not exists account_id text;
+alter table debts                add column if not exists deleted_at text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).
@@ -310,7 +327,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

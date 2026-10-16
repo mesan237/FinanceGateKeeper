@@ -10,6 +10,8 @@ are implemented.
 | **Wallet balance** | Money physically in one wallet (cash, MoMo, bank): the latest balance check plus what happened after it, or — with no check — the opening balance plus the whole history | Today (VS-42: templates carry a wallet; checks pin the balance) | `accounts.balance.getAccountBalance` |
 | **Balance check** | "This wallet actually holds X today." Pins the balance at a date; later entries move it, older back-logged ones do not. Records how far off the app was. Soft-deleted, never hard-deleted | Today (VS-42) | `accounts.checks` |
 | **Unassigned spending** | Expenses with no wallet (legacy, or from a template without one). Left out of every wallet balance and shown as a count and total on Accounts | Today (VS-42) | `accounts.balance.getUnassignedSpending` |
+| **Debt outstanding** | What is still owed on a pending debt: its amount less its live repayments. Settled debts owe nothing | Today (VS-44) | `debt.service` (`outstanding`) |
+| **Repayment** | Money paid back on a debt, through an account or none. Moves account balances; never income or spending | Today (VS-44) | `debt.payments` |
 | **Cash on hand** | Sum of all active wallet balances | Planned | — |
 | **Month income** | Income dated in the month, all sources and wallets | Today | `budget.service.getIncomeMonthlyTotal` |
 | **Month spend** | Expenses dated in the month. Transfers are never spend | Today | `budget.service.getExpensesMonthlyTotal` |
