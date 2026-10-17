@@ -41,8 +41,9 @@ touched no wallet, so goal figures drifted from the money.
 - `goals` → `accounts`: `getAccountBalance` (progress), `AccountPicker` and
   `useAccounts` (the form). "Save now" navigates to `/transfers/log?to=<wallet>` by
   path, so no accounts screen is imported.
-- Nothing imports `goals`. VS-49 (pay yourself first, safe-to-spend) has `budget` read
-  the `goals` table by SQL.
+- Nothing imports `goals`. `budget` reads the `goals` table by SQL (VS-49): monthly
+  amounts are set aside before the envelopes, and goal-wallet cash is left out of
+  safe-to-spend. A reached goal keeps its monthly amount until edited; its card says so.
 
 ## Module Map
 | File | Job |
