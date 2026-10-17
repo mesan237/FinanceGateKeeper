@@ -116,3 +116,52 @@ export interface BudgetOverview {
   /** True when neither a total nor any envelope has been set for the month. */
   isUnplanned: boolean;
 }
+
+// ---- VS-46: the baseline ----------------------------------------------------------
+
+/** A question the baseline records an answer to. */
+export type BaselineKind =
+  | 'monthly_income'
+  | 'income_regular'
+  | 'pay_day'
+  | 'monthly_essentials'
+  | 'no_debts'
+  | 'cost_types_reviewed'
+  | 'checklist_hidden';
+
+/** Whether the user typed a value or accepted one observed from logged months. */
+export type FactSource = 'user' | 'observed';
+
+/** One answer, with where it came from and when. */
+export interface BaselineFact {
+  value: number;
+  source: FactSource;
+  /** ISO timestamp. */
+  setAt: string;
+}
+
+/** Everything the user has told the app; null where they have not answered. */
+export interface Baseline {
+  monthlyIncome: BaselineFact | null;
+  incomeRegular: boolean | null;
+  /** Day of the month the income usually lands; only for regular income. */
+  payDay: number | null;
+  monthlyEssentials: BaselineFact | null;
+  noDebts: boolean;
+  costTypesReviewed: boolean;
+  checklistHidden: boolean;
+}
+
+/** The estimates form. */
+export interface Estimates {
+  monthlyIncome: number;
+  incomeRegular: boolean;
+  payDay: number | null;
+  monthlyEssentials: number;
+}
+
+/** One setup step on the dashboard checklist. */
+export interface BaselineStep {
+  key: 'balances' | 'bills' | 'debts' | 'costTypes' | 'estimates';
+  done: boolean;
+}

@@ -3,6 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { addMonths, currentMonthISO, toISODate } from '@/utils/formatDate';
 
+import { getBaseline, setBaselineFact } from '@/features/finance/budget/budget.baseline';
+import type { Baseline } from '@/features/finance/budget/budget.types';
+
 import { getSpendingProfile } from './reports.profile';
 import * as reportsService from './reports.service';
 import type { MonthlyReport, SpendingProfile, WeeklyReport } from './reports.types';
@@ -141,4 +144,31 @@ export function useSpendingProfile() {
   }, []);
 
   return { profile, refresh };
+}
+
+/**
+ * The user's income and essentials estimates for the comparison card, and
+ * `accept` to adopt an observed figure (recorded as observed, VS-46).
+ * `refresh` is caller-driven, like the profile's.
+ */
+export function useEstimatesForReport() {
+  const [baseline, setBaseline] = useState<Baseline | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      setBaseline(await getBaseline());
+    } catch {
+      setBaseline(null);
+    }
+  }, []);
+
+  const accept = useCallback(
+    async (kind: 'monthly_income' | 'monthly_essentials', value: number) => {
+      await setBaselineFact(kind, value, 'observed');
+      await refresh();
+    },
+    [refresh],
+  );
+
+  return { baseline, refresh, accept };
 }

@@ -14,6 +14,7 @@ import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { BaselineCard } from '@/features/finance/budget/BaselineCard';
 import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { formatDateLong } from '@/utils/formatDate';
@@ -111,6 +112,9 @@ export function DashboardScreen() {
           onLogExpense={() => setSheet({ open: true, segment: 'expense' })}
           onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
+
+        {/* Setup checklist — hidden once done or dismissed (VS-46). */}
+        <BaselineCard />
 
         {/* Planned purchases coming due — hidden while nothing is (VS-39). */}
         <PlannedDueCard />

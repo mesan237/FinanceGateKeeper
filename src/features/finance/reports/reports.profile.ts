@@ -6,6 +6,7 @@ import {
   getAllCategories,
   getExpensesByDateRange,
 } from '@/features/finance/expenses/expenses.service';
+import { getIncomeByDateRange } from '@/features/finance/income/income.service';
 import { toISODate } from '@/utils/formatDate';
 import { firstDayOfMonth, lastDayOfMonth, prevMonthISO } from '@/utils/monthMath';
 
@@ -41,6 +42,8 @@ export interface SpendingProfileInput {
   /** The observation window, oldest first, with each month's coverage. */
   months: ReadonlyArray<ProfileMonth>;
   expenses: ReadonlyArray<ProfileExpense>;
+  /** Income rows of the window; averaged over the same complete months (VS-46). */
+  incomes?: ReadonlyArray<{ date: string; amount: number }>;
   /** Whether a (category, subcategory) is a fixed or variable cost. */
   kindOf: (categoryId: number, subcategoryId: number | null) => 'fixed' | 'variable';
   labelOf: (categoryId: number) => string;
@@ -87,6 +90,7 @@ export function buildSpendingProfile(input: SpendingProfileInput): SpendingProfi
   const empty: SpendingProfile = {
     months: [...input.months],
     average: null,
+    incomeAverage: null,
     variableCategories: [],
     fixedCategories: [],
   };
@@ -119,6 +123,11 @@ export function buildSpendingProfile(input: SpendingProfileInput): SpendingProfi
   return {
     months: [...input.months],
     average,
+    incomeAverage: perMonth(
+      (input.incomes ?? [])
+        .filter((i) => counted.has(i.date.slice(0, 7)))
+        .reduce((sum, i) => sum + i.amount, 0),
+    ),
     variableCategories: rankCategories(byKind.variable, complete, input.labelOf),
     fixedCategories: rankCategories(byKind.fixed, complete, input.labelOf),
   };
@@ -151,10 +160,11 @@ export async function getSpendingProfile(
   const from = firstDayOfMonth(months[0]);
   const to = lastDayOfMonth(months[months.length - 1]);
 
-  const [logged, expenses, categories] = await Promise.all([
+  const [logged, expenses, categories, incomes] = await Promise.all([
     getLoggedDates(from, to),
     getExpensesByDateRange(from, to),
     getAllCategories(),
+    getIncomeByDateRange(from, to),
   ]);
 
   const nameOf = new Map(categories.map((c) => [c.id, c.name]));
@@ -164,6 +174,7 @@ export async function getSpendingProfile(
       return { month: m, coverage, isComplete };
     }),
     expenses,
+    incomes,
     kindOf: costTypeResolver(categories),
     labelOf: (id) => nameOf.get(id) ?? i18n.t('uncategorised', { ns: 'reports' }),
   });

@@ -131,6 +131,8 @@ export interface SpendingProfile {
   /** The observation window, oldest first. */
   months: ProfileMonth[];
   average: ProfileAverage | null;
+  /** Income received per complete month (VS-46); null until a month is complete. */
+  incomeAverage: number | null;
   /** Variable categories, highest average first — where behaviour can change. */
   variableCategories: ProfileCategory[];
   /** Fixed categories, highest average first. */

@@ -9,6 +9,10 @@ jest.mock('@/features/finance/budget/budget.envelopes', () => ({
   copyBudgetsFromMonth: jest.fn(),
 }));
 
+jest.mock('@/features/finance/budget/budget.baseline', () => ({
+  countCompleteMonths: jest.fn().mockResolvedValue(1),
+}));
+
 jest.mock('@/features/finance/budget/budget.plan', () => ({
   buildMonthlyPlan: jest.fn(),
   getBudgetableCategories: jest.fn(),

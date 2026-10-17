@@ -39,6 +39,7 @@ import { migration as walletIntegrity } from '@/services/migrations/037_wallet_i
 import { migration as transferSoftDelete } from '@/services/migrations/038_transfer_soft_delete';
 import { migration as debtPayments } from '@/services/migrations/039_debt_payments';
 import { migration as expenseRefunds } from '@/services/migrations/040_expense_refunds';
+import { migration as baselineFacts } from '@/services/migrations/041_baseline_facts';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -81,4 +82,5 @@ export const migrations: ReadonlyArray<Migration> = [
   transferSoftDelete,
   debtPayments,
   expenseRefunds,
+  baselineFacts,
 ];
