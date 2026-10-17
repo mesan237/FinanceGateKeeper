@@ -93,9 +93,15 @@ export interface MonthlyPlan {
   unbudgetedIncome: number;
   /** True when `unbudgetedIncome` has grown past what the user already chose to leave unbudgeted. */
   surplusNeedsJob: boolean;
+  /** The goals' monthly amounts, taken out first — pay yourself first (VS-49). */
+  setAside: number;
+  /** `totalBudget - setAside`, never below zero: what the envelopes share and spending is measured against. */
+  spendable: number;
+  /** How far the goals' amounts exceed the total; 0 when they fit. */
+  setAsideShortfall: number;
   /** Sum of category allocations (never includes rollover). */
   assigned: number;
-  /** `totalBudget - assigned`; negative when over-allocated. */
+  /** `spendable - assigned`; negative when over-allocated. */
   unassigned: number;
   isOverAllocated: boolean;
 }
@@ -110,7 +116,7 @@ export interface BudgetOverview {
   categories: CategoryBudgetProgress[];
   /** Total carried into this month across rollover-enabled envelopes. */
   totalCarried: number;
-  /** `plan.totalBudget + totalCarried` — everything spendable this month. */
+  /** `plan.spendable + totalCarried` — everything spendable this month. */
   available: number;
   spent: number;
   remaining: number;
@@ -194,5 +200,9 @@ export interface CommittedMoney {
 export interface MoneyView {
   /** Cash on hand: the sum of every active wallet. */
   cash: number;
+  /** The part of `cash` held in goal wallets (VS-49). */
+  goalCash: number;
   committed: CommittedMoney;
+  /** `cash - goalCash - committed.total`: free to spend before month end. May be negative. */
+  safeToSpend: number;
 }

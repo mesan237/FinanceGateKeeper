@@ -35,6 +35,10 @@ jest.mock('@/features/finance/budget/budget.insights', () => ({
 }));
 
 // The money view (VS-47) is covered in BudgetOverview.cashflow.test.tsx.
+jest.mock('@/features/finance/budget/budget.goals', () => ({
+  getGoalCash: jest.fn().mockResolvedValue(0),
+  getGoalSetAside: jest.fn().mockResolvedValue(0),
+}));
 jest.mock('@/features/finance/budget/budget.committed', () => ({
   getCommitted: jest.fn().mockResolvedValue({ recurring: 0, planned: 0, debts: 0, total: 0 }),
 }));
@@ -89,6 +93,9 @@ function overviewData(overrides: Partial<BudgetOverviewData> = {}): BudgetOvervi
       receivedIncome: 260_000,
       unbudgetedIncome: 0,
       surplusNeedsJob: false,
+      setAside: 0,
+      spendable: 300_000,
+      setAsideShortfall: 0,
       assigned: 300_000,
       unassigned: 0,
       isOverAllocated: false,

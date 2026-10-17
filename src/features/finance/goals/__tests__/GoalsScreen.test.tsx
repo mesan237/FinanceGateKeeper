@@ -106,6 +106,15 @@ describe('GoalsScreen', () => {
     expect(await screen.findByText('Goal reached')).toBeTruthy();
   });
 
+  it('reminds that a reached goal still takes its monthly amount from the budget (VS-49)', async () => {
+    mockedGetGoals.mockResolvedValue([goal({}, { achieved: true, saved: 300_000, remaining: 0, pct: 100 })]);
+    render(<GoalsScreen />);
+
+    expect(
+      await screen.findByText('Still takes 25 000 FCFA a month from your budget. Edit the goal to stop.'),
+    ).toBeTruthy();
+  });
+
   it('opens a transfer into the goal wallet from "Save now"', async () => {
     render(<GoalsScreen />);
 

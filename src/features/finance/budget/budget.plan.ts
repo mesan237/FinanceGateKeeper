@@ -1,9 +1,7 @@
 import i18n from 'i18next';
 
-import { getMonthCoverage } from '@/features/finance/expenses/expenses.coverage';
 import { getAllCategories, getCategories } from '@/features/finance/expenses/expenses.service';
 import { toISODate } from '@/utils/formatDate';
-import { prevMonthISO } from '@/utils/monthMath';
 
 import {
   getCarriedIn,
@@ -14,6 +12,7 @@ import {
 } from './budget.envelopes';
 import { getExpectedIncome, getSurplusSeen } from './budget.cashflow';
 import { buildCategoryProgress, buildOverallProgress } from './budget.progress';
+import { getGoalSetAside } from './budget.goals';
 import { getMonthlyBudget } from './budget.service';
 import type {
   BudgetOverview,
@@ -22,6 +21,8 @@ import type {
   MonthlyPlan,
   OverBudgetCheck,
 } from './budget.types';
+
+export { suggestFromHistory } from './budget.suggestions';
 
 /**
  * Composition for the Budget tab and its planner (VS-33): turns the stored
@@ -45,16 +46,19 @@ export async function buildMonthlyPlan(
   monthISO: string,
   receivedIncome: number,
 ): Promise<MonthlyPlan> {
-  const [explicit, budgets, expectedIncome, surplusSeen] = await Promise.all([
+  const [explicit, budgets, expectedIncome, surplusSeen, setAside] = await Promise.all([
     getTotalBudget(monthISO),
     getCategoryBudgets(monthISO),
     getExpectedIncome(monthISO),
     getSurplusSeen(monthISO),
+    getGoalSetAside(monthISO),
   ]);
 
   const derivedTotal = expectedIncome ?? receivedIncome;
   const totalBudget = explicit ?? derivedTotal;
   const assigned = budgets.reduce((sum, b) => sum + b.allocatedAmount, 0);
+  // Pay yourself first (VS-49): goals come out before the envelopes.
+  const spendable = Math.max(0, totalBudget - setAside);
   const unbudgetedIncome = Math.max(0, receivedIncome - totalBudget);
 
   return {
@@ -67,9 +71,12 @@ export async function buildMonthlyPlan(
     receivedIncome,
     unbudgetedIncome,
     surplusNeedsJob: unbudgetedIncome > surplusSeen,
+    setAside,
+    spendable,
+    setAsideShortfall: Math.max(0, setAside - totalBudget),
     assigned,
-    unassigned: totalBudget - assigned,
-    isOverAllocated: assigned > totalBudget,
+    unassigned: spendable - assigned,
+    isOverAllocated: assigned > spendable,
   };
 }
 
@@ -143,7 +150,7 @@ export async function getBudgetOverview(
   ]);
 
   const totalCarried = categories.reduce((sum, c) => sum + c.carriedIn, 0);
-  const available = plan.totalBudget + totalCarried;
+  const available = plan.spendable + totalCarried;
   // Recurring bills are projected once, not at the daily pace (VS-40).
   const fixedSpent = [...fixedByCategory.values()].reduce((sum, v) => sum + v, 0);
   const overall = buildOverallProgress(
@@ -164,52 +171,6 @@ export async function getBudgetOverview(
     // A month sized by an income estimate already has a plan (VS-47).
     isUnplanned: !plan.isExplicit && plan.derivedSource === 'received' && plan.assigned === 0,
   };
-}
-
-/**
- * Average monthly spend per category over the `lookback` months *before*
- * `monthISO` — the "budget from what you actually spend" suggestion that
- * removes the blank-page problem on a first plan.
- *
- * Only **complete** months count (see `expenses.coverage`), and every complete
- * month counts — a month with no spend in a category contributes a real zero
- * (VS-41). Dividing by "months that had spend" instead turned one annual
- * 120,000 bill into a 120,000 suggestion every month, and a half-logged first
- * month made the user look frugal. An incomplete month is left out entirely
- * rather than guessed at.
- *
- * @returns Category id → suggested whole-FCFA amount. Empty until at least one
- *   month in the window is complete.
- */
-export async function suggestFromHistory(
-  monthISO: string,
-  lookback: number = 3,
-): Promise<Map<number, number>> {
-  const months: string[] = [];
-  let cursor = monthISO;
-  for (let i = 0; i < lookback; i += 1) {
-    cursor = prevMonthISO(cursor);
-    months.push(cursor);
-  }
-
-  const coverage = await Promise.all(months.map(getMonthCoverage));
-  const complete = coverage.filter((c) => c.isComplete).map((c) => c.month);
-  if (complete.length === 0) return new Map();
-
-  const perMonth = await Promise.all(complete.map(getSpendByCategory));
-
-  const totals = new Map<number, number>();
-  for (const spend of perMonth) {
-    for (const [categoryId, amount] of spend) {
-      totals.set(categoryId, (totals.get(categoryId) ?? 0) + amount);
-    }
-  }
-
-  const suggestions = new Map<number, number>();
-  for (const [categoryId, sum] of totals) {
-    if (sum > 0) suggestions.set(categoryId, Math.round(sum / complete.length));
-  }
-  return suggestions;
 }
 
 /** The visible top-level categories a month's envelopes can be assigned to. */
@@ -233,9 +194,11 @@ export async function checkOverBudget(
 ): Promise<OverBudgetCheck> {
   const budget = await getMonthlyBudget(monthISO);
   const plan = await buildMonthlyPlan(monthISO, budget.incomeTotal);
-  const expenseBudget = plan.totalBudget;
+  // Measured against what is left after the goals (VS-49); silent only when
+  // the month has no budget at all.
+  const expenseBudget = plan.spendable;
   const remaining = expenseBudget - budget.expensesLogged;
-  if (expenseBudget <= 0) {
+  if (plan.totalBudget <= 0) {
     return { isOver: false, overage: 0, remaining, expenseBudget };
   }
   const after = budget.expensesLogged + newExpenseAmount;

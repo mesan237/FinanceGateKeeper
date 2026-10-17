@@ -4,11 +4,13 @@ import { getCashOnHand } from '@/features/finance/accounts/accounts.service';
 
 import { addSurplusToBudget, leaveSurplusUnbudgeted } from './budget.cashflow';
 import { getCommitted } from './budget.committed';
+import { getGoalCash } from './budget.goals';
 import type { MonthlyPlan, MoneyView } from './budget.types';
 
 /**
- * The Budget tab's cash-flow pieces (VS-47): the money view (cash in wallets
- * and committed money) and the two answers to "give it a job".
+ * The Budget tab's cash-flow pieces (VS-47): the money view (cash in wallets,
+ * goal cash, committed money and safe-to-spend, VS-49) and the two answers to
+ * "give it a job".
  *
  * Cash is today's figure, so the money view loads only while `enabled` — the
  * tab passes true for the current month alone. Showing today's wallets beside
@@ -25,8 +27,13 @@ export function useCashflow(monthISO: string, enabled: boolean) {
       return;
     }
     try {
-      const [cash, committed] = await Promise.all([getCashOnHand(), getCommitted(monthISO)]);
-      setMoney({ cash, committed });
+      const [cash, goalCash, committed] = await Promise.all([
+        getCashOnHand(),
+        getGoalCash(),
+        getCommitted(monthISO),
+      ]);
+      // Goal money is promised to its goal, so it is not safe to spend (VS-49).
+      setMoney({ cash, goalCash, committed, safeToSpend: cash - goalCash - committed.total });
     } catch {
       // The money view is supplementary; the budget still renders without it.
       setMoney(null);

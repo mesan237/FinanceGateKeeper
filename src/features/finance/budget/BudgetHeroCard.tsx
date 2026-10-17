@@ -83,6 +83,12 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
         </Typography>
       ) : null}
 
+      {overview.plan.setAside > 0 ? (
+        <Typography variant="muted" style={styles.carried} testID="budget-set-aside">
+          {t('hero.setAside', { amount: formatCurrency(overview.plan.setAside) })}
+        </Typography>
+      ) : null}
+
       {overview.totalCarried !== 0 ? (
         <Typography variant="muted" style={styles.carried} testID="budget-carried">
           {t('hero.carried', { amount: formatCurrency(overview.totalCarried) })}

@@ -30,6 +30,10 @@ jest.mock('@/features/finance/budget/budget.cashflow', () => ({
   addSurplusToBudget: jest.fn().mockResolvedValue(undefined),
   leaveSurplusUnbudgeted: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock('@/features/finance/budget/budget.goals', () => ({
+  getGoalCash: jest.fn().mockResolvedValue(25_000),
+  getGoalSetAside: jest.fn().mockResolvedValue(0),
+}));
 jest.mock('@/features/finance/budget/budget.committed', () => ({
   getCommitted: jest.fn(),
 }));
@@ -59,6 +63,9 @@ const PLAN: MonthlyPlan = {
   receivedIncome: 290_000,
   unbudgetedIncome: 40_000,
   surplusNeedsJob: true,
+  setAside: 0,
+  spendable: 250_000,
+  setAsideShortfall: 0,
   assigned: 250_000,
   unassigned: 0,
   isOverAllocated: false,
@@ -117,6 +124,15 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
     );
   });
 
+  it('says how much the goals took before the budget (VS-49)', async () => {
+    mockedGetOverview.mockResolvedValue(overviewData({ setAside: 30_000, spendable: 220_000 }));
+    await renderTab();
+
+    expect(screen.getByTestId('budget-set-aside')).toHaveTextContent(
+      'After 30 000 FCFA set aside for your goals.',
+    );
+  });
+
   it('does not mention expected income once the user set the total', async () => {
     mockedGetOverview.mockResolvedValue(overviewData({ isExplicit: true }));
     await renderTab();
@@ -159,6 +175,8 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
     await waitFor(() => expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA'));
     expect(screen.getByTestId('money-budget-left')).toHaveTextContent('150 000 FCFA');
     expect(screen.getByTestId('money-committed')).toHaveTextContent('52 000 FCFA');
+    // 90 000 cash − 25 000 in goal wallets − 52 000 due (VS-49).
+    expect(screen.getByTestId('money-safe')).toHaveTextContent('13 000 FCFA');
     expect(mockedCommitted).toHaveBeenCalledWith('2026-10');
   });
 

@@ -92,6 +92,12 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
                   })}
             </Typography>
 
+            {planner.setAside > 0 ? (
+              <Typography variant="muted" testID="planner-set-aside">
+                {t('planner.setAside', { amount: formatCurrency(planner.setAside) })}
+              </Typography>
+            ) : null}
+
             <View style={styles.chips}>
               {planner.totalInput ? (
                 <SuggestionChip
@@ -167,7 +173,7 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
             <Pill
               label={t('planner.assignedOf', {
                 assigned: formatCurrency(planner.assigned),
-                total: formatCurrency(planner.totalBudget),
+                total: formatCurrency(planner.spendable),
               })}
               tone={planner.isOverAllocated ? 'danger' : 'neutral'}
             />

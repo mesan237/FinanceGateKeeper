@@ -53,6 +53,9 @@ export function GoalCard({ goal, onPress, onSave }: GoalCardProps) {
         <Typography variant="muted">{t('list.keptIn', { wallet: goal.accountName })}</Typography>
 
         {progress.achieved ? null : <PaceLine goal={goal} />}
+        {progress.achieved && goal.monthlyAmount > 0 ? (
+          <Typography variant="muted">{t('list.reachedStillSetAside', { monthly })}</Typography>
+        ) : null}
         {!progress.achieved && progress.onPace === false ? (
           <Typography style={styles.warning}>{t('list.notEnough', { monthly })}</Typography>
         ) : null}

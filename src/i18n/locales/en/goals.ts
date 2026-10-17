@@ -15,6 +15,7 @@ export const goals = {
     savedOf: '{{saved}} of {{target}}',
     keptIn: 'Kept in {{wallet}}',
     reached: 'Goal reached',
+    reachedStillSetAside: 'Still takes {{monthly}} a month from your budget. Edit the goal to stop.',
     byDate: 'By {{date}} · needs {{amount}} a month',
     overdue: 'Date passed · {{amount}} still missing',
     notEnough: 'Your {{monthly}} a month will not get there in time.',
