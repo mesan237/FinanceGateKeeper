@@ -11,7 +11,8 @@ redistribution — was parked in VS-34. It lives on
 it fed. Nothing here reads it any more.
 
 ## Database Tables
-- `allocations` — id, month (YYYY-MM), **total_budget** (nullable), created_at, plus
+- `allocations` — id, month (YYYY-MM), **total_budget** (nullable), **surplus_seen**
+  (nullable, VS-47), created_at, plus
   four percentage columns and a lock flag left over from the parked split
 - `category_budgets` — id, month, category_id, allocated_amount, rollover_enabled,
   created_at, `UNIQUE(month, category_id)`
@@ -27,10 +28,18 @@ reasoning that kept the `funds` and `projects` tables.
 - **The total is hybrid.** `allocations.total_budget` is nullable, and NULL is
   meaningful: it means "derive the total". Setting a value overrides the derived
   figure for that month only; clearing it returns to the derived one.
-- **NULL now derives from the month's income** (`getMonthlyBudget().incomeTotal`).
-  Before VS-34 it derived from `allocated income × expenses_pct`; with no split there
-  is no percentage to apply, so the whole month's income is the honest default.
-  Existing months needed no backfill — only the derivation changed.
+- **NULL derives from expected income, else income received** (VS-47). Expected
+  income is the `monthly_income` estimate in force when the month ended
+  (`budget.cashflow.getExpectedIncome`), so a later estimate never rewrites a closed
+  month. With no estimate the month follows income received, as it did since VS-34.
+  This is what lets a salaried user plan before payday, and stops each irregular
+  payment from growing the budget.
+- **Income never raises the budget by itself.** Income received beyond the total is
+  `unbudgetedIncome`; the Budget tab asks to give it a job (add to budget = an
+  explicit total; leave unassigned = `surplus_seen`, which silences the prompt until
+  more arrives). Only the current month asks.
+- Expected income is never cash and never "income in": the Dashboard's cashflow and
+  every report still read `plan.receivedIncome` / `incomeTotal`.
 - The resolution (`explicit ?? derived`) lives in **one place**,
   `budget.plan.buildMonthlyPlan`. The Dashboard and Reports both call it rather than
   reading `incomeTotal` directly, so all three screens agree on what "the budget" is.
@@ -77,6 +86,18 @@ reasoning that kept the `funds` and `projects` tables.
   conserves the month's total. Covering an overspend should be a decision about
   priorities, not a quiet increase of the overall budget.
 
+### Cash flow (VS-47)
+- The Budget tab shows **budget left · cash in wallets · committed** for the current
+  month only — cash is a today figure, and setting it beside a past month's plan would
+  compare two moments. None is subtracted from another; the one comparison shown is
+  committed > cash. Safe-to-spend waits for Phase 4.
+- **Committed** (`budget.committed`) = recurring occurrences still to log, open
+  planned items due (own date, else list date), and what is still owed on the user's
+  pending debts due — all up to month end, overdue included. Planned items and debts
+  are read by SQL, so `budget` gains no dependency on `planned` or `debt`, and
+  planned items still never touch the budget.
+- Cash on hand comes from `accounts.getCashOnHand` (approved `budget → accounts`).
+
 ## Module Map
 
 Split for the 300-line ceiling; each file has one job.
@@ -87,6 +108,9 @@ Split for the 300-line ceiling; each file has one job.
 | `budget.progress.ts` | **Pure** math: health, projection, pace, carry chain, weekly/burn-down |
 | `budget.envelopes.ts` | `category_budgets` storage: CRUD, totals, spend reads, carry, `total_budget` |
 | `budget.plan.ts` | Composition for the tab and planner; both over-budget guards |
+| `budget.cashflow.ts` | Expected income, the surplus answers (`surplus_seen`, add to budget) |
+| `budget.committed.ts` | Committed money: recurring, planned and debts due by month end |
+| `budget.cashflow.hooks.ts` | `useCashflow` — money view + surplus actions for the tab |
 | `budget.insights.ts` | Analytics: weekly trend, burn-down, budget share, month-over-month |
 | `budget.types.ts` | Slice types |
 | `budget.hooks.ts` | `useBudgetStatus`, `useOverBudgetCheck` |
@@ -105,6 +129,8 @@ callers import `budget.envelopes` / `budget.plan` directly.
 - `CategoryEnvelopeRow.tsx` — one envelope with its meter, pace marker, and run-rate
 - `BudgetPlannerScreen.tsx` + `PlannerCategoryRow.tsx` + `BudgetPlannerRoute.tsx` — the planner
 - `EnvelopeEditSheet.tsx` — single-envelope edit, rollover toggle, cover-from-another
+- `SurplusCard.tsx` — "give it a job" for income beyond the budget (VS-47)
+- `MoneyViewCard.tsx` — budget left · cash in wallets · committed (VS-47)
 - `BudgetInsights.tsx` + `BudgetBurndown.tsx` — the analytics block (collapsed by default)
 - `OverBudgetAlert.tsx` — warning modal, category-aware
 
