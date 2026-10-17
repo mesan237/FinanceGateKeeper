@@ -74,6 +74,15 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
         <Typography variant="muted">{`${Math.round(overview.consumedPct)}%`}</Typography>
       </View>
 
+      {overview.plan.derivedSource === 'expected' && !overview.plan.isExplicit ? (
+        <Typography variant="muted" style={styles.carried} testID="budget-expected-income">
+          {t('hero.expectedIncome', {
+            received: formatCurrency(overview.plan.receivedIncome),
+            expected: formatCurrency(overview.plan.expectedIncome ?? 0),
+          })}
+        </Typography>
+      ) : null}
+
       {overview.totalCarried !== 0 ? (
         <Typography variant="muted" style={styles.carried} testID="budget-carried">
           {t('hero.carried', { amount: formatCurrency(overview.totalCarried) })}

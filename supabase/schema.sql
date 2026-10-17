@@ -139,6 +139,8 @@ create table allocations (
   -- Explicit spendable total for the month. NULL = derive from the income split
   -- (allocated income x expenses_pct), which is what every pre-VS-33 month does.
   total_budget       integer,
+  -- Income above the budget the user chose to leave unbudgeted (VS-47).
+  surplus_seen       integer,
   created_at         text not null,
   updated_at         text not null
 );

@@ -25,7 +25,7 @@
 --      planned_lists.due_date 033, categories.cost_type 036,
 --      quick_add_templates/recurring_expenses.account_id 037,
 --      transfers.deleted_at 038, debts.account_id/deleted_at 039,
---      expenses.refund_of 040).
+--      expenses.refund_of 040, allocations.surplus_seen 042).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -145,6 +145,8 @@ create table if not exists allocations (
   -- Explicit spendable total for the month. NULL = derive from the income split
   -- (allocated income x expenses_pct), which is what every pre-VS-33 month does.
   total_budget       integer,
+  -- Income above the budget the user chose to leave unbudgeted (VS-47).
+  surplus_seen       integer,
   created_at         text not null,
   updated_at         text not null
 );
@@ -319,6 +321,7 @@ alter table expenses             add column if not exists is_unplanned integer n
 alter table income               add column if not exists account_id text;
 alter table income               add column if not exists allocation_status text not null default 'allocated';
 alter table allocations          add column if not exists total_budget integer;
+alter table allocations          add column if not exists surplus_seen integer;
 alter table fund_transactions    add column if not exists account_id text;
 alter table project_transactions add column if not exists account_id text;
 alter table planned_lists        add column if not exists due_date text;

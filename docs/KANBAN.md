@@ -1531,6 +1531,47 @@ reality — labelled provisional — once real months are logged.
 
 ---
 
+### VS-47: Budgeting with Real Cash Flow 🔄 In Progress
+
+**Priority:** High — Phase 3 of the progression plan
+**Blocked by:** VS-46 (income estimate), VS-42 (trustworthy wallet balances)
+
+**Decisions (2026-10-17):** default budget = expected income (fallback: income
+received); income above the budget prompts "give it a job", never raises the budget
+by itself; the Budget tab shows budget left · cash · committed, no safe-to-spend yet.
+
+**Scope:**
+
+- **Expected vs received income.** With no explicit total, the month's budget is the
+  typical-income estimate in force when the month ended; without one, income
+  received. The hero says "Planned on expected income · X of Y received"; the
+  planner says "Following your expected income". Dashboard and Reports keep
+  reporting income received.
+- **Plan before payday.** A month sized by an estimate counts as planned (no empty
+  state) and the over-budget guard binds from day one.
+- **Give it a job.** Income beyond the budget shows a card on the current month: add
+  it to the budget (explicit total) or leave it unassigned. Migration 042 adds
+  synced `allocations.surplus_seen` so a left surplus stays quiet until more arrives.
+- **Money view.** Budget left · cash in wallets (`getCashOnHand`) · committed
+  (recurring still to log, open planned items due, debts owed due — to month end),
+  current month only, with a warning when more is due than the wallets hold.
+- New edge `budget → accounts` (cash on hand). Planned and debts read by SQL.
+- Supabase patch 046 (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: expected income — none, latest before month end, closed months untouched, zero = none.
+- Test: plan — expected before payday, fallback to received, surplus never raises the budget, explicit total, add/leave/ask again.
+- Test: over-budget guard and "planned" state on expected income; dashboard income stays received.
+- Test: committed — weekly/monthly occurrences, paused bills, planned by item/list date, bought/undated excluded, debts less repayments.
+- Test: cash on hand; screens — hero line, surplus card, money view (current month only), planner copy.
+
+**Done when:** a salaried user sees a budget on the 1st, an irregular earner's
+budget no longer climbs with each payment, and the Budget tab tells plan, cash and
+promised money apart.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

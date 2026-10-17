@@ -58,8 +58,10 @@ function category(id: number, name: string): Category {
   return { id, name, parentId: null, isDefault: true, isHidden: false, costType: null };
 }
 
-function setup(options: { isExplicit?: boolean; totalBudget?: number } = {}) {
-  const { isExplicit = true, totalBudget = 200_000 } = options;
+function setup(
+  options: { isExplicit?: boolean; totalBudget?: number; derivedSource?: 'expected' | 'received' } = {},
+) {
+  const { isExplicit = true, totalBudget = 200_000, derivedSource = 'received' } = options;
 
   mockedGetCategories.mockResolvedValue([category(FOOD, 'Food'), category(TRANSPORT, 'Transport')]);
   mockedGetBudgets.mockResolvedValue([]);
@@ -77,6 +79,11 @@ function setup(options: { isExplicit?: boolean; totalBudget?: number } = {}) {
     totalBudget,
     isExplicit,
     derivedTotal: 260_000,
+    derivedSource,
+    expectedIncome: derivedSource === 'expected' ? 260_000 : null,
+    receivedIncome: 260_000,
+    unbudgetedIncome: 0,
+    surplusNeedsJob: false,
     assigned: 0,
     unassigned: totalBudget,
     isOverAllocated: false,
@@ -171,6 +178,18 @@ describe('BudgetPlannerScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('planner-use-derived')).toBeTruthy());
     expect(screen.getByText("Use this month's income")).toBeTruthy();
+  });
+
+  it('follows expected income when the user gave an estimate (VS-47)', async () => {
+    setup({ isExplicit: false, totalBudget: 260_000, derivedSource: 'expected' });
+    await renderPlanner();
+
+    expect(screen.getByTestId('planner-total-hint')).toHaveTextContent(
+      'Following your expected income — 260 000 FCFA.',
+    );
+
+    fireEvent.changeText(screen.getByTestId('planner-total'), '300000');
+    await waitFor(() => expect(screen.getByText('Use expected income')).toBeTruthy());
   });
 
   it('offers the averages shortcut only when there is history to average', async () => {

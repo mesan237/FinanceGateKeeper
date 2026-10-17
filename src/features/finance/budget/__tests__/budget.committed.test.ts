@@ -1,0 +1,147 @@
+import Database from 'better-sqlite3';
+
+import { createBetterSqliteDriver, runMigrations, type SqliteDriver } from '@/services/database';
+import { migrations } from '@/services/migrations';
+
+const mockState: { driver: SqliteDriver | null } = { driver: null };
+
+jest.mock('@/services/database', () => {
+  const actual = jest.requireActual('@/services/database');
+  return {
+    ...actual,
+    execute: (sql: string, params?: ReadonlyArray<unknown>) =>
+      mockState.driver!.execute(sql, params as never),
+    query: (sql: string, params?: ReadonlyArray<unknown>) =>
+      mockState.driver!.query(sql, params as never),
+  };
+});
+
+import { execute, query } from '@/services/database';
+import { getCommitted } from '@/features/finance/budget/budget.committed';
+
+let sqlite: Database.Database;
+
+const FOOD = 1;
+const NOW = '2026-10-01T08:00:00Z';
+
+beforeEach(async () => {
+  sqlite = new Database(':memory:');
+  mockState.driver = createBetterSqliteDriver(
+    sqlite as unknown as Parameters<typeof createBetterSqliteDriver>[0],
+  );
+  await runMigrations(mockState.driver, migrations);
+});
+
+afterEach(() => {
+  sqlite.close();
+  mockState.driver = null;
+});
+
+async function bill(
+  amount: number,
+  frequency: 'monthly' | 'weekly',
+  nextDue: string,
+  isActive = 1,
+): Promise<void> {
+  await execute(
+    `INSERT INTO recurring_expenses (label, amount, category_id, frequency, next_due_date, is_active, created_at)
+     VALUES ('Bill', ?, ?, ?, ?, ?, ?)`,
+    [amount, FOOD, frequency, nextDue, isActive, NOW],
+  );
+}
+
+/** Runs an insert and returns the new row's id. */
+async function insert(sql: string, params: ReadonlyArray<string | number | null>): Promise<number> {
+  await execute(sql, params);
+  const [row] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');
+  return row.id;
+}
+
+async function list(dueDate: string | null): Promise<number> {
+  return insert('INSERT INTO planned_lists (name, created_at, due_date) VALUES (?, ?, ?)', [
+    'Market',
+    NOW,
+    dueDate,
+  ]);
+}
+
+async function item(listId: number, amount: number, plannedDate: string | null = null): Promise<number> {
+  return insert(
+    `INSERT INTO planned_items (list_id, name, estimated_amount, category_id, planned_date, created_at)
+     VALUES (?, 'Rice', ?, ?, ?, ?)`,
+    [listId, amount, FOOD, plannedDate, NOW],
+  );
+}
+
+async function debt(
+  amount: number,
+  direction: 'owed' | 'lent',
+  dueDate: string | null,
+  status: 'pending' | 'settled' = 'pending',
+): Promise<number> {
+  return insert(
+    `INSERT INTO debts (person_name, amount, direction, date, due_date, status, created_at)
+     VALUES ('Awa', ?, ?, '2026-09-01', ?, ?, ?)`,
+    [amount, direction, dueDate, status, NOW],
+  );
+}
+
+describe('getCommitted', () => {
+  it('is zero when nothing is due', async () => {
+    expect(await getCommitted('2026-10')).toEqual({ recurring: 0, planned: 0, debts: 0, total: 0 });
+  });
+
+  it('counts every recurring occurrence still to log by the end of the month', async () => {
+    await bill(30_000, 'monthly', '2026-10-25');
+    await bill(5_000, 'weekly', '2026-10-15'); // 15, 22, 29
+    await bill(9_000, 'monthly', '2026-11-02'); // next month
+    await bill(7_000, 'monthly', '2026-10-20', 0); // paused
+
+    const committed = await getCommitted('2026-10');
+    expect(committed.recurring).toBe(45_000);
+  });
+
+  it('counts open planned items due by the end of the month, by their own date or their list', async () => {
+    const october = await list('2026-10-28');
+    await item(october, 12_000);
+    await item(october, 3_000, '2026-11-05'); // moved to next month
+    const later = await list('2026-11-10');
+    await item(later, 8_000, '2026-10-12'); // own date wins
+    await item(later, 20_000);
+    const bought = await item(october, 4_000);
+    const spent = await insert(
+      "INSERT INTO expenses (amount, category_id, date, created_at) VALUES (4000, ?, '2026-10-02', ?)",
+      [FOOD, NOW],
+    );
+    await execute('UPDATE planned_items SET expense_id = ? WHERE id = ?', [spent, bought]);
+    const undated = await list(null);
+    await item(undated, 6_000);
+
+    const committed = await getCommitted('2026-10');
+    expect(committed.planned).toBe(20_000);
+  });
+
+  it('counts what is still owed on debts due by the end of the month, overdue included', async () => {
+    const partlyPaid = await debt(50_000, 'owed', '2026-10-30');
+    await execute(
+      "INSERT INTO debt_payments (debt_id, amount, date, created_at) VALUES (?, 20000, '2026-10-05', ?)",
+      [partlyPaid, NOW],
+    );
+    await debt(10_000, 'owed', '2026-09-20'); // overdue
+    await debt(70_000, 'owed', '2026-11-15'); // next month
+    await debt(90_000, 'lent', '2026-10-10'); // owed to the user
+    await debt(15_000, 'owed', '2026-10-10', 'settled');
+    await debt(25_000, 'owed', null); // no date
+
+    const committed = await getCommitted('2026-10');
+    expect(committed.debts).toBe(40_000);
+  });
+
+  it('adds the three sources into one total', async () => {
+    await bill(30_000, 'monthly', '2026-10-25');
+    await item(await list('2026-10-28'), 12_000);
+    await debt(10_000, 'owed', '2026-10-30');
+
+    expect((await getCommitted('2026-10')).total).toBe(52_000);
+  });
+});

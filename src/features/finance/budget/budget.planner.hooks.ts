@@ -17,6 +17,7 @@ import {
   suggestFromHistory,
 } from './budget.plan';
 import { getMonthlyBudget } from './budget.service';
+import type { MonthlyPlan } from './budget.types';
 
 /**
  * The month-planning form (VS-33).
@@ -51,8 +52,10 @@ export interface BudgetPlannerState {
   setAmount: (categoryId: number, value: string) => void;
   rollovers: RolloverDraft;
   toggleRollover: (categoryId: number) => void;
-  /** The income-split figure, always offered as a suggestion. */
+  /** The figure the total follows when none is typed, always offered as a suggestion. */
   derivedTotal: number;
+  /** Whether `derivedTotal` is expected income or income received (VS-47). */
+  derivedSource: MonthlyPlan['derivedSource'];
   /** The effective total being distributed. */
   totalBudget: number;
   assigned: number;
@@ -84,6 +87,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
   const [amounts, setAmounts] = useState<AmountDraft>({});
   const [rollovers, setRollovers] = useState<RolloverDraft>({});
   const [derivedTotal, setDerivedTotal] = useState(0);
+  const [derivedSource, setDerivedSource] = useState<MonthlyPlan['derivedSource']>('received');
   const [suggestions, setSuggestions] = useState<Map<number, number>>(new Map());
   const [averageMonths, setAverageMonths] = useState(0);
 
@@ -105,6 +109,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
 
         setCategories(cats);
         setDerivedTotal(plan.derivedTotal);
+        setDerivedSource(plan.derivedSource);
         // Blank when the total is inherited, so the field shows the derived
         // figure as a placeholder rather than pretending the user typed it.
         setTotalInput(plan.isExplicit ? String(plan.totalBudget) : '');
@@ -221,6 +226,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
     rollovers,
     toggleRollover,
     derivedTotal,
+    derivedSource,
     totalBudget,
     assigned,
     unassigned: totalBudget - assigned,

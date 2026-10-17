@@ -83,6 +83,16 @@ export interface MonthlyPlan {
   isExplicit: boolean;
   /** The derived figure, always available so the UI can offer it as a suggestion. */
   derivedTotal: number;
+  /** Where `derivedTotal` comes from: the income estimate, or income received (VS-47). */
+  derivedSource: 'expected' | 'received';
+  /** The typical-income estimate in force for the month; null when none was given. */
+  expectedIncome: number | null;
+  /** Income actually logged in the month so far. */
+  receivedIncome: number;
+  /** Income received beyond `totalBudget` — money that has no job yet. Never negative. */
+  unbudgetedIncome: number;
+  /** True when `unbudgetedIncome` has grown past what the user already chose to leave unbudgeted. */
+  surplusNeedsJob: boolean;
   /** Sum of category allocations (never includes rollover). */
   assigned: number;
   /** `totalBudget - assigned`; negative when over-allocated. */
@@ -164,4 +174,25 @@ export interface Estimates {
 export interface BaselineStep {
   key: 'balances' | 'bills' | 'debts' | 'costTypes' | 'estimates';
   done: boolean;
+}
+
+// ---- VS-47: cash flow -------------------------------------------------------------
+
+/**
+ * Money already spoken for before the month ends: recurring bills still to be
+ * logged, open planned purchases, and what is still owed on debts due. Overdue
+ * items count — they are still owed.
+ */
+export interface CommittedMoney {
+  recurring: number;
+  planned: number;
+  debts: number;
+  total: number;
+}
+
+/** The three figures the Budget tab keeps apart (VS-47). */
+export interface MoneyView {
+  /** Cash on hand: the sum of every active wallet. */
+  cash: number;
+  committed: CommittedMoney;
 }

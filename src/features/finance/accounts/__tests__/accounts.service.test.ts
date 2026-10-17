@@ -24,6 +24,7 @@ import {
   getAccountBalance,
   getAccountById,
   getAccountStats,
+  getCashOnHand,
   getAccounts,
   getTransfers,
   hideAccount,
@@ -289,5 +290,19 @@ describe('createAccount / updateAccount', () => {
     await updateAccount(3, { name: 'Orange Money CI', purpose: 'saving' });
     const acc = await getAccountById(3);
     expect(acc).toMatchObject({ name: 'Orange Money CI', purpose: 'saving' });
+  });
+});
+
+describe('getCashOnHand', () => {
+  it('sums the live balance of every active wallet and leaves hidden ones out', async () => {
+    await insertIncome(100_000, 1);
+    await insertExpense(25_000, 1);
+    await insertIncome(40_000, 2);
+    const savings = await createAccount({ name: 'Savings', type: 'bank', purpose: 'saving', openingBalance: 60_000 });
+    await insertIncome(9_000, 3);
+    await hideAccount(3);
+
+    expect(await getCashOnHand()).toBe(75_000 + 40_000 + 60_000);
+    expect(savings.id).toBeGreaterThan(3);
   });
 });
