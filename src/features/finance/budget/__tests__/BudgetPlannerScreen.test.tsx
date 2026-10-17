@@ -14,6 +14,10 @@ jest.mock('@/features/finance/budget/budget.envelopes', () => ({
   setTotalBudget: jest.fn(),
 }));
 
+jest.mock('@/features/finance/budget/budget.baseline', () => ({
+  countCompleteMonths: jest.fn().mockResolvedValue(1),
+}));
+
 jest.mock('@/features/finance/budget/budget.plan', () => ({
   buildMonthlyPlan: jest.fn(),
   getBudgetableCategories: jest.fn(),
@@ -221,5 +225,14 @@ describe('BudgetPlannerScreen', () => {
 
     await waitFor(() => expect(screen.getByTestId('planner-error')).toHaveTextContent('disk full'));
     expect(mockBack).not.toHaveBeenCalled();
+  });
+
+  it('says how much history the averages rest on (VS-46)', async () => {
+    mockedSuggest.mockResolvedValue(new Map([[FOOD, 55_000]]));
+    await renderPlanner();
+
+    expect(screen.getByTestId('planner-apply-suggestions')).toHaveTextContent(
+      'Use my averages · provisional, 1 month',
+    );
   });
 });

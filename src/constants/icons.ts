@@ -10,6 +10,7 @@ import {
   Building2,
   Calendar,
   Check,
+  Circle,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -59,6 +60,8 @@ export const ICONS = {
   forward: ChevronRight,
   add: Plus,
   check: Check,
+  /** An open step on a checklist (VS-46). */
+  circle: Circle,
   delete: Trash2,
   settings: Settings,
   calendar: Calendar,

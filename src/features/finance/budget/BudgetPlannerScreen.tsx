@@ -105,7 +105,10 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
               />
               {planner.suggestions.size > 0 ? (
                 <SuggestionChip
-                  label={t('planner.useAverages')}
+                  label={t(
+                    planner.averageMonths < 3 ? 'planner.useAveragesProvisional' : 'planner.useAveragesReliable',
+                    { count: planner.averageMonths },
+                  )}
                   testID="planner-apply-suggestions"
                   onPress={planner.applySuggestions}
                 />

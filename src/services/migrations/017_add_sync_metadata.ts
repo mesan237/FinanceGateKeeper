@@ -27,6 +27,7 @@ export const SYNCED_TABLES = [
   'planned_lists',
   'planned_items',
   'balance_checks',
+  'baseline_facts',
 ] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
@@ -43,6 +44,7 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'planned_items',
   'balance_checks',
   'debt_payments',
+  'baseline_facts',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -139,6 +141,7 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
   zero_days: ['date', 'confirmed_at'],
   balance_checks: ['account_id', 'balance', 'difference', 'date', 'note', 'created_at', 'deleted_at'],
   debt_payments: ['debt_id', 'amount', 'account_id', 'date', 'note', 'created_at', 'deleted_at'],
+  baseline_facts: ['kind', 'value', 'source', 'created_at'],
   debts: [
     'person_name',
     'amount',

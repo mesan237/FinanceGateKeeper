@@ -1,4 +1,5 @@
 import i18n from 'i18next';
+import { countCompleteMonths } from './budget.baseline';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Category } from '@/features/finance/expenses/expenses.types';
@@ -60,6 +61,8 @@ export interface BudgetPlannerState {
   isOverAllocated: boolean;
   /** Per-category averages from recent months; empty with no history. */
   suggestions: Map<number, number>;
+  /** Complete months behind the averages; under three reads as provisional (VS-46). */
+  averageMonths: number;
   applySuggestions: () => void;
   copyFromLastMonth: () => Promise<void>;
   useDerivedTotal: () => void;
@@ -82,6 +85,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
   const [rollovers, setRollovers] = useState<RolloverDraft>({});
   const [derivedTotal, setDerivedTotal] = useState(0);
   const [suggestions, setSuggestions] = useState<Map<number, number>>(new Map());
+  const [averageMonths, setAverageMonths] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -89,13 +93,15 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
     async function load() {
       try {
         const monthly = await getMonthlyBudget(monthISO);
-        const [cats, budgets, plan, suggested] = await Promise.all([
+        const [cats, budgets, plan, suggested, completeMonths] = await Promise.all([
           getBudgetableCategories(),
           getCategoryBudgets(monthISO),
           buildMonthlyPlan(monthISO, monthly.incomeTotal),
           suggestFromHistory(monthISO),
+          countCompleteMonths(monthISO),
         ]);
         if (!active) return;
+        setAverageMonths(completeMonths);
 
         setCategories(cats);
         setDerivedTotal(plan.derivedTotal);
@@ -220,6 +226,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
     unassigned: totalBudget - assigned,
     isOverAllocated: assigned > totalBudget,
     suggestions,
+    averageMonths,
     applySuggestions,
     copyFromLastMonth,
     useDerivedTotal,

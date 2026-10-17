@@ -32,6 +32,8 @@ are implemented.
 | **Reserved / committed money** | Cash set aside for known upcoming obligations (recurring, planned, debt due) | Planned (Phase 3–4) | — |
 | **Earmark** | Money assigned to a goal (buffer, sinking fund, reserve). Virtual unless decided otherwise | Planned (Phase 4) | — |
 | **Safe to spend** | Cash on hand − reserved − protected earmarks | Planned. Do not show before cash on hand is trustworthy | — |
-| **Expected income** | Income the user anticipates but has not received. Never counted as cash | Planned (Phase 3) | — |
-| **Observed vs estimated** | Observed = derived from logged transactions over complete, well-covered months. Estimated = typed by the user. They are never silently merged | Planned (Phase 2) | — |
+| **Expected income** | Income the user anticipates but has not received. Never counted as cash. The typical-income estimate (VS-46) is an input for it, not cash | Planned (Phase 3) | — |
+| **Observed vs estimated** | Observed = derived from logged transactions over complete months. Estimated = typed by the user. Never silently merged: the user may adopt an observed figure, which is then recorded as observed | Today (VS-46) | `budget.baseline`, `reports.EstimateVsActualCard` |
+| **Baseline fact** | One answer about the user's money (income, regular or not, pay day, essentials, checklist answers). Append-only; latest per kind wins | Today (VS-46) | `budget.baseline` |
+| **Provisional** | A figure based on fewer than 3 complete months. Shown, labelled, never presented as settled | Today (VS-46) | `countCompleteMonths` |
 | **Net worth** | Cash on hand + other assets − outstanding debts owed | Planned (Phase 6) | — |

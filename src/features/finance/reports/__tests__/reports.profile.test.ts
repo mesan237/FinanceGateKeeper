@@ -165,6 +165,7 @@ describe('habitSavingsPotential', () => {
     const profile = {
       months: [COMPLETE('2026-07'), COMPLETE('2026-08')],
       average: { total: 0, fixed: 0, variable: 0, unexpected: 0 },
+      incomeAverage: null,
       variableCategories: [category(60_000, 50_000), category(10_000, 0)],
       fixedCategories: [category(100_000, 90_000)],
     };
@@ -176,9 +177,27 @@ describe('habitSavingsPotential', () => {
     const profile = {
       months: [COMPLETE('2026-08')],
       average: { total: 0, fixed: 0, variable: 0, unexpected: 0 },
+      incomeAverage: null,
       variableCategories: [category(60_000, 60_000)],
       fixedCategories: [],
     };
     expect(habitSavingsPotential(profile)).toBe(0);
+  });
+
+  it('averages income over the same complete months (VS-46)', () => {
+    const profile = buildSpendingProfile({
+      months: [COMPLETE('2026-07'), PARTIAL('2026-08'), COMPLETE('2026-09')],
+      expenses: [expense('2026-07', FOOD, 10_000)],
+      incomes: [
+        { date: '2026-07-25', amount: 250_000 },
+        { date: '2026-08-25', amount: 999_000 },
+        { date: '2026-09-25', amount: 200_000 },
+        { date: '2026-09-12', amount: 30_000 },
+      ],
+      kindOf: (categoryId) => kindOf(categoryId),
+      labelOf,
+    });
+
+    expect(profile.incomeAverage).toBe(240_000);
   });
 });

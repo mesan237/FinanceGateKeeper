@@ -20,6 +20,7 @@ const PROFILE: SpendingProfile = {
     { categoryId: 1, categoryLabel: 'Food', average: 60_000, lowest: 50_000, highest: 70_000 },
     { categoryId: 5, categoryLabel: 'Transport', average: 35_000, lowest: 30_000, highest: 40_000 },
   ],
+  incomeAverage: 250_000,
   fixedCategories: [
     { categoryId: 9, categoryLabel: 'Bills', average: 100_000, lowest: 100_000, highest: 100_000 },
   ],
@@ -61,6 +62,7 @@ describe('TypicalMonthCard (VS-41)', () => {
         profile={{
           months: [{ month: '2026-09', coverage: 0.4, isComplete: false }],
           average: null,
+          incomeAverage: null,
           variableCategories: [],
           fixedCategories: [],
         }}
@@ -77,5 +79,24 @@ describe('TypicalMonthCard (VS-41)', () => {
 
     fireEvent.press(screen.getByText('Set categories as fixed or variable'));
     expect(mockPush).toHaveBeenCalledWith('/expenses/categories');
+  });
+
+  it('labels the figures provisional until three months are complete (VS-46)', () => {
+    render(<TypicalMonthCard profile={PROFILE} />);
+    expect(screen.getByTestId('typical-confidence')).toHaveTextContent('Provisional');
+
+    render(
+      <TypicalMonthCard
+        profile={{
+          ...PROFILE,
+          months: [
+            { month: '2026-07', coverage: 0.9, isComplete: true },
+            { month: '2026-08', coverage: 0.9, isComplete: true },
+            { month: '2026-09', coverage: 0.9, isComplete: true },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByTestId('typical-confidence')).toHaveTextContent('Reliable');
   });
 });

@@ -20,10 +20,11 @@ import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
 import { OptimizationSuggestions } from './OptimizationSuggestions';
 import { SpendingDonutChart } from './SpendingDonutChart';
+import { EstimateVsActualCard } from './EstimateVsActualCard';
 import { TypicalMonthCard } from './TypicalMonthCard';
 import { UnplannedCard } from './UnplannedCard';
 import { expenseSpentPct } from './reports.service';
-import { useMonthlyReport, useSpendingProfile } from './reports.hooks';
+import { useEstimatesForReport, useMonthlyReport, useSpendingProfile } from './reports.hooks';
 
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
@@ -42,15 +43,25 @@ export function MonthlyReport() {
   // The typical month is not tied to the month being browsed; it is reloaded on
   // focus so a category re-tagged as fixed or variable shows on return (VS-41).
   const { profile, refresh: refreshProfile } = useSpendingProfile();
+  const { baseline, refresh: refreshEstimates, accept } = useEstimatesForReport();
   useFocusEffect(
     useCallback(() => {
       void refreshProfile();
-    }, [refreshProfile]),
+      void refreshEstimates();
+    }, [refreshProfile, refreshEstimates]),
   );
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {profile ? <TypicalMonthCard profile={profile} /> : null}
+      {profile && baseline ? (
+        <EstimateVsActualCard
+          profile={profile}
+          monthlyIncome={baseline.monthlyIncome}
+          monthlyEssentials={baseline.monthlyEssentials}
+          onAccept={(kind, value) => void accept(kind, value)}
+        />
+      ) : null}
 
       <NavArrows
         label={monthLabel(monthISO)}

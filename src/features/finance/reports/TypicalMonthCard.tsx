@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { Pill } from '@/components/Pill';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
@@ -75,6 +76,13 @@ export function TypicalMonthCard({ profile }: TypicalMonthCardProps) {
       <Typography testID="typical-total" style={styles.total}>
         {t('typical.perMonth', { amount: formatCurrency(average.total) })}
       </Typography>
+      {/* Three complete months make an average worth acting on (VS-46). */}
+      <Pill
+        testID="typical-confidence"
+        label={t(complete.length < 3 ? 'typical.provisional' : 'typical.reliable')}
+        tone={complete.length < 3 ? 'warning' : 'success'}
+        style={styles.pill}
+      />
       <Typography variant="muted">
         {t('typical.basedOn', {
           count: complete.length,
@@ -141,6 +149,7 @@ export function TypicalMonthCard({ profile }: TypicalMonthCardProps) {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: { gap: 8 },
+    pill: { alignSelf: 'flex-start' },
     total: { fontSize: 22, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, color: c.TEXT_PRIMARY },
     bar: {
       flexDirection: 'row',

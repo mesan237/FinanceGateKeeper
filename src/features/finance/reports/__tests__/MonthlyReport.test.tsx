@@ -16,6 +16,12 @@ jest.mock('expo-router', () => {
   };
 });
 
+// The estimate comparison has its own tests (VS-46).
+jest.mock('@/features/finance/budget/budget.baseline', () => ({
+  getBaseline: jest.fn().mockResolvedValue(null),
+  setBaselineFact: jest.fn(),
+}));
+
 const mockGetProfile = jest.fn();
 jest.mock('@/features/finance/reports/reports.profile', () => ({
   ...jest.requireActual('@/features/finance/reports/reports.profile'),
@@ -240,6 +246,7 @@ describe('MonthlyReport', () => {
     mockGetProfile.mockResolvedValue({
       months: [{ month: '2026-05', coverage: 0.9, isComplete: true }],
       average: { total: 150_000, fixed: 100_000, variable: 50_000, unexpected: 0 },
+      incomeAverage: null,
       variableCategories: [],
       fixedCategories: [],
     });

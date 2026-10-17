@@ -1491,6 +1491,46 @@ month's imprévus total is not reduced (the month's spending is).
 
 ---
 
+### VS-46: Baseline and Provisional Guidance 🔄 In Progress
+
+**Priority:** High — Phase 2 of the progression plan
+**Blocked by:** VS-41 (complete months), VS-42…VS-45 (Phase 1b)
+
+**Scope:**
+
+Useful from day one on the user's own estimates, honest about how much real
+history stands behind any figure. Lives in `budget` (planning data), so it
+needs no new cross-feature edge: the checklist reads other slices' tables by SQL.
+
+- Migration 041: synced, append-only `baseline_facts` (kind, value, source
+  user | observed). The latest row per kind wins; earlier answers are kept.
+- **Checklist card** on the dashboard ("Set up your baseline", N of 5): confirm
+  balances, add regular bills, record debts (or "None"), check fixed categories
+  (or "Looks right"), enter estimates. Each step opens the existing screen and
+  ticks itself off from real data; hidden when done or dismissed.
+- **Estimates screen** (`/budget/estimates`): typical monthly income, regular
+  or irregular (pay day if regular), monthly essentials; each answer shows when
+  it was set and whether typed or adopted from logged months.
+- **Reports "Estimate vs actual"**: income estimate beside income received,
+  essentials beside observed fixed spending, over complete months; offers to
+  adopt the observed figure, never replaces it silently.
+- **Provisional labels**: the typical-month card (Provisional / Reliable at 3
+  complete months) and the planner's "Use my averages · provisional, N months".
+- Supabase patch 045 (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: facts — empty start, typed vs observed, history kept, unchanged answers not rewritten, validation.
+- Test: checklist — each step from real data or an explicit answer.
+- Test: `countCompleteMonths`; profile income average over complete months.
+- Test: screens — checklist card, estimates form, comparison card (offers, never auto-replaces), labels.
+
+**Done when:** a new or existing user can set up a baseline in five short
+steps, plan from their estimates on day one, and see those estimates set beside
+reality — labelled provisional — once real months are logged.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
