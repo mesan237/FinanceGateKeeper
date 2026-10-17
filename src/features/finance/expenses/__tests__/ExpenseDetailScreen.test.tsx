@@ -20,12 +20,9 @@ jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
 }));
 
 
-// The refunds section reads its own data; these suites are about the purchase.
-jest.mock('@/features/finance/expenses/expenses.refunds', () => ({
-  getRefunds: jest.fn().mockResolvedValue([]),
-  recordRefund: jest.fn(),
-  removeRefund: jest.fn(),
-}));
+// The refunds section has its own tests (ExpenseRefunds.test); these suites are
+// about the purchase, so it is stubbed out rather than loading accounts and refunds.
+jest.mock('@/features/finance/expenses/ExpenseRefunds', () => ({ ExpenseRefunds: () => null }));
 
 const mockGetExpenseById = jest.fn();
 const mockUpdateExpense = jest.fn();
@@ -85,7 +82,8 @@ describe('ExpenseDetailScreen', () => {
     });
     expect(screen.getByDisplayValue('lunch')).toBeTruthy();
     expect(screen.getByTestId('expense-date')).toBeTruthy();
-    expect(screen.getByText('Food')).toBeTruthy();
+    // Categories load separately from the expense, so the label can land later.
+    expect(await screen.findByText('Food')).toBeTruthy();
   });
 
   it('uses a back chevron, not a "Cancel" label — it is a drill-down (VS-26 M3)', async () => {
