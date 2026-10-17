@@ -19,6 +19,8 @@ import { useTransferLog } from './accounts.hooks';
 export interface TransferLogScreenProps {
   /** The transfer to edit; omitted to log a new one (VS-43). */
   transferId?: number;
+  /** Pre-selected destination for a new transfer, e.g. a goal's wallet (VS-48). */
+  toAccountId?: number;
 }
 
 /**
@@ -30,10 +32,10 @@ export interface TransferLogScreenProps {
  * Given a `transferId` it edits that transfer instead, pre-filled, with a
  * confirm-guarded Delete (VS-43).
  */
-export function TransferLogScreen({ transferId }: TransferLogScreenProps = {}) {
+export function TransferLogScreen({ transferId, toAccountId }: TransferLogScreenProps = {}) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
-  const transfer = useTransferLog(transferId);
+  const transfer = useTransferLog(transferId, toAccountId);
   const { show } = useToast();
   const { t } = useTranslation(['accounts', 'common']);
   const [saving, setSaving] = useState(false);

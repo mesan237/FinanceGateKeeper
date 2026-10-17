@@ -43,5 +43,6 @@ export const dataTransfer: Translation<typeof en> = {
     balance_checks: "Soldes confirmés",
     debt_payments: "Remboursements",
     baseline_facts: "Réponses de référence",
+    goals: 'Objectifs',
   },
 };

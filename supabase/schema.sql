@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, users
+  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -306,6 +306,20 @@ create table baseline_facts (
   updated_at  text not null
 );
 
+create table goals (
+  uuid            text primary key,
+  user_id         uuid not null default auth.uid(),
+  name            text not null,
+  kind            text not null,   -- 'buffer' | 'sinking' (VS-48)
+  target_amount   integer not null,
+  target_date     text,            -- required for a sinking fund
+  account_id      text not null,   -- uuid of the wallet holding the goal's money
+  monthly_amount  integer not null default 0,
+  created_at      text not null,
+  deleted_at      text,
+  updated_at      text not null
+);
+
 -- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
@@ -317,7 +331,7 @@ begin
     'categories','funds','projects','accounts','expenses','income','allocations',
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
-    'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts'
+    'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

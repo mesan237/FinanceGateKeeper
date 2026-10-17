@@ -18,6 +18,7 @@ export const navigation = {
     categories: 'Categories',
     debts: 'Debts',
     planned: 'Planned purchases',
+    goals: 'Goals',
     exportImport: 'Export & Import',
     backupRestore: 'Backup & Restore',
     deleteReset: 'Delete & Reset',

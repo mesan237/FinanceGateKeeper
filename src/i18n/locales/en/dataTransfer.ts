@@ -39,5 +39,6 @@ export const dataTransfer = {
     balance_checks: "Balance checks",
     debt_payments: "Debt repayments",
     baseline_facts: "Baseline answers",
+    goals: 'Goals',
   },
 };
