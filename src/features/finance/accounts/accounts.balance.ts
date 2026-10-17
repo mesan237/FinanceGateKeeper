@@ -86,6 +86,17 @@ export async function getAccountBalance(id: number): Promise<number> {
 }
 
 /**
+ * Cash on hand: the live balance of every active wallet, summed (VS-47).
+ * Hidden wallets are left out, like everywhere else they stop showing.
+ * Unassigned spending is not subtracted — it touches no wallet.
+ */
+export async function getCashOnHand(): Promise<number> {
+  const rows = await query<{ id: number }>('SELECT id FROM accounts WHERE is_active = 1');
+  const balances = await Promise.all(rows.map((row) => getAccountBalance(row.id)));
+  return balances.reduce((sum, balance) => sum + balance, 0);
+}
+
+/**
  * Expenses that no wallet accounts for — logged before wallets existed, or
  * from a template without a wallet. Wallet balances leave them out, so the
  * accounts screen says how much is unassigned rather than hiding it (VS-42).

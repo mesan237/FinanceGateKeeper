@@ -107,11 +107,12 @@ export async function getDashboardSnapshot(
   const todaySpending = spendingTrend[spendingTrend.length - 1];
 
   // The Budget tab's own overview, so the dashboard summary can never disagree
-  // with the tab it summarises: the same total (explicit, else the month's
-  // income), the same rollover carry, and the same health verdict (VS-40).
+  // with the tab it summarises: the same total (explicit, else expected or
+  // received income), the same rollover carry, and the same health verdict (VS-40).
   const overview = await getBudgetOverview(monthISO, todayISO);
   const expenseBudget = overview.available;
-  const incomeTotal = overview.plan.derivedTotal;
+  // Income in is what was received; expected income only sizes the plan (VS-47).
+  const incomeTotal = overview.plan.receivedIncome;
 
   const daysRemaining = daysRemainingInMonth(monthISO, todayISO);
 

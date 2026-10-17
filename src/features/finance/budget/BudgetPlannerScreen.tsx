@@ -87,13 +87,15 @@ export function BudgetPlannerScreen({ monthISO = currentMonthISO() }: BudgetPlan
             <Typography variant="muted" testID="planner-total-hint">
               {planner.totalInput
                 ? t('planner.setByYou')
-                : t('planner.followingIncome', { amount: formatCurrency(planner.derivedTotal) })}
+                : t(planner.derivedSource === 'expected' ? 'planner.followingExpected' : 'planner.followingIncome', {
+                    amount: formatCurrency(planner.derivedTotal),
+                  })}
             </Typography>
 
             <View style={styles.chips}>
               {planner.totalInput ? (
                 <SuggestionChip
-                  label={t('planner.useIncome')}
+                  label={t(planner.derivedSource === 'expected' ? 'planner.useExpected' : 'planner.useIncome')}
                   testID="planner-use-derived"
                   onPress={planner.useDerivedTotal}
                 />

@@ -40,6 +40,7 @@ import { migration as transferSoftDelete } from '@/services/migrations/038_trans
 import { migration as debtPayments } from '@/services/migrations/039_debt_payments';
 import { migration as expenseRefunds } from '@/services/migrations/040_expense_refunds';
 import { migration as baselineFacts } from '@/services/migrations/041_baseline_facts';
+import { migration as allocationSurplusSeen } from '@/services/migrations/042_allocation_surplus_seen';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -83,4 +84,5 @@ export const migrations: ReadonlyArray<Migration> = [
   debtPayments,
   expenseRefunds,
   baselineFacts,
+  allocationSurplusSeen,
 ];

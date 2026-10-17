@@ -9,6 +9,7 @@ import type { Account, NewAccountFields, AccountPatch, Transfer } from './accoun
 export {
   getAccountBalance,
   getAccountStats,
+  getCashOnHand,
   getAccountHistory,
   getUnassignedSpending,
 } from './accounts.balance';

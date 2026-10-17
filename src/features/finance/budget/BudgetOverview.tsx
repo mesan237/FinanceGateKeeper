@@ -20,6 +20,9 @@ import { BudgetHeroCard } from './BudgetHeroCard';
 import { BudgetInsights } from './BudgetInsights';
 import { CategoryEnvelopeRow } from './CategoryEnvelopeRow';
 import { EnvelopeEditSheet } from './EnvelopeEditSheet';
+import { MoneyViewCard } from './MoneyViewCard';
+import { SurplusCard } from './SurplusCard';
+import { useCashflow } from './budget.cashflow.hooks';
 import { useBudgetOverview, useEnvelopeActions } from './budget.envelope.hooks';
 import type { CategoryBudgetProgress } from './budget.types';
 
@@ -46,6 +49,10 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
   const { overview, loading, error, refresh } = useBudgetOverview(month);
   const { setBudget, remove, coverFrom, error: writeError } = useEnvelopeActions(month);
+  // Cash and the surplus prompt are about now, so only the current month has them (VS-47).
+  const isCurrent = month === currentMonthISO();
+  const cashflow = useCashflow(month, isCurrent);
+  const refreshCashflow = cashflow.refresh;
 
   // Expenses are logged from other screens entirely, so the tab re-reads every
   // time it regains focus. Without this the figures silently go stale the moment
@@ -53,8 +60,14 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
   useFocusEffect(
     useCallback(() => {
       void refresh();
-    }, [refresh]),
+      void refreshCashflow();
+    }, [refresh, refreshCashflow]),
   );
+
+  const answerSurplus = async (write: Promise<void>) => {
+    await write;
+    await refresh();
+  };
 
   const openPlanner = () => router.push({ pathname: '/budget/plan', params: { month } });
 
@@ -94,6 +107,16 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
         ) : (
           <>
             <BudgetHeroCard overview={overview} />
+
+            {isCurrent && overview.plan.surplusNeedsJob ? (
+              <SurplusCard
+                amount={overview.plan.unbudgetedIncome}
+                onAddToBudget={() => void answerSurplus(cashflow.addToBudget(overview.plan))}
+                onLeave={() => void answerSurplus(cashflow.leaveUnbudgeted(overview.plan))}
+              />
+            ) : null}
+
+            {cashflow.money ? <MoneyViewCard budgetLeft={overview.remaining} money={cashflow.money} /> : null}
 
             {overview.plan.unassigned !== 0 ? (
               <Pressable

@@ -16,6 +16,7 @@ jest.mock('@/services/database', () => {
   };
 });
 
+import { execute } from '@/services/database';
 import { createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 import {
@@ -215,6 +216,19 @@ describe('getDashboardSnapshot', () => {
     // dailyPace — 100 000 / 30 days in June
     expect(state.dailyPace).toBeCloseTo(100000 / 30);
 
+  });
+
+  it('budgets on expected income but reports only income received (VS-47)', async () => {
+    await execute(
+      `INSERT INTO baseline_facts (kind, value, source, created_at)
+       VALUES ('monthly_income', 250000, 'user', '2026-06-01T08:00:00Z')`,
+    );
+    await createIncome({ amount: 40000, source: 'freelance', note: null, date: TODAY });
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+
+    expect(state.budget!.expenseBudget).toBe(250000);
+    expect(state.cashflow!.income).toBe(40000);
   });
 
   it('returns yellow pace when >= 75% of expense budget spent with days remaining', async () => {

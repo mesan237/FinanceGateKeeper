@@ -12,6 +12,7 @@ import {
   getSpendByCategory,
   getTotalBudget,
 } from './budget.envelopes';
+import { getExpectedIncome, getSurplusSeen } from './budget.cashflow';
 import { buildCategoryProgress, buildOverallProgress } from './budget.progress';
 import { getMonthlyBudget } from './budget.service';
 import type {
@@ -32,27 +33,40 @@ import type {
  * The month's distribution — how big the pot is and how much of it is already
  * handed out.
  *
- * `derivedTotal` is always carried alongside `totalBudget` so the planner can
- * offer the month's income as a one-tap suggestion even when the user has set
- * an explicit total.
+ * Without an explicit total the pot is the month's **expected** income when an
+ * estimate exists, so a salaried user can plan before payday and an irregular
+ * receipt does not grow the budget (VS-47); otherwise income received, as
+ * before. Income beyond the pot is `unbudgetedIncome`, for the user to give a
+ * job. `derivedTotal` rides along so the planner can always offer it.
+ *
+ * @param receivedIncome Income logged in the month (`getMonthlyBudget().incomeTotal`).
  */
 export async function buildMonthlyPlan(
   monthISO: string,
-  derivedTotal: number,
+  receivedIncome: number,
 ): Promise<MonthlyPlan> {
-  const [explicit, budgets] = await Promise.all([
+  const [explicit, budgets, expectedIncome, surplusSeen] = await Promise.all([
     getTotalBudget(monthISO),
     getCategoryBudgets(monthISO),
+    getExpectedIncome(monthISO),
+    getSurplusSeen(monthISO),
   ]);
 
+  const derivedTotal = expectedIncome ?? receivedIncome;
   const totalBudget = explicit ?? derivedTotal;
   const assigned = budgets.reduce((sum, b) => sum + b.allocatedAmount, 0);
+  const unbudgetedIncome = Math.max(0, receivedIncome - totalBudget);
 
   return {
     month: monthISO,
     totalBudget,
     isExplicit: explicit !== null,
     derivedTotal,
+    derivedSource: expectedIncome === null ? 'received' : 'expected',
+    expectedIncome,
+    receivedIncome,
+    unbudgetedIncome,
+    surplusNeedsJob: unbudgetedIncome > surplusSeen,
     assigned,
     unassigned: totalBudget - assigned,
     isOverAllocated: assigned > totalBudget,
@@ -147,7 +161,8 @@ export async function getBudgetOverview(
     totalCarried,
     available,
     ...overall,
-    isUnplanned: !plan.isExplicit && plan.assigned === 0,
+    // A month sized by an income estimate already has a plan (VS-47).
+    isUnplanned: !plan.isExplicit && plan.derivedSource === 'received' && plan.assigned === 0,
   };
 }
 
