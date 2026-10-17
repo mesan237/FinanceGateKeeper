@@ -1572,6 +1572,40 @@ promised money apart.
 
 ---
 
+### VS-48: Goals in Real Wallets 🔄 In Progress
+
+**Priority:** High — Phase 4 of the progression plan (part 1 of 2; VS-49 links goals to the budget)
+**Blocked by:** VS-42 (trustworthy wallet balances), VS-43 (transfers), VS-46 (essentials estimate)
+
+**Decisions (2026-10-17):** a goal's money lives in a real wallet (progress = its
+balance, saving = a transfer); first types are the starter buffer and sinking funds;
+saving is pay-yourself-first (VS-49); safe-to-spend on the Budget tab only (VS-49).
+
+**Scope:**
+
+- New `goals` slice (`goals → accounts`). Migration 043: synced, soft-deleted `goals`
+  (name, kind buffer | sinking, target, date for sinking, wallet, monthly amount).
+- One live goal per wallet; hidden wallets refused.
+- **Goals screen** (drawer → Goals): progress from the wallet, "Kept in …", sinking
+  pace ("By {date} · needs X a month", overdue, not-enough warning), buffer pace
+  ("about N months to go"), saved this month, Goal reached.
+- **Save now** opens the transfer form pointed at the goal's wallet
+  (`/transfers/log?to=<id>`, new `TransferLogRoute`).
+- **Form:** kind, name, target (+ one month of essentials), date, wallet, monthly
+  amount (+ the amount a sinking fund needs); edit and confirm-guarded delete.
+- Supabase patch 047 (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: pace — months left, required monthly, overdue, buffer months-to-target, reached, overdrawn.
+- Test: service — validation, wallet already used or hidden, soft delete frees the wallet, progress from balance and this month's transfers.
+- Test: screens — list lines, Save now route, form suggestions, edit/delete; transfer pre-fill; drawer row.
+
+**Done when:** the user can start a buffer and a sinking fund in their own wallets
+and see, from real balances, whether each is on track.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

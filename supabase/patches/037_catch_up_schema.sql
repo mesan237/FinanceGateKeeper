@@ -38,7 +38,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -312,6 +312,20 @@ create table if not exists baseline_facts (
   updated_at  text not null
 );
 
+create table if not exists goals (
+  uuid            text primary key,
+  user_id         uuid not null default auth.uid(),
+  name            text not null,
+  kind            text not null,   -- 'buffer' | 'sinking' (VS-48)
+  target_amount   integer not null,
+  target_date     text,            -- required for a sinking fund
+  account_id      text not null,   -- uuid of the wallet holding the goal's money
+  monthly_amount  integer not null default 0,
+  created_at      text not null,
+  deleted_at      text,
+  updated_at      text not null
+);
+
 -- ----------------------------------------------------------------
 -- 3. Columns added after these tables first shipped.
 -- ----------------------------------------------------------------
@@ -343,7 +357,7 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

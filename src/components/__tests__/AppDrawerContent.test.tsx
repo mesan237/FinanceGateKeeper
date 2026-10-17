@@ -69,6 +69,13 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
+  it('navigates to /goals and closes the drawer when "Goals" is pressed (VS-48)', () => {
+    const { navigation } = renderDrawer();
+    fireEvent.press(screen.getByRole('button', { name: 'Goals' }));
+    expect(mockPush).toHaveBeenCalledWith('/goals');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
   it('navigates to /backup and closes the drawer when "Backup & Restore" is pressed', () => {
     const { navigation } = renderDrawer();
     const row = screen.getByRole('button', { name: 'Backup & Restore' });

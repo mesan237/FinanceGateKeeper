@@ -182,10 +182,13 @@ export function useAccountStats(id: number, monthISO: string) {
  *
  * With `transferId` the form edits that transfer instead (VS-43): it loads the
  * stored fields, `submit` saves the correction, and `remove` deletes it.
+ *
+ * `initialToId` pre-selects the destination of a new transfer — "Save now" on
+ * a goal opens the form pointed at the goal's wallet (VS-48).
  */
-export function useTransferLog(transferId?: number) {
+export function useTransferLog(transferId?: number, initialToId?: number) {
   const [fromId, setFromId] = useState<number | null>(null);
-  const [toId, setToId] = useState<number | null>(null);
+  const [toId, setToId] = useState<number | null>(initialToId ?? null);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(toISODate(new Date()));
   const [note, setNote] = useState('');

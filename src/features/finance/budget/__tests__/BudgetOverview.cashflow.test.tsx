@@ -93,7 +93,7 @@ async function renderTab(monthISO = '2026-10') {
 beforeAll(() => {
   jest.useFakeTimers({
     now: new Date('2026-10-17T12:00:00.000Z'),
-    doNotFake: ['nextTick', 'queueMicrotask', 'setImmediate', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'],
+    doNotFake: ['hrtime', 'nextTick', 'performance', 'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame', 'requestIdleCallback', 'cancelIdleCallback', 'setImmediate', 'clearImmediate', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'],
   });
 });
 

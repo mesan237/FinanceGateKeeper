@@ -87,6 +87,17 @@ describe('TransferLogScreen', () => {
     expect(mockBack).toHaveBeenCalled();
   });
 
+  it('opens with the destination already chosen when saving into a goal (VS-48)', async () => {
+    render(<TransferLogScreen toAccountId={2} />);
+    await screen.findByTestId('transfer-from-trigger');
+    fireEvent.changeText(screen.getByTestId('transfer-amount'), '3000');
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mocked.logTransfer).toHaveBeenCalledWith(1, 2, 3000, expect.any(String), undefined),
+    );
+  });
+
   describe('editing a transfer (VS-43)', () => {
     beforeEach(() => {
       mocked.getTransferById.mockResolvedValue({

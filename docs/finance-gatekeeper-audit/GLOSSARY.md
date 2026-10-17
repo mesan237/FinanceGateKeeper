@@ -32,7 +32,10 @@ are implemented.
 | **Imprévu** | An expense flagged as unexpected. A flag, not a category | Today | `expenses.is_unplanned` |
 | **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, and what is still owed on debts due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47) | `budget.committed.getCommitted` |
 | **Reserved money** | Cash actually set aside for committed money or goals | Planned (Phase 4) | — |
-| **Earmark** | Money assigned to a goal (buffer, sinking fund, reserve). Virtual unless decided otherwise | Planned (Phase 4) | — |
+| **Goal** | A starter buffer or a sinking fund, linked to one wallet. Its progress is that wallet's balance; saving is a transfer into it. One live goal per wallet | Today (VS-48) | `goals.service.getGoals` |
+| **Sinking fund** | A goal for a known cost on a date. Needs `ceil(remaining / months left)` a month, months counted up to (not including) the target month | Today (VS-48) | `goals.progress.goalProgress` |
+| **Starter buffer** | A goal with no date: a cushion for surprises, suggested at one month of essentials | Today (VS-48) | same |
+| **Earmark** | Money assigned to a goal. Decided 2026-10-17: never virtual — a goal's money is its wallet (see Goal) | Superseded by Goal (VS-48) | — |
 | **Safe to spend** | Cash on hand − reserved − protected earmarks | Planned. Do not show before cash on hand is trustworthy | — |
 | **Expected income** | Income the user anticipates but has not received: the typical-income estimate in force when the month ended (a later estimate never rewrites a closed month). Sizes the default budget; never counted as cash or as income in | Today (VS-47) | `budget.cashflow.getExpectedIncome` |
 | **Observed vs estimated** | Observed = derived from logged transactions over complete months. Estimated = typed by the user. Never silently merged: the user may adopt an observed figure, which is then recorded as observed | Today (VS-46) | `budget.baseline`, `reports.EstimateVsActualCard` |

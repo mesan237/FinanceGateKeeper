@@ -1,5 +1,5 @@
-import { TransferLogScreen } from '@/features/finance/accounts/TransferLogScreen';
+import { TransferLogRoute } from '@/features/finance/accounts/TransferLogRoute';
 
-export default function TransferLogRoute() {
-  return <TransferLogScreen />;
+export default function TransferLogScreenRoute() {
+  return <TransferLogRoute />;
 }
