@@ -44,6 +44,7 @@ Three layers — never violate these:
 - `planned` → `expenses` (ticking an item creates the expense, unticking deletes it, VS-36), `accounts` (AccountPicker on the purchase sheet). Nothing depends on `planned`: planned items never affect the budget
 - `debt` → reads `accounts` (AccountPicker on the debt form and the repayment sheet, VS-44). Wallet balances read the `debts`/`debt_payments` tables by SQL, not by importing `debt`
 - `goals` → reads `accounts` (a goal's progress is its linked wallet's balance; AccountPicker on the goal form, VS-48), `expenses` (observed essential spending — `getObservedFixedAverage` — to size an emergency reserve, VS-50). "Save now" opens `/transfers/log?to=<wallet>` by path. Nothing imports `goals`
+- `tontines` → reads `accounts` (AccountPicker and the default wallet on the tontine form and payment sheet, VS-51). Wallet balances read `tontine_payments` by SQL, not by importing `tontines`; tontine money is never spending or income. Nothing imports `tontines`
 All other cross-feature imports are forbidden.
 
 **Attention counts (VS-39).** A feature that needs to surface "something here needs you"

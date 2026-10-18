@@ -1672,6 +1672,41 @@ follows their real essential spending.
 
 ---
 
+### VS-51: Tontines 🔄 In Progress
+
+**Priority:** High — user decision 2026-10-18 (part 1 of 2; VS-52 adds committed money and reminders)
+**Blocked by:** VS-42 (wallet balances), VS-44 (the money-moving pattern of debts)
+
+**Decisions (2026-10-18):** own entity with rotation; money is neither spending nor
+income; contributions are scheduled and ticked when paid; the payout turn is optional
+until the draw.
+
+**Scope:**
+
+- New `tontines` slice (`tontines → accounts`). Migration 045: synced, soft-deleted
+  `tontines` and `tontine_payments`.
+- Schedule derived from start date + weekly/monthly cycle, one cycle per member; status
+  paid / overdue / due / upcoming. Monthly cycles keep their day without drifting.
+- Tick a contribution paid (wallet + date, payment sheet) or undo it; record the payout
+  once the turn is set (amount starts at the full pot) or undo it.
+- Wallet balances count contributions out and the payout in (`accounts.balance`).
+- List and detail: contribution and cycle, turn and pot, contributions paid, overdue,
+  position (ahead / behind / level), finished. Form with edit and confirm-guarded
+  delete. Drawer → Tontines.
+- Supabase patch 049 (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: cycle dates (weekly, clamped monthly), statuses, payout turn, summary (ahead, behind, finished).
+- Test: service — validation, pay once per cycle, payout once and only with a turn, undo, members vs paid cycles, soft delete.
+- Test: wallet balances with contributions, payout, removed and deleted, after a balance check.
+- Test: screens — list lines, detail ticking / undo / payout, form create / edit / delete; drawer row.
+
+**Done when:** the user can follow a tontine cycle by cycle, from real wallets, and see
+where they stand before and after their turn.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
