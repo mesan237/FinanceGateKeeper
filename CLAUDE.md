@@ -37,7 +37,7 @@ Three layers — never violate these:
 
 ## Approved Cross-Feature Dependencies
 - `dashboard` → reads from `expenses`, `budget` (monthly figures and the resolved plan total), `accounts` (Wallets summary)
-- `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33; `advanceDueDate` for committed recurring bills, VS-47), `accounts` (cash on hand for the Budget tab's money view, VS-47). Committed planned purchases and debts are read by SQL, not by importing `planned` or `debt`
+- `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33; `advanceDueDate` for committed recurring bills, VS-47), `accounts` (cash on hand for the Budget tab's money view, VS-47). Committed planned purchases and debts, and goals' set-asides and wallets (VS-49), are read by SQL, not by importing `planned`, `debt` or `goals`
 - `reports` → reads from `expenses`, `income`, `budget`, `debt`
 - `income` → reads `accounts` (AccountPicker on income log)
 - `expenses` → reads `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the log/detail/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)

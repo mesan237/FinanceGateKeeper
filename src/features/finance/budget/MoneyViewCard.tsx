@@ -19,16 +19,16 @@ export interface MoneyViewCardProps {
 
 /**
  * "Your money now" (VS-47): the budget, the cash and the money already
- * promised, kept as three separate figures. The budget is a plan, the cash is
- * a fact, and committed money is neither, so none is subtracted from another.
- * The one comparison made is the one that needs action: more due by month end
- * than the wallets hold. Safe-to-spend waits until the wallets can be trusted.
+ * promised, kept as separate figures. The budget is a plan, the cash is a
+ * fact, and committed money is neither, so the budget is never subtracted from
+ * either. Safe-to-spend (VS-49) is the one derived figure: cash outside the
+ * goal wallets, less what is due by month end. When that is negative the card
+ * says so in words.
  */
 export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('budget');
   const { committed } = money;
-  const shortfall = committed.total - money.cash;
 
   return (
     <Card testID="money-view" style={styles.card}>
@@ -36,6 +36,11 @@ export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
 
       <Figure label={t('money.budgetLeft')} hint={t('money.budgetLeftHint')} amount={budgetLeft} testID="money-budget-left" />
       <Figure label={t('money.cash')} hint={t('money.cashHint')} amount={money.cash} testID="money-cash" />
+      {money.goalCash > 0 ? (
+        <Typography variant="muted" testID="money-goal-cash">
+          {t('money.goalCash', { amount: formatCurrency(money.goalCash) })}
+        </Typography>
+      ) : null}
       <Figure
         label={t('money.committed')}
         hint={t('money.committedHint')}
@@ -52,9 +57,10 @@ export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
         </Typography>
       ) : null}
 
-      {shortfall > 0 ? (
+      <Figure label={t('money.safe')} hint={t('money.safeHint')} amount={money.safeToSpend} testID="money-safe" />
+      {money.safeToSpend < 0 ? (
         <Typography style={styles.shortfall} testID="money-shortfall">
-          {t('money.shortfall', { amount: formatCurrency(shortfall) })}
+          {t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) })}
         </Typography>
       ) : null}
     </Card>

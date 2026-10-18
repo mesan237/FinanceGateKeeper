@@ -24,19 +24,21 @@ are implemented.
 | **Budget total** | The month's spending plan: the explicit total if set, else expected income, else month income | Today (expected income since VS-47) | `budget.plan.buildMonthlyPlan` |
 | **Unbudgeted income** | Income received beyond the budget total. Never raises the budget by itself: the user adds it to the budget or leaves it unassigned ("give it a job") | Today (VS-47) | `buildMonthlyPlan` (`unbudgetedIncome`), `budget.cashflow` |
 | **Envelope** | One category's budget for one month | Today | `category_budgets` |
-| **Available (budget)** | Budget total + rollover carried in. This is what the Budget tab and the Dashboard both measure against | Today | `budget.plan.getBudgetOverview` |
+| **Set aside (goals)** | The month's goal monthly amounts, taken out of the budget total first — pay yourself first | Today (VS-49) | `budget.goals.getGoalSetAside` |
+| **Spendable** | Budget total − set aside, never below zero. What the envelopes share and spending is measured against | Today (VS-49) | `buildMonthlyPlan` |
+| **Available (budget)** | Spendable + rollover carried in. This is what the Budget tab and the Dashboard both measure against | Today | `budget.plan.getBudgetOverview` |
 | **Budget remaining** | Available − month spend. **A plan figure, not money.** It says nothing about what is in the wallets | Today | same |
 | **Budget health** | `on_track` / `at_risk` / `over`, one rule for every screen. The Dashboard shows it as green/yellow/red | Today (unified in VS-40) | `budget.progress.budgetHealth` |
 | **Projected spend** | Fixed spend + variable spend at the daily run-rate, to month end | Today (VS-40) | `budget.progress.projectSpend` |
-| **Unassigned** | Budget total − sum of envelopes | Today | `buildMonthlyPlan` |
+| **Unassigned** | Spendable − sum of envelopes | Today (spendable since VS-49) | `buildMonthlyPlan` |
 | **Imprévu** | An expense flagged as unexpected. A flag, not a category | Today | `expenses.is_unplanned` |
 | **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, and what is still owed on debts due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47) | `budget.committed.getCommitted` |
-| **Reserved money** | Cash actually set aside for committed money or goals | Planned (Phase 4) | — |
+| **Goal cash** | Cash in the wallets of live goals. Part of cash on hand, but promised to a goal | Today (VS-49) | `budget.goals.getGoalCash` |
 | **Goal** | A starter buffer or a sinking fund, linked to one wallet. Its progress is that wallet's balance; saving is a transfer into it. One live goal per wallet | Today (VS-48) | `goals.service.getGoals` |
 | **Sinking fund** | A goal for a known cost on a date. Needs `ceil(remaining / months left)` a month, months counted up to (not including) the target month | Today (VS-48) | `goals.progress.goalProgress` |
 | **Starter buffer** | A goal with no date: a cushion for surprises, suggested at one month of essentials | Today (VS-48) | same |
 | **Earmark** | Money assigned to a goal. Decided 2026-10-17: never virtual — a goal's money is its wallet (see Goal) | Superseded by Goal (VS-48) | — |
-| **Safe to spend** | Cash on hand − reserved − protected earmarks | Planned. Do not show before cash on hand is trustworthy | — |
+| **Safe to spend** | Cash on hand − goal cash − committed money. Budget tab only; may be negative, said in words | Today (VS-49) | `budget.cashflow.hooks.useCashflow` |
 | **Expected income** | Income the user anticipates but has not received: the typical-income estimate in force when the month ended (a later estimate never rewrites a closed month). Sizes the default budget; never counted as cash or as income in | Today (VS-47) | `budget.cashflow.getExpectedIncome` |
 | **Observed vs estimated** | Observed = derived from logged transactions over complete months. Estimated = typed by the user. Never silently merged: the user may adopt an observed figure, which is then recorded as observed | Today (VS-46) | `budget.baseline`, `reports.EstimateVsActualCard` |
 | **Baseline fact** | One answer about the user's money (income, regular or not, pay day, essentials, checklist answers). Append-only; latest per kind wins | Today (VS-46) | `budget.baseline` |

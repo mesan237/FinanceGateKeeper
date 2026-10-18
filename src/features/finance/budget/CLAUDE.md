@@ -89,14 +89,29 @@ reasoning that kept the `funds` and `projects` tables.
 ### Cash flow (VS-47)
 - The Budget tab shows **budget left · cash in wallets · committed** for the current
   month only — cash is a today figure, and setting it beside a past month's plan would
-  compare two moments. None is subtracted from another; the one comparison shown is
-  committed > cash. Safe-to-spend waits for Phase 4.
+  compare two moments. The budget is never subtracted from cash or committed.
+- **Safe to spend** (VS-49) = cash on hand − cash in goal wallets − committed. A
+  negative figure is said in words. Budget tab only (user decision); not on the
+  dashboard.
 - **Committed** (`budget.committed`) = recurring occurrences still to log, open
   planned items due (own date, else list date), and what is still owed on the user's
   pending debts due — all up to month end, overdue included. Planned items and debts
   are read by SQL, so `budget` gains no dependency on `planned` or `debt`, and
   planned items still never touch the budget.
 - Cash on hand comes from `accounts.getCashOnHand` (approved `budget → accounts`).
+
+### Pay yourself first (VS-49)
+- `plan.setAside` = the monthly amounts of goals live during the month (created
+  before it ended, not deleted before it began), read from `goals` by SQL
+  (`budget.goals`). Deleting a goal leaves the months it was live unchanged.
+- `plan.spendable = max(0, totalBudget − setAside)` is what the envelopes share
+  (`unassigned = spendable − assigned`), what `available` starts from, and what the
+  month-wide guard and Reports' "planned" measure against. `setAsideShortfall` says
+  how far goals exceed the total.
+- The guard stays silent only when `totalBudget` is 0. If goals take the whole
+  budget, any spending warns.
+- Surplus income is still measured against `totalBudget`. Goals are part of the
+  plan, not extra spending.
 
 ## Module Map
 
@@ -110,6 +125,8 @@ Split for the 300-line ceiling; each file has one job.
 | `budget.plan.ts` | Composition for the tab and planner; both over-budget guards |
 | `budget.cashflow.ts` | Expected income, the surplus answers (`surplus_seen`, add to budget) |
 | `budget.committed.ts` | Committed money: recurring, planned and debts due by month end |
+| `budget.goals.ts` | Goals' monthly set-aside and goal-wallet cash, read by SQL (VS-49) |
+| `budget.suggestions.ts` | `suggestFromHistory` (re-exported by `budget.plan`) |
 | `budget.cashflow.hooks.ts` | `useCashflow` — money view + surplus actions for the tab |
 | `budget.insights.ts` | Analytics: weekly trend, burn-down, budget share, month-over-month |
 | `budget.types.ts` | Slice types |

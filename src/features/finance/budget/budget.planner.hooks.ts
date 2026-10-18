@@ -56,8 +56,12 @@ export interface BudgetPlannerState {
   derivedTotal: number;
   /** Whether `derivedTotal` is expected income or income received (VS-47). */
   derivedSource: MonthlyPlan['derivedSource'];
-  /** The effective total being distributed. */
+  /** The month's total, before goals. */
   totalBudget: number;
+  /** What goals take first (VS-49). */
+  setAside: number;
+  /** `totalBudget - setAside`, never below zero — what the envelopes share. */
+  spendable: number;
   assigned: number;
   /** `totalBudget - assigned` — the figure the planner drives to zero. */
   unassigned: number;
@@ -88,6 +92,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
   const [rollovers, setRollovers] = useState<RolloverDraft>({});
   const [derivedTotal, setDerivedTotal] = useState(0);
   const [derivedSource, setDerivedSource] = useState<MonthlyPlan['derivedSource']>('received');
+  const [setAside, setSetAside] = useState(0);
   const [suggestions, setSuggestions] = useState<Map<number, number>>(new Map());
   const [averageMonths, setAverageMonths] = useState(0);
 
@@ -110,6 +115,7 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
         setCategories(cats);
         setDerivedTotal(plan.derivedTotal);
         setDerivedSource(plan.derivedSource);
+        setSetAside(plan.setAside);
         // Blank when the total is inherited, so the field shows the derived
         // figure as a placeholder rather than pretending the user typed it.
         setTotalInput(plan.isExplicit ? String(plan.totalBudget) : '');
@@ -137,6 +143,8 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
   }, [monthISO]);
 
   const totalBudget = totalInput ? Number(totalInput) : derivedTotal;
+  // Pay yourself first (VS-49): the envelopes share what the goals leave.
+  const spendable = Math.max(0, totalBudget - setAside);
 
   const assigned = useMemo(
     () => Object.values(amounts).reduce((sum, value) => sum + toAmount(value), 0),
@@ -166,12 +174,12 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
     (categoryId: number) => {
       setAmounts((prev) => {
         const currentAssigned = Object.values(prev).reduce((s, v) => s + toAmount(v), 0);
-        const remainder = totalBudget - currentAssigned;
+        const remainder = spendable - currentAssigned;
         if (remainder <= 0) return prev;
         return { ...prev, [categoryId]: String(toAmount(prev[categoryId]) + remainder) };
       });
     },
-    [totalBudget],
+    [spendable],
   );
 
   const copyFromLastMonth = useCallback(async () => {
@@ -228,9 +236,11 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
     derivedTotal,
     derivedSource,
     totalBudget,
+    setAside,
+    spendable,
     assigned,
-    unassigned: totalBudget - assigned,
-    isOverAllocated: assigned > totalBudget,
+    unassigned: spendable - assigned,
+    isOverAllocated: assigned > spendable,
     suggestions,
     averageMonths,
     applySuggestions,

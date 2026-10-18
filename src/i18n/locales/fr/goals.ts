@@ -18,6 +18,7 @@ export const goals: Translation<typeof en> = {
     savedOf: '{{saved}} sur {{target}}',
     keptIn: 'Dans {{wallet}}',
     reached: 'Objectif atteint',
+    reachedStillSetAside: 'Prend encore {{monthly}} par mois sur votre budget. Modifiez l’objectif pour arrêter.',
     byDate: 'Pour le {{date}} · {{amount}} par mois nécessaires',
     overdue: 'Date passée · il manque {{amount}}',
     notEnough: 'Vos {{monthly}} par mois ne suffiront pas à temps.',

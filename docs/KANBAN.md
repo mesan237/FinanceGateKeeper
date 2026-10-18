@@ -1606,6 +1606,36 @@ and see, from real balances, whether each is on track.
 
 ---
 
+### VS-49: Pay Yourself First and Safe to Spend 🔄 In Progress
+
+**Priority:** High — Phase 4 of the progression plan (part 2 of 2)
+**Blocked by:** VS-48 (goals), VS-47 (money view)
+
+**Scope:**
+
+- **Pay yourself first.** Goals' monthly amounts (goals live during the month) are
+  taken out of the month's total before the envelopes: `spendable = total − set aside`.
+  The planner says "X goes to your goals first" and shares out only the rest; the
+  hero says "After X set aside for your goals". Available, the month-wide guard,
+  the Dashboard and Reports' planned figure all measure against spendable.
+- **Safe to spend** in "Your money now": cash − goal-wallet cash − committed, with
+  "X of it is in goal wallets" and a warning in words when negative. Budget tab only.
+- A reached goal that still sets money aside says so on its card.
+- `budget` reads `goals` by SQL (`budget.goals`), so there is no `budget → goals` edge.
+  `suggestFromHistory` moves to `budget.suggestions.ts` (300-line ceiling).
+- No migration.
+
+**TDD Anchor:**
+
+- Test: set aside — live window by created/deleted dates; goal cash excludes deleted goals and hidden wallets.
+- Test: plan — spendable, unassigned, over-allocation, shortfall floor, guard when goals take everything, surplus vs total.
+- Test: screens — planner line and remainder, hero line, money view safe-to-spend and warning, reached-goal hint.
+
+**Done when:** saving for goals is the first line of every month's plan, and the
+Budget tab says how much is truly free to spend.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

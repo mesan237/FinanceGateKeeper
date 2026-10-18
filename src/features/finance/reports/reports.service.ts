@@ -224,8 +224,9 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
     getOutstandingTotals(),
   ]);
   // The same resolution the Budget tab uses: the explicit total when the user
-  // set one, else the month's expected income, else its income received (VS-47).
-  const planned = (await buildMonthlyPlan(monthISO, budget.incomeTotal)).totalBudget;
+  // set one, else the month's expected income, else its income received (VS-47),
+  // less what the goals set aside first (VS-49).
+  const planned = (await buildMonthlyPlan(monthISO, budget.incomeTotal)).spendable;
 
   const labelOf = categoryLabelResolver(categories);
   const actual = sumAmounts(expenses);

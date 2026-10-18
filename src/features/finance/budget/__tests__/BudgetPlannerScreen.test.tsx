@@ -59,9 +59,14 @@ function category(id: number, name: string): Category {
 }
 
 function setup(
-  options: { isExplicit?: boolean; totalBudget?: number; derivedSource?: 'expected' | 'received' } = {},
+  options: {
+    isExplicit?: boolean;
+    totalBudget?: number;
+    derivedSource?: 'expected' | 'received';
+    setAside?: number;
+  } = {},
 ) {
-  const { isExplicit = true, totalBudget = 200_000, derivedSource = 'received' } = options;
+  const { isExplicit = true, totalBudget = 200_000, derivedSource = 'received', setAside = 0 } = options;
 
   mockedGetCategories.mockResolvedValue([category(FOOD, 'Food'), category(TRANSPORT, 'Transport')]);
   mockedGetBudgets.mockResolvedValue([]);
@@ -84,8 +89,11 @@ function setup(
     receivedIncome: 260_000,
     unbudgetedIncome: 0,
     surplusNeedsJob: false,
+    setAside,
+    spendable: totalBudget - setAside,
+    setAsideShortfall: 0,
     assigned: 0,
-    unassigned: totalBudget,
+    unassigned: totalBudget - setAside,
     isOverAllocated: false,
   });
 }
@@ -95,6 +103,11 @@ async function renderPlanner() {
   render(<BudgetPlannerScreen monthISO="2026-08" />);
   await waitFor(() => expect(screen.queryByTestId('planner-loading')).toBeNull());
 }
+
+// The planner renders every category row plus a sticky footer, so each render
+// is expensive; under a saturated full-suite run the default 5 s budget is too
+// tight (seen as one random test timing out per run). Matches BudgetOverview.
+jest.setTimeout(20_000);
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -190,6 +203,37 @@ describe('BudgetPlannerScreen', () => {
 
     fireEvent.changeText(screen.getByTestId('planner-total'), '300000');
     await waitFor(() => expect(screen.getByText('Use expected income')).toBeTruthy());
+  });
+
+  it('sets the goals aside before sharing out the rest (VS-49)', async () => {
+    setup({ setAside: 30_000 });
+    await renderPlanner();
+
+    expect(screen.getByTestId('planner-set-aside')).toHaveTextContent(
+      '30 000 FCFA goes to your goals first. The rest is shared out below.',
+    );
+    expect(screen.getByTestId('planner-unassigned')).toHaveTextContent('170 000 FCFA');
+
+    fireEvent.changeText(screen.getByTestId(`planner-category-${FOOD}-amount`), '180000');
+
+    await waitFor(() => expect(screen.getByTestId('planner-over-warning')).toBeTruthy());
+  });
+
+  it('drops only what is left after the goals into a category', async () => {
+    setup({ setAside: 30_000 });
+    await renderPlanner();
+
+    fireEvent.press(screen.getByTestId(`planner-category-${FOOD}-remainder`));
+
+    await waitFor(() =>
+      expect(screen.getByTestId(`planner-category-${FOOD}-amount`).props.value).toBe('170 000'),
+    );
+  });
+
+  it('says nothing about goals when none set money aside', async () => {
+    await renderPlanner();
+
+    expect(screen.queryByTestId('planner-set-aside')).toBeNull();
   });
 
   it('offers the averages shortcut only when there is history to average', async () => {
