@@ -33,6 +33,28 @@ export function costTypeResolver(
   };
 }
 
+/** The facts that decide how one expense counts in a month's spending. */
+export interface SpendFacts {
+  categoryId: number;
+  subcategoryId: number | null;
+  isRecurring: boolean;
+  isUnplanned: boolean;
+}
+
+/**
+ * How an expense counts: a surprise first (an imprévu is never a habit), then
+ * an auto-logged recurring bill as fixed, then its category's tag. The one
+ * rule for the typical-month profile and the observed essentials (VS-50). Pure.
+ */
+export function spendKindOf(
+  expense: SpendFacts,
+  kindOf: (categoryId: number, subcategoryId: number | null) => CostType,
+): 'fixed' | 'variable' | 'unexpected' {
+  if (expense.isUnplanned) return 'unexpected';
+  if (expense.isRecurring) return 'fixed';
+  return kindOf(expense.categoryId, expense.subcategoryId);
+}
+
 /** The cost type a category actually has once inheritance is applied. */
 export function effectiveCostType(category: Category, categories: ReadonlyArray<Category>): CostType {
   const resolve = costTypeResolver(categories);

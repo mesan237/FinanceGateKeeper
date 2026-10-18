@@ -310,13 +310,14 @@ create table goals (
   uuid            text primary key,
   user_id         uuid not null default auth.uid(),
   name            text not null,
-  kind            text not null,   -- 'buffer' | 'sinking' (VS-48)
+  kind            text not null,   -- 'buffer' | 'sinking' (VS-48) | 'reserve' (VS-50)
   target_amount   integer not null,
   target_date     text,            -- required for a sinking fund
   account_id      text not null,   -- uuid of the wallet holding the goal's money
   monthly_amount  integer not null default 0,
   created_at      text not null,
   deleted_at      text,
+  target_months   integer,         -- months of essentials, reserves only (VS-50)
   updated_at      text not null
 );
 

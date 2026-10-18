@@ -17,6 +17,7 @@ import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { ReserveSizeField } from './ReserveSizeField';
 import { useGoalForm } from './goals.hooks';
 import { GOAL_KINDS, type GoalKind } from './goals.types';
 
@@ -75,17 +76,23 @@ export function GoalForm({ goalId }: GoalFormProps) {
             />
           </Field>
 
-          <Field label={t('form.target')}>
-            <AmountInput testID="goal-target" value={form.target} onChangeText={form.setTarget} accessibilityLabel={t('form.target')} />
-            {form.kind === 'buffer' && form.essentials ? (
-              <Button
-                label={t('form.essentialsSuggestion', { amount: formatCurrency(form.essentials) })}
-                variant="secondary"
-                compact
-                onPress={() => form.setTarget(String(form.essentials))}
-              />
-            ) : null}
-          </Field>
+          {form.kind === 'reserve' ? (
+            <Field label={t('form.months')}>
+              <ReserveSizeField months={form.months} onMonthsChange={form.setMonths} essentials={form.essentialMonthly} />
+            </Field>
+          ) : (
+            <Field label={t('form.target')}>
+              <AmountInput testID="goal-target" value={form.target} onChangeText={form.setTarget} accessibilityLabel={t('form.target')} />
+              {form.kind === 'buffer' && form.essentials ? (
+                <Button
+                  label={t('form.essentialsSuggestion', { amount: formatCurrency(form.essentials) })}
+                  variant="secondary"
+                  compact
+                  onPress={() => form.setTarget(String(form.essentials))}
+                />
+              ) : null}
+            </Field>
+          )}
 
           {form.kind === 'sinking' ? (
             <Field label={t('form.targetDate')}>

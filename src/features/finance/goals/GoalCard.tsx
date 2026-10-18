@@ -51,6 +51,12 @@ export function GoalCard({ goal, onPress, onSave }: GoalCardProps) {
         </Typography>
         <ProgressBar value={progress.pct} color={progress.achieved ? c.SUCCESS : undefined} />
         <Typography variant="muted">{t('list.keptIn', { wallet: goal.accountName })}</Typography>
+        {goal.reserveBasis && goal.targetMonths !== null ? (
+          <Typography variant="muted">
+            {t('list.reserveOf', { count: goal.targetMonths, essentials: formatCurrency(goal.reserveBasis.essentials) })}
+            {goal.reserveBasis.completeMonths < 3 ? ` · ${t('list.provisional')}` : ''}
+          </Typography>
+        ) : null}
 
         {progress.achieved ? null : <PaceLine goal={goal} />}
         {progress.achieved && goal.monthlyAmount > 0 ? (
