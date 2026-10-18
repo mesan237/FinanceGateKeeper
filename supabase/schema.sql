@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, users
+  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -321,6 +321,35 @@ create table goals (
   updated_at      text not null
 );
 
+create table tontines (
+  uuid                 text primary key,
+  user_id              uuid not null default auth.uid(),
+  name                 text not null,
+  contribution_amount  integer not null,
+  frequency            text not null,   -- 'weekly' | 'monthly' (VS-51)
+  start_date           text not null,
+  members              integer not null,
+  payout_turn          integer,         -- null until the draw settles it
+  account_id           text,            -- uuid of the usual wallet, or null
+  created_at           text not null,
+  deleted_at           text,
+  updated_at           text not null
+);
+
+create table tontine_payments (
+  uuid         text primary key,
+  user_id      uuid not null default auth.uid(),
+  tontine_id   text not null,   -- uuid of the tontine
+  kind         text not null,   -- 'contribution' | 'payout'
+  cycle        integer not null,
+  amount       integer not null,
+  account_id   text,            -- uuid of the wallet, or null
+  date         text not null,
+  created_at   text not null,
+  deleted_at   text,
+  updated_at   text not null
+);
+
 -- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
@@ -332,7 +361,8 @@ begin
     'categories','funds','projects','accounts','expenses','income','allocations',
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
-    'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals'
+    'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals',
+    'tontines','tontine_payments'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

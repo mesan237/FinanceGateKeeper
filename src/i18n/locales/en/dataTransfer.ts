@@ -40,5 +40,7 @@ export const dataTransfer = {
     debt_payments: "Debt repayments",
     baseline_facts: "Baseline answers",
     goals: 'Goals',
+    tontines: 'Tontines',
+    tontine_payments: 'Tontine payments',
   },
 };

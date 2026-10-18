@@ -29,6 +29,8 @@ export const SYNCED_TABLES = [
   'balance_checks',
   'baseline_facts',
   'goals',
+  'tontines',
+  'tontine_payments',
 ] as const;
 
 export type SyncedTable = (typeof SYNCED_TABLES)[number];
@@ -47,6 +49,8 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'debt_payments',
   'baseline_facts',
   'goals',
+  'tontines',
+  'tontine_payments',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -154,6 +158,18 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'created_at',
     'deleted_at',
   ],
+  tontines: [
+    'name',
+    'contribution_amount',
+    'frequency',
+    'start_date',
+    'members',
+    'payout_turn',
+    'account_id',
+    'created_at',
+    'deleted_at',
+  ],
+  tontine_payments: ['tontine_id', 'kind', 'cycle', 'amount', 'account_id', 'date', 'created_at', 'deleted_at'],
   debts: [
     'person_name',
     'amount',

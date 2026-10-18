@@ -43,6 +43,7 @@ import { migration as baselineFacts } from '@/services/migrations/041_baseline_f
 import { migration as allocationSurplusSeen } from '@/services/migrations/042_allocation_surplus_seen';
 import { migration as goals } from '@/services/migrations/043_goals';
 import { migration as goalReserve } from '@/services/migrations/044_goal_reserve';
+import { migration as tontines } from '@/services/migrations/045_tontines';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -89,4 +90,5 @@ export const migrations: ReadonlyArray<Migration> = [
   allocationSurplusSeen,
   goals,
   goalReserve,
+  tontines,
 ];

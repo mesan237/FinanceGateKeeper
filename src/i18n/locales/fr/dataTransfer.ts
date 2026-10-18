@@ -44,5 +44,7 @@ export const dataTransfer: Translation<typeof en> = {
     debt_payments: "Remboursements",
     baseline_facts: "Réponses de référence",
     goals: 'Objectifs',
+    tontines: 'Tontines',
+    tontine_payments: 'Paiements de tontine',
   },
 };

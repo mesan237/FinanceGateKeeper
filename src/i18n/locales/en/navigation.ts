@@ -19,6 +19,7 @@ export const navigation = {
     debts: 'Debts',
     planned: 'Planned purchases',
     goals: 'Goals',
+    tontines: 'Tontines',
     exportImport: 'Export & Import',
     backupRestore: 'Backup & Restore',
     deleteReset: 'Delete & Reset',
