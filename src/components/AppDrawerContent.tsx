@@ -51,6 +51,7 @@ const SECTIONS: DrawerSection[] = [
       { labelKey: 'debts', icon: 'debt', route: '/debt' },
       { labelKey: 'planned', icon: 'planned', route: '/planned', attentionKey: ATTENTION_PLANNED },
       { labelKey: 'goals', icon: 'goal', route: '/goals' },
+      { labelKey: 'tontines', icon: 'tontine', route: '/tontines' },
       { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
       { labelKey: 'backupRestore', icon: 'backup', route: '/backup' },
       { labelKey: 'deleteReset', icon: 'delete', soon: true },

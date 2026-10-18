@@ -23,6 +23,7 @@ export const navigation: Translation<typeof en> = {
     debts: 'Dettes',
     planned: 'Achats prévus',
     goals: 'Objectifs',
+    tontines: 'Tontines',
     exportImport: 'Export et import',
     backupRestore: 'Sauvegarde et restauration',
     deleteReset: 'Supprimer et réinitialiser',

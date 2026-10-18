@@ -66,7 +66,7 @@ export const goals = {
     nameRequired: 'Give the goal a name.',
     targetPositive: 'The target must be a positive whole amount.',
     monthlyAmount: 'The monthly amount must be a whole amount, zero or more.',
-    kindInvalid: 'Choose a starter buffer or a sinking fund.',
+    kindInvalid: 'Choose a starter buffer, an emergency reserve or a sinking fund.',
     dateRequired: 'Pick the date the money is needed by.',
     walletInvalid: 'Pick an active wallet for this goal.',
     walletTaken: 'That wallet already holds another goal. Pick a wallet of its own.',

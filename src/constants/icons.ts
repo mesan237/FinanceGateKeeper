@@ -42,6 +42,7 @@ import {
   Target,
   Trash2,
   UserRound,
+  Users,
   Wallet,
   X,
   type LucideIcon,
@@ -102,6 +103,7 @@ export const ICONS = {
   hide: EyeOff,
   show: Eye,
   goal: Target,
+  tontine: Users,
   profile: UserRound,
   lock: Lock,
 } satisfies Record<string, LucideIcon>;

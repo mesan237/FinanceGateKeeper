@@ -69,7 +69,7 @@ export const goals: Translation<typeof en> = {
     nameRequired: 'Donnez un nom à l’objectif.',
     targetPositive: 'Le montant visé doit être un montant entier positif.',
     monthlyAmount: 'Le montant mensuel doit être un montant entier, zéro ou plus.',
-    kindInvalid: 'Choisissez un coussin de départ ou une épargne dédiée.',
+    kindInvalid: 'Choisissez un coussin de départ, une réserve d’urgence ou une épargne dédiée.',
     dateRequired: 'Choisissez la date à laquelle l’argent est nécessaire.',
     walletInvalid: 'Choisissez un portefeuille actif pour cet objectif.',
     walletTaken: 'Ce portefeuille contient déjà un autre objectif. Choisissez-en un à part.',

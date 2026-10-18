@@ -39,7 +39,8 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
+    'tontines', 'tontine_payments'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -328,6 +329,35 @@ create table if not exists goals (
   updated_at      text not null
 );
 
+create table if not exists tontines (
+  uuid                 text primary key,
+  user_id              uuid not null default auth.uid(),
+  name                 text not null,
+  contribution_amount  integer not null,
+  frequency            text not null,   -- 'weekly' | 'monthly' (VS-51)
+  start_date           text not null,
+  members              integer not null,
+  payout_turn          integer,         -- null until the draw settles it
+  account_id           text,            -- uuid of the usual wallet, or null
+  created_at           text not null,
+  deleted_at           text,
+  updated_at           text not null
+);
+
+create table if not exists tontine_payments (
+  uuid         text primary key,
+  user_id      uuid not null default auth.uid(),
+  tontine_id   text not null,   -- uuid of the tontine
+  kind         text not null,   -- 'contribution' | 'payout'
+  cycle        integer not null,
+  amount       integer not null,
+  account_id   text,            -- uuid of the wallet, or null
+  date         text not null,
+  created_at   text not null,
+  deleted_at   text,
+  updated_at   text not null
+);
+
 -- ----------------------------------------------------------------
 -- 3. Columns added after these tables first shipped.
 -- ----------------------------------------------------------------
@@ -360,7 +390,8 @@ begin
     'categories', 'funds', 'projects', 'accounts', 'expenses',
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
-    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals'
+    'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
+    'tontines', 'tontine_payments'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

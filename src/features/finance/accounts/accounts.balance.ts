@@ -34,7 +34,9 @@ async function latestCheck(id: number): Promise<Checkpoint | null> {
  * Adds income credits and transfers in; subtracts expense debits, transfers
  * out, manual fund deposits, and manual project contributions. Debts move it
  * too (VS-44): a loan given lowers the wallet it left and a loan received
- * raises the one it landed in; repayments move money back. Rows with a NULL
+ * raises the one it landed in; repayments move money back. So do tontines
+ * (VS-51): a contribution leaves its wallet and the payout lands in one —
+ * never spending or income, so only balances read them. Rows with a NULL
  * `account_id` (legacy entries and automated allocation deposits) are excluded
  * because they touch no real wallet.
  *
@@ -58,6 +60,8 @@ export async function getAccountBalance(id: number): Promise<number> {
   });
   const payments = 'debt_payments p JOIN debts d ON d.id = p.debt_id';
   const livePayment = ' AND p.deleted_at IS NULL AND d.deleted_at IS NULL';
+  const tontine = 'tontine_payments p JOIN tontines t ON t.id = p.tontine_id';
+  const liveTontine = ' AND p.deleted_at IS NULL AND t.deleted_at IS NULL';
   const parts = [
     { sign: '+', table: 'income', ...flow('account_id') },
     { sign: '-', table: 'expenses', ...flow('account_id') },
@@ -69,6 +73,8 @@ export async function getAccountBalance(id: number): Promise<number> {
     { sign: '+', table: 'debts', ...flow('account_id', " AND deleted_at IS NULL AND direction = 'owed'") },
     { sign: '+', table: payments, ...flow('account_id', `${livePayment} AND d.direction = 'lent'`, 'p.') },
     { sign: '-', table: payments, ...flow('account_id', `${livePayment} AND d.direction = 'owed'`, 'p.') },
+    { sign: '-', table: tontine, ...flow('account_id', `${liveTontine} AND p.kind = 'contribution'`, 'p.') },
+    { sign: '+', table: tontine, ...flow('account_id', `${liveTontine} AND p.kind = 'payout'`, 'p.') },
   ];
 
   const base = check
