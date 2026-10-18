@@ -1,8 +1,14 @@
-/** What a goal is for: a cushion for surprises, or a known cost on a date. */
-export type GoalKind = 'buffer' | 'sinking';
+/**
+ * What a goal is for: a small cushion for surprises, a reserve sized in months
+ * of essential spending (VS-50), or a known cost on a date.
+ */
+export type GoalKind = 'buffer' | 'reserve' | 'sinking';
 
 /** The goal kinds, in the order the form offers them. */
-export const GOAL_KINDS: ReadonlyArray<GoalKind> = ['buffer', 'sinking'];
+export const GOAL_KINDS: ReadonlyArray<GoalKind> = ['buffer', 'reserve', 'sinking'];
+
+/** The months a reserve may cover, as the form offers them. */
+export const RESERVE_MONTHS: ReadonlyArray<number> = [3, 4, 5, 6];
 
 /** A goal as stored. Its money is the balance of the linked wallet (VS-48). */
 export interface Goal {
@@ -10,8 +16,10 @@ export interface Goal {
   name: string;
   kind: GoalKind;
   targetAmount: number;
-  /** `YYYY-MM-DD`; set for a sinking fund, null for a buffer. */
+  /** `YYYY-MM-DD`; set for a sinking fund, null otherwise. */
   targetDate: string | null;
+  /** Months of essential spending; set for a reserve, null otherwise. */
+  targetMonths: number | null;
   accountId: number;
   /** What the user plans to set aside each month. */
   monthlyAmount: number;
@@ -24,6 +32,8 @@ export interface NewGoal {
   kind: GoalKind;
   targetAmount: number;
   targetDate?: string | null;
+  /** Required for a reserve, whose target is then computed (`targetAmount` is ignored). */
+  targetMonths?: number | null;
   accountId: number;
   monthlyAmount: number;
 }
@@ -54,8 +64,26 @@ export interface GoalProgress {
   monthsToTarget: number | null;
 }
 
+/** What one month of essential spending is taken to be, and where that came from. */
+export interface EssentialMonthly {
+  /** Null when neither complete months nor an estimate say anything. */
+  amount: number | null;
+  source: 'observed' | 'estimate' | null;
+  /** Complete months behind an observed figure; below 3 it is provisional. */
+  completeMonths: number;
+}
+
+/** What a reserve's target rests on: `targetMonths × essentials`. */
+export interface ReserveBasis {
+  essentials: number;
+  source: 'observed' | 'estimate';
+  completeMonths: number;
+}
+
 /** A goal with its wallet's name and its progress, as the list shows it. */
 export interface GoalWithProgress extends Goal {
   accountName: string;
   progress: GoalProgress;
+  /** Reserves only: the essentials figure the live target was sized from. */
+  reserveBasis: ReserveBasis | null;
 }

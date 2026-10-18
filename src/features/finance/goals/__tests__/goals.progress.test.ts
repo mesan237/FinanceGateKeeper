@@ -12,6 +12,7 @@ function goal(overrides: Partial<Goal> = {}): Goal {
     targetDate: '2027-09-01',
     accountId: 4,
     monthlyAmount: 25_000,
+    targetMonths: null,
     createdAt: '2026-10-01T08:00:00Z',
     ...overrides,
   };

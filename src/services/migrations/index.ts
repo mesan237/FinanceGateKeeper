@@ -42,6 +42,7 @@ import { migration as expenseRefunds } from '@/services/migrations/040_expense_r
 import { migration as baselineFacts } from '@/services/migrations/041_baseline_facts';
 import { migration as allocationSurplusSeen } from '@/services/migrations/042_allocation_surplus_seen';
 import { migration as goals } from '@/services/migrations/043_goals';
+import { migration as goalReserve } from '@/services/migrations/044_goal_reserve';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -87,4 +88,5 @@ export const migrations: ReadonlyArray<Migration> = [
   baselineFacts,
   allocationSurplusSeen,
   goals,
+  goalReserve,
 ];

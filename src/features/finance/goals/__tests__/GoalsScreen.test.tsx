@@ -43,9 +43,11 @@ function goal(overrides: Partial<GoalWithProgress> = {}, progress: Partial<GoalP
     targetDate: '2027-09-01',
     accountId: 4,
     monthlyAmount: 25_000,
+    targetMonths: null,
     createdAt: '2026-10-01T08:00:00Z',
     accountName: 'Savings MoMo',
     progress: { ...PROGRESS, ...progress },
+    reserveBasis: null,
     ...overrides,
   };
 }
@@ -97,6 +99,26 @@ describe('GoalsScreen', () => {
     render(<GoalsScreen />);
 
     expect(await screen.findByText('15 000 FCFA a month · about 4 months to go')).toBeTruthy();
+  });
+
+  it('says what an emergency reserve is sized from, provisional below three months (VS-50)', async () => {
+    mockedGetGoals.mockResolvedValue([
+      goal(
+        {
+          kind: 'reserve',
+          name: 'Emergency reserve',
+          targetDate: null,
+          targetMonths: 3,
+          targetAmount: 450_000,
+          reserveBasis: { essentials: 150_000, source: 'observed', completeMonths: 1 },
+        },
+        { monthsLeft: null, requiredMonthly: null, onPace: null, monthsToTarget: 18 },
+      ),
+    ]);
+    render(<GoalsScreen />);
+
+    expect(await screen.findAllByText('Emergency reserve')).toHaveLength(2); // name and kind
+    expect(screen.getByText('3 months of essentials at 150 000 FCFA a month · provisional')).toBeTruthy();
   });
 
   it('marks a goal that is reached', async () => {

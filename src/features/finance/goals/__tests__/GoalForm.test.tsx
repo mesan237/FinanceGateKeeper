@@ -2,8 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import React from 'react';
 
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockBack, replace: jest.fn(), push: jest.fn() }),
+  useRouter: () => ({ back: mockBack, replace: jest.fn(), push: mockPush }),
 }));
 
 // Cash is the default; "Savings MoMo" already holds 60 000.
@@ -27,6 +28,7 @@ jest.mock('@/features/finance/goals/goals.service', () => ({
   getGoalById: jest.fn(),
   getGoals: jest.fn(),
   getEssentialsEstimate: jest.fn(),
+  getEssentialMonthly: jest.fn(),
 }));
 
 import { GoalForm } from '@/features/finance/goals/GoalForm';
@@ -45,6 +47,7 @@ afterAll(() => {
 beforeEach(() => {
   jest.clearAllMocks();
   mocked.getEssentialsEstimate.mockResolvedValue(120_000);
+  mocked.getEssentialMonthly.mockResolvedValue({ amount: 120_000, source: 'estimate', completeMonths: 0 });
   mocked.getGoalById.mockResolvedValue(null);
 });
 
@@ -80,6 +83,7 @@ describe('GoalForm — new goal', () => {
         kind: 'buffer',
         targetAmount: 100_000,
         targetDate: null,
+        targetMonths: null,
         accountId: 4,
         monthlyAmount: 15_000,
       }),
@@ -125,6 +129,40 @@ describe('GoalForm — new goal', () => {
   });
 });
 
+describe('GoalForm — emergency reserve (VS-50)', () => {
+  it('sizes the reserve from months of essentials and saves the months', async () => {
+    render(<GoalForm />);
+    fireEvent.press(await screen.findByTestId('goal-kind-reserve'));
+    fireEvent.changeText(screen.getByTestId('goal-name'), 'Emergency reserve');
+    fireEvent.press(screen.getByTestId('goal-months-4'));
+    await pickWallet(4);
+
+    expect(screen.queryByTestId('goal-target')).toBeNull();
+    expect(screen.getByTestId('goal-reserve-size')).toHaveTextContent('480 000 FCFA · 4 × 120 000 FCFA of essentials');
+    expect(screen.getByText('From your essentials estimate. Provisional until 3 months are logged.')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(mocked.createGoal).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'reserve', targetMonths: 4, targetDate: null, accountId: 4 }),
+      ),
+    );
+  });
+
+  it('says how to size a reserve when essentials are unknown, and cannot save', async () => {
+    mocked.getEssentialMonthly.mockResolvedValue({ amount: null, source: null, completeMonths: 0 });
+    render(<GoalForm />);
+    fireEvent.press(await screen.findByTestId('goal-kind-reserve'));
+    fireEvent.changeText(screen.getByTestId('goal-name'), 'Emergency reserve');
+    await pickWallet(4);
+
+    expect(await screen.findByTestId('goal-reserve-missing')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('goal-open-estimates'));
+    expect(mockPush).toHaveBeenCalledWith('/budget/estimates');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+});
+
 describe('GoalForm — editing', () => {
   beforeEach(() => {
     mocked.getGoalById.mockResolvedValue({
@@ -135,6 +173,7 @@ describe('GoalForm — editing', () => {
       targetDate: '2027-09-01',
       accountId: 4,
       monthlyAmount: 25_000,
+      targetMonths: null,
       createdAt: '2026-10-01T08:00:00Z',
     });
   });

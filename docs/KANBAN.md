@@ -1636,6 +1636,42 @@ Budget tab says how much is truly free to spend.
 
 ---
 
+### VS-50: Emergency Reserve 🔄 In Progress
+
+**Priority:** High — after Phase 4, user decision 2026-10-18
+**Blocked by:** VS-48 (goals), VS-41 (complete months, fixed/variable), VS-46 (essentials estimate)
+
+**Decisions (2026-10-18):** next is the emergency reserve; the user picks months and
+the app sizes it from essential spending (observed complete months, else the
+estimate). Tontines come later as their own entity with rotation.
+
+**Scope:**
+
+- Third goal kind `reserve`: months of essentials (form 3–6, table 1–12), kept in its own
+  wallet like every goal. Target = months × essentials, re-sized on read as real months
+  are logged; provisional below 3 complete months.
+- Essentials = `expenses.getObservedFixedAverage` (new `expenses.essentials.ts`) when
+  positive, else the `monthly_essentials` estimate. The rule for what counts as fixed
+  moves to `expenses.costType.spendKindOf`, shared with the Reports typical month.
+- New edge `goals → expenses`.
+- Form: months picker, live size and basis; with no essentials, a message and a link to
+  Estimates (save disabled). Card: "N months of essentials at X a month · provisional".
+- Migration 044 rebuilds `goals` (SQLite cannot widen a CHECK) in one transaction,
+  keeping ids, uuids and sync state, and adds `target_months`. Supabase patch 048
+  (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: `spendKindOf`; observed fixed average over complete months only.
+- Test: migration 044 keeps existing goals and sync state; reserve kind and months range; triggers.
+- Test: essentials observed vs estimate vs unknown; reserve sizing, refusal without essentials, re-size on read and on edit.
+- Test: form months/size/basis/missing state; card basis line.
+
+**Done when:** the user can build a reserve of a chosen number of months whose size
+follows their real essential spending.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

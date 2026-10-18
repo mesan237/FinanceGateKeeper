@@ -25,7 +25,8 @@
 --      planned_lists.due_date 033, categories.cost_type 036,
 --      quick_add_templates/recurring_expenses.account_id 037,
 --      transfers.deleted_at 038, debts.account_id/deleted_at 039,
---      expenses.refund_of 040, allocations.surplus_seen 042).
+--      expenses.refund_of 040, allocations.surplus_seen 042,
+--      goals.target_months 044).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -316,13 +317,14 @@ create table if not exists goals (
   uuid            text primary key,
   user_id         uuid not null default auth.uid(),
   name            text not null,
-  kind            text not null,   -- 'buffer' | 'sinking' (VS-48)
+  kind            text not null,   -- 'buffer' | 'sinking' (VS-48) | 'reserve' (VS-50)
   target_amount   integer not null,
   target_date     text,            -- required for a sinking fund
   account_id      text not null,   -- uuid of the wallet holding the goal's money
   monthly_amount  integer not null default 0,
   created_at      text not null,
   deleted_at      text,
+  target_months   integer,         -- months of essentials, reserves only (VS-50)
   updated_at      text not null
 );
 
@@ -346,6 +348,7 @@ alter table transfers            add column if not exists deleted_at text;
 alter table debts                add column if not exists account_id text;
 alter table debts                add column if not exists deleted_at text;
 alter table expenses             add column if not exists refund_of text;
+alter table goals                add column if not exists target_months integer;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

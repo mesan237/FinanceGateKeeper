@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 
-import { costTypeResolver } from '@/features/finance/expenses/expenses.costType';
+import { costTypeResolver, spendKindOf } from '@/features/finance/expenses/expenses.costType';
 import { getLoggedDates, monthCoverage } from '@/features/finance/expenses/expenses.coverage';
 import {
   getAllCategories,
@@ -49,14 +49,9 @@ export interface SpendingProfileInput {
   labelOf: (categoryId: number) => string;
 }
 
-/**
- * How an expense counts: a surprise first (an imprévu is never a habit), then
- * an auto-logged recurring bill as fixed, then its category's tag.
- */
+/** How an expense counts — the shared rule in `expenses.costType` (VS-50). */
 function spendKind(expense: ProfileExpense, input: SpendingProfileInput): SpendKind {
-  if (expense.isUnplanned) return 'unexpected';
-  if (expense.isRecurring) return 'fixed';
-  return input.kindOf(expense.categoryId, expense.subcategoryId);
+  return spendKindOf(expense, input.kindOf);
 }
 
 /** Turns per-category, per-month totals into ranked rows over `complete` months. */
