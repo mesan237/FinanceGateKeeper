@@ -45,3 +45,5 @@ Other: Miscellaneous
 - `expenses.hooks.ts` — useExpenseLog, useTransactions, useQuickAdd, useRecurring, useCategories, useZeroDay
 - `expenses.service.ts` — All database operations for this domain
 - `expenses.types.ts` — Expense, Category, Subcategory, QuickAddTemplate, RecurringExpense, ZeroDay
+- `expenses.costType.ts` — fixed/variable tags, and `spendKindOf`: the one rule for how an expense counts (imprévu → unexpected, recurring → fixed, else its tag). Used by the Reports typical month and the observed essentials
+- `expenses.essentials.ts` — `getObservedFixedAverage`: fixed spending averaged over the complete months before this one (VS-50). Read by `goals` to size an emergency reserve

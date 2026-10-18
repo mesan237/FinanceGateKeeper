@@ -37,6 +37,8 @@ are implemented.
 | **Goal** | A starter buffer or a sinking fund, linked to one wallet. Its progress is that wallet's balance; saving is a transfer into it. One live goal per wallet | Today (VS-48) | `goals.service.getGoals` |
 | **Sinking fund** | A goal for a known cost on a date. Needs `ceil(remaining / months left)` a month, months counted up to (not including) the target month | Today (VS-48) | `goals.progress.goalProgress` |
 | **Starter buffer** | A goal with no date: a cushion for surprises, suggested at one month of essentials | Today (VS-48) | same |
+| **Essential spending** (one month) | The fixed part of a typical month, averaged over complete months (imprévus excluded, recurring bills counted); else the user's essentials estimate | Today (VS-50) | `goals.reserve.getEssentialMonthly`, `expenses.essentials` |
+| **Emergency reserve** | A goal sized as N months (1–12) of essential spending; re-sized as real months are logged; provisional below 3 complete months | Today (VS-50) | `goals.service.getGoals` |
 | **Earmark** | Money assigned to a goal. Decided 2026-10-17: never virtual — a goal's money is its wallet (see Goal) | Superseded by Goal (VS-48) | — |
 | **Safe to spend** | Cash on hand − goal cash − committed money. Budget tab only; may be negative, said in words | Today (VS-49) | `budget.cashflow.hooks.useCashflow` |
 | **Expected income** | Income the user anticipates but has not received: the typical-income estimate in force when the month ended (a later estimate never rewrites a closed month). Sizes the default budget; never counted as cash or as income in | Today (VS-47) | `budget.cashflow.getExpectedIncome` |
