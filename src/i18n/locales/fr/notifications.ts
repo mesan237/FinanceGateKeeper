@@ -26,6 +26,9 @@ export const notifications: Translation<typeof en> = {
     body: "Une dette approche de sa date d'échéance.",
     bodyDueSoon: '{{person}} — {{amount}} à rembourser le {{date}}.',
     bodyOverdue: '{{person}} — {{amount}} en retard (échéance le {{date}}).',
+    bodyInstalmentDueSoon: '{{person}} — échéance {{n}} : {{amount}} à payer le {{date}}.',
+    bodyInstalmentsOverdue_one: '{{person}} — {{count}} échéance en retard ({{amount}}).',
+    bodyInstalmentsOverdue_other: '{{person}} — {{count}} échéances en retard ({{amount}}).',
   },
   plannedDue: {
     title: 'Achat prévu',

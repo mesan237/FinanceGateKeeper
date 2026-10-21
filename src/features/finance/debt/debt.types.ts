@@ -126,4 +126,8 @@ export interface DebtReminder {
   amount: number;
   dueDate: string;
   kind: 'dueSoon' | 'overdue';
+  /** Scheduled debts (VS-55): the (first) instalment the reminder is about. */
+  instalment?: number;
+  /** Scheduled debts: how many instalments it covers (overdue ones are grouped). */
+  count?: number;
 }
