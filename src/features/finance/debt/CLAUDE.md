@@ -1,17 +1,44 @@
 # Debt Feature Context
 
 ## Domain Responsibility
-People ledger — tracking informal lending in both directions with due dates and reminders.
+People ledger — informal and formal loans in both directions (`lent`: they owe me,
+`owed`: I owe them), with repayments, optional terms, due dates and reminders.
 
 ## Database Tables
-- `debts` — id, person_name, amount, direction (lent | owed), date, due_date (nullable), status (pending | settled), note, settled_at, created_at
+- `debts` — id, person_name, amount (borrowed / lent), direction, date, due_date
+  (nullable), status (pending | settled), note, settled_at, account_id (the wallet the
+  loan went through, VS-44), deleted_at (soft delete), and terms (VS-54):
+  total_to_repay (nullable — interest included), instalment_count,
+  instalment_frequency (`weekly` | `monthly`), first_instalment_date.
+- `debt_payments` — each repayment (VS-44): debt_id, amount, account_id, date, note,
+  deleted_at, and `instalment` (VS-54: which instalment it paid, or NULL).
 
 ## Key Business Rules
-- Money lent to others is tracked but NOT counted as available income until repaid and logged as income.
-- Money owed to others is factored into expense obligations in reports.
-- Settling a debt changes status to `settled` and records `settled_at`.
-- Reminders: 3 days before due date (warning), daily after due date (overdue), stop when settled.
+- **Debts move money** (VS-44): the loan moves its `account_id` wallet by `amount`;
+  each repayment moves its wallet back. Never income or spending — only wallet balances
+  read these tables (by SQL, in `accounts.balance`).
+- **Repayable = `total_to_repay ?? amount`** (VS-54). The user types the total to repay
+  rather than a rate. Outstanding = repayable − live repayments; a repayment or settle
+  that reaches the repayable total settles the debt; removing one reopens it. The cost
+  is `repayable − amount`; `debt.terms.loanCost` shows an equivalent flat monthly rate
+  over the term (loan date → last instalment, else due date). Every reader of "still
+  owed" uses repayable: the ledger totals, Reports, net worth, committed money.
+- **Equal instalments** (VS-54, optional): `count` instalments from
+  `first_instalment_date`, weekly or monthly; dates derived by `utils/cycleDate`,
+  amounts by `utils/instalments` (equal, the last takes the remainder). "Mark paid"
+  records a repayment of exactly that instalment (capped at what is still owed), tied by
+  `instalment`; "Undo" soft-deletes it. Free repayments still work alongside.
+- **Committed money** counts a scheduled debt's unpaid instalments due by month end, not
+  its whole balance (user decision); an unscheduled debt counts once its due date falls in
+  the month.
+- Terms are set when the debt is created; there is no terms edit yet.
+- Reminders: 3 days before the due date (warning), daily after (overdue), stop when
+  settled. Instalment reminders come in VS-55.
 - Person names are free text — no contact integration.
 
 ## Files
-- `DebtListScreen.tsx`, `DebtDetail.tsx`, `DebtForm.tsx`, `debt.hooks.ts`, `debt.service.ts`, `debt.types.ts`
+- `DebtListScreen.tsx`, `DebtDetail.tsx` (+ `DebtInstalments.tsx`, `RepaymentSheet.tsx`),
+  `DebtForm.tsx` (+ `DebtTermsFields.tsx`, `WalletField.tsx`)
+- `debt.service.ts` (CRUD, totals, reminders), `debt.payments.ts` (repayments,
+  `payInstalment`), `debt.terms.ts` (pure instalments and cost), `debt.validation.ts`
+  (terms), `debt.hooks.ts`, `debt.types.ts`

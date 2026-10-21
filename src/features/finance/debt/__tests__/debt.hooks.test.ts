@@ -59,6 +59,9 @@ const JEAN: Debt = {
   settledAt: null,
   createdAt: '2026-06-01T00:00:00.000Z',
   accountId: null,
+  totalToRepay: null,
+  schedule: null,
+  repayable: 15000,
   paid: 0,
   outstanding: 15000,
 };

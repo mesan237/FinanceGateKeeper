@@ -8,7 +8,7 @@ import {
 } from '@/notifications/notifications.service';
 import { buildDebtDueAlert } from '@/notifications/triggers/debtDueDate';
 
-import { getDebtPayments, recordDebtPayment, removeDebtPayment } from './debt.payments';
+import { getDebtPayments, payInstalment, recordDebtPayment, removeDebtPayment } from './debt.payments';
 import * as debtService from './debt.service';
 import type {
   Debt,
@@ -124,6 +124,21 @@ export function useDebtDetail(id: number) {
     [id, refresh],
   );
 
+  /** Pays instalment `n` through the sheet's wallet and day (VS-54); resolves true when it landed. */
+  const payInstalmentAction = useCallback(
+    async (n: number, payment: NewDebtPayment): Promise<boolean> => {
+      try {
+        await payInstalment(id, n, payment.accountId, payment.date);
+        await refresh();
+        return true;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : i18n.t('errors.paymentFailed', { ns: 'debt' }));
+        return false;
+      }
+    },
+    [id, refresh],
+  );
+
   const removePayment = useCallback(
     async (paymentId: number): Promise<void> => {
       try {
@@ -156,7 +171,18 @@ export function useDebtDetail(id: number) {
     }
   }, [id]);
 
-  return { debt, payments, loading, error, refresh, recordPayment, removePayment, update, remove };
+  return {
+    debt,
+    payments,
+    loading,
+    error,
+    refresh,
+    recordPayment,
+    payInstalment: payInstalmentAction,
+    removePayment,
+    update,
+    remove,
+  };
 }
 
 /** Cancels every previously scheduled debt due-date notification. */

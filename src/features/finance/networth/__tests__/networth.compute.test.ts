@@ -84,6 +84,13 @@ describe('getNetWorthAsOf (VS-53)', () => {
     });
   });
 
+  it('counts what is still to be repaid, interest included, on a debt with a total to repay (VS-54)', async () => {
+    const lent = await debt(50_000, 'lent', '2026-09-10');
+    await execute('UPDATE debts SET total_to_repay = 55000 WHERE id = ?', [lent]);
+
+    expect((await getNetWorthAsOf('2026-09-30')).lent).toBe(55_000);
+  });
+
   it('counts a tontine position: paid in minus received, by the date', async () => {
     await execute(
       `INSERT INTO tontines (name, contribution_amount, frequency, start_date, members, created_at)

@@ -1,11 +1,10 @@
-import { daysBetween, toISODate } from '@/utils/formatDate';
-import { daysInMonth } from '@/utils/monthMath';
+import { cycleDate } from '@/utils/cycleDate';
+import { daysBetween } from '@/utils/formatDate';
 
 import type {
   CycleStatus,
   Tontine,
   TontineCycle,
-  TontineFrequency,
   TontinePayment,
   TontineSummary,
 } from './tontines.types';
@@ -13,25 +12,7 @@ import type {
 /** How many days ahead an unpaid contribution counts as due. */
 export const DUE_SOON_DAYS = 3;
 
-/**
- * The date of `cycle` (1-based) for a tontine starting on `startDate`. Weekly
- * steps seven days; monthly keeps the start's day of the month, clamped in
- * shorter months but never drifting (31 Jan → 28 Feb → 31 Mar). Pure.
- */
-export function cycleDate(startDate: string, frequency: TontineFrequency, cycle: number): string {
-  if (frequency === 'weekly') {
-    const date = new Date(`${startDate}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + 7 * (cycle - 1));
-    return toISODate(date);
-  }
-  const [year, month, day] = startDate.split('-').map(Number);
-  const index = year * 12 + (month - 1) + (cycle - 1);
-  const targetYear = Math.floor(index / 12);
-  const targetMonth = (index % 12) + 1;
-  const monthISO = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
-  const clamped = Math.min(day, daysInMonth(monthISO));
-  return `${monthISO}-${String(clamped).padStart(2, '0')}`;
-}
+export { cycleDate } from '@/utils/cycleDate';
 
 /** An unpaid cycle's status against today. */
 function unpaidStatus(dueDate: string, todayISO: string): CycleStatus {

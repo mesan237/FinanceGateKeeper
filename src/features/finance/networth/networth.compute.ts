@@ -9,10 +9,14 @@ import type { MonthFlows, NetWorth } from './networth.types';
  * this slice depends only on `accounts`.
  */
 
-/** What is still outstanding, as of `asOf`, on live debts in `direction` dated by then. */
+/**
+ * What is still outstanding, as of `asOf`, on live debts in `direction` dated by
+ * then: the total to repay (interest included, VS-54), else the amount, less
+ * repayments made by then.
+ */
 async function outstanding(direction: 'lent' | 'owed', asOf: string): Promise<number> {
   const [row] = await query<{ total: number }>(
-    `SELECT COALESCE(SUM(MAX(d.amount - (
+    `SELECT COALESCE(SUM(MAX(COALESCE(d.total_to_repay, d.amount) - (
         SELECT COALESCE(SUM(p.amount), 0) FROM debt_payments p
         WHERE p.debt_id = d.id AND p.deleted_at IS NULL AND p.date <= ?), 0)), 0) AS total
      FROM debts d

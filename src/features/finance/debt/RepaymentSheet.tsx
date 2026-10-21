@@ -7,6 +7,7 @@ import { BottomSheet } from '@/components/BottomSheet';
 import { Button } from '@/components/Button';
 import { DateField } from '@/components/DateField';
 import { Typography } from '@/components/Typography';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { toISODate } from '@/utils/formatDate';
 
 import { WalletField } from './WalletField';
@@ -19,6 +20,10 @@ export interface RepaymentSheetProps {
   outstanding: number;
   /** The account the repayment starts on (the loan's account, else the default). */
   accountId: number | null;
+  /** Pays exactly this — an instalment (VS-54): the amount is shown, not typed. */
+  fixedAmount?: number;
+  /** Replaces the title, e.g. "Instalment 2". */
+  title?: string;
   onSave: (payment: NewDebtPayment) => Promise<boolean>;
   onClose: () => void;
 }
@@ -32,6 +37,8 @@ export function RepaymentSheet({
   direction,
   outstanding,
   accountId: initialAccountId,
+  fixedAmount,
+  title,
   onSave,
   onClose,
 }: RepaymentSheetProps) {
@@ -43,10 +50,10 @@ export function RepaymentSheet({
 
   useEffect(() => {
     if (!visible) return;
-    setAmount(String(outstanding));
+    setAmount(String(fixedAmount ?? outstanding));
     setAccountId(initialAccountId);
     setDate(toISODate(new Date()));
-  }, [visible, outstanding, initialAccountId]);
+  }, [visible, outstanding, fixedAmount, initialAccountId]);
 
   const value = Math.trunc(Number(amount));
   const valid = amount !== '' && Number.isFinite(value) && value > 0 && value <= outstanding;
@@ -64,8 +71,12 @@ export function RepaymentSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose} testID="repayment-sheet">
       <View style={styles.body}>
-        <Typography variant="subheading">{t('repayment.title')}</Typography>
-        <AmountInput value={amount} onChangeText={setAmount} testID="repayment-amount" />
+        <Typography variant="subheading">{title ?? t('repayment.title')}</Typography>
+        {fixedAmount === undefined ? (
+          <AmountInput value={amount} onChangeText={setAmount} testID="repayment-amount" />
+        ) : (
+          <Typography testID="repayment-fixed-amount">{formatCurrency(fixedAmount)}</Typography>
+        )}
         <WalletField
           testID="repayment-wallet"
           value={accountId}

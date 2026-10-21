@@ -16,7 +16,9 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
+import { toISODate } from '@/utils/formatDate';
 
+import { DebtTermsFields, type DebtTermsDraft } from './DebtTermsFields';
 import { WalletField } from './WalletField';
 import { createDebt } from './debt.service';
 
@@ -44,10 +46,25 @@ export function DebtForm() {
   const defaultAccountId = useDefaultAccountId();
   const [chosenAccountId, setChosenAccountId] = useState<number | null | undefined>(undefined);
   const accountId = chosenAccountId === undefined ? defaultAccountId : chosenAccountId;
+  // Optional terms (VS-54): a total to repay and an equal-instalment schedule.
+  const [terms, setTerms] = useState<DebtTermsDraft>({
+    total: '',
+    instalmentsOn: false,
+    count: '',
+    frequency: 'monthly',
+    firstDate: toISODate(new Date()),
+  });
 
   const parsedAmount = Number(amount);
+  const totalToRepay = terms.total === '' ? null : Number(terms.total);
+  const schedule = terms.instalmentsOn
+    ? { count: Number(terms.count), frequency: terms.frequency, firstDate: terms.firstDate }
+    : null;
+  const termsValid =
+    (totalToRepay === null || totalToRepay >= parsedAmount) &&
+    (schedule === null || (schedule.count >= 2 && schedule.count <= 120));
   const canSubmit =
-    person.trim().length > 0 && Number.isInteger(parsedAmount) && parsedAmount > 0 && !saving;
+    person.trim().length > 0 && Number.isInteger(parsedAmount) && parsedAmount > 0 && termsValid && !saving;
 
   const handleSave = async () => {
     if (!canSubmit) return;
@@ -60,6 +77,8 @@ export function DebtForm() {
         dueDate: due === '' ? null : due,
         note: note.trim() === '' ? null : note.trim(),
         accountId,
+        totalToRepay,
+        schedule,
       });
       router.replace('/debt');
     } catch (e) {
@@ -126,6 +145,8 @@ export function DebtForm() {
               accessibilityLabel={t('form.note')}
             />
           </View>
+
+          <DebtTermsFields direction={direction} amount={parsedAmount || 0} draft={terms} onChange={setTerms} />
 
           <WalletField
             testID="debt-wallet"

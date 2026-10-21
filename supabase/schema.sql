@@ -231,6 +231,10 @@ create table debts (
   account_id  text,            -- uuid of the wallet the loan went through, or null (VS-44)
   deleted_at  text,            -- set when removed; removals sync, deletions do not
   created_at  text not null,
+  total_to_repay        integer,   -- interest included; null = the amount (VS-54)
+  instalment_count      integer,   -- equal instalments, or null
+  instalment_frequency  text,      -- 'weekly' | 'monthly'
+  first_instalment_date text,
   updated_at  text not null
 );
 
@@ -244,6 +248,7 @@ create table debt_payments (
   note        text,
   created_at  text not null,
   deleted_at  text,
+  instalment   integer,         -- which instalment it pays, or null (VS-54)
   updated_at  text not null
 );
 

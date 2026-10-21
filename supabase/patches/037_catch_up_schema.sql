@@ -26,7 +26,7 @@
 --      quick_add_templates/recurring_expenses.account_id 037,
 --      transfers.deleted_at 038, debts.account_id/deleted_at 039,
 --      expenses.refund_of 040, allocations.surplus_seen 042,
---      goals.target_months 044).
+--      goals.target_months 044, debts terms and debt_payments.instalment 047).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -239,6 +239,10 @@ create table if not exists debts (
   account_id  text,            -- uuid of the wallet the loan went through, or null (VS-44)
   deleted_at  text,            -- set when removed; removals sync, deletions do not
   created_at  text not null,
+  total_to_repay        integer,   -- interest included; null = the amount (VS-54)
+  instalment_count      integer,   -- equal instalments, or null
+  instalment_frequency  text,      -- 'weekly' | 'monthly'
+  first_instalment_date text,
   updated_at  text not null
 );
 
@@ -252,6 +256,7 @@ create table if not exists debt_payments (
   note        text,
   created_at  text not null,
   deleted_at  text,
+  instalment   integer,         -- which instalment it pays, or null (VS-54)
   updated_at  text not null
 );
 
@@ -394,6 +399,11 @@ alter table debts                add column if not exists account_id text;
 alter table debts                add column if not exists deleted_at text;
 alter table expenses             add column if not exists refund_of text;
 alter table goals                add column if not exists target_months integer;
+alter table debts                add column if not exists total_to_repay integer;
+alter table debts                add column if not exists instalment_count integer;
+alter table debts                add column if not exists instalment_frequency text;
+alter table debts                add column if not exists first_instalment_date text;
+alter table debt_payments        add column if not exists instalment integer;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).

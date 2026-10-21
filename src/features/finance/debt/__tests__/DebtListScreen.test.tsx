@@ -30,6 +30,9 @@ const JEAN: Debt = {
   settledAt: null,
   createdAt: '2026-06-01T00:00:00.000Z',
   accountId: null,
+  totalToRepay: null,
+  schedule: null,
+  repayable: 15000,
   paid: 0,
   outstanding: 15000,
 };
@@ -45,6 +48,9 @@ const PAUL_SETTLED: Debt = {
   settledAt: '2026-05-20T00:00:00.000Z',
   createdAt: '2026-05-01T00:00:00.000Z',
   accountId: null,
+  totalToRepay: null,
+  schedule: null,
+  repayable: 8000,
   paid: 0,
   outstanding: 0,
 };
@@ -60,6 +66,9 @@ const AWA: Debt = {
   settledAt: null,
   createdAt: '2026-06-02T00:00:00.000Z',
   accountId: null,
+  totalToRepay: null,
+  schedule: null,
+  repayable: 40000,
   paid: 0,
   outstanding: 40000,
 };
