@@ -16,13 +16,18 @@ export interface DebtDueInput {
   amount: number;
   dueDate: string;
   kind: 'dueSoon' | 'overdue';
+  /** A scheduled debt's (first) instalment, when the reminder is about instalments (VS-55). */
+  instalment?: number;
+  /** How many instalments it covers. */
+  count?: number;
 }
 
 /**
  * Builds the debt due-date reminder payload. Pure — returns the payload only;
  * the feature passes it to `notifications.service.scheduleNotification`. Does
  * not touch the database. The body differs for an approaching vs. an overdue
- * debt so the user can tell them apart at a glance.
+ * debt so the user can tell them apart at a glance, and names the instalment
+ * for a scheduled debt (VS-55).
  */
 export function buildDebtDueAlert(input: DebtDueInput): NotificationPayload {
   const params = {
@@ -32,9 +37,13 @@ export function buildDebtDueAlert(input: DebtDueInput): NotificationPayload {
     date: formatDateLong(input.dueDate),
   } as const;
   const body =
-    input.kind === 'overdue'
-      ? i18n.t('debtDueDate.bodyOverdue', params)
-      : i18n.t('debtDueDate.bodyDueSoon', params);
+    input.instalment !== undefined
+      ? input.kind === 'overdue'
+        ? i18n.t('debtDueDate.bodyInstalmentsOverdue', { ...params, count: input.count ?? 1 })
+        : i18n.t('debtDueDate.bodyInstalmentDueSoon', { ...params, n: input.instalment })
+      : input.kind === 'overdue'
+        ? i18n.t('debtDueDate.bodyOverdue', params)
+        : i18n.t('debtDueDate.bodyDueSoon', params);
   return {
     type: 'debtDueDate',
     title: notificationCopy('debtDueDate').title,

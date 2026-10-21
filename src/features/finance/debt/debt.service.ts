@@ -1,11 +1,11 @@
 import i18n from 'i18next';
 
 import type { DebtDirection } from '@/constants/debt';
-import { DEBT_DUE_SOON_DAYS } from '@/constants/debt';
 import { execute, query } from '@/services/database';
-import { daysBetween, toISODate } from '@/utils/formatDate';
+import { toISODate } from '@/utils/formatDate';
 
-import { recordDebtPayment } from './debt.payments';
+import { getDebtPayments, recordDebtPayment } from './debt.payments';
+import { dueReminders } from './debt.reminders';
 import { assertTerms } from './debt.validation';
 import type { Debt, DebtPatch, DebtReminder, DebtSchedule, NewDebt, OutstandingTotals } from './debt.types';
 
@@ -200,26 +200,20 @@ export async function getOutstandingTotals(): Promise<OutstandingTotals> {
 }
 
 /**
- * Returns the pending debts whose due date warrants a reminder, classified
- * `dueSoon` (due today through `DEBT_DUE_SOON_DAYS` ahead) or `overdue` (past
- * the due date). Debts due further out, settled debts, and debts with no due
- * date are excluded. Day math is UTC-stable via `daysBetween`.
+ * The reminders pending debts call for today (`debt.reminders.dueReminders`):
+ * by due date for a debt without instalments, by instalment for a scheduled one
+ * (VS-55). Settled debts and debts with neither are left out.
  */
 export async function getDueReminders(
   todayISO: string = toISODate(new Date()),
 ): Promise<DebtReminder[]> {
   const rows = await query<DebtRow>(
-    `${DEBT_SELECT} AND d.status = 'pending' AND d.due_date IS NOT NULL`,
+    `${DEBT_SELECT} AND d.status = 'pending' AND (d.due_date IS NOT NULL OR d.instalment_count IS NOT NULL)`,
   );
   const reminders: DebtReminder[] = [];
-  for (const row of rows) {
-    const dueDate = row.due_date as string;
-    const daysUntil = daysBetween(todayISO, dueDate);
-    if (daysUntil < 0) {
-      reminders.push({ debtId: row.id, personName: row.person_name, amount: (row.total_to_repay ?? row.amount) - row.paid, dueDate, kind: 'overdue' });
-    } else if (daysUntil <= DEBT_DUE_SOON_DAYS) {
-      reminders.push({ debtId: row.id, personName: row.person_name, amount: (row.total_to_repay ?? row.amount) - row.paid, dueDate, kind: 'dueSoon' });
-    }
+  for (const debt of rows.map(mapDebt)) {
+    const payments = debt.schedule ? await getDebtPayments(debt.id) : [];
+    reminders.push(...dueReminders(debt, payments, todayISO));
   }
   return reminders;
 }

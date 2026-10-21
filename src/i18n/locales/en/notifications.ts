@@ -23,6 +23,9 @@ export const notifications = {
     body: 'A debt is approaching its due date.',
     bodyDueSoon: '{{person}} — {{amount}} is due on {{date}}.',
     bodyOverdue: '{{person}} — {{amount}} is overdue (was due {{date}}).',
+    bodyInstalmentDueSoon: '{{person}} — instalment {{n}}: {{amount}} due on {{date}}.',
+    bodyInstalmentsOverdue_one: '{{person}} — {{count}} instalment overdue ({{amount}}).',
+    bodyInstalmentsOverdue_other: '{{person}} — {{count}} instalments overdue ({{amount}}).',
   },
   plannedDue: {
     title: 'Planned purchase',
