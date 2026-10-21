@@ -40,7 +40,7 @@ jest.mock('@/features/finance/budget/budget.goals', () => ({
   getGoalSetAside: jest.fn().mockResolvedValue(0),
 }));
 jest.mock('@/features/finance/budget/budget.committed', () => ({
-  getCommitted: jest.fn().mockResolvedValue({ recurring: 0, planned: 0, debts: 0, total: 0 }),
+  getCommitted: jest.fn().mockResolvedValue({ recurring: 0, planned: 0, debts: 0, tontines: 0, total: 0 }),
 }));
 jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getCashOnHand: jest.fn().mockResolvedValue(0),

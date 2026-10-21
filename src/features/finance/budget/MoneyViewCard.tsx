@@ -11,6 +11,9 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 import type { MoneyView } from './budget.types';
 
+/** The sources of committed money, in the order the breakdown names them. */
+const COMMITTED_PARTS = ['recurring', 'planned', 'debts', 'tontines'] as const;
+
 export interface MoneyViewCardProps {
   /** What the month's plan still allows (the hero's remainder). */
   budgetLeft: number;
@@ -49,11 +52,9 @@ export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
       />
       {committed.total > 0 ? (
         <Typography variant="muted">
-          {t('money.breakdown', {
-            recurring: formatCurrency(committed.recurring),
-            planned: formatCurrency(committed.planned),
-            debts: formatCurrency(committed.debts),
-          })}
+          {COMMITTED_PARTS.filter((part) => committed[part] > 0)
+            .map((part) => t(`money.parts.${part}`, { amount: formatCurrency(committed[part]) }))
+            .join(' · ')}
         </Typography>
       ) : null}
 

@@ -104,7 +104,12 @@ export const budget = {
     cashHint: 'What your wallets hold today',
     committed: 'Committed',
     committedHint: 'Due before the month ends',
-    breakdown: 'Bills {{recurring}} · Planned {{planned}} · Debts {{debts}}',
+    parts: {
+      recurring: 'Bills {{amount}}',
+      planned: 'Planned {{amount}}',
+      debts: 'Debts {{amount}}',
+      tontines: 'Tontines {{amount}}',
+    },
     goalCash: '{{amount}} of it is in goal wallets',
     safe: 'Safe to spend',
     safeHint: 'Cash outside your goals, less what is due',

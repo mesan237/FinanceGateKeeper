@@ -4,7 +4,7 @@ import React from 'react';
 import { MoneyViewCard } from '@/features/finance/budget/MoneyViewCard';
 import type { MoneyView } from '@/features/finance/budget/budget.types';
 
-const COMMITTED = { recurring: 30_000, planned: 12_000, debts: 10_000, total: 52_000 };
+const COMMITTED = { recurring: 30_000, planned: 12_000, debts: 10_000, tontines: 0, total: 52_000 };
 
 function money(overrides: Partial<MoneyView> = {}): MoneyView {
   return { cash: 90_000, goalCash: 0, committed: COMMITTED, safeToSpend: 38_000, ...overrides };
@@ -25,6 +25,17 @@ describe('MoneyViewCard', () => {
     expect(
       screen.getByText('Bills 30 000 FCFA · Planned 12 000 FCFA · Debts 10 000 FCFA'),
     ).toBeTruthy();
+  });
+
+  it('names tontine contributions due when there are some, and only the sources that are (VS-52)', () => {
+    render(
+      <MoneyViewCard
+        budgetLeft={120_000}
+        money={money({ committed: { recurring: 30_000, planned: 0, debts: 0, tontines: 20_000, total: 50_000 } })}
+      />,
+    );
+
+    expect(screen.getByText('Bills 30 000 FCFA · Tontines 20 000 FCFA')).toBeTruthy();
   });
 
   it('shows what is safe to spend: cash outside the goals, less what is due (VS-49)', () => {

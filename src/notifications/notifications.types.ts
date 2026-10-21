@@ -3,7 +3,8 @@ export type NotificationType =
   | 'zeroDayCheck'
   | 'overBudget'
   | 'debtDueDate'
-  | 'plannedDue';
+  | 'plannedDue'
+  | 'tontineDue';
 
 /**
  * A repeating calendar trigger — fires every day at `hour`:`minute` local time.

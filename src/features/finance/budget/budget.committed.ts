@@ -1,5 +1,6 @@
 import { advanceDueDate } from '@/features/finance/expenses/expenses.service';
 import type { Frequency } from '@/features/finance/expenses/expenses.types';
+import { getDueContributions } from '@/features/finance/tontines/tontines.due';
 import { query } from '@/services/database';
 import { lastDayOfMonth } from '@/utils/monthMath';
 
@@ -15,6 +16,10 @@ import type { CommittedMoney } from './budget.types';
  * Planned items and debts are read by SQL, the way wallet balances read them,
  * so the budget slice gains no dependency on `planned` or `debt`. Planned
  * items still never touch the budget: this is a display figure only.
+ *
+ * Tontine contributions (VS-52) come from `tontines.getDueContributions`
+ * through the approved `budget → tontines` edge: their dates follow from a
+ * derived schedule, which SQL alone cannot reproduce.
  */
 
 /**
@@ -67,17 +72,24 @@ async function debtsDue(lastDay: string): Promise<number> {
   return row.total;
 }
 
+/** Unpaid tontine contributions due by the month's last day, overdue included. */
+async function tontinesDue(lastDay: string): Promise<number> {
+  const due = await getDueContributions(lastDay);
+  return due.reduce((sum, c) => sum + c.amount, 0);
+}
+
 /**
  * Committed money for `monthISO`: recurring bills still to log, open planned
- * purchases and debts owed, each due by the end of the month. Overdue items
- * are included — they are still owed.
+ * purchases, debts owed and tontine contributions, each due by the end of the
+ * month. Overdue items are included — they are still owed.
  */
 export async function getCommitted(monthISO: string): Promise<CommittedMoney> {
   const lastDay = lastDayOfMonth(monthISO);
-  const [recurring, planned, debts] = await Promise.all([
+  const [recurring, planned, debts, tontines] = await Promise.all([
     recurringDue(lastDay),
     plannedDue(lastDay),
     debtsDue(lastDay),
+    tontinesDue(lastDay),
   ]);
-  return { recurring, planned, debts, total: recurring + planned + debts };
+  return { recurring, planned, debts, tontines, total: recurring + planned + debts + tontines };
 }

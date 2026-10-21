@@ -37,4 +37,12 @@ export const notifications: Translation<typeof en> = {
     bodyOverdue_one: '{{list}} : {{count}} article toujours à acheter, prévu le {{date}}.',
     bodyOverdue_other: '{{list}} : {{count}} articles toujours à acheter, prévus le {{date}}.',
   },
+  tontineDue: {
+    title: 'Cotisation de tontine',
+    body: 'Une cotisation de tontine est due.',
+    bodySoon: '{{tontine}} : {{amount}} à payer le {{date}}.',
+    bodyToday: "{{tontine}} : {{amount}} à payer aujourd'hui.",
+    bodyOverdue_one: '{{tontine}} : {{count}} cotisation en retard ({{amount}}).',
+    bodyOverdue_other: '{{tontine}} : {{count}} cotisations en retard ({{amount}}).',
+  },
 };

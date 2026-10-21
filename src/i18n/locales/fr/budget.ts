@@ -109,7 +109,12 @@ export const budget: Translation<typeof en> = {
     cashHint: 'Ce que contiennent vos portefeuilles aujourd’hui',
     committed: 'Engagé',
     committedHint: 'À payer avant la fin du mois',
-    breakdown: 'Factures {{recurring}} · Prévu {{planned}} · Dettes {{debts}}',
+    parts: {
+      recurring: 'Factures {{amount}}',
+      planned: 'Prévu {{amount}}',
+      debts: 'Dettes {{amount}}',
+      tontines: 'Tontines {{amount}}',
+    },
     goalCash: 'dont {{amount}} dans les portefeuilles d’objectifs',
     safe: 'Disponible à dépenser',
     safeHint: 'L’argent hors objectifs, moins ce qui est dû',
