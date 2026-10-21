@@ -1772,6 +1772,40 @@ much of each month's income they kept — figures that stay put once a month clo
 
 ---
 
+### VS-54: Debt Terms and Instalments 🔄 In Progress
+
+**Priority:** High — user decision 2026-10-21 (part 1 of 2; VS-55 adds instalment reminders)
+**Blocked by:** VS-44 (repayments), VS-47 (committed money), VS-53 (net worth)
+
+**Decisions (2026-10-21):** cost entered as a total to repay (no rate formulas); optional
+equal instalments ticked paid; committed money counts instalments due, not the whole
+balance; both directions.
+
+**Scope:**
+
+- Migration 047: debts gain total_to_repay and an instalment schedule (count, weekly /
+  monthly, first date); debt_payments gain instalment. Supabase patch 051.
+- Repayable = total to repay, else amount, everywhere outstanding is read: the ledger,
+  Reports totals, settle and reopen, net worth, committed money.
+- Cost and an equivalent monthly rate on the detail ("costs" / "earns" for a loan given).
+- Equal instalments (shared `utils/cycleDate` and `utils/instalments`); Mark paid records
+  exactly that instalment through the repayment sheet (wallet + day), Undo removes it.
+- Committed money: a scheduled debt counts only its unpaid instalments due by month end.
+- Form: optional total to repay with a live cost preview, optional instalments with a
+  "6 × 20 000 FCFA" preview.
+
+**TDD Anchor:**
+
+- Test: instalment split, schedule statuses, cost and rate.
+- Test: service — validation, repayable in outstanding and totals, pay once per instalment, settle and reopen at the total, free repayments up to the total.
+- Test: committed money for scheduled and unscheduled debts; net worth with a total to repay.
+- Test: form (total, preview, instalments) and detail (summary, schedule, pay, undo, lent wording).
+
+**Done when:** a loan with interest shows what it really costs, and an instalment plan
+is followed instalment by instalment, with only what is due counted as committed.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

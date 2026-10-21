@@ -10,7 +10,9 @@ are implemented.
 | **Wallet balance** | Money physically in one wallet (cash, MoMo, bank): the latest balance check plus what happened after it, or — with no check — the opening balance plus the whole history | Today (VS-42: templates carry a wallet; checks pin the balance) | `accounts.balance.getAccountBalance` |
 | **Balance check** | "This wallet actually holds X today." Pins the balance at a date; later entries move it, older back-logged ones do not. Records how far off the app was. Soft-deleted, never hard-deleted | Today (VS-42) | `accounts.checks` |
 | **Unassigned spending** | Expenses with no wallet (legacy, or from a template without one). Left out of every wallet balance and shown as a count and total on Accounts | Today (VS-42) | `accounts.balance.getUnassignedSpending` |
-| **Debt outstanding** | What is still owed on a pending debt: its amount less its live repayments. Settled debts owe nothing | Today (VS-44) | `debt.service` (`outstanding`) |
+| **Debt outstanding** | What is still owed on a pending debt: its repayable total (total to repay, else the amount) less its live repayments. Settled debts owe nothing | Today (VS-44; total to repay VS-54) | `debt.service` (`outstanding`) |
+| **Total to repay** | What a borrower pays back in all, interest and fees included — typed by the user instead of a rate. Its excess over the amount is the loan's cost (or, for a loan given, its earnings) | Today (VS-54) | `debt.terms.loanCost` |
+| **Instalment** | One of a debt's equal scheduled repayments (weekly or monthly from a first date); ticking it records a repayment of exactly that amount | Today (VS-54) | `debt.terms.buildInstalments` |
 | **Repayment** | Money paid back on a debt, through an account or none. Moves account balances; never income or spending | Today (VS-44) | `debt.payments` |
 | **Refund** | Money back for a purchase: a negative expense row linked to it, in its category, dated when the money came back. Lowers that month's spending; never income | Today (VS-45) | `expenses.refunds` |
 | **Cash on hand** | Sum of all active wallet balances. Shown on the Budget tab for the current month only; never mixed into the budget | Today (VS-47) | `accounts.balance.getCashOnHand` |
@@ -32,7 +34,7 @@ are implemented.
 | **Projected spend** | Fixed spend + variable spend at the daily run-rate, to month end | Today (VS-40) | `budget.progress.projectSpend` |
 | **Unassigned** | Spendable − sum of envelopes | Today (spendable since VS-49) | `buildMonthlyPlan` |
 | **Imprévu** | An expense flagged as unexpected. A flag, not a category | Today | `expenses.is_unplanned` |
-| **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, what is still owed on debts due, and unpaid tontine contributions due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47; tontines VS-52) | `budget.committed.getCommitted` |
+| **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, what is still owed on debts due (for a debt with instalments, only its unpaid instalments due), and unpaid tontine contributions due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47; tontines VS-52) | `budget.committed.getCommitted` |
 | **Goal cash** | Cash in the wallets of live goals. Part of cash on hand, but promised to a goal | Today (VS-49) | `budget.goals.getGoalCash` |
 | **Goal** | A starter buffer or a sinking fund, linked to one wallet. Its progress is that wallet's balance; saving is a transfer into it. One live goal per wallet | Today (VS-48) | `goals.service.getGoals` |
 | **Sinking fund** | A goal for a known cost on a date. Needs `ceil(remaining / months left)` a month, months counted up to (not including) the target month | Today (VS-48) | `goals.progress.goalProgress` |

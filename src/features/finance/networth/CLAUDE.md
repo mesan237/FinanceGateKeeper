@@ -6,7 +6,8 @@ month's income they kept. Shown as a card on the Reports tab and a month-end his
 
 ## User decisions (2026-10-21)
 - **Money only, assets later.** Net worth = active wallets + still lent out (debts
-  `lent`, amount − repayments) − still owed (debts `owed`) + tontine position
+  `lent`, total to repay — else amount — less repayments, VS-54) − still owed (debts
+  `owed`, same rule) + tontine position
   (contributions − payouts). No hand-entered land, livestock or business values yet.
 - **Month-end snapshots.** Each closed month is stored once (`month_snapshots`), so an
   edit to an old entry does not rewrite history. "Recalculate" refreshes a month on
