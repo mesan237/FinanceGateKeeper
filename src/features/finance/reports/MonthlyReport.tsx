@@ -14,6 +14,7 @@ import { RADIUS } from '@/constants/layout';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { monthLabel } from '@/utils/monthMath';
+import { NetWorthCard } from '@/features/finance/networth/NetWorthCard';
 
 import { colorForIndex } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
@@ -53,6 +54,7 @@ export function MonthlyReport() {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
+      <NetWorthCard />
       {profile ? <TypicalMonthCard profile={profile} /> : null}
       {profile && baseline ? (
         <EstimateVsActualCard

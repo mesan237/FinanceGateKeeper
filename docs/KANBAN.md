@@ -1737,6 +1737,41 @@ tontine, and the Budget tab's committed money and safe to spend include it.
 
 ---
 
+### VS-53: Net Worth and Savings Rate 🔄 In Progress
+
+**Priority:** High — user decision 2026-10-21
+**Blocked by:** VS-42 (balance checks), VS-44 (debt repayments), VS-51 (tontines)
+
+**Decisions (2026-10-21):** money only (assets later); month-end snapshots with a
+deliberate recalculate; savings rate = income kept.
+
+**Scope:**
+
+- `accounts.getAccountBalance(id, asOf?)`: a wallet's balance at the end of a day
+  (balance checks dated by then honoured).
+- New `networth` slice (`networth → accounts`; `reports → networth`): net worth as of a
+  day (wallets + lent − owed + tontine position), the month's income and spending, the
+  savings rate.
+- Migration 046: synced, append-only `month_snapshots`. A root `MonthCloser` stores
+  every closed month without one (first entry onward, at most 24 months back), waiting
+  while a recurring bill is still to be logged into a month.
+- Reports card: today's net worth and its parts, change since the last closed month,
+  this month's savings rate so far and last month's; History (`/reports/net-worth`)
+  lists closed months with their change and savings rate, each recalculable.
+- Supabase patch 050 (folded into 037 and `schema.sql`).
+
+**TDD Anchor:**
+
+- Test: balances as of a day, with and without later balance checks.
+- Test: net worth parts as of a day (lent/owed less repayments by then, tontines, deleted debts, hidden wallets); flows; savings rate.
+- Test: closeMonths fills closed months only, keeps them on later edits, recalculate appends, 24-month cap, waits for unlogged recurring bills.
+- Test: card, history screen, month closer.
+
+**Done when:** the user sees what they are worth today and month by month, and how
+much of each month's income they kept — figures that stay put once a month closes.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

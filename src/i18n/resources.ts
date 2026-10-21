@@ -14,6 +14,7 @@ import { notifications as enNotifications } from '@/i18n/locales/en/notification
 import { onboarding as enOnboarding } from '@/i18n/locales/en/onboarding';
 import { goals as enGoals } from '@/i18n/locales/en/goals';
 import { tontines as enTontines } from '@/i18n/locales/en/tontines';
+import { networth as enNetworth } from '@/i18n/locales/en/networth';
 import { planned as enPlanned } from '@/i18n/locales/en/planned';
 import { reports as enReports } from '@/i18n/locales/en/reports';
 import { accounts as frAccounts } from '@/i18n/locales/fr/accounts';
@@ -32,6 +33,7 @@ import { notifications as frNotifications } from '@/i18n/locales/fr/notification
 import { onboarding as frOnboarding } from '@/i18n/locales/fr/onboarding';
 import { goals as frGoals } from '@/i18n/locales/fr/goals';
 import { tontines as frTontines } from '@/i18n/locales/fr/tontines';
+import { networth as frNetworth } from '@/i18n/locales/fr/networth';
 import { planned as frPlanned } from '@/i18n/locales/fr/planned';
 import { reports as frReports } from '@/i18n/locales/fr/reports';
 
@@ -60,6 +62,7 @@ export const resources = {
     planned: enPlanned,
     goals: enGoals,
     tontines: enTontines,
+    networth: enNetworth,
   },
   fr: {
     common: frCommon,
@@ -80,6 +83,7 @@ export const resources = {
     planned: frPlanned,
     goals: frGoals,
     tontines: frTontines,
+    networth: frNetworth,
   },
 };
 

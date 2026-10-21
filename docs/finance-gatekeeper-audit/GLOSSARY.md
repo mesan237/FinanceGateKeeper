@@ -47,4 +47,6 @@ are implemented.
 | **Observed vs estimated** | Observed = derived from logged transactions over complete months. Estimated = typed by the user. Never silently merged: the user may adopt an observed figure, which is then recorded as observed | Today (VS-46) | `budget.baseline`, `reports.EstimateVsActualCard` |
 | **Baseline fact** | One answer about the user's money (income, regular or not, pay day, essentials, checklist answers). Append-only; latest per kind wins | Today (VS-46) | `budget.baseline` |
 | **Provisional** | A figure based on fewer than 3 complete months. Shown, labelled, never presented as settled | Today (VS-46) | `countCompleteMonths` |
-| **Net worth** | Cash on hand + other assets − outstanding debts owed | Planned (Phase 6) | — |
+| **Net worth** | Money only (user decision): active wallets + still lent out − still owed + tontine position, as of a day. Things owned (land, livestock, a business) are not counted yet | Today (VS-53) | `networth.compute.getNetWorthAsOf` |
+| **Savings rate** | Share of a month's income kept: (income received − spending) ÷ income received, whole percent; negative when spending exceeded income; none without income | Today (VS-53) | `networth.compute.savingsRate` |
+| **Month-end snapshot** | A closed month's net worth, its parts and its income and spending, stored once so later edits do not rewrite history. Append-only; latest per month wins; recalculated only on purpose | Today (VS-53) | `networth.snapshots` |

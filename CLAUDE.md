@@ -38,13 +38,14 @@ Three layers — never violate these:
 ## Approved Cross-Feature Dependencies
 - `dashboard` → reads from `expenses`, `budget` (monthly figures and the resolved plan total), `accounts` (Wallets summary)
 - `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33; `advanceDueDate` for committed recurring bills, VS-47), `accounts` (cash on hand for the Budget tab's money view, VS-47), `tontines` (`getDueContributions` — unpaid contributions in committed money, VS-52; their dates come from a derived schedule SQL cannot reproduce). Committed planned purchases and debts, and goals' set-asides and wallets (VS-49), are read by SQL, not by importing `planned`, `debt` or `goals`
-- `reports` → reads from `expenses`, `income`, `budget`, `debt`
+- `reports` → reads from `expenses`, `income`, `budget`, `debt`, `networth` (the Net worth card at the top of the Reports tab, VS-53)
 - `income` → reads `accounts` (AccountPicker on income log)
 - `expenses` → reads `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the log/detail/quick-add screens); imports `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); reads `accounts` (AccountPicker on the log/detail screens)
 - `planned` → `expenses` (ticking an item creates the expense, unticking deletes it, VS-36), `accounts` (AccountPicker on the purchase sheet). Nothing depends on `planned`: planned items never affect the budget
 - `debt` → reads `accounts` (AccountPicker on the debt form and the repayment sheet, VS-44). Wallet balances read the `debts`/`debt_payments` tables by SQL, not by importing `debt`
 - `goals` → reads `accounts` (a goal's progress is its linked wallet's balance; AccountPicker on the goal form, VS-48), `expenses` (observed essential spending — `getObservedFixedAverage` — to size an emergency reserve, VS-50). "Save now" opens `/transfers/log?to=<wallet>` by path. Nothing imports `goals`
 - `tontines` → reads `accounts` (AccountPicker and the default wallet on the tontine form and payment sheet, VS-51). Wallet balances read `tontine_payments` by SQL, not by importing `tontines`; tontine money is never spending or income. Only `budget` imports `tontines` (one read, above)
+- `networth` → reads `accounts` (wallet balances as of a month's last day, VS-53). Debts, tontines, income, expenses and recurring bills are read by SQL. Only `reports` imports `networth`
 All other cross-feature imports are forbidden.
 
 **Attention counts (VS-39).** A feature that needs to surface "something here needs you"

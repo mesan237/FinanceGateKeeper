@@ -17,14 +17,15 @@ interface Checkpoint {
 
 /**
  * The wallet's most recent balance check that has not been removed, or null.
- * "Latest" is by date, then by when it was saved.
+ * "Latest" is by date, then by when it was saved. With `asOf`, only checks
+ * dated on or before it count.
  */
-async function latestCheck(id: number): Promise<Checkpoint | null> {
+async function latestCheck(id: number, asOf?: string): Promise<Checkpoint | null> {
   const rows = await query<Checkpoint>(
     `SELECT balance, date, created_at FROM balance_checks
-     WHERE account_id = ? AND deleted_at IS NULL
+     WHERE account_id = ? AND deleted_at IS NULL${asOf ? ' AND date <= ?' : ''}
      ORDER BY date DESC, created_at DESC LIMIT 1`,
-    [id],
+    asOf ? [id, asOf] : [id],
   );
   return rows[0] ?? null;
 }
@@ -45,18 +46,23 @@ async function latestCheck(id: number): Promise<Checkpoint | null> {
  * same date saved after the check. Back-logging an older transaction therefore
  * cannot move a balance the user has already confirmed. Without a check, the
  * account's opening balance plus its whole history is used, as before.
+ *
+ * @param asOf `YYYY-MM-DD`: the balance at the end of that day (VS-53) — only
+ *   checks and movements dated on or before it count. Omitted: today's live balance.
  */
-export async function getAccountBalance(id: number): Promise<number> {
-  const check = await latestCheck(id);
+export async function getAccountBalance(id: number, asOf?: string): Promise<number> {
+  const check = await latestCheck(id, asOf);
   const afterParams = check ? [check.date, check.date, check.created_at] : [];
+  const untilParams = asOf ? [asOf] : [];
   // `col` qualifies the columns when the source is a join (repayments need
   // their debt's direction).
   const flow = (owner: string, extra = '', col = '') => ({
     col,
     sql:
       `${col}${owner} = ?${extra}` +
-      (check ? ` AND (${col}date > ? OR (${col}date = ? AND ${col}created_at > ?))` : ''),
-    params: [id, ...afterParams],
+      (check ? ` AND (${col}date > ? OR (${col}date = ? AND ${col}created_at > ?))` : '') +
+      (asOf ? ` AND ${col}date <= ?` : ''),
+    params: [id, ...afterParams, ...untilParams],
   });
   const payments = 'debt_payments p JOIN debts d ON d.id = p.debt_id';
   const livePayment = ' AND p.deleted_at IS NULL AND d.deleted_at IS NULL';

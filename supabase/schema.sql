@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, users
+  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, month_snapshots, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -350,6 +350,21 @@ create table tontine_payments (
   updated_at   text not null
 );
 
+create table month_snapshots (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  month       text not null,       -- YYYY-MM; append-only, latest per month wins (VS-53)
+  wallets     integer not null,
+  lent        integer not null,
+  owed        integer not null,
+  tontines    integer not null,
+  net_worth   integer not null,
+  income      integer not null,
+  spending    integer not null,
+  created_at  text not null,
+  updated_at  text not null
+);
+
 -- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
@@ -362,7 +377,7 @@ begin
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
     'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals',
-    'tontines','tontine_payments'
+    'tontines','tontine_payments','month_snapshots'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.
