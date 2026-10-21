@@ -32,13 +32,18 @@ People ledger — informal and formal loans in both directions (`lent`: they owe
   its whole balance (user decision); an unscheduled debt counts once its due date falls in
   the month.
 - Terms are set when the debt is created; there is no terms edit yet.
-- Reminders: 3 days before the due date (warning), daily after (overdue), stop when
-  settled. Instalment reminders come in VS-55.
+- Reminders (`debt.reminders.dueReminders`, pure; delivered on app open by
+  `DebtReminderScheduler`): a debt without instalments — 3 days before its due date
+  (warning), daily after (overdue), stop when settled. A scheduled debt (VS-55) ignores
+  its due date: one grouped reminder for its overdue instalments (their total, from the
+  earliest), and one for its next instalment once within `DEBT_DUE_SOON_DAYS`. The
+  notification names the instalment (`debtDueDate.bodyInstalment*`).
 - Person names are free text — no contact integration.
 
 ## Files
 - `DebtListScreen.tsx`, `DebtDetail.tsx` (+ `DebtInstalments.tsx`, `RepaymentSheet.tsx`),
   `DebtForm.tsx` (+ `DebtTermsFields.tsx`, `WalletField.tsx`)
 - `debt.service.ts` (CRUD, totals, reminders), `debt.payments.ts` (repayments,
-  `payInstalment`), `debt.terms.ts` (pure instalments and cost), `debt.validation.ts`
+  `payInstalment`), `debt.terms.ts` (pure instalments and cost), `debt.reminders.ts` (pure reminder
+  rules), `debt.validation.ts`
   (terms), `debt.hooks.ts`, `debt.types.ts`

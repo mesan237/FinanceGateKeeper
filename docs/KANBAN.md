@@ -1806,6 +1806,29 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
+### VS-55: Instalment Reminders 🔄 In Progress
+
+**Priority:** High — debt terms part 2 of 2
+**Blocked by:** VS-54 (instalments)
+
+**Scope:**
+
+- Pure `debt.reminders.dueReminders`: a debt without instalments keeps its due-date
+  reminder; a scheduled debt gets one grouped reminder for its overdue instalments and
+  one for its next instalment within three days — its due date is ignored.
+- `getDueReminders` composes it per pending debt; `DebtReminderScheduler` delivers as
+  before (on app open, cancel-then-schedule).
+- Notification copy names the instalment (en/fr).
+- No migration.
+
+**TDD Anchor:**
+
+- Test: next instalment within three days, quiet further out, overdue grouped plus next, unscheduled debts unchanged; alert copy.
+
+**Done when:** a missed or upcoming instalment reaches the user without opening the debt.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
