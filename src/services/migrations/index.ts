@@ -44,6 +44,7 @@ import { migration as allocationSurplusSeen } from '@/services/migrations/042_al
 import { migration as goals } from '@/services/migrations/043_goals';
 import { migration as goalReserve } from '@/services/migrations/044_goal_reserve';
 import { migration as tontines } from '@/services/migrations/045_tontines';
+import { migration as monthSnapshots } from '@/services/migrations/046_month_snapshots';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -91,4 +92,5 @@ export const migrations: ReadonlyArray<Migration> = [
   goals,
   goalReserve,
   tontines,
+  monthSnapshots,
 ];

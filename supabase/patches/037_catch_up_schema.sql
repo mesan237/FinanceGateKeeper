@@ -40,7 +40,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments'
+    'tontines', 'tontine_payments', 'month_snapshots'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -358,6 +358,21 @@ create table if not exists tontine_payments (
   updated_at   text not null
 );
 
+create table if not exists month_snapshots (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  month       text not null,       -- YYYY-MM; append-only, latest per month wins (VS-53)
+  wallets     integer not null,
+  lent        integer not null,
+  owed        integer not null,
+  tontines    integer not null,
+  net_worth   integer not null,
+  income      integer not null,
+  spending    integer not null,
+  created_at  text not null,
+  updated_at  text not null
+);
+
 -- ----------------------------------------------------------------
 -- 3. Columns added after these tables first shipped.
 -- ----------------------------------------------------------------
@@ -391,7 +406,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments'
+    'tontines', 'tontine_payments', 'month_snapshots'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

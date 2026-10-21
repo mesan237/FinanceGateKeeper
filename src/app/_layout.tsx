@@ -30,6 +30,7 @@ import { useAppSettings } from '@/features/finance/auth/auth.hooks';
 import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
 import { PlannedReminderScheduler } from '@/features/finance/planned/PlannedReminderScheduler';
 import { TontineReminderScheduler } from '@/features/finance/tontines/TontineReminderScheduler';
+import { MonthCloser } from '@/features/finance/networth/MonthCloser';
 import { RecurringAutoLogger } from '@/features/finance/expenses/RecurringAutoLogger';
 import { ZeroDayGate } from '@/features/finance/expenses/ZeroDayGate';
 import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
@@ -93,24 +94,26 @@ export default function RootLayout() {
             >
               <AttentionProvider>
                 <RecurringAutoLogger>
-                  <DebtReminderScheduler>
-                    <PlannedReminderScheduler>
-                      <TontineReminderScheduler>
-                        <DailyReminderScheduler>
-                          <ZeroDayGate
-                            reminderTime={settings?.reminderTime ?? '21:00'}
-                            notificationsEnabled={settings?.notificationsEnabled ?? false}
-                          >
-                            <ThemedShell>
-                              <ToastProvider>
-                                <PushedScreensStack />
-                              </ToastProvider>
-                            </ThemedShell>
-                          </ZeroDayGate>
-                        </DailyReminderScheduler>
-                      </TontineReminderScheduler>
-                    </PlannedReminderScheduler>
-                  </DebtReminderScheduler>
+                  <MonthCloser>
+                    <DebtReminderScheduler>
+                      <PlannedReminderScheduler>
+                        <TontineReminderScheduler>
+                          <DailyReminderScheduler>
+                            <ZeroDayGate
+                              reminderTime={settings?.reminderTime ?? '21:00'}
+                              notificationsEnabled={settings?.notificationsEnabled ?? false}
+                            >
+                              <ThemedShell>
+                                <ToastProvider>
+                                  <PushedScreensStack />
+                                </ToastProvider>
+                              </ThemedShell>
+                            </ZeroDayGate>
+                          </DailyReminderScheduler>
+                        </TontineReminderScheduler>
+                      </PlannedReminderScheduler>
+                    </DebtReminderScheduler>
+                  </MonthCloser>
                 </RecurringAutoLogger>
               </AttentionProvider>
             </OnboardingGate>

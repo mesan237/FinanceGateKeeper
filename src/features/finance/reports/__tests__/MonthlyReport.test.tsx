@@ -17,6 +17,9 @@ jest.mock('expo-router', () => {
 });
 
 // The estimate comparison has its own tests (VS-46).
+// The net worth card has its own suite (networth/__tests__/NetWorthCard.test.tsx).
+jest.mock('@/features/finance/networth/NetWorthCard', () => ({ NetWorthCard: () => null }));
+
 jest.mock('@/features/finance/budget/budget.baseline', () => ({
   getBaseline: jest.fn().mockResolvedValue(null),
   setBaselineFact: jest.fn(),
