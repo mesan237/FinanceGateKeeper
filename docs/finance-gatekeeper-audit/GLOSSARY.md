@@ -32,7 +32,7 @@ are implemented.
 | **Projected spend** | Fixed spend + variable spend at the daily run-rate, to month end | Today (VS-40) | `budget.progress.projectSpend` |
 | **Unassigned** | Spendable − sum of envelopes | Today (spendable since VS-49) | `buildMonthlyPlan` |
 | **Imprévu** | An expense flagged as unexpected. A flag, not a category | Today | `expenses.is_unplanned` |
-| **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, and what is still owed on debts due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47) | `budget.committed.getCommitted` |
+| **Committed money** | What is already promised before the month ends: recurring bills still to log, open planned purchases due, what is still owed on debts due, and unpaid tontine contributions due (overdue included). Shown beside budget and cash, never subtracted from either | Today (VS-47; tontines VS-52) | `budget.committed.getCommitted` |
 | **Goal cash** | Cash in the wallets of live goals. Part of cash on hand, but promised to a goal | Today (VS-49) | `budget.goals.getGoalCash` |
 | **Goal** | A starter buffer or a sinking fund, linked to one wallet. Its progress is that wallet's balance; saving is a transfer into it. One live goal per wallet | Today (VS-48) | `goals.service.getGoals` |
 | **Sinking fund** | A goal for a known cost on a date. Needs `ceil(remaining / months left)` a month, months counted up to (not including) the target month | Today (VS-48) | `goals.progress.goalProgress` |

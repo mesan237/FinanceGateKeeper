@@ -34,4 +34,12 @@ export const notifications = {
     bodyOverdue_one: '{{list}}: {{count}} item still to buy — it was due {{date}}.',
     bodyOverdue_other: '{{list}}: {{count}} items still to buy — they were due {{date}}.',
   },
+  tontineDue: {
+    title: 'Tontine contribution',
+    body: 'A tontine contribution is due.',
+    bodySoon: '{{tontine}}: {{amount}} to pay on {{date}}.',
+    bodyToday: '{{tontine}}: {{amount}} to pay today.',
+    bodyOverdue_one: '{{tontine}}: {{count}} contribution overdue ({{amount}}).',
+    bodyOverdue_other: '{{tontine}}: {{count}} contributions overdue ({{amount}}).',
+  },
 };

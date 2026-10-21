@@ -193,6 +193,8 @@ export interface CommittedMoney {
   recurring: number;
   planned: number;
   debts: number;
+  /** Unpaid tontine contributions due by month end (VS-52). */
+  tontines: number;
   total: number;
 }
 

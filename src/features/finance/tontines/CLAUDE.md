@@ -39,7 +39,22 @@ the user's decision (2026-10-18), rather than as a goal or a recurring bill.
 ## Dependencies
 - `tontines` → `accounts`: `AccountPicker`, `useDefaultAccountId` (form, payment sheet).
 - `accounts` reads `tontine_payments` (joined to live `tontines`) by SQL for balances.
-- Nothing imports `tontines`. Committed money and overdue reminders come in VS-52.
+- `budget` → `tontines`: `getDueContributions` only, for committed money (VS-52).
+
+## Reminders and attention (VS-52)
+- `tontines.due.getDueContributions(through?)` lists every unpaid contribution due by a
+  date, overdue included — committed money passes the month's last day, reminders pass
+  nothing (all unpaid).
+- `tontines.reminders.planTontineReminders` (pure), per tontine: one grouped nudge for
+  its overdue contributions at the next 09:00 (re-planned every app open, so daily until
+  paid); for its **next** contribution only, a heads-up at 09:00 `DUE_SOON_DAYS` before
+  and a reminder at 09:00 on the day. Later cycles wait until they are next.
+- `reconcileTontineReminders` cancels only `tontineDue` notifications, schedules fresh,
+  and returns `{ soon, overdue }`. The root `TontineReminderScheduler` publishes that to
+  `AttentionProvider` under `ATTENTION_TONTINES` — the drawer row's dot — on mount, on
+  `tontines.events` change (every service write notifies), and on app foreground.
+- The notification payload is built by `notifications/triggers/tontineDue`, which takes a
+  plain input shape so `notifications/` never imports the feature.
 
 ## Module Map
 | File | Job |
@@ -51,4 +66,6 @@ the user's decision (2026-10-18), rather than as a goal or a recurring bill.
 | `TontinesScreen.tsx` / `TontineCard.tsx` | The list (`/tontines`, drawer → Tontines) |
 | `TontineDetail.tsx` / `TontineDetailRoute.tsx` / `CycleRow.tsx` / `PaymentSheet.tsx` | Detail (`/tontines/[id]`) |
 | `TontineForm.tsx` / `TontineFormRoute.tsx` | Create (`/tontines/create`), edit (`/tontines/edit/[id]`) |
+| `tontines.due.ts` | Unpaid contributions due by a date (reminders, committed money) |
+| `tontines.reminders.ts` / `tontines.events.ts` / `TontineReminderScheduler.tsx` | Reminders and the drawer dot |
 | `__fixtures__/tontines.fixtures.ts` | Shared screen-test data (outside `__tests__` so Jest does not run it) |

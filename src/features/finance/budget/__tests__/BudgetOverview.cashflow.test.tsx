@@ -112,7 +112,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockedGetOverview.mockResolvedValue(overviewData());
   mockedCash.mockResolvedValue(90_000);
-  mockedCommitted.mockResolvedValue({ recurring: 30_000, planned: 12_000, debts: 10_000, total: 52_000 });
+  mockedCommitted.mockResolvedValue({ recurring: 30_000, planned: 12_000, debts: 10_000, tontines: 0, total: 52_000 });
 });
 
 describe('BudgetOverview — cash flow (VS-47)', () => {

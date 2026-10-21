@@ -95,9 +95,12 @@ reasoning that kept the `funds` and `projects` tables.
   dashboard.
 - **Committed** (`budget.committed`) = recurring occurrences still to log, open
   planned items due (own date, else list date), and what is still owed on the user's
-  pending debts due — all up to month end, overdue included. Planned items and debts
-  are read by SQL, so `budget` gains no dependency on `planned` or `debt`, and
-  planned items still never touch the budget.
+  pending debts due, and unpaid tontine contributions due (VS-52) — all up to month
+  end, overdue included. Planned items and debts are read by SQL, so `budget` gains no
+  dependency on `planned` or `debt`, and planned items still never touch the budget.
+  Tontine dates follow a derived schedule, so they come from
+  `tontines.getDueContributions` (approved `budget → tontines`). The breakdown names
+  only the sources with something due.
 - Cash on hand comes from `accounts.getCashOnHand` (approved `budget → accounts`).
 
 ### Pay yourself first (VS-49)

@@ -1,9 +1,15 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
+import { AppState } from 'react-native';
+
+import { useSetAttention } from '@/components/AttentionProvider';
+import { ATTENTION_TONTINES } from '@/constants/attention';
 
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { toISODate } from '@/utils/formatDate';
 
+import { onTontineChange } from './tontines.events';
+import { reconcileTontineReminders } from './tontines.reminders';
 import {
   createTontine,
   deleteTontine,
@@ -215,4 +221,36 @@ export function useTontineForm(tontineId?: number) {
     save,
     remove,
   };
+}
+
+/**
+ * Keeps the tontine reminders and the drawer dot's counts up to date (VS-52):
+ * re-plans on mount, after any tontine or payment change, and whenever the app
+ * returns to the foreground, since the day may have changed.
+ */
+export function useTontineReminders(): void {
+  const setAttention = useSetAttention();
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      try {
+        const counts = await reconcileTontineReminders();
+        if (active) setAttention(ATTENTION_TONTINES, counts);
+      } catch {
+        // Reminders are a convenience; the tontines themselves still work.
+      }
+    };
+
+    void run();
+    const unsubscribe = onTontineChange(() => void run());
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void run();
+    });
+    return () => {
+      active = false;
+      unsubscribe();
+      subscription.remove();
+    };
+  }, [setAttention]);
 }

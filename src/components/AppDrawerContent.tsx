@@ -10,7 +10,7 @@ import { AttentionDot, attentionHint } from '@/components/AttentionDot';
 import { useAttention } from '@/components/AttentionProvider';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
-import { ATTENTION_PLANNED } from '@/constants/attention';
+import { ATTENTION_PLANNED, ATTENTION_TONTINES } from '@/constants/attention';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import type { navigation } from '@/i18n/locales/en/navigation';
 import { useThemedStyles, type ThemeColors } from '@/theme';
@@ -51,7 +51,7 @@ const SECTIONS: DrawerSection[] = [
       { labelKey: 'debts', icon: 'debt', route: '/debt' },
       { labelKey: 'planned', icon: 'planned', route: '/planned', attentionKey: ATTENTION_PLANNED },
       { labelKey: 'goals', icon: 'goal', route: '/goals' },
-      { labelKey: 'tontines', icon: 'tontine', route: '/tontines' },
+      { labelKey: 'tontines', icon: 'tontine', route: '/tontines', attentionKey: ATTENTION_TONTINES },
       { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
       { labelKey: 'backupRestore', icon: 'backup', route: '/backup' },
       { labelKey: 'deleteReset', icon: 'delete', soon: true },

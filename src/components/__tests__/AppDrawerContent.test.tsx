@@ -18,18 +18,19 @@ import i18n from '@/i18n';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 
 /** Publishes planned-purchase counts, as the planned feature's scheduler does. */
-function Publish({ counts }: { counts: AttentionCounts }) {
+function Publish({ counts, section = 'planned' }: { counts: AttentionCounts; section?: string }) {
   const set = useSetAttention();
-  useEffect(() => set('planned', counts), [set, counts]);
+  useEffect(() => set(section, counts), [set, counts, section]);
   return null;
 }
 
-function renderDrawer(planned?: AttentionCounts) {
+function renderDrawer(planned?: AttentionCounts, tontines?: AttentionCounts) {
   const navigation = { closeDrawer: jest.fn() };
   const props = { navigation, state: {}, descriptors: {} } as unknown as DrawerContentComponentProps;
   render(
     <AttentionProvider>
       {planned ? <Publish counts={planned} /> : null}
+      {tontines ? <Publish counts={tontines} section="tontines" /> : null}
       <AppDrawerContent {...props} />
     </AttentionProvider>,
   );
@@ -102,6 +103,12 @@ describe('AppDrawerContent', () => {
   });
 
   describe('attention dot', () => {
+    it('marks Tontines while contributions are overdue (VS-52)', () => {
+      renderDrawer(undefined, { soon: 0, overdue: 2 });
+      expect(screen.getByTestId('drawer-dot-tontines')).toBeTruthy();
+      expect(screen.queryByTestId('drawer-dot-planned')).toBeNull();
+    });
+
     it('shows no dot while nothing needs attention', () => {
       renderDrawer({ soon: 0, overdue: 0 });
       expect(screen.queryByTestId('drawer-dot-planned')).toBeNull();

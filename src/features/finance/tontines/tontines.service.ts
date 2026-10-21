@@ -4,6 +4,7 @@ import type { tontines as tontinesCopy } from '@/i18n/locales/en/tontines';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 
+import { notifyTontineChange } from './tontines.events';
 import { buildCycles, summarise } from './tontines.schedule';
 import {
   TONTINE_FREQUENCIES,
@@ -123,6 +124,7 @@ export async function createTontine(input: NewTontine): Promise<number> {
     [t.name, t.contributionAmount, t.frequency, t.startDate, t.members, t.payoutTurn ?? null, t.accountId ?? null, new Date().toISOString()],
   );
   const [{ id }] = await query<{ id: number }>('SELECT last_insert_rowid() AS id');
+  notifyTontineChange();
   return id;
 }
 
@@ -159,6 +161,7 @@ export async function updateTontine(id: number, patch: TontinePatch): Promise<vo
      WHERE id = ?`,
     [t.name, t.contributionAmount, t.frequency, t.startDate, t.members, t.payoutTurn ?? null, t.accountId ?? null, id],
   );
+  notifyTontineChange();
 }
 
 /**
@@ -167,6 +170,7 @@ export async function updateTontine(id: number, patch: TontinePatch): Promise<vo
  */
 export async function deleteTontine(id: number): Promise<void> {
   await execute('UPDATE tontines SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL', [new Date().toISOString(), id]);
+  notifyTontineChange();
 }
 
 /** One tontine with its summary and whole schedule, or null when gone. */
@@ -179,6 +183,12 @@ export async function getTontineDetail(
   const payments = await getPayments(id);
   const cycles = buildCycles(tontine, payments, todayISO);
   return { ...tontine, cycles, summary: summarise(tontine, cycles, payments) };
+}
+
+/** The ids of every live tontine, oldest first. */
+export async function getTontineIds(): Promise<number[]> {
+  const rows = await query<{ id: number }>('SELECT id FROM tontines WHERE deleted_at IS NULL ORDER BY created_at ASC, id ASC');
+  return rows.map((r) => r.id);
 }
 
 /** Every live tontine with its summary, oldest first. */
@@ -208,6 +218,7 @@ async function insertPayment(
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [tontineId, kind, cycle, amount, accountId, date, new Date().toISOString()],
   );
+  notifyTontineChange();
 }
 
 /**
@@ -263,4 +274,5 @@ export async function removePayment(paymentId: number): Promise<void> {
     new Date().toISOString(),
     paymentId,
   ]);
+  notifyTontineChange();
 }

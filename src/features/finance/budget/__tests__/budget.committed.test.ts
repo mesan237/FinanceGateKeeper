@@ -18,6 +18,7 @@ jest.mock('@/services/database', () => {
 
 import { execute, query } from '@/services/database';
 import { getCommitted } from '@/features/finance/budget/budget.committed';
+import { createTontine, payContribution } from '@/features/finance/tontines/tontines.service';
 
 let sqlite: Database.Database;
 
@@ -88,7 +89,7 @@ async function debt(
 
 describe('getCommitted', () => {
   it('is zero when nothing is due', async () => {
-    expect(await getCommitted('2026-10')).toEqual({ recurring: 0, planned: 0, debts: 0, total: 0 });
+    expect(await getCommitted('2026-10')).toEqual({ recurring: 0, planned: 0, debts: 0, tontines: 0, total: 0 });
   });
 
   it('counts every recurring occurrence still to log by the end of the month', async () => {
@@ -137,11 +138,27 @@ describe('getCommitted', () => {
     expect(committed.debts).toBe(40_000);
   });
 
-  it('adds the three sources into one total', async () => {
+  it('counts unpaid tontine contributions due by the end of the month, overdue included (VS-52)', async () => {
+    const id = await createTontine({
+      name: 'Njangi',
+      contributionAmount: 10_000,
+      frequency: 'weekly',
+      startDate: '2026-10-05',
+      members: 10,
+      accountId: 1,
+    });
+    await payContribution(id, 1, 1, '2026-10-05');
+
+    // Cycles 2–4 (12, 19, 26 Oct) are unpaid; cycle 5 falls on 2 Nov.
+    expect((await getCommitted('2026-10')).tontines).toBe(30_000);
+  });
+
+  it('adds every source into one total', async () => {
     await bill(30_000, 'monthly', '2026-10-25');
     await item(await list('2026-10-28'), 12_000);
     await debt(10_000, 'owed', '2026-10-30');
+    await createTontine({ name: 'Office', contributionAmount: 5_000, frequency: 'monthly', startDate: '2026-10-30', members: 4 });
 
-    expect((await getCommitted('2026-10')).total).toBe(52_000);
+    expect((await getCommitted('2026-10')).total).toBe(57_000);
   });
 });

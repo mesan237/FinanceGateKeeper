@@ -99,3 +99,12 @@ export interface TontineWithSummary extends Tontine {
 export interface TontineDetail extends TontineWithSummary {
   cycles: TontineCycle[];
 }
+
+/** One unpaid contribution, as reminders and committed money need it (VS-52). */
+export interface DueContribution {
+  tontineId: number;
+  tontineName: string;
+  cycle: number;
+  dueDate: string;
+  amount: number;
+}
