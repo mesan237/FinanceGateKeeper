@@ -1707,6 +1707,36 @@ where they stand before and after their turn.
 
 ---
 
+### VS-52: Tontine Reminders and Committed Contributions 🔄 In Progress
+
+**Priority:** High — tontines part 2 of 2
+**Blocked by:** VS-51 (tontines), VS-47/49 (committed money, safe to spend), VS-39 (attention pattern)
+
+**Scope:**
+
+- `tontines.getDueContributions(through?)`: unpaid contributions of live tontines due by
+  a date, overdue included.
+- **Committed money** gains a `tontines` line (unpaid contributions due by month end), so
+  safe to spend accounts for them. New edge `budget → tontines` (that one read). The
+  breakdown names only the sources with something due.
+- **Reminders** (`tontineDue` notifications, 09:00): per tontine, one grouped nudge for
+  overdue contributions, and a 3-day heads-up plus an on-the-day reminder for the next
+  contribution. Re-planned on open, after any tontine or payment write, and on foreground.
+- **Drawer dot** on Tontines via `AttentionProvider` (`ATTENTION_TONTINES`), published by
+  a root `TontineReminderScheduler`.
+- No migration.
+
+**TDD Anchor:**
+
+- Test: due contributions — unpaid only, overdue included, by date, deleted tontines out.
+- Test: reminder planning (heads-up, on the day, grouped overdue, next cycle only, per tontine), counts, reconcile cancels only tontine reminders.
+- Test: scheduler publishes and re-plans on change; trigger copy; committed tontines line and total; breakdown; drawer dot.
+
+**Done when:** a due or missed contribution reaches the user without opening the
+tontine, and the Budget tab's committed money and safe to spend include it.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
