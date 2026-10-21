@@ -153,6 +153,29 @@ describe('getCommitted', () => {
     expect((await getCommitted('2026-10')).tontines).toBe(30_000);
   });
 
+  it('counts only the instalments of a scheduled debt due by month end, not its whole balance (VS-54)', async () => {
+    const loan = await debt(100_000, 'owed', null);
+    await execute(
+      `UPDATE debts SET total_to_repay = 120000, instalment_count = 6, instalment_frequency = 'monthly',
+         first_instalment_date = '2026-09-15' WHERE id = ?`,
+      [loan],
+    );
+    await execute(
+      "INSERT INTO debt_payments (debt_id, amount, date, created_at, instalment) VALUES (?, 20000, '2026-09-15', ?, 1)",
+      [loan, NOW],
+    );
+
+    // Instalment 2 (15 Oct) is due this month; 3–6 fall later.
+    expect((await getCommitted('2026-10')).debts).toBe(20_000);
+  });
+
+  it('counts the total to repay on an unscheduled debt due this month (VS-54)', async () => {
+    const loan = await debt(100_000, 'owed', '2026-10-30');
+    await execute('UPDATE debts SET total_to_repay = 110000 WHERE id = ?', [loan]);
+
+    expect((await getCommitted('2026-10')).debts).toBe(110_000);
+  });
+
   it('adds every source into one total', async () => {
     await bill(30_000, 'monthly', '2026-10-25');
     await item(await list('2026-10-28'), 12_000);

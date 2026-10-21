@@ -12,10 +12,13 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { useAccounts, useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { formatDateLong, formatDateShort } from '@/utils/formatDate';
+import { formatDateLong, formatDateShort, toISODate } from '@/utils/formatDate';
 
+import { DebtInstalments } from './DebtInstalments';
 import { RepaymentSheet } from './RepaymentSheet';
 import { useDebtDetail } from './debt.hooks';
+import { buildInstalments, loanCost } from './debt.terms';
+import type { Instalment } from './debt.types';
 
 export interface DebtDetailProps {
   debtId: number;
@@ -33,11 +36,13 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { t } = useTranslation(['debt', 'common']);
-  const { debt, payments, loading, error, recordPayment, removePayment, remove } = useDebtDetail(debtId);
+  const { debt, payments, loading, error, recordPayment, payInstalment, removePayment, remove } =
+    useDebtDetail(debtId);
   const { accounts } = useAccounts();
   const defaultAccountId = useDefaultAccountId();
   const accountName = useMemo(() => new Map(accounts.map((a) => [a.id, a.name])), [accounts]);
   const [repaying, setRepaying] = useState(false);
+  const [paying, setPaying] = useState<Instalment | null>(null);
   const [paymentToRemove, setPaymentToRemove] = useState<number | null>(null);
 
   if (loading && !debt) {
@@ -68,6 +73,10 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
     router.back();
   };
 
+  const instalments = buildInstalments(debt, payments, toISODate(new Date()));
+  const { cost, monthlyRate } = loanCost(debt);
+  const lent = debt.direction === 'lent';
+
   return (
     <View style={styles.screen}>
       <ScreenHeader title={t('detail.title')} />
@@ -88,11 +97,29 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
               })}
             </Typography>
           ) : null}
+          {debt.totalToRepay !== null && cost > 0 ? (
+            <Typography>
+              {t(lent ? 'terms.summaryLent' : 'terms.summary', {
+                total: formatCurrency(debt.repayable),
+                cost: formatCurrency(cost),
+              }) + (monthlyRate === null ? '' : t('terms.rate', { rate: monthlyRate }))}
+            </Typography>
+          ) : null}
           {debt.dueDate ? (
             <Typography variant="muted">{t('due', { date: formatDateLong(debt.dueDate) })}</Typography>
           ) : null}
           {debt.note ? <Typography style={styles.note}>{debt.note}</Typography> : null}
         </Card>
+
+        {instalments.length > 0 ? (
+          <Card>
+            <DebtInstalments
+              instalments={instalments}
+              onPay={setPaying}
+              onUndo={(paymentId) => void removePayment(paymentId)}
+            />
+          </Card>
+        ) : null}
 
         {payments.length > 0 ? (
           <View style={styles.section}>
@@ -136,6 +163,17 @@ export function DebtDetail({ debtId }: DebtDetailProps) {
         accountId={debt.accountId ?? defaultAccountId}
         onSave={recordPayment}
         onClose={() => setRepaying(false)}
+      />
+
+      <RepaymentSheet
+        visible={paying !== null}
+        direction={debt.direction}
+        outstanding={debt.outstanding}
+        fixedAmount={paying ? Math.min(paying.amount, debt.outstanding) : undefined}
+        title={paying ? t('terms.instalment', { n: paying.n }) : undefined}
+        accountId={debt.accountId ?? defaultAccountId}
+        onSave={(payment) => (paying ? payInstalment(paying.n, payment) : Promise.resolve(false))}
+        onClose={() => setPaying(null)}
       />
 
       <Modal visible={paymentToRemove !== null} onRequestClose={() => setPaymentToRemove(null)}>

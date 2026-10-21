@@ -6,7 +6,8 @@ import { execute, query } from '@/services/database';
 import { daysBetween, toISODate } from '@/utils/formatDate';
 
 import { recordDebtPayment } from './debt.payments';
-import type { Debt, DebtPatch, DebtReminder, NewDebt, OutstandingTotals } from './debt.types';
+import { assertTerms } from './debt.validation';
+import type { Debt, DebtPatch, DebtReminder, DebtSchedule, NewDebt, OutstandingTotals } from './debt.types';
 
 interface DebtRow {
   id: number;
@@ -20,6 +21,10 @@ interface DebtRow {
   settled_at: string | null;
   created_at: string;
   account_id: number | null;
+  total_to_repay: number | null;
+  instalment_count: number | null;
+  instalment_frequency: DebtSchedule['frequency'] | null;
+  first_instalment_date: string | null;
   paid: number;
 }
 
@@ -29,11 +34,17 @@ interface DebtRow {
  */
 const DEBT_SELECT = `SELECT d.id, d.person_name, d.amount, d.direction, d.date, d.due_date,
     d.status, d.note, d.settled_at, d.created_at, d.account_id,
+    d.total_to_repay, d.instalment_count, d.instalment_frequency, d.first_instalment_date,
     (SELECT COALESCE(SUM(p.amount), 0) FROM debt_payments p
       WHERE p.debt_id = d.id AND p.deleted_at IS NULL) AS paid
   FROM debts d WHERE d.deleted_at IS NULL`;
 
 function mapDebt(row: DebtRow): Debt {
+  const repayable = row.total_to_repay ?? row.amount;
+  const schedule =
+    row.instalment_count !== null && row.instalment_frequency !== null && row.first_instalment_date !== null
+      ? { count: row.instalment_count, frequency: row.instalment_frequency, firstDate: row.first_instalment_date }
+      : null;
   return {
     id: row.id,
     personName: row.person_name,
@@ -46,8 +57,11 @@ function mapDebt(row: DebtRow): Debt {
     settledAt: row.settled_at,
     createdAt: row.created_at,
     accountId: row.account_id,
+    totalToRepay: row.total_to_repay,
+    schedule,
+    repayable,
     paid: row.paid,
-    outstanding: row.status === 'settled' ? 0 : Math.max(0, row.amount - row.paid),
+    outstanding: row.status === 'settled' ? 0 : Math.max(0, repayable - row.paid),
   };
 }
 
@@ -72,7 +86,8 @@ export async function getDebts(direction: DebtDirection): Promise<Debt[]> {
 
 /**
  * Creates a pending debt. The person name must be non-empty and the amount a
- * positive integer; `date` defaults to today.
+ * positive integer; `date` defaults to today. Optional terms (VS-54): a total
+ * to repay of at least the amount, and an equal-instalment schedule.
  *
  * @returns the new debt's id.
  */
@@ -83,9 +98,13 @@ export async function createDebt(input: NewDebt): Promise<number> {
     throw new Error(i18n.t('errors.amountPositive', { ns: 'debt' }));
   }
   const date = input.date ?? toISODate(new Date());
+  const totalToRepay = input.totalToRepay ?? null;
+  const schedule = input.schedule ?? null;
+  assertTerms(input.amount, totalToRepay, schedule);
   await execute(
-    `INSERT INTO debts (person_name, amount, direction, date, due_date, status, note, settled_at, account_id, created_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?, NULL, ?, ?)`,
+    `INSERT INTO debts (person_name, amount, direction, date, due_date, status, note, settled_at, account_id,
+       total_to_repay, instalment_count, instalment_frequency, first_instalment_date, created_at)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, NULL, ?, ?, ?, ?, ?, ?)`,
     [
       personName,
       input.amount,
@@ -94,6 +113,10 @@ export async function createDebt(input: NewDebt): Promise<number> {
       input.dueDate ?? null,
       input.note ?? null,
       input.accountId ?? null,
+      totalToRepay,
+      schedule?.count ?? null,
+      schedule?.frequency ?? null,
+      schedule?.firstDate ?? null,
       new Date().toISOString(),
     ],
   );
@@ -139,7 +162,8 @@ export async function updateDebt(id: number, patch: DebtPatch): Promise<void> {
     throw new Error(i18n.t('errors.amountPositive', { ns: 'debt' }));
   }
   // Repayments are history: the debt cannot shrink below what came back (VS-44).
-  if (amount < debt.paid) throw new Error(i18n.t('errors.belowRepaid', { ns: 'debt' }));
+  if ((debt.totalToRepay ?? amount) < debt.paid) throw new Error(i18n.t('errors.belowRepaid', { ns: 'debt' }));
+  assertTerms(amount, debt.totalToRepay, debt.schedule);
   const dueDate = patch.dueDate === undefined ? debt.dueDate : patch.dueDate;
   const note = patch.note === undefined ? debt.note : patch.note;
   const accountId = patch.accountId === undefined ? debt.accountId : patch.accountId;
@@ -167,7 +191,7 @@ export async function deleteDebt(id: number): Promise<void> {
  */
 export async function getOutstandingTotals(): Promise<OutstandingTotals> {
   const rows = await query<{ direction: DebtDirection; total: number }>(
-    `SELECT direction, SUM(amount - paid) AS total FROM (${DEBT_SELECT} AND d.status = 'pending')
+    `SELECT direction, SUM(COALESCE(total_to_repay, amount) - paid) AS total FROM (${DEBT_SELECT} AND d.status = 'pending')
      GROUP BY direction`,
   );
   const totals: OutstandingTotals = { lent: 0, owed: 0 };
@@ -192,9 +216,9 @@ export async function getDueReminders(
     const dueDate = row.due_date as string;
     const daysUntil = daysBetween(todayISO, dueDate);
     if (daysUntil < 0) {
-      reminders.push({ debtId: row.id, personName: row.person_name, amount: row.amount - row.paid, dueDate, kind: 'overdue' });
+      reminders.push({ debtId: row.id, personName: row.person_name, amount: (row.total_to_repay ?? row.amount) - row.paid, dueDate, kind: 'overdue' });
     } else if (daysUntil <= DEBT_DUE_SOON_DAYS) {
-      reminders.push({ debtId: row.id, personName: row.person_name, amount: row.amount - row.paid, dueDate, kind: 'dueSoon' });
+      reminders.push({ debtId: row.id, personName: row.person_name, amount: (row.total_to_repay ?? row.amount) - row.paid, dueDate, kind: 'dueSoon' });
     }
   }
   return reminders;

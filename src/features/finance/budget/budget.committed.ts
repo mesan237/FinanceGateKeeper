@@ -2,6 +2,8 @@ import { advanceDueDate } from '@/features/finance/expenses/expenses.service';
 import type { Frequency } from '@/features/finance/expenses/expenses.types';
 import { getDueContributions } from '@/features/finance/tontines/tontines.due';
 import { query } from '@/services/database';
+import { cycleDate, type CycleFrequency } from '@/utils/cycleDate';
+import { instalmentAmounts } from '@/utils/instalments';
 import { lastDayOfMonth } from '@/utils/monthMath';
 
 import type { CommittedMoney } from './budget.types';
@@ -58,18 +60,52 @@ async function plannedDue(lastDay: string): Promise<number> {
   return row.total;
 }
 
-/** What is still owed on the user's pending debts due by the month's last day, less repayments. */
+/**
+ * What the user's pending debts ask for by the month's last day, overdue
+ * included. An unscheduled debt counts once its due date falls by then: its
+ * total to repay (interest included, VS-54), else its amount, less repayments.
+ * A scheduled debt counts only its unpaid instalments dated by then — never the
+ * whole balance (user decision, VS-54).
+ */
 async function debtsDue(lastDay: string): Promise<number> {
-  const [row] = await query<{ total: number }>(
-    `SELECT COALESCE(SUM(MAX(d.amount - (
+  const [unscheduled] = await query<{ total: number }>(
+    `SELECT COALESCE(SUM(MAX(COALESCE(d.total_to_repay, d.amount) - (
         SELECT COALESCE(SUM(p.amount), 0) FROM debt_payments p
         WHERE p.debt_id = d.id AND p.deleted_at IS NULL), 0)), 0) AS total
      FROM debts d
      WHERE d.deleted_at IS NULL AND d.direction = 'owed' AND d.status = 'pending'
-       AND d.due_date IS NOT NULL AND d.due_date <= ?`,
+       AND d.instalment_count IS NULL AND d.due_date IS NOT NULL AND d.due_date <= ?`,
     [lastDay],
   );
-  return row.total;
+
+  const scheduled = await query<{
+    id: number;
+    repayable: number;
+    count: number;
+    frequency: CycleFrequency;
+    first_date: string;
+  }>(
+    `SELECT id, COALESCE(total_to_repay, amount) AS repayable, instalment_count AS count,
+       instalment_frequency AS frequency, first_instalment_date AS first_date
+     FROM debts
+     WHERE deleted_at IS NULL AND direction = 'owed' AND status = 'pending' AND instalment_count IS NOT NULL`,
+  );
+  let instalments = 0;
+  for (const debt of scheduled) {
+    const paid = new Set(
+      (
+        await query<{ instalment: number }>(
+          'SELECT instalment FROM debt_payments WHERE debt_id = ? AND instalment IS NOT NULL AND deleted_at IS NULL',
+          [debt.id],
+        )
+      ).map((r) => r.instalment),
+    );
+    instalmentAmounts(debt.repayable, debt.count).forEach((amount, i) => {
+      const n = i + 1;
+      if (!paid.has(n) && cycleDate(debt.first_date, debt.frequency, n) <= lastDay) instalments += amount;
+    });
+  }
+  return unscheduled.total + instalments;
 }
 
 /** Unpaid tontine contributions due by the month's last day, overdue included. */

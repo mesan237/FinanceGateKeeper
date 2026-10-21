@@ -1,4 +1,5 @@
 import type { DebtDirection, DebtStatus } from '@/constants/debt';
+import type { CycleFrequency } from '@/utils/cycleDate';
 
 // Re-exported so this slice's types have their documented home here, while the
 // enums' single source of truth stays in `@/constants/debt` (mirrors how
@@ -21,10 +22,42 @@ export interface Debt {
   createdAt: string;
   /** Wallet the loan itself went through, or null when it moved no wallet (VS-44). */
   accountId: number | null;
+  /** The total paid back, interest included; null when it is just the amount (VS-54). */
+  totalToRepay: number | null;
+  /** An equal-instalment schedule, or null (VS-54). */
+  schedule: DebtSchedule | null;
+  /** `totalToRepay ?? amount`: what repayments add up to once settled. */
+  repayable: number;
   /** Sum of live repayments. */
   paid: number;
-  /** What is still owed: `amount - paid` while pending, 0 once settled. */
+  /** What is still owed: `repayable - paid` while pending, 0 once settled. */
   outstanding: number;
+}
+
+/** Equal instalments from `firstDate`, every week or month (VS-54). Dates are derived. */
+export interface DebtSchedule {
+  count: number;
+  frequency: CycleFrequency;
+  /** `YYYY-MM-DD` of the first instalment. */
+  firstDate: string;
+}
+
+/** One instalment of a scheduled debt, derived — never stored (VS-54). */
+export interface Instalment {
+  n: number;
+  dueDate: string;
+  amount: number;
+  /** `due`: today or within `DEBT_DUE_SOON_DAYS`. */
+  status: 'paid' | 'overdue' | 'due' | 'upcoming';
+  /** The repayment that paid it, if any. */
+  payment: DebtPayment | null;
+}
+
+/** What a loan costs on top of the amount, and the equivalent monthly rate over its term. */
+export interface LoanCost {
+  cost: number;
+  /** Percent a month, one decimal; null without an end date or without a cost. */
+  monthlyRate: number | null;
 }
 
 /** What the create form supplies; `status` defaults to pending in the service. */
@@ -38,6 +71,10 @@ export interface NewDebt {
   date?: string;
   /** Wallet the loan went through; omitted or null moves no wallet (VS-44). */
   accountId?: number | null;
+  /** The total to be paid back, interest included; at least `amount` (VS-54). */
+  totalToRepay?: number | null;
+  /** An optional equal-instalment schedule (VS-54). */
+  schedule?: DebtSchedule | null;
 }
 
 /** Fields the edit form may change on a debt. */
@@ -60,6 +97,8 @@ export interface DebtPayment {
   date: string;
   note: string | null;
   createdAt: string;
+  /** The instalment it paid, or null for a free repayment (VS-54). */
+  instalment: number | null;
 }
 
 /** What `recordDebtPayment` takes. */

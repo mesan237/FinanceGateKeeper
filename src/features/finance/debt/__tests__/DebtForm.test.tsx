@@ -78,6 +78,8 @@ describe('DebtForm', () => {
         note: null,
         // The loan leaves the default account unless the user says otherwise (VS-44).
         accountId: 1,
+        totalToRepay: null,
+        schedule: null,
       }),
     );
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/debt'));
@@ -102,6 +104,52 @@ describe('DebtForm', () => {
     fireEvent.changeText(screen.getByTestId('debt-person'), 'X');
     fireEvent.changeText(screen.getByTestId('debt-amount'), '0');
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('saves a total to repay and shows what the loan costs (VS-54)', async () => {
+    render(<DebtForm />);
+    fireEvent.changeText(screen.getByTestId('debt-person'), 'Microfinance');
+    fireEvent.changeText(screen.getByTestId('debt-amount'), '100000');
+    fireEvent.press(screen.getByTestId('debt-direction-owed'));
+    fireEvent.changeText(screen.getByTestId('debt-total'), '120000');
+
+    expect(screen.getByText('Costs 20 000 FCFA on top of the amount')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith(expect.objectContaining({ totalToRepay: 120000, schedule: null })),
+    );
+  });
+
+  it('refuses to save a total below the amount', () => {
+    render(<DebtForm />);
+    fireEvent.changeText(screen.getByTestId('debt-person'), 'Awa');
+    fireEvent.changeText(screen.getByTestId('debt-amount'), '100000');
+    fireEvent.changeText(screen.getByTestId('debt-total'), '90000');
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('sets up equal instalments and previews them (VS-54)', async () => {
+    render(<DebtForm />);
+    fireEvent.changeText(screen.getByTestId('debt-person'), 'Microfinance');
+    fireEvent.changeText(screen.getByTestId('debt-amount'), '100000');
+    fireEvent.changeText(screen.getByTestId('debt-total'), '120000');
+    fireEvent.press(screen.getByRole('switch', { name: 'Pay in instalments' }));
+    fireEvent.changeText(screen.getByTestId('debt-instalments'), '6');
+    fireEvent.press(screen.getByTestId('debt-instalment-frequency-monthly'));
+
+    expect(screen.getByText('6 × 20 000 FCFA')).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mockedCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalToRepay: 120000,
+          schedule: { count: 6, frequency: 'monthly', firstDate: expect.any(String) },
+        }),
+      ),
+    );
   });
 
   it('records a debt that moved through no account (VS-44)', async () => {

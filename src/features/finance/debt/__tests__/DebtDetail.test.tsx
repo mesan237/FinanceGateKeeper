@@ -44,6 +44,9 @@ const JEAN: Debt = {
   settledAt: null,
   createdAt: '2026-06-01T00:00:00.000Z',
   accountId: null,
+  totalToRepay: null,
+  schedule: null,
+  repayable: 15000,
   paid: 0,
   outstanding: 15000,
 };
@@ -58,6 +61,7 @@ function mockState(over: Partial<ReturnType<typeof useDebtDetail>> = {}) {
     remove: jest.fn(),
     payments: [],
     recordPayment: jest.fn().mockResolvedValue(true),
+    payInstalment: jest.fn().mockResolvedValue(true),
     removePayment: jest.fn().mockResolvedValue(undefined),
     ...over,
   });
@@ -94,7 +98,7 @@ describe('DebtDetail', () => {
     mockState({
       debt: { ...JEAN, paid: 5000, outstanding: 10000 },
       payments: [
-        { id: 3, debtId: 1, amount: 5000, accountId: 2, date: '2026-06-05', note: null, createdAt: '' },
+        { id: 3, debtId: 1, amount: 5000, accountId: 2, date: '2026-06-05', note: null, createdAt: '', instalment: null },
       ],
     });
     render(<DebtDetail debtId={1} />);
@@ -109,7 +113,7 @@ describe('DebtDetail', () => {
     mockState({
       debt: { ...JEAN, paid: 5000, outstanding: 10000 },
       payments: [
-        { id: 3, debtId: 1, amount: 5000, accountId: null, date: '2026-06-05', note: null, createdAt: '' },
+        { id: 3, debtId: 1, amount: 5000, accountId: null, date: '2026-06-05', note: null, createdAt: '', instalment: null },
       ],
       removePayment,
     });
