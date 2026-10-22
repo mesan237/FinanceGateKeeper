@@ -362,55 +362,18 @@ describe('BudgetOverview — envelopes', () => {
     expect(screen.getByTestId(`envelope-rollover-${FOOD}`)).toBeTruthy();
   });
 
-  it('opens the edit sheet when an envelope is tapped', async () => {
+  // Editing an envelope moved into the category detail (VS-56); its sheet tests
+  // live in CategoryDetailScreen.test.tsx.
+  it('opens the category detail for the month when an envelope is tapped', async () => {
     await renderTab();
 
     fireEvent.press(screen.getByTestId(`envelope-row-${FOOD}`));
 
-    await waitFor(() => expect(screen.getByTestId('envelope-sheet')).toBeTruthy());
-  });
-
-  it('saves an edited envelope and re-reads the month', async () => {
-    await renderTab();
-    fireEvent.press(screen.getByTestId(`envelope-row-${FOOD}`));
-    await waitFor(() => expect(screen.getByTestId('envelope-amount')).toBeTruthy());
-
-    fireEvent.changeText(screen.getByTestId('envelope-amount'), '75000');
-    fireEvent.press(screen.getByTestId('envelope-save'));
-
-    await waitFor(() =>
-      expect(mockedSetBudget).toHaveBeenCalledWith('2026-08', FOOD, 75_000, false),
-    );
-    // Once for the initial focus load, again after the write.
-    expect(mockedGetOverview.mock.calls.length).toBeGreaterThan(1);
-  });
-
-  it('prompts to cover an overspent envelope from another one', async () => {
-    mockedGetOverview.mockResolvedValue(
-      overviewData({
-        categories: [
-          envelope({ spent: 70_000, remaining: -10_000, health: 'over' }),
-          envelope({
-            categoryId: TRANSPORT,
-            categoryName: 'Transport',
-            allocated: 40_000,
-            available: 40_000,
-            spent: 10_000,
-            remaining: 30_000,
-            health: 'on_track',
-          }),
-        ],
-      }),
-    );
-    await renderTab();
-
-    fireEvent.press(screen.getByTestId(`envelope-row-${FOOD}`));
-    await waitFor(() => expect(screen.getByTestId('envelope-cover')).toBeTruthy());
-
-    fireEvent.press(screen.getByTestId('envelope-cover'));
-
-    await waitFor(() => expect(screen.getByTestId('envelope-cover-picker')).toBeTruthy());
-    expect(screen.getByTestId(`envelope-cover-${TRANSPORT}`)).toBeTruthy();
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/budget/category/[id]',
+      params: { id: String(FOOD), month: '2026-08' },
+    });
+    expect(screen.queryByTestId('envelope-sheet')).toBeNull();
   });
 });
 

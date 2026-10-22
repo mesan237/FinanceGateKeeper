@@ -208,3 +208,55 @@ export interface MoneyView {
   /** `cash - goalCash - committed.total`: free to spend before month end. May be negative. */
   safeToSpend: number;
 }
+
+/** One subcategory's share of a category's month (VS-56). */
+export interface CategorySpendPart {
+  /** null for spending filed under the category itself. */
+  subcategoryId: number | null;
+  /** Stored subcategory name; null with `subcategoryId`. */
+  name: string | null;
+  /** Net of refunds. */
+  amount: number;
+  /** Purchases in the part (refunds not counted). */
+  count: number;
+  /** Share of the category's net spend, 0–100. */
+  sharePct: number;
+}
+
+/** Purchases that share a note — "Taxi ×18" (VS-56). */
+export interface RepeatedSpend {
+  /** The note as first written. */
+  label: string;
+  count: number;
+  total: number;
+}
+
+/** One of a category's biggest purchases, net of its refunds this month (VS-56). */
+export interface LargestSpend {
+  id: number;
+  amount: number;
+  date: string;
+  note: string | null;
+  /** Stored subcategory name, or null. */
+  subcategoryName: string | null;
+}
+
+/** Where a category's money went in one month: the Budget tab's drill-down (VS-56). */
+export interface CategoryDetail {
+  categoryId: number;
+  /** Stored name; show it with `displayCategoryName`. */
+  categoryName: string;
+  month: string;
+  /** Net spend, refunds included. */
+  spent: number;
+  /** Split by subcategory, largest first. Empty when no expense uses a subcategory. */
+  parts: CategorySpendPart[];
+  /** Up to three notes repeated across purchases, by total. */
+  repeats: RepeatedSpend[];
+  /** Up to five purchases, largest first. */
+  largest: LargestSpend[];
+  /** What can and cannot easily be cut, by `spendKindOf`. */
+  kinds: { fixed: number; variable: number; unexpected: number };
+  /** Average over complete months before this one; null until one is complete. */
+  average: number | null;
+}
