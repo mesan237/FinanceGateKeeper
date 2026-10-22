@@ -104,6 +104,20 @@ export interface ProfileCategory {
   /** The cheapest and dearest complete month — the room a habit change can win back. */
   lowest: number;
   highest: number;
+  /**
+   * The category split by subcategory over the same months, highest first (VS-59);
+   * absent when none of its spending was filed under a subcategory.
+   */
+  subcategories?: ProfileSubcategory[];
+}
+
+/** One subcategory's average month inside a {@link ProfileCategory} (VS-59). */
+export interface ProfileSubcategory {
+  /** null for spending filed under the category itself. */
+  subcategoryId: number | null;
+  /** Stored name; null with `subcategoryId`. */
+  label: string | null;
+  average: number;
 }
 
 /** Average monthly spend, split by kind. `total` is the sum of the three. */

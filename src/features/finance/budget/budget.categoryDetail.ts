@@ -8,7 +8,12 @@ import type { Category, Expense } from '@/features/finance/expenses/expenses.typ
 import { query } from '@/services/database';
 import { firstDayOfMonth, lastDayOfMonth, prevMonthISO } from '@/utils/monthMath';
 
-import type { CategoryDetail, CategorySpendPart, RepeatedSpend } from './budget.types';
+import type {
+  CategoryDetail,
+  CategorySpendPart,
+  RepeatedSpend,
+  SubcategoryFilter,
+} from './budget.types';
 
 /**
  * A category's month, taken apart (VS-56): which subcategories the money went
@@ -96,6 +101,8 @@ function buildRepeats(expenses: ReadonlyArray<Expense>): RepeatedSpend[] {
  * @param expenses Every row of the category in the month, refunds included.
  * @param categories The full category tree, for subcategory names and cost types.
  * @param usual The category's usual month.
+ * @param subcategory When set, `expenses` are already that subcategory's and
+ *   `usual` is its own; the split is left empty (VS-59).
  */
 export function buildCategoryDetail(
   categoryId: number,
@@ -103,6 +110,7 @@ export function buildCategoryDetail(
   expenses: ReadonlyArray<Expense>,
   categories: ReadonlyArray<Category>,
   usual: UsualSpend,
+  subcategory: CategoryDetail['subcategory'] = null,
 ): CategoryDetail {
   const nameOf = new Map(categories.map((c) => [c.id, c.name]));
   const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -114,9 +122,10 @@ export function buildCategoryDetail(
   return {
     categoryId,
     categoryName: nameOf.get(categoryId) ?? '',
+    subcategory,
     month,
     spent,
-    parts: buildParts(expenses, spent, nameOf, usual),
+    parts: subcategory ? [] : buildParts(expenses, spent, nameOf, usual),
     repeats: buildRepeats(expenses),
     kinds: {
       fixed: Math.max(0, kinds.fixed),
@@ -158,19 +167,35 @@ export async function getUsualSpend(monthISO: string, categoryId: number): Promi
   return { total: Math.round(sum / complete.length), bySubcategory, months: complete.length };
 }
 
-/** Loads one category's month and takes it apart. */
-export async function getCategoryDetail(monthISO: string, categoryId: number): Promise<CategoryDetail> {
+/**
+ * Loads one category's month and takes it apart — or, with `subcategory`, just
+ * that subcategory's part of it (VS-59), compared with its own usual month.
+ */
+export async function getCategoryDetail(
+  monthISO: string,
+  categoryId: number,
+  subcategory?: SubcategoryFilter,
+): Promise<CategoryDetail> {
   const [expenses, categories, usual] = await Promise.all([
     getExpensesByDateRange(firstDayOfMonth(monthISO), lastDayOfMonth(monthISO)),
     getAllCategories(),
     getUsualSpend(monthISO, categoryId),
   ]);
+  const inCategory = expenses.filter((e) => e.categoryId === categoryId);
+  if (subcategory === undefined) return buildCategoryDetail(categoryId, monthISO, inCategory, categories, usual);
 
+  const subId = subcategory === 'none' ? null : subcategory;
+  const subUsual: UsualSpend = {
+    total: usual.months > 0 ? usual.bySubcategory.get(subId) ?? 0 : null,
+    bySubcategory: new Map(),
+    months: usual.months,
+  };
   return buildCategoryDetail(
     categoryId,
     monthISO,
-    expenses.filter((e) => e.categoryId === categoryId),
+    inCategory.filter((e) => e.subcategoryId === subId),
     categories,
-    usual,
+    subUsual,
+    { id: subId, name: subId === null ? null : categories.find((c) => c.id === subId)?.name ?? null },
   );
 }

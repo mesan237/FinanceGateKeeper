@@ -8,7 +8,7 @@ import { nextMonthISO } from '@/utils/monthMath';
 import { getCategoryDetail } from './budget.categoryDetail';
 import { getCategoryBudgets } from './budget.envelopes';
 import { getBudgetOverview } from './budget.plan';
-import type { CategoryBudgetProgress, CategoryDetail } from './budget.types';
+import type { CategoryBudgetProgress, CategoryDetail, SubcategoryFilter } from './budget.types';
 
 /** Everything the category drill-down shows (VS-56). */
 export interface CategoryDetailView {
@@ -29,8 +29,11 @@ export interface CategoryDetailView {
  *
  * `refresh` is caller-driven, like `useBudgetOverview`: the screen re-reads on
  * focus, because tapping a transaction opens it for editing elsewhere.
+ *
+ * With `subcategory` the detail and the transactions narrow to it (VS-59); the
+ * envelope stays the category's, since budgets are per category.
  */
-export function useCategoryDetail(monthISO: string, categoryId: number) {
+export function useCategoryDetail(monthISO: string, categoryId: number, subcategory?: SubcategoryFilter) {
   const [view, setView] = useState<CategoryDetailView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +41,9 @@ export function useCategoryDetail(monthISO: string, categoryId: number) {
   const refresh = useCallback(async () => {
     try {
       const [detail, overview, feed, next] = await Promise.all([
-        getCategoryDetail(monthISO, categoryId),
+        subcategory === undefined
+          ? getCategoryDetail(monthISO, categoryId)
+          : getCategoryDetail(monthISO, categoryId, subcategory),
         getBudgetOverview(monthISO),
         getTransactionFeed(monthISO),
         getCategoryBudgets(nextMonthISO(monthISO)),
@@ -50,7 +55,10 @@ export function useCategoryDetail(monthISO: string, categoryId: number) {
           (c) => c.categoryId !== categoryId && c.remaining > 0 && c.allocated > 0,
         ),
         transactions: feed.filter(
-          (e): e is ExpenseEntry => e.type === 'expense' && e.categoryId === categoryId,
+          (e): e is ExpenseEntry =>
+            e.type === 'expense' &&
+            e.categoryId === categoryId &&
+            (subcategory === undefined || e.subcategoryId === (subcategory === 'none' ? null : subcategory)),
         ),
         nextMonthBudget: next.find((b) => b.categoryId === categoryId)?.allocatedAmount ?? null,
       });
@@ -60,7 +68,7 @@ export function useCategoryDetail(monthISO: string, categoryId: number) {
     } finally {
       setLoading(false);
     }
-  }, [monthISO, categoryId]);
+  }, [monthISO, categoryId, subcategory]);
 
   useEffect(() => {
     setLoading(true);

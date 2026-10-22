@@ -157,3 +157,68 @@ describe('TypicalMonthCard — starting point (VS-58)', () => {
     expect(screen.queryByTestId('typical-compare')).toBeNull();
   });
 });
+
+describe('TypicalMonthCard — subcategories in the comparison (VS-59)', () => {
+  const withSubs = (profile: SpendingProfile, market: number, street: number): SpendingProfile => ({
+    ...profile,
+    variableCategories: profile.variableCategories.map((c) =>
+      c.categoryId === 1
+        ? {
+            ...c,
+            subcategories: [
+              { subcategoryId: 40, label: 'Market', average: market },
+              { subcategoryId: 41, label: 'Street food', average: street },
+            ],
+          }
+        : c,
+    ),
+  });
+  const START: SpendingProfile = withSubs(
+    {
+      ...PROFILE,
+      months: [
+        { month: '2026-03', coverage: 1, isComplete: true },
+        { month: '2026-04', coverage: 1, isComplete: true },
+        { month: '2026-05', coverage: 1, isComplete: true },
+      ],
+      average: { total: 250_000, fixed: 100_000, variable: 130_000, unexpected: 20_000 },
+      variableCategories: [{ categoryId: 1, categoryLabel: 'Food', average: 80_000, lowest: 70_000, highest: 90_000 }],
+    },
+    50_000,
+    30_000,
+  );
+
+  it('lists each category’s subcategories under it, starting point against now', () => {
+    render(
+      <TypicalMonthCard
+        profile={withSubs(PROFILE, 45_000, 15_000)}
+        startingPoint={{ recorded: ['2026-03', '2026-04', '2026-05'], needed: 3, profile: START }}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('typical-compare-toggle'));
+
+    expect(screen.getByTestId('typical-compare-sub-1-41')).toHaveTextContent(/Street food30 000 FCFA15 000 FCFA−50%/);
+    expect(screen.getByTestId('typical-compare-sub-1-40')).toHaveTextContent(/−10%/);
+    // A category with no subcategories gets no extra rows.
+    expect(screen.queryByTestId(/typical-compare-sub-5-/)).toBeNull();
+  });
+
+  it('adds up a category that is partly fixed and partly variable', () => {
+    const split = (variable: number, fixed: number): SpendingProfile => ({
+      ...PROFILE,
+      variableCategories: [{ categoryId: 1, categoryLabel: 'Food', average: variable, lowest: 0, highest: 0 }],
+      fixedCategories: [{ categoryId: 1, categoryLabel: 'Food', average: fixed, lowest: 0, highest: 0 }],
+    });
+    render(
+      <TypicalMonthCard
+        profile={split(30_000, 20_000)}
+        startingPoint={{ recorded: ['2026-03', '2026-04', '2026-05'], needed: 3, profile: { ...START, ...split(60_000, 20_000), months: START.months, average: START.average } }}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('typical-compare-toggle'));
+
+    expect(screen.getByTestId('typical-compare-category-1')).toHaveTextContent(/Food80 000 FCFA50 000 FCFA−37%/);
+  });
+});

@@ -136,6 +136,43 @@ describe('buildSpendingProfile (VS-41)', () => {
   });
 });
 
+describe('buildSpendingProfile — subcategories (VS-59)', () => {
+  const MARKET = 40;
+  const STREET = 41;
+  const subLabel = (id: number) => ({ 1: 'Food', 40: 'Market', 41: 'Street food' })[id] ?? '?';
+
+  it('breaks a category into its subcategories, averaged over the same months', () => {
+    const profile = buildSpendingProfile({
+      months: [COMPLETE('2026-07'), COMPLETE('2026-08')],
+      expenses: [
+        expense('2026-07', FOOD, 40_000, { subcategoryId: MARKET }),
+        expense('2026-08', FOOD, 20_000, { subcategoryId: MARKET }),
+        expense('2026-08', FOOD, 10_000, { subcategoryId: STREET }),
+        expense('2026-08', FOOD, 4_000),
+      ],
+      kindOf: (categoryId) => kindOf(categoryId),
+      labelOf: subLabel,
+    });
+
+    expect(profile.variableCategories[0].subcategories).toEqual([
+      { subcategoryId: MARKET, label: 'Market', average: 30_000 },
+      { subcategoryId: STREET, label: 'Street food', average: 5_000 },
+      { subcategoryId: null, label: null, average: 2_000 },
+    ]);
+  });
+
+  it('adds no breakdown to a category never split into subcategories', () => {
+    const profile = buildSpendingProfile({
+      months: [COMPLETE('2026-08')],
+      expenses: [expense('2026-08', FOOD, 4_000)],
+      kindOf: (categoryId) => kindOf(categoryId),
+      labelOf: subLabel,
+    });
+
+    expect(profile.variableCategories[0].subcategories).toBeUndefined();
+  });
+});
+
 describe('getSpendingProfile', () => {
   it('reads the three months before today and splits them on the category tags', async () => {
     for (let d = 1; d <= 30; d += 1) await confirmZeroDay(`2026-09-${String(d).padStart(2, '0')}`);
