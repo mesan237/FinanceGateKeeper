@@ -157,7 +157,7 @@ Split for the 300-line ceiling; each file has one job.
 | `budget.cashflow.hooks.ts` | `useCashflow` — money view + surplus actions for the tab |
 | `budget.insights.ts` | Analytics: weekly trend and burn-down |
 | `budget.categoryDetail.ts` | One category's month taken apart: split, repeats, kinds, usual month (VS-56) |
-| `budget.nextMonth.ts` | **Pure** next-month plan and `percentChange` (VS-56) |
+| `budget.nextMonth.ts` | **Pure** next-month plan (VS-56); `% change` and its chip are shared: `utils/percentChange`, `components/ChangeChip` (VS-58) |
 | `budget.categoryDetail.hooks.ts` | `useCategoryDetail` — the detail, its envelope and cover sources, its transactions |
 | `budget.types.ts` | Slice types |
 | `budget.hooks.ts` | `useBudgetStatus`, `useOverBudgetCheck` |

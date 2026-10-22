@@ -31,6 +31,11 @@ jest.mock('@/features/finance/reports/reports.profile', () => ({
   getSpendingProfile: () => mockGetProfile(),
 }));
 
+const mockGetStartingPoint = jest.fn();
+jest.mock('@/features/finance/reports/reports.startingPoint', () => ({
+  getStartingPoint: () => mockGetStartingPoint(),
+}));
+
 jest.mock('@/features/finance/reports/reports.service', () => ({
   getMonthlyReport: jest.fn(),
   expenseSpentPct: jest.requireActual<typeof import('@/features/finance/reports/reports.service')>(
@@ -75,6 +80,7 @@ beforeEach(() => {
   mockGetMonthly.mockResolvedValue(buildReport());
   // No profile by default: the other suites are about the month's report.
   mockGetProfile.mockResolvedValue(null);
+  mockGetStartingPoint.mockResolvedValue({ recorded: [], needed: 3, profile: null });
 });
 
 // This suite asserts on calendar labels and on "the current month", so it pins
@@ -261,5 +267,20 @@ describe('MonthlyReport', () => {
 
     expect(await screen.findByTestId('typical-month-card')).toBeTruthy();
     expect(screen.getByTestId('typical-total')).toHaveTextContent('150 000 FCFA a month');
+  });
+
+  it('shows how much of the starting point is recorded in the typical month (VS-58)', async () => {
+    mockGetProfile.mockResolvedValue({
+      months: [{ month: '2026-05', coverage: 0.9, isComplete: true }],
+      average: { total: 150_000, fixed: 100_000, variable: 50_000, unexpected: 0 },
+      incomeAverage: null,
+      variableCategories: [],
+      fixedCategories: [],
+    });
+    mockGetStartingPoint.mockResolvedValue({ recorded: ['2026-05'], needed: 3, profile: null });
+
+    render(<MonthlyReport />);
+
+    expect(await screen.findByTestId('typical-start-progress')).toHaveTextContent(/1 of 3 months recorded/);
   });
 });

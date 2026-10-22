@@ -1897,6 +1897,35 @@ on a day they forget.
 
 ---
 
+### VS-58: Starting Point — Your First Three Months 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22
+**Blocked by:** VS-41 (typical month), VS-56 (shared % chip)
+
+**Decisions (2026-10-22):** the first three *complete* months; while they are being
+recorded only a progress line appears and nothing else changes; merged into "Your
+typical month" as Starting point · Now columns rather than a second card.
+
+**Scope:**
+
+- `reports.startingPoint`: first logged day → closed months → the first three complete
+  ones; their profile through `buildSpendingProfile`. Nothing stored, no migration.
+- `TypicalMonthCard` + `StartingPointCompare`: progress line; "same months" note; table
+  of total / fixed / variable / unexpected with a % chip, categories on tap.
+- Shared `utils/percentChange` and `components/ChangeChip`, now used by the category
+  detail too (one chip, not two).
+
+**TDD Anchor:**
+
+- Test: picks the first three complete months; nothing before the first entry; the running month never counts; a half-logged first month is skipped and the point stays fixed.
+- Test: card progress, comparison rows and %, categories on tap, same-months note; Reports loads it.
+- Test: shared chip signs and "New"; percentChange.
+
+**Done when:** the user can see what they really spent in their first three months and
+how far their spending has moved since.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

@@ -130,3 +130,15 @@ export interface SpendingProfile {
   /** Fixed categories, highest average first. */
   fixedCategories: ProfileCategory[];
 }
+
+// ---- VS-58: the starting point -----------------------------------------------
+
+/** The first three complete months, fixed once recorded: what spending was before any change. */
+export interface StartingPoint {
+  /** The complete months found so far, oldest first; at most `needed`. */
+  recorded: string[];
+  /** How many complete months the starting point needs (3). */
+  needed: number;
+  /** The profile of those months once all are recorded; null before. */
+  profile: SpendingProfile | null;
+}

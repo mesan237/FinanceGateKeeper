@@ -22,6 +22,9 @@ export const common = {
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
   },
+  change: {
+    new: 'New',
+  },
   errors: {
     syncFailed: 'Sync failed.',
   },

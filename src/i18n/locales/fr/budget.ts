@@ -169,7 +169,6 @@ export const budget: Translation<typeof en> = {
     nothingSpent: 'Aucune dépense en {{category}} en {{month}}.',
     vsUsual: 'par rapport à votre mois habituel ({{amount}})',
     vsUsualPace: 'à ce rythme, par rapport à votre mois habituel ({{amount}})',
-    newThisMonth: 'Nouveau',
     noUsual: 'Votre mois habituel apparaîtra une fois un mois complet saisi.',
     whereTitle: 'Où est allé l’argent',
     noSubcategory: 'Sans sous-catégorie',

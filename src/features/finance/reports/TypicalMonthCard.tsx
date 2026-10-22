@@ -15,10 +15,13 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { monthLabel } from '@/utils/monthMath';
 
 import { habitSavingsPotential } from './reports.profile';
-import type { SpendKind, SpendingProfile } from './reports.types';
+import { StartingPointBlock, canCompare } from './StartingPointCompare';
+import type { SpendKind, SpendingProfile, StartingPoint } from './reports.types';
 
 export interface TypicalMonthCardProps {
   profile: SpendingProfile;
+  /** The first three complete months, fixed (VS-58); omitted or null hides that part. */
+  startingPoint?: StartingPoint | null;
 }
 
 /** How many variable categories the card names — the biggest levers only. */
@@ -30,8 +33,10 @@ const TOP_VARIABLE = 3;
  * surprises, then the variable categories where a new habit would pay off —
  * each with its cheapest and dearest month, from the user's own record.
  * Before any month is complete it says how far each month is from counting.
+ * With the starting point (VS-58) it sets now beside the first three complete
+ * months, so the user sees how far their habits have moved.
  */
-export function TypicalMonthCard({ profile }: TypicalMonthCardProps) {
+export function TypicalMonthCard({ profile, startingPoint }: TypicalMonthCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
@@ -57,6 +62,7 @@ export function TypicalMonthCard({ profile }: TypicalMonthCardProps) {
             {t('typical.coverage', { month: monthLabel(m.month), percent: Math.round(m.coverage * 100) })}
           </Typography>
         ))}
+        {startingPoint ? <StartingPointBlock startingPoint={startingPoint} now={profile} /> : null}
         {tagLink}
       </Card>
     );
@@ -97,13 +103,16 @@ export function TypicalMonthCard({ profile }: TypicalMonthCardProps) {
           ) : null,
         )}
       </View>
-      {kinds.map(({ kind, color }) => (
+      {/* With a starting point to compare, the table carries these figures (VS-58). */}
+      {canCompare(startingPoint, profile) ? null : kinds.map(({ kind, color }) => (
         <View key={kind} style={styles.row} testID={`typical-${kind}`}>
           <View style={[styles.dot, { backgroundColor: color }]} />
           <Typography style={styles.grow}>{t(`typical.${kind}`)}</Typography>
           <Typography>{formatCurrency(average[kind])}</Typography>
         </View>
       ))}
+
+      {startingPoint ? <StartingPointBlock startingPoint={startingPoint} now={profile} /> : null}
 
       {profile.variableCategories.length > 0 ? (
         <>
