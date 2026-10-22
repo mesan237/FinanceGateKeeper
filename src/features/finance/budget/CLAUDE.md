@@ -117,6 +117,21 @@ reasoning that kept the `funds` and `projects` tables.
 - Surplus income is still measured against `totalBudget`. Goals are part of the
   plan, not extra spending.
 
+### Category detail (VS-56)
+- Tapping an envelope opens `/budget/category/[id]?month=`; the envelope sheet lives
+  there now ("Edit budget"), not on the tab.
+- The split is by subcategory and appears only when some expense in the month uses
+  one. Repeats group purchases by note (trimmed, case-insensitive, at least two), so
+  a user who never files subcategories still sees "Taxi ×18".
+- Refunds net out of the totals and the split by themselves (they carry the
+  purchase's subcategory); the purchase lists skip refund rows and subtract them from
+  the purchase they refund. A fully refunded purchase drops out of "biggest".
+- Fixed / variable / unexpected follows `expenses.spendKindOf`, the one rule the
+  typical-month profile and the reserve use.
+- The usual month is `suggestFromHistory` (complete months only), so it matches the
+  planner's "Use my averages". The current month is compared on its envelope
+  projection, a closed month on what it spent; within 5% reads as "about the same".
+
 ## Module Map
 
 Split for the 300-line ceiling; each file has one job.
@@ -133,6 +148,8 @@ Split for the 300-line ceiling; each file has one job.
 | `budget.suggestions.ts` | `suggestFromHistory` (re-exported by `budget.plan`) |
 | `budget.cashflow.hooks.ts` | `useCashflow` — money view + surplus actions for the tab |
 | `budget.insights.ts` | Analytics: weekly trend, burn-down, budget share, month-over-month |
+| `budget.categoryDetail.ts` | One category's month taken apart: split, repeats, biggest, kinds, usual (VS-56) |
+| `budget.categoryDetail.hooks.ts` | `useCategoryDetail` — the detail, its envelope and cover sources, its transactions |
 | `budget.types.ts` | Slice types |
 | `budget.hooks.ts` | `useBudgetStatus`, `useOverBudgetCheck` |
 | `budget.envelope.hooks.ts` | `useBudgetOverview`, `useEnvelopeActions`, `useCategoryOverBudgetCheck` |
@@ -149,7 +166,10 @@ callers import `budget.envelopes` / `budget.plan` directly.
 - `BudgetHeroCard.tsx` — remaining, paced meter, status word, days/daily/projection stats
 - `CategoryEnvelopeRow.tsx` — one envelope with its meter, pace marker, and run-rate
 - `BudgetPlannerScreen.tsx` + `PlannerCategoryRow.tsx` + `BudgetPlannerRoute.tsx` — the planner
-- `EnvelopeEditSheet.tsx` — single-envelope edit, rollover toggle, cover-from-another
+- `CategoryDetailScreen.tsx` + `CategoryDetailSections.tsx` + `CategoryDetailRoute.tsx` —
+  the category drill-down opened from an envelope (VS-56)
+- `EnvelopeEditSheet.tsx` — single-envelope edit, rollover toggle, cover-from-another;
+  opened from the category detail
 - `SurplusCard.tsx` — "give it a job" for income beyond the budget (VS-47)
 - `MoneyViewCard.tsx` — budget left · cash in wallets · committed (VS-47)
 - `BudgetInsights.tsx` + `BudgetBurndown.tsx` — the analytics block (collapsed by default)

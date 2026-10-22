@@ -1829,6 +1829,39 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
+### VS-56: Category Detail — Where the Money Went 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22
+**Blocked by:** VS-33 (envelopes), VS-41 (cost types), VS-45 (refunds)
+
+**Decisions (2026-10-22):** tapping an envelope opens the detail, and editing moves
+inside it ("Edit budget"); Budget tab only for now. Reports can open the same route
+by path later, with no new import.
+
+**Scope:**
+
+- `budget.categoryDetail` (budget → expenses, already approved): one category's month
+  split by subcategory (share and count), up to three repeated notes ("Taxi ×18"), the
+  five biggest purchases net of their refunds, fixed / variable / unexpected
+  (`spendKindOf`), and the usual month (the planner's `suggestFromHistory`).
+- `CategoryDetailScreen` at `/budget/category/[id]?month=`: the envelope row and
+  "Edit budget" (the envelope sheet, moved from the tab), the cards above, a
+  comparison with a usual month (pace for the current month, spend for a closed one),
+  and the category's transactions, each opening the expense.
+- Budget tab: an envelope tap opens the detail instead of the sheet.
+- No migration.
+
+**TDD Anchor:**
+
+- Test: subcategory split and shares, repeats grouped by note, biggest purchases (ties, refunds), kinds, usual month over complete months only.
+- Test: screen sections, comparison wording, empty month, edit and cover from the detail, French.
+- Test: Budget tab tap opens the detail for the shown month.
+
+**Done when:** from any envelope the user can see where that category's money went
+and which purchases to cut.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
