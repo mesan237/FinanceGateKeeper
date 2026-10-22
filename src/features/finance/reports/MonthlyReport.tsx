@@ -19,7 +19,6 @@ import { NetWorthCard } from '@/features/finance/networth/NetWorthCard';
 import { colorForIndex } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
-import { OptimizationSuggestions } from './OptimizationSuggestions';
 import { SpendingDonutChart } from './SpendingDonutChart';
 import { EstimateVsActualCard } from './EstimateVsActualCard';
 import { TypicalMonthCard } from './TypicalMonthCard';
@@ -30,8 +29,8 @@ import { useEstimatesForReport, useMonthlyReport, useSpendingProfile } from './r
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
  * expense performance, the month's imprévus, a category pie chart and
- * breakdown, debt totals, an optional month-over-month comparison, and
- * rule-based suggestions. Prev/next arrows browse months; "next" is disabled
+ * breakdown (each category opens its detail, VS-56), debt totals and an
+ * optional month-over-month comparison. Prev/next arrows browse months; "next" is disabled
  * on the current month. A link navigates to the weekly report.
  */
 export function MonthlyReport() {
@@ -45,6 +44,11 @@ export function MonthlyReport() {
   // focus so a category re-tagged as fixed or variable shows on return (VS-41).
   const { profile, refresh: refreshProfile } = useSpendingProfile();
   const { baseline, refresh: refreshEstimates, accept } = useEstimatesForReport();
+  // A category row opens the same drill-down as its envelope on the Budget tab,
+  // by path, so Reports gains no import (VS-56).
+  const openCategory = (categoryId: number) =>
+    router.push({ pathname: '/budget/category/[id]', params: { id: String(categoryId), month: monthISO } });
+
   useFocusEffect(
     useCallback(() => {
       void refreshProfile();
@@ -127,8 +131,10 @@ export function MonthlyReport() {
               const emoji = getTransactionIcon('expense', cat.categoryLabel);
               const avatar = getCategoryAvatar(cat.categoryLabel);
               return (
-                <View
+                <Pressable
                   key={cat.categoryId}
+                  accessibilityRole="button"
+                  onPress={() => openCategory(cat.categoryId)}
                   style={styles.categoryRow}
                   testID={`month-category-${cat.categoryId}`}
                 >
@@ -148,7 +154,7 @@ export function MonthlyReport() {
                     </Typography>
                   </View>
                   <Typography variant="body">{formatCurrency(cat.amount)}</Typography>
-                </View>
+                </Pressable>
               );
             })}
           </View>
@@ -161,7 +167,6 @@ export function MonthlyReport() {
 
           {report.comparison ? <MonthComparison comparison={report.comparison} /> : null}
 
-          <OptimizationSuggestions suggestions={report.suggestions} />
 
           <Pressable
             testID="view-weekly-link"

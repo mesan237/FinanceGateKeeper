@@ -59,13 +59,6 @@ export interface MonthComparison {
   categories: CategoryDelta[];
 }
 
-export interface OptimizationSuggestion {
-  type: 'increase';
-  categoryLabel: string;
-  pctChange: number;
-  message: string;
-}
-
 /** The month's imprévus: the expenses the user marked as unplanned (VS-38). */
 export interface UnplannedSummary {
   count: number;
@@ -86,7 +79,6 @@ export interface MonthlyReport {
   debtSummary: DebtSummaryData;
   /** null when there is no income/expense data for the previous month. */
   comparison: MonthComparison | null;
-  suggestions: OptimizationSuggestion[];
 }
 
 // ---- VS-41: the typical month ------------------------------------------------

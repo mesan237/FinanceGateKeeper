@@ -26,6 +26,7 @@ jest.mock('@/features/finance/budget/budget.plan', () => ({
   getBudgetOverview: jest.fn(),
 }));
 jest.mock('@/features/finance/budget/budget.envelopes', () => ({
+  getCategoryBudgets: jest.fn(),
   setCategoryBudget: jest.fn(),
   removeCategoryBudget: jest.fn(),
   moveBudget: jest.fn(),
@@ -51,10 +52,14 @@ const mockedFeed = transactions.getTransactionFeed as jest.MockedFunction<
 const mockedSetBudget = envelopes.setCategoryBudget as jest.MockedFunction<
   typeof envelopes.setCategoryBudget
 >;
+const mockedNextBudgets = envelopes.getCategoryBudgets as jest.MockedFunction<
+  typeof envelopes.getCategoryBudgets
+>;
 
 const FOOD = 1;
 const TRANSPORT = 5;
 const MARKET = 40;
+const RESTAURANT = 41;
 
 function envelope(overrides: Partial<CategoryBudgetProgress> = {}): CategoryBudgetProgress {
   return {
@@ -75,6 +80,7 @@ function envelope(overrides: Partial<CategoryBudgetProgress> = {}): CategoryBudg
   };
 }
 
+/** Half the month gone: 45,000 spent, heading for 90,000 against a usual 60,000. */
 function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
   return {
     categoryId: FOOD,
@@ -82,11 +88,10 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
     month: '2026-08',
     spent: 45_000,
     parts: [
-      { subcategoryId: MARKET, name: 'Market', amount: 30_000, count: 4, sharePct: 66.7 },
-      { subcategoryId: null, name: null, amount: 15_000, count: 6, sharePct: 33.3 },
+      { subcategoryId: MARKET, name: 'Market', amount: 25_000, count: 4, sharePct: 55.6, usual: 48_000 },
+      { subcategoryId: RESTAURANT, name: 'Restaurant', amount: 20_000, count: 6, sharePct: 44.4, usual: 12_000 },
     ],
     repeats: [{ label: 'Bread', count: 6, total: 3_000 }],
-    largest: [{ id: 11, amount: 12_000, date: '2026-08-03', note: 'Rice sack', subcategoryName: 'Market' }],
     kinds: { fixed: 10_000, variable: 31_000, unexpected: 4_000 },
     average: 60_000,
     ...overrides,
@@ -116,7 +121,10 @@ const ROW: ExpenseEntry = {
 jest.setTimeout(20_000);
 
 beforeAll(() => {
-  jest.useFakeTimers({ now: new Date('2026-08-15T12:00:00.000Z'), doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'performance', 'hrtime'] });
+  jest.useFakeTimers({
+    now: new Date('2026-08-15T12:00:00.000Z'),
+    doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'performance', 'hrtime'],
+  });
 });
 
 afterAll(() => {
@@ -127,6 +135,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockedDetail.mockResolvedValue(detail());
   mockedOverview.mockResolvedValue(overview());
+  mockedNextBudgets.mockResolvedValue([]);
   mockedFeed.mockResolvedValue([
     ROW,
     { ...ROW, id: 22, categoryId: TRANSPORT, categoryLabel: 'Transport' },
@@ -140,7 +149,7 @@ async function renderScreen(monthISO = '2026-08') {
   await screen.findByTestId('category-detail');
 }
 
-describe('CategoryDetailScreen (VS-56)', () => {
+describe('CategoryDetailScreen — summary (VS-56)', () => {
   it('reads the month for the category it was opened on', async () => {
     await renderScreen();
 
@@ -149,66 +158,113 @@ describe('CategoryDetailScreen (VS-56)', () => {
     expect(screen.getByTestId(`envelope-row-${FOOD}`)).toBeTruthy();
   });
 
-  it('splits the spending by subcategory with each share', async () => {
+  it('shows the change against a usual month as a percentage, on the month’s pace', async () => {
+    await renderScreen();
+
+    expect(screen.getByTestId('detail-change')).toHaveTextContent('+50%');
+    expect(screen.getByTestId('detail-vs-usual')).toHaveTextContent(/on this pace, vs your usual month \(60.000 FCFA\)/);
+  });
+
+  it('compares a closed month on what was spent', async () => {
+    await renderScreen('2026-07');
+
+    expect(screen.getByTestId('detail-change')).toHaveTextContent('−25%');
+    expect(screen.getByTestId('detail-vs-usual')).toHaveTextContent(/^vs your usual month/);
+  });
+
+  it('says when there is no usual month yet', async () => {
+    mockedDetail.mockResolvedValue(detail({ average: null, parts: [] }));
+    await renderScreen();
+
+    expect(screen.getByTestId('detail-no-usual')).toBeTruthy();
+    expect(screen.queryByTestId('detail-change')).toBeNull();
+  });
+
+  it('says so when nothing was spent and there is no budget', async () => {
+    mockedDetail.mockResolvedValue(
+      detail({ spent: 0, parts: [], repeats: [], kinds: { fixed: 0, variable: 0, unexpected: 0 } }),
+    );
+    mockedOverview.mockResolvedValue(overview([]));
+    mockedFeed.mockResolvedValue([]);
+    await renderScreen();
+
+    expect(screen.getByTestId('detail-nothing-spent')).toBeTruthy();
+    expect(screen.queryByTestId('detail-edit-budget')).toBeNull();
+    expect(screen.queryByTestId('detail-next')).toBeNull();
+  });
+});
+
+describe('CategoryDetailScreen — where it went', () => {
+  it('gives each subcategory its share and its change against usual', async () => {
     await renderScreen();
 
     expect(screen.getByTestId(`detail-part-${MARKET}`)).toHaveTextContent(/Market/);
-    expect(screen.getByTestId(`detail-part-${MARKET}`)).toHaveTextContent(/67% · ×4/);
-    expect(screen.getByTestId('detail-part-none')).toHaveTextContent(/No subcategory/);
+    expect(screen.getByTestId(`detail-part-${MARKET}`)).toHaveTextContent(/56% of it · ×4/);
+    // 25,000 halfway through heads for 50,000 against a usual 48,000.
+    expect(screen.getByTestId(`detail-part-change-${MARKET}`)).toHaveTextContent('+4%');
+    expect(screen.getByTestId(`detail-part-change-${RESTAURANT}`)).toHaveTextContent('+233%');
   });
 
-  it('hides the split when no expense uses a subcategory', async () => {
-    mockedDetail.mockResolvedValue(detail({ parts: [] }));
+  it('marks a part with no usual spending as new', async () => {
+    mockedDetail.mockResolvedValue(
+      detail({ parts: [{ subcategoryId: null, name: null, amount: 45_000, count: 9, sharePct: 100, usual: 0 }] }),
+    );
     await renderScreen();
 
-    expect(screen.queryByTestId('detail-parts')).toBeNull();
+    expect(screen.getByTestId('detail-part-none')).toHaveTextContent(/No subcategory/);
+    expect(screen.getByTestId('detail-part-change-none')).toHaveTextContent('New');
   });
 
-  it('names the small purchases that keep coming back', async () => {
+  it('names the purchases that keep coming back', async () => {
     await renderScreen();
 
     expect(screen.getByTestId('detail-repeat-0')).toHaveTextContent(/Bread ×6/);
   });
 
-  it('opens a big purchase when it is tapped', async () => {
+  it('hides the card when there is neither a split nor a repeat', async () => {
+    mockedDetail.mockResolvedValue(detail({ parts: [], repeats: [] }));
     await renderScreen();
 
-    expect(screen.getByTestId('detail-largest-11')).toHaveTextContent(/Rice sack/);
-    fireEvent.press(screen.getByTestId('detail-largest-11'));
-
-    expect(mockPush).toHaveBeenCalledWith('/expenses/11');
+    expect(screen.queryByTestId('detail-where')).toBeNull();
   });
+});
 
-  it('separates fixed, variable and unexpected spending', async () => {
+describe('CategoryDetailScreen — next month', () => {
+  it('suggests a budget and the steps to get there', async () => {
     await renderScreen();
 
-    expect(screen.getByTestId('detail-kind-fixed')).toHaveTextContent(/10,000|10 000/);
-    expect(screen.getByTestId('detail-kind-variable')).toHaveTextContent(/31,000|31 000/);
-    expect(screen.getByTestId('detail-kind-unexpected')).toHaveTextContent(/4,000|4 000/);
+    expect(screen.getByTestId('detail-next-target')).toHaveTextContent(/Aim for 60.000 FCFA, your usual month: 33% less/);
+    expect(screen.getByTestId('detail-next-fixed')).toHaveTextContent(/10.000 FCFA of it is fixed bills/);
+    expect(screen.getByTestId('detail-step-0')).toHaveTextContent(/Bring Restaurant back to usual: save 28.000 FCFA/);
+    expect(screen.getByTestId('detail-step-1')).toHaveTextContent(/Skip 1 Bread in 4/);
   });
 
-  it('compares the current month’s pace with a usual month', async () => {
+  it('sets the suggestion as next month’s budget', async () => {
     await renderScreen();
 
-    expect(screen.getByTestId('detail-usual')).toHaveTextContent(/60,000|60 000/);
-    expect(screen.getByTestId('detail-compare')).toHaveTextContent(/On this pace .*, 30.000 FCFA more than usual/);
+    fireEvent.press(screen.getByTestId('detail-use-target'));
+
+    await waitFor(() => expect(mockedSetBudget).toHaveBeenCalledWith('2026-09', FOOD, 60_000, undefined));
   });
 
-  it('compares a past month on what was spent', async () => {
-    mockedOverview.mockResolvedValue(overview([envelope({ spent: 45_000, projected: 45_000 })]));
+  it('shows next month’s budget once it matches the suggestion', async () => {
+    mockedNextBudgets.mockResolvedValue([
+      { id: 9, month: '2026-09', categoryId: FOOD, allocatedAmount: 60_000, rolloverEnabled: false, createdAt: '' },
+    ]);
+    await renderScreen();
+
+    expect(screen.getByTestId('detail-next-set')).toHaveTextContent(/Next month’s budget: 60.000 FCFA/);
+    expect(screen.queryByTestId('detail-use-target')).toBeNull();
+  });
+
+  it('only plans from the month that is running', async () => {
     await renderScreen('2026-07');
 
-    expect(screen.getByTestId('detail-compare')).toHaveTextContent(/You spent .*, 15.000 FCFA less than usual/);
+    expect(screen.queryByTestId('detail-next')).toBeNull();
   });
+});
 
-  it('says when there is no usual month yet', async () => {
-    mockedDetail.mockResolvedValue(detail({ average: null }));
-    await renderScreen();
-
-    expect(screen.getByTestId('detail-no-usual')).toBeTruthy();
-    expect(screen.queryByTestId('detail-compare')).toBeNull();
-  });
-
+describe('CategoryDetailScreen — transactions and editing', () => {
   it('lists only this category’s transactions and opens one on tap', async () => {
     await renderScreen();
 
@@ -217,18 +273,6 @@ describe('CategoryDetailScreen (VS-56)', () => {
     fireEvent.press(screen.getByTestId('tx-row-expense-21'));
 
     expect(mockPush).toHaveBeenCalledWith('/expenses/21');
-  });
-
-  it('says so when nothing was spent and there is no budget', async () => {
-    mockedDetail.mockResolvedValue(
-      detail({ spent: 0, parts: [], repeats: [], largest: [], kinds: { fixed: 0, variable: 0, unexpected: 0 } }),
-    );
-    mockedOverview.mockResolvedValue(overview([]));
-    mockedFeed.mockResolvedValue([]);
-    await renderScreen();
-
-    expect(screen.getByTestId('detail-nothing-spent')).toBeTruthy();
-    expect(screen.queryByTestId('detail-edit-budget')).toBeNull();
   });
 
   it('edits the envelope from the detail and re-reads the month', async () => {
@@ -264,7 +308,7 @@ describe('CategoryDetailScreen (VS-56)', () => {
     try {
       await renderScreen();
       expect(screen.getByText('Où est allé l’argent')).toBeTruthy();
-      expect(screen.getByTestId('detail-part-none')).toHaveTextContent(/Sans sous-catégorie/);
+      expect(screen.getByText('Le mois prochain')).toBeTruthy();
     } finally {
       await act(async () => {
         await i18n.changeLanguage('en');

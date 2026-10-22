@@ -6,7 +6,6 @@ import {
 } from '@/features/finance/expenses/expenses.service';
 import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
 import { getIncomeByDateRange } from '@/features/finance/income/income.service';
-import { displayCategoryName } from '@/i18n/categoryNames';
 import { buildMonthlyPlan } from '@/features/finance/budget/budget.plan';
 import { getMonthlyBudget } from '@/features/finance/budget/budget.service';
 import { getOutstandingTotals } from '@/features/finance/debt/debt.service';
@@ -20,7 +19,6 @@ import type {
   DaySpend,
   MonthComparison,
   MonthlyReport,
-  OptimizationSuggestion,
   UnplannedSummary,
   WeeklyReport,
 } from './reports.types';
@@ -160,30 +158,6 @@ export async function getMonthComparison(
 }
 
 /**
- * Rule-based optimization suggestions. Implements the single VS-14 rule: any
- * category whose spending increased > 10% vs the previous month earns a
- * "review it" prompt. Categories with no prior-month spend (null pctChange) are
- * skipped — a first-time spend is not an increase.
- */
-export function generateSuggestions(
-  comparison: { categories: CategoryDelta[] } | null,
-): OptimizationSuggestion[] {
-  if (!comparison) return [];
-  return comparison.categories
-    .filter((d): d is CategoryDelta & { pctChange: number } => d.pctChange !== null && d.pctChange > 10)
-    .map((d) => ({
-      type: 'increase' as const,
-      categoryLabel: d.categoryLabel,
-      pctChange: d.pctChange,
-      message: i18n.t('suggestions.increase', {
-        ns: 'reports',
-        category: displayCategoryName(d.categoryLabel),
-        percent: Math.round(d.pctChange),
-      }),
-    }));
-}
-
-/**
  * Sums the month's imprévus from its already-loaded expenses, works out their
  * share of `totalSpent`, and fetches the previous month's figures to compare.
  */
@@ -210,8 +184,7 @@ async function summariseUnplanned(
 /**
  * Builds the full monthly report: income vs expenses, allocation performance,
  * category breakdown, the month's imprévus, debt summary, month-over-month
- * comparison, and optimization suggestions. The comparison (and its
- * suggestions) is omitted when neither month had any spending.
+ * and comparison. The comparison is omitted when neither month had any spending.
  */
 export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport> {
   const firstDay = `${monthISO}-01`;
@@ -252,6 +225,5 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
     unplanned,
     debtSummary: { totalLent: debt.lent, totalOwed: debt.owed },
     comparison,
-    suggestions: generateSuggestions(comparison),
   };
 }

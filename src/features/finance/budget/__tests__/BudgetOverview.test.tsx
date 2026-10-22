@@ -30,8 +30,6 @@ jest.mock('@/features/finance/budget/budget.envelopes', () => ({
 
 jest.mock('@/features/finance/budget/budget.insights', () => ({
   getBudgetTrend: jest.fn().mockResolvedValue({ weekly: [], weeklyPace: 0, burndown: [] }),
-  getMonthOverMonth: jest.fn().mockResolvedValue([]),
-  rankByBudgetShare: jest.fn().mockReturnValue([]),
 }));
 
 // The money view (VS-47) is covered in BudgetOverview.cashflow.test.tsx.

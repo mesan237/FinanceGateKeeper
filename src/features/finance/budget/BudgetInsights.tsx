@@ -10,16 +10,9 @@ import { RADIUS, SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { daysInMonth } from '@/utils/monthMath';
-import { displayCategoryName } from '@/i18n/categoryNames';
 
 import { BudgetBurndown } from './BudgetBurndown';
-import {
-  getBudgetTrend,
-  getMonthOverMonth,
-  rankByBudgetShare,
-  type BudgetTrend,
-  type CategoryTrend,
-} from './budget.insights';
+import { getBudgetTrend, type BudgetTrend } from './budget.insights';
 import type { BudgetOverview } from './budget.types';
 
 export interface BudgetInsightsProps {
@@ -27,8 +20,12 @@ export interface BudgetInsightsProps {
 }
 
 /**
- * The Budget tab's analytics block: burn-down, weekly pace, biggest consumers,
- * and month-over-month movement.
+ * The Budget tab's analytics block: the burn-down and weekly pace.
+ *
+ * Per-category ranking and month-over-month movement used to live here too;
+ * they repeated the envelope list above and Reports' comparison, so they went
+ * in VS-56. A category's own change now shows in its detail, against a usual
+ * month.
  *
  * Collapsed by default. The daily decision ("can I spend this?") is answered
  * entirely by the hero and the envelope rows above; analytics are for the
@@ -43,28 +40,21 @@ export function BudgetInsights({ overview }: BudgetInsightsProps) {
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslation(['budget', 'common']);
   const [trend, setTrend] = useState<BudgetTrend | null>(null);
-  const [comparison, setComparison] = useState<CategoryTrend[]>([]);
 
   useEffect(() => {
     if (!expanded) return;
     let active = true;
 
     void (async () => {
-      const [nextTrend, nextComparison] = await Promise.all([
-        getBudgetTrend(overview.month, overview.available),
-        getMonthOverMonth(overview.month),
-      ]);
+      const nextTrend = await getBudgetTrend(overview.month, overview.available);
       if (!active) return;
       setTrend(nextTrend);
-      setComparison(nextComparison);
     })();
 
     return () => {
       active = false;
     };
   }, [expanded, overview.month, overview.available]);
-
-  const topConsumers = rankByBudgetShare(overview.categories, overview.available);
 
   return (
     <Card testID="budget-insights">
@@ -100,32 +90,6 @@ export function BudgetInsights({ overview }: BudgetInsightsProps) {
             </Section>
           ) : null}
 
-          {topConsumers.length > 0 ? (
-            <Section title={t('insights.biggestShare')}>
-              {topConsumers.map((entry) => (
-                <View
-                  key={entry.categoryId}
-                  style={styles.shareRow}
-                  testID={`budget-share-${entry.categoryId}`}
-                >
-                  <Typography style={styles.shareName}>
-                    {displayCategoryName(entry.categoryName)}
-                  </Typography>
-                  <Typography variant="muted">
-                    {`${Math.round(entry.shareOfBudgetPct)}% · ${formatCurrency(entry.spent)}`}
-                  </Typography>
-                </View>
-              ))}
-            </Section>
-          ) : null}
-
-          {comparison.length > 0 ? (
-            <Section title={t('insights.versusLastMonth')}>
-              {comparison.slice(0, 5).map((entry) => (
-                <ComparisonRow key={entry.categoryId} entry={entry} />
-              ))}
-            </Section>
-          ) : null}
         </View>
       )}
     </Card>
@@ -173,22 +137,6 @@ function WeeklyBars({ weekly, pace }: { weekly: number[]; pace: number }) {
   );
 }
 
-function ComparisonRow({ entry }: { entry: CategoryTrend }) {
-  const styles = useThemedStyles(makeStyles);
-  const delta = entry.current - entry.previous;
-  const up = delta > 0;
-
-  return (
-    <View style={styles.shareRow} testID={`budget-vs-${entry.categoryId}`}>
-      <Typography style={styles.shareName}>{displayCategoryName(entry.categoryName)}</Typography>
-      <Typography variant="muted" style={up ? styles.deltaUp : styles.deltaDown}>
-        {`${up ? '+' : ''}${formatCurrency(delta)}`}
-        {entry.changePct !== null ? ` (${up ? '+' : ''}${Math.round(entry.changePct)}%)` : ''}
-      </Typography>
-    </View>
-  );
-}
-
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -228,20 +176,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     minWidth: 84,
     textAlign: 'right',
     fontSize: 11,
-  },
-  shareRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACING.md,
-  },
-  shareName: {
-    flex: 1,
-  },
-  deltaUp: {
-    color: c.DANGER_TEXT,
-  },
-  deltaDown: {
-    color: c.SUCCESS_TEXT,
   },
 });

@@ -13,19 +13,14 @@ import { TransactionRow } from '@/features/finance/expenses/TransactionRow';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { currentMonthISO } from '@/utils/formatDate';
-import { monthLabel } from '@/utils/monthMath';
+import { monthLabel, nextMonthISO } from '@/utils/monthMath';
 
 import { CategoryEnvelopeRow } from './CategoryEnvelopeRow';
-import {
-  LargestCard,
-  RepeatsCard,
-  SpendMixCard,
-  UsualMonthCard,
-  WhereItWentCard,
-} from './CategoryDetailSections';
+import { NextMonthCard, UsualComparison, WhereItWentCard } from './CategoryDetailSections';
 import { EnvelopeEditSheet } from './EnvelopeEditSheet';
 import { useCategoryDetail } from './budget.categoryDetail.hooks';
 import { useEnvelopeActions } from './budget.envelope.hooks';
+import { planNextMonth } from './budget.nextMonth';
 
 export interface CategoryDetailScreenProps {
   /** `YYYY-MM`. */
@@ -36,10 +31,10 @@ export interface CategoryDetailScreenProps {
 /**
  * One category's month, opened from its envelope on the Budget tab (VS-56).
  *
- * Reads as "where should I cut?": the envelope at the top, then where the money
- * went by subcategory, the small purchases that keep coming back, the biggest
- * ones, how much of it is fixed, how the month compares with a usual one, and
- * every transaction. Editing the envelope moved here from the tab, behind
+ * Four cards, top to bottom: the envelope and how the month compares with a
+ * usual one (as a percentage); where the money went, each part with its own
+ * change; next month's suggested budget and how to get there (the running month
+ * only); and the transactions. Editing the envelope lives here, behind
  * "Edit budget".
  */
 export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScreenProps) {
@@ -50,6 +45,7 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
 
   const { view, loading, error, refresh } = useCategoryDetail(monthISO, categoryId);
   const { setBudget, remove, coverFrom, error: writeError } = useEnvelopeActions(monthISO);
+  const nextMonth = useEnvelopeActions(nextMonthISO(monthISO));
 
   // Tapping a transaction opens it for editing elsewhere; re-read on return.
   useFocusEffect(
@@ -65,8 +61,7 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
   };
 
   const openExpense = (id: number) => router.push(`/expenses/${id}`);
-  const now = currentMonthISO();
-  const timing = monthISO < now ? 'past' : monthISO === now ? 'current' : 'future';
+  const running = monthISO === currentMonthISO();
 
   if (loading && !view) {
     return (
@@ -79,6 +74,12 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
 
   const name = view ? displayCategoryName(view.detail.categoryName) : '';
   const envelope = view?.envelope ?? null;
+  const spent = view?.detail.spent ?? 0;
+  // A running month is judged on where its pace leads; a closed one on what it spent.
+  const heading = running ? envelope?.projected ?? spent : spent;
+  const scale = spent > 0 ? heading / spent : 1;
+  const plan = view && running ? planNextMonth(view.detail, heading) : null;
+  const empty = !view || (spent === 0 && view.transactions.length === 0);
 
   return (
     <View style={styles.screen}>
@@ -90,6 +91,7 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
           {envelope ? (
             <Card style={styles.card}>
               <CategoryEnvelopeRow envelope={envelope} first onPress={() => setEditing(true)} />
+              {spent > 0 ? <UsualComparison detail={view.detail} heading={heading} running={running} /> : null}
               <Button
                 testID="detail-edit-budget"
                 label={t('detail.editBudget')}
@@ -100,21 +102,20 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
             </Card>
           ) : null}
 
-          {view.detail.spent === 0 && view.transactions.length === 0 ? (
+          {empty ? (
             <Typography variant="muted" testID="detail-nothing-spent">
               {t('detail.nothingSpent', { category: name, month: monthLabel(monthISO) })}
             </Typography>
           ) : (
             <>
-              <WhereItWentCard detail={view.detail} />
-              <RepeatsCard detail={view.detail} />
-              <LargestCard detail={view.detail} onOpen={openExpense} />
-              <SpendMixCard detail={view.detail} />
-              <UsualMonthCard
-                detail={view.detail}
-                timing={timing}
-                heading={timing === 'current' ? envelope?.projected ?? view.detail.spent : view.detail.spent}
-              />
+              <WhereItWentCard detail={view.detail} scale={scale} />
+              {plan ? (
+                <NextMonthCard
+                  plan={plan}
+                  nextMonthBudget={view.nextMonthBudget}
+                  onUseTarget={(amount) => void write(nextMonth.setBudget(categoryId, amount))}
+                />
+              ) : null}
               <Card testID="detail-transactions">
                 <Typography variant="label">{t('detail.transactionsTitle')}</Typography>
                 {view.transactions.map((item) => (
@@ -131,9 +132,9 @@ export function CategoryDetailScreen({ monthISO, categoryId }: CategoryDetailScr
         </ScrollView>
       ) : null}
 
-      {error ? (
+      {error ?? nextMonth.error ? (
         <Typography style={styles.error} testID="detail-error">
-          {error}
+          {error ?? nextMonth.error}
         </Typography>
       ) : null}
 

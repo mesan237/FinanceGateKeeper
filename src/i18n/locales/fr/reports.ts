@@ -70,12 +70,6 @@ export const reports: Translation<typeof en> = {
     empty: 'Aucune donnée de comparaison pour le mois dernier.',
     new: 'Nouveau',
   },
-  suggestions: {
-    title: 'Suggestions',
-    empty: 'Aucune suggestion pour ce mois.',
-    increase:
-      'Les dépenses en {{category}} ont augmenté de {{percent}} % par rapport au mois dernier — à surveiller.',
-  },
   weekly: {
     title: 'Rapport hebdomadaire',
     spent: 'Dépensé',

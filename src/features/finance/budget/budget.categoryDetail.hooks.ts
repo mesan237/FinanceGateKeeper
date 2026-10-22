@@ -3,8 +3,10 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { getTransactionFeed } from '@/services/transactions';
 import type { ExpenseEntry } from '@/types/transactions';
+import { nextMonthISO } from '@/utils/monthMath';
 
 import { getCategoryDetail } from './budget.categoryDetail';
+import { getCategoryBudgets } from './budget.envelopes';
 import { getBudgetOverview } from './budget.plan';
 import type { CategoryBudgetProgress, CategoryDetail } from './budget.types';
 
@@ -17,6 +19,8 @@ export interface CategoryDetailView {
   coverSources: CategoryBudgetProgress[];
   /** The category's expenses and refunds this month, newest first. */
   transactions: ExpenseEntry[];
+  /** What the category already has budgeted for next month, or null. */
+  nextMonthBudget: number | null;
 }
 
 /**
@@ -33,10 +37,11 @@ export function useCategoryDetail(monthISO: string, categoryId: number) {
 
   const refresh = useCallback(async () => {
     try {
-      const [detail, overview, feed] = await Promise.all([
+      const [detail, overview, feed, next] = await Promise.all([
         getCategoryDetail(monthISO, categoryId),
         getBudgetOverview(monthISO),
         getTransactionFeed(monthISO),
+        getCategoryBudgets(nextMonthISO(monthISO)),
       ]);
       setView({
         detail,
@@ -47,6 +52,7 @@ export function useCategoryDetail(monthISO: string, categoryId: number) {
         transactions: feed.filter(
           (e): e is ExpenseEntry => e.type === 'expense' && e.categoryId === categoryId,
         ),
+        nextMonthBudget: next.find((b) => b.categoryId === categoryId)?.allocatedAmount ?? null,
       });
       setError(null);
     } catch (e) {

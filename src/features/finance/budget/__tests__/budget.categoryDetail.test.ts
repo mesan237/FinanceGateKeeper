@@ -82,9 +82,9 @@ describe('getCategoryDetail — where the money went (VS-56)', () => {
 
     expect(detail.spent).toBe(75_000);
     expect(detail.parts).toEqual([
-      { subcategoryId: market, name: 'Market', amount: 50_000, count: 2, sharePct: (50_000 / 75_000) * 100 },
-      { subcategoryId: null, name: null, amount: 15_000, count: 1, sharePct: 20 },
-      { subcategoryId: restaurant, name: 'Street food', amount: 10_000, count: 1, sharePct: (10_000 / 75_000) * 100 },
+      { subcategoryId: market, name: 'Market', amount: 50_000, count: 2, sharePct: (50_000 / 75_000) * 100, usual: null },
+      { subcategoryId: null, name: null, amount: 15_000, count: 1, sharePct: 20, usual: null },
+      { subcategoryId: restaurant, name: 'Street food', amount: 10_000, count: 1, sharePct: (10_000 / 75_000) * 100, usual: null },
     ]);
   });
 
@@ -104,7 +104,6 @@ describe('getCategoryDetail — where the money went (VS-56)', () => {
     const detail = await getCategoryDetail('2026-08', FOOD);
 
     expect(detail.spent).toBe(30_000);
-    expect(detail.largest.map((l) => l.amount)).toEqual([30_000]);
   });
 });
 
@@ -138,32 +137,8 @@ describe('getCategoryDetail — repeated spending', () => {
   });
 });
 
-describe('getCategoryDetail — biggest purchases and refunds', () => {
-  it('lists the five largest purchases, newest wins a tie', async () => {
-    for (const [day, amount] of [
-      ['01', 1_000],
-      ['02', 9_000],
-      ['03', 3_000],
-      ['04', 7_000],
-      ['05', 5_000],
-      ['06', 9_000],
-      ['07', 2_000],
-    ] as const) {
-      await spend(`2026-08-${day}`, amount);
-    }
-
-    const detail = await getCategoryDetail('2026-08', FOOD);
-
-    expect(detail.largest.map((l) => [l.date, l.amount])).toEqual([
-      ['2026-08-06', 9_000],
-      ['2026-08-02', 9_000],
-      ['2026-08-04', 7_000],
-      ['2026-08-05', 5_000],
-      ['2026-08-03', 3_000],
-    ]);
-  });
-
-  it('nets a refund out of its purchase and out of the split', async () => {
+describe('getCategoryDetail — refunds', () => {
+  it('nets a refund out of the total and out of the split', async () => {
     const market = await createCategory({ name: 'Market', parentId: FOOD });
     const purchase = await spend('2026-08-02', 20_000, { subcategoryId: market, note: 'Rice sack' });
     await spend('2026-08-03', 8_000, { subcategoryId: market });
@@ -173,21 +148,18 @@ describe('getCategoryDetail — biggest purchases and refunds', () => {
 
     expect(detail.spent).toBe(13_000);
     expect(detail.parts).toEqual([
-      { subcategoryId: market, name: 'Market', amount: 13_000, count: 2, sharePct: 100 },
-    ]);
-    expect(detail.largest.map((l) => [l.id, l.amount])).toEqual([
-      [expect.any(Number), 8_000],
-      [purchase, 5_000],
+      { subcategoryId: market, name: 'Market', amount: 13_000, count: 2, sharePct: 100, usual: null },
     ]);
   });
 
-  it('drops a fully refunded purchase from the biggest list', async () => {
-    const purchase = await spend('2026-08-02', 20_000);
-    await recordRefund(purchase, { amount: 20_000, accountId: null, date: '2026-08-04' });
+  it('does not count a refund as a repeated purchase', async () => {
+    const purchase = await spend('2026-08-02', 2_000, { note: 'Bread' });
+    await spend('2026-08-03', 2_000, { note: 'Bread' });
+    await recordRefund(purchase, { amount: 2_000, accountId: null, date: '2026-08-04', note: 'Bread' });
 
     const detail = await getCategoryDetail('2026-08', FOOD);
 
-    expect(detail.largest).toEqual([]);
+    expect(detail.repeats).toEqual([{ label: 'Bread', count: 2, total: 4_000 }]);
   });
 });
 
@@ -224,5 +196,39 @@ describe('getCategoryDetail — compared with a usual month', () => {
     const detail = await getCategoryDetail('2026-08', FOOD);
 
     expect(detail.average).toBeNull();
+  });
+});
+
+describe('getCategoryDetail — each subcategory against its usual month', () => {
+  it('gives each part its own average over the same complete months', async () => {
+    const market = await createCategory({ name: 'Market', parentId: FOOD });
+    const street = await createCategory({ name: 'Street food', parentId: FOOD });
+    await logWholeMonth('2026-06');
+    await logWholeMonth('2026-07');
+    await spend('2026-06-10', 20_000, { subcategoryId: market });
+    await spend('2026-07-10', 30_000, { subcategoryId: market });
+    await spend('2026-07-11', 6_000, { subcategoryId: street });
+    await spend('2026-08-02', 25_000, { subcategoryId: market });
+    await spend('2026-08-03', 9_000, { subcategoryId: street });
+    await spend('2026-08-04', 1_000);
+
+    const detail = await getCategoryDetail('2026-08', FOOD);
+
+    expect(detail.average).toBe(28_000);
+    const usualOf = new Map(detail.parts.map((p) => [p.subcategoryId, p.usual]));
+    expect(usualOf.get(market)).toBe(25_000);
+    expect(usualOf.get(street)).toBe(3_000);
+    // Complete months exist, so spending never filed there is a real zero.
+    expect(usualOf.get(null)).toBe(0);
+  });
+
+  it('ignores an incomplete month when averaging', async () => {
+    await logWholeMonth('2026-07');
+    await spend('2026-06-10', 90_000);
+    await spend('2026-07-10', 20_000);
+
+    const detail = await getCategoryDetail('2026-08', FOOD);
+
+    expect(detail.average).toBe(20_000);
   });
 });

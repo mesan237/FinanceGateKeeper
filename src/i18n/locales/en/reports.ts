@@ -66,11 +66,6 @@ export const reports = {
     empty: 'No comparison data for last month.',
     new: 'New',
   },
-  suggestions: {
-    title: 'Suggestions',
-    empty: 'No suggestions for this month.',
-    increase: '{{category}} spending increased {{percent}}% vs last month — review it.',
-  },
   weekly: {
     title: 'Weekly Report',
     spent: 'Spent',
