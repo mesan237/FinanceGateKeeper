@@ -1954,6 +1954,34 @@ starting-point comparison shows subcategories too.
 
 ---
 
+### VS-60: Weekday Recurring Expenses 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22 ("why" behind spending, part 1 of 2)
+**Blocked by:** VS-07 (recurring expenses)
+
+**Decision (2026-10-22):** routine spending (transport to work) is set once as a
+recurring expense that repeats Monday to Friday, so it is logged as fixed and the
+rest of the category is what the user chooses. Part 2 is events (VS-61).
+
+**Scope:**
+
+- `Frequency` gains `weekdays`; `utils/weekdays` (`nextWeekday`, `firstWeekdayOnOrAfter`).
+- `advanceDueDate` skips weekends; create and update roll a weekend start to Monday.
+- Migration 048 rebuilds `recurring_expenses` for the new CHECK value (rows, cloud keys,
+  wallet and sync state kept; index and triggers recreated). No Supabase patch.
+- Recurring form: a third option, "Weekdays" / "Jours ouvrés"; list badge.
+- Committed money counts each working day left in the month (no change needed).
+
+**TDD Anchor:**
+
+- Test: migration keeps rows and sync state, accepts weekdays, rejects unknown, re-arms sync.
+- Test: weekday dates; advance, weekend start on create/update, auto-log skips weekends.
+- Test: committed money per working day; form saves weekdays, list label.
+
+**Done when:** a weekday routine is entered once and logged each working day.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

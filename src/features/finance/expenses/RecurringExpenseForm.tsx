@@ -27,7 +27,7 @@ export interface RecurringExpenseFormProps {
   onClose: () => void;
 }
 
-const FREQUENCIES: ReadonlyArray<Frequency> = ['monthly', 'weekly'];
+const FREQUENCIES: ReadonlyArray<Frequency> = ['monthly', 'weekly', 'weekdays'];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**

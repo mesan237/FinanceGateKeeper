@@ -134,4 +134,27 @@ describe('RecurringExpensesScreen', () => {
     await waitFor(() => expect(updateRecurringExpense).toHaveBeenCalledTimes(1));
     expect(updateRecurringExpense).toHaveBeenCalledWith(1, expect.objectContaining({ accountId: 2 }));
   });
+
+  it('saves a recurring expense that repeats on weekdays (VS-60)', async () => {
+    render(<RecurringExpensesScreen />);
+    fireEvent.press(await screen.findByTestId('recurring-add-btn'));
+    fireEvent.changeText(screen.getByTestId('recurring-label-input'), 'Taxi to work');
+    fireEvent.changeText(screen.getByTestId('recurring-amount-input'), '1000');
+    fireEvent.press(screen.getByText('Select category'));
+    fireEvent.press(await screen.findByText('Bills'));
+    fireEvent.press(await screen.findByText('Use Bills'));
+
+    fireEvent.press(screen.getByTestId('recurring-frequency-weekdays'));
+    fireEvent.press(screen.getByTestId('recurring-save'));
+
+    await waitFor(() => expect(createRecurringExpense).toHaveBeenCalledTimes(1));
+    expect(createRecurringExpense).toHaveBeenCalledWith(expect.objectContaining({ frequency: 'weekdays' }));
+  });
+
+  it('labels a weekday bill in the list', async () => {
+    mockedGet.mockResolvedValue([{ ...RENT, frequency: 'weekdays' }]);
+    render(<RecurringExpensesScreen />);
+
+    expect(await screen.findByText('Weekdays')).toBeTruthy();
+  });
 });

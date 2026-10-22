@@ -4,6 +4,7 @@ import { getRefundedTotal } from './expenses.refunds';
 import type { expenses as expenseCopy } from '@/i18n/locales/en/expenses';
 import { execute, query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
+import { firstWeekdayOnOrAfter, nextWeekday } from '@/utils/weekdays';
 
 import type {
   Category,
@@ -323,7 +324,7 @@ const QUICK_ADD_COLUMNS =
 const RECURRING_COLUMNS =
   'id, label, amount, category_id, subcategory_id, frequency, next_due_date, is_active, account_id, created_at';
 
-const FREQUENCY_SET: ReadonlySet<string> = new Set<Frequency>(['monthly', 'weekly']);
+const FREQUENCY_SET: ReadonlySet<string> = new Set<Frequency>(['monthly', 'weekly', 'weekdays']);
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function mapQuickAddTemplate(row: QuickAddTemplateRow): QuickAddTemplate {
@@ -405,6 +406,7 @@ function assertFrequency(value: string): void {
  * Mar-28). The anchor day is intentionally not preserved per the VS-07 design.
  */
 export function advanceDueDate(iso: string, frequency: Frequency): string {
+  if (frequency === 'weekdays') return nextWeekday(iso);
   if (frequency === 'weekly') {
     const d = new Date(`${iso}T00:00:00Z`);
     d.setUTCDate(d.getUTCDate() + 7);
@@ -555,7 +557,7 @@ export async function createRecurringExpense(input: NewRecurringExpense): Promis
       input.categoryId,
       input.subcategoryId ?? null,
       input.frequency,
-      input.nextDueDate,
+      input.frequency === 'weekdays' ? firstWeekdayOnOrAfter(input.nextDueDate) : input.nextDueDate,
       input.isActive ? 1 : 0,
       input.accountId ?? null,
       new Date().toISOString(),
@@ -625,6 +627,18 @@ export async function updateRecurringExpense(
 
   params.push(id);
   await execute(`UPDATE recurring_expenses SET ${sets.join(', ')} WHERE id = ?`, params);
+
+  // A bill now on weekdays never falls due on a weekend (VS-60).
+  if (patch.frequency === undefined && patch.nextDueDate === undefined) return;
+  const [row] = await query<{ frequency: Frequency; next_due_date: string }>(
+    'SELECT frequency, next_due_date FROM recurring_expenses WHERE id = ?',
+    [id],
+  );
+  if (row?.frequency !== 'weekdays') return;
+  const rolled = firstWeekdayOnOrAfter(row.next_due_date);
+  if (rolled !== row.next_due_date) {
+    await execute('UPDATE recurring_expenses SET next_due_date = ? WHERE id = ?', [rolled, id]);
+  }
 }
 
 /** Toggles a recurring expense's active flag, leaving `next_due_date` untouched. */

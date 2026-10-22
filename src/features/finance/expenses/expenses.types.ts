@@ -117,7 +117,8 @@ export interface TransactionFilter {
  * runtime check in the service. Lives in the slice (not `constants/`) because
  * nothing outside the expenses feature references it.
  */
-export type Frequency = 'monthly' | 'weekly';
+/** How often a recurring expense repeats; `weekdays` is Monday to Friday (VS-60). */
+export type Frequency = 'monthly' | 'weekly' | 'weekdays';
 
 /**
  * A one-tap quick-add template: a pre-filled label + amount + category that

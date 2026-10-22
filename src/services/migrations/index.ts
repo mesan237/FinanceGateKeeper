@@ -46,6 +46,7 @@ import { migration as goalReserve } from '@/services/migrations/044_goal_reserve
 import { migration as tontines } from '@/services/migrations/045_tontines';
 import { migration as monthSnapshots } from '@/services/migrations/046_month_snapshots';
 import { migration as debtTerms } from '@/services/migrations/047_debt_terms';
+import { migration as recurringWeekdays } from '@/services/migrations/048_recurring_weekdays';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -95,4 +96,5 @@ export const migrations: ReadonlyArray<Migration> = [
   tontines,
   monthSnapshots,
   debtTerms,
+  recurringWeekdays,
 ];
