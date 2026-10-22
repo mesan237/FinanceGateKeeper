@@ -14,7 +14,7 @@ export const auth = {
     languageSubtitle: 'Follow your device, or pick a language for the app.',
     languageSystem: 'System',
     reminderTitle: 'Daily reminder',
-    reminderSubtitle: "We'll nudge you to log the day's spending.",
+    reminderSubtitle: "We'll nudge you to log the day's spending — only on days with nothing logged yet.",
     reminderTimeLabel: 'Reminder time',
     reminderSave: 'Save reminder',
     reminderSaveError: "Couldn't save the reminder.",
