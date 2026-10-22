@@ -9,6 +9,7 @@ export const navigation: Translation<typeof en> = {
     transactions: 'Transactions',
     budget: 'Budget',
     reports: 'Rapports',
+    path: 'Mon parcours',
   },
   openMenu: 'Ouvrir le menu',
   attention: {
