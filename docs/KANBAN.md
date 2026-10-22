@@ -1841,21 +1841,26 @@ by path later, with no new import.
 **Scope:**
 
 - `budget.categoryDetail` (budget → expenses, already approved): one category's month
-  split by subcategory (share and count), up to three repeated notes ("Taxi ×18"), the
-  five biggest purchases net of their refunds, fixed / variable / unexpected
-  (`spendKindOf`), and the usual month (the planner's `suggestFromHistory`).
-- `CategoryDetailScreen` at `/budget/category/[id]?month=`: the envelope row and
-  "Edit budget" (the envelope sheet, moved from the tab), the cards above, a
-  comparison with a usual month (pace for the current month, spend for a closed one),
-  and the category's transactions, each opening the expense.
-- Budget tab: an envelope tap opens the detail instead of the sheet.
+  split by subcategory (share, count, usual month each), up to three repeated notes
+  ("Taxi ×18"), fixed / variable / unexpected (`spendKindOf`), and the usual month over
+  complete months (the planner's window).
+- `budget.nextMonth` (pure): a suggested budget for next month (back to usual when
+  more than 5% above it, else trim the non-fixed part by 10%), never below fixed bills,
+  with up to three steps and their savings.
+- `CategoryDetailScreen` at `/budget/category/[id]?month=`, four cards: envelope with a
+  % chip vs usual and "Edit budget"; where it went (per-part % vs usual, repeats); next
+  month (running month only; one tap sets the envelope); transactions.
+- Budget tab: an envelope tap opens the detail. Reports: a category row opens it (by path).
+- Duplicates removed (user audit request): Budget insights' "Biggest share" and
+  "Versus last month"; Reports' "Suggestions" (restated the comparison).
 - No migration.
 
 **TDD Anchor:**
 
-- Test: subcategory split and shares, repeats grouped by note, biggest purchases (ties, refunds), kinds, usual month over complete months only.
-- Test: screen sections, comparison wording, empty month, edit and cover from the detail, French.
-- Test: Budget tab tap opens the detail for the shown month.
+- Test: split, shares and per-part usual month; repeats by note (refunds skipped); kinds; usual over complete months only.
+- Test: next-month plan: back to usual, on pace, fixed floor, trim, no usual, all fixed, skip one in four.
+- Test: screen: % chips, closed vs running month, next-month card and setting it, empty month, edit and cover, French.
+- Test: Budget tab and Reports rows open the detail for the shown month.
 
 **Done when:** from any envelope the user can see where that category's money went
 and which purchases to cut.

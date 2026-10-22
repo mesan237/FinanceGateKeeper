@@ -118,19 +118,27 @@ reasoning that kept the `funds` and `projects` tables.
   plan, not extra spending.
 
 ### Category detail (VS-56)
-- Tapping an envelope opens `/budget/category/[id]?month=`; the envelope sheet lives
-  there now ("Edit budget"), not on the tab.
-- The split is by subcategory and appears only when some expense in the month uses
-  one. Repeats group purchases by note (trimmed, case-insensitive, at least two), so
-  a user who never files subcategories still sees "Taxi ×18".
-- Refunds net out of the totals and the split by themselves (they carry the
-  purchase's subcategory); the purchase lists skip refund rows and subtract them from
-  the purchase they refund. A fully refunded purchase drops out of "biggest".
-- Fixed / variable / unexpected follows `expenses.spendKindOf`, the one rule the
-  typical-month profile and the reserve use.
-- The usual month is `suggestFromHistory` (complete months only), so it matches the
-  planner's "Use my averages". The current month is compared on its envelope
-  projection, a closed month on what it spent; within 5% reads as "about the same".
+- Tapping an envelope (or a Reports category row, by path) opens
+  `/budget/category/[id]?month=`; the envelope sheet lives there now ("Edit budget").
+- Four cards, nothing more: the envelope with a **% chip against a usual month**;
+  **Where it went** (each subcategory's share and its own % against usual, then
+  purchases repeated by note, "Taxi ×18"); **Next month** (running month only); the
+  transactions.
+- **Usual month** = average over the complete months among the three before
+  (`getUsualSpend`, overall and per subcategory: the planner's window and rule). A
+  running month compares on pace: the envelope projection, and each part scaled by
+  `projection / spent`. A closed month compares on what it spent. A part with a usual
+  of 0 reads "New".
+- **Next month** (`budget.nextMonth.planNextMonth`, pure): more than 5% above usual →
+  aim for the usual month; otherwise (or no usual yet) trim the non-fixed part by 10%;
+  only fixed bills → nothing to cut. Never below the fixed bills; rounded down to 500
+  (100 under 10,000). Steps: up to two subcategories more than 10% above their usual,
+  and "skip 1 in 4" for a purchase bought 4+ times. One tap writes the target as next
+  month's envelope.
+- Refunds net out of totals and the split by themselves; repeats skip them.
+- Removed as duplicates in VS-56: the tab's "Biggest share of your budget" (repeated
+  the envelope list) and "Versus last month" (Reports owns the comparison); the
+  detail's "Biggest purchases" (repeated its transactions).
 
 ## Module Map
 
@@ -147,8 +155,9 @@ Split for the 300-line ceiling; each file has one job.
 | `budget.goals.ts` | Goals' monthly set-aside and goal-wallet cash, read by SQL (VS-49) |
 | `budget.suggestions.ts` | `suggestFromHistory` (re-exported by `budget.plan`) |
 | `budget.cashflow.hooks.ts` | `useCashflow` — money view + surplus actions for the tab |
-| `budget.insights.ts` | Analytics: weekly trend, burn-down, budget share, month-over-month |
-| `budget.categoryDetail.ts` | One category's month taken apart: split, repeats, biggest, kinds, usual (VS-56) |
+| `budget.insights.ts` | Analytics: weekly trend and burn-down |
+| `budget.categoryDetail.ts` | One category's month taken apart: split, repeats, kinds, usual month (VS-56) |
+| `budget.nextMonth.ts` | **Pure** next-month plan and `percentChange` (VS-56) |
 | `budget.categoryDetail.hooks.ts` | `useCategoryDetail` — the detail, its envelope and cover sources, its transactions |
 | `budget.types.ts` | Slice types |
 | `budget.hooks.ts` | `useBudgetStatus`, `useOverBudgetCheck` |
@@ -172,11 +181,11 @@ callers import `budget.envelopes` / `budget.plan` directly.
   opened from the category detail
 - `SurplusCard.tsx` — "give it a job" for income beyond the budget (VS-47)
 - `MoneyViewCard.tsx` — budget left · cash in wallets · committed (VS-47)
-- `BudgetInsights.tsx` + `BudgetBurndown.tsx` — the analytics block (collapsed by default)
+- `BudgetInsights.tsx` + `BudgetBurndown.tsx` — burn-down and weekly pace (collapsed by default)
 - `OverBudgetAlert.tsx` — warning modal, category-aware
 
 ## Visualizations: what is deliberately absent
-Reports owns the spending donut and the Dashboard owns the daily sparkline. Repeating
-either here would add pixels without adding a decision, so the Budget tab carries only
-paced meters, the burn-down, weekly bars, budget-share ranking, and month-over-month
-deltas.
+Reports owns the spending donut and the month-over-month comparison, and the Dashboard
+owns the daily sparkline. Repeating them here would add pixels without adding a
+decision, so the Budget tab carries only paced meters, the burn-down and weekly bars;
+a category's own change lives in its detail.
