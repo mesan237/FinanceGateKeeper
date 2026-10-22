@@ -48,6 +48,8 @@ export interface Expense {
    * a negative amount in the purchase's category; null on every purchase.
    */
   refundOf: number | null;
+  /** The event this expense was for (VS-61): the occasion that explains it, or null. */
+  eventId: number | null;
   createdAt: string;
 }
 
@@ -81,15 +83,16 @@ export interface NewRefund {
  * (quick-add, recurring auto-log, planned purchases) need not supply them; an
  * expense is planned unless marked otherwise.
  */
-export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnplanned' | 'refundOf'> & {
+export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnplanned' | 'refundOf' | 'eventId'> & {
   accountId?: number | null;
   isUnplanned?: boolean;
+  eventId?: number | null;
 };
 
 /** The fields `updateExpense` may change on an existing expense. */
 export type ExpenseEditableFields = Pick<
   Expense,
-  'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId' | 'isUnplanned'
+  'amount' | 'categoryId' | 'subcategoryId' | 'note' | 'date' | 'accountId' | 'isUnplanned' | 'eventId'
 >;
 
 /** How many imprévus a period holds and what they cost, in FCFA. */

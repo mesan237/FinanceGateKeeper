@@ -66,6 +66,8 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [isUnplanned, setIsUnplanned] = useState(false);
+  // The occasion the expense was for (VS-61), or null.
+  const [eventId, setEventId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
 
@@ -103,6 +105,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
         isRecurring: false,
         accountId,
         isUnplanned,
+        eventId,
       });
       setError(null);
       return id;
@@ -110,7 +113,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
-  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned]);
+  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned, eventId]);
 
   return {
     amount,
@@ -127,6 +130,8 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
     setAccountId,
     isUnplanned,
     setIsUnplanned,
+    eventId,
+    setEventId,
     submit,
     validate,
     canSubmit,
@@ -479,6 +484,9 @@ export function useExpenseEdit(id: number): {
   setAccountId: (v: number | null) => void;
   isUnplanned: boolean;
   setIsUnplanned: (v: boolean) => void;
+  /** The event the expense was for (VS-61), or null. */
+  eventId: number | null;
+  setEventId: (v: number | null) => void;
   originalAmount: number | null;
   /** The stored category and date, so budget checks know where the old amount sits. */
   originalCategoryId: number | null;
@@ -503,6 +511,8 @@ export function useExpenseEdit(id: number): {
   const [originalAccountId, setOriginalAccountId] = useState<number | null>(null);
   const [isUnplanned, setIsUnplanned] = useState(false);
   const [originalIsUnplanned, setOriginalIsUnplanned] = useState(false);
+  const [eventId, setEventId] = useState<number | null>(null);
+  const [originalEventId, setOriginalEventId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -528,6 +538,8 @@ export function useExpenseEdit(id: number): {
       setOriginalAccountId(expense.accountId);
       setIsUnplanned(expense.isUnplanned);
       setOriginalIsUnplanned(expense.isUnplanned);
+      setEventId(expense.eventId);
+      setOriginalEventId(expense.eventId);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.loadExpense', { ns: 'expenses' }));
@@ -556,6 +568,7 @@ export function useExpenseEdit(id: number): {
       if (date !== originalDate) fields.date = date;
       if (accountId !== originalAccountId) fields.accountId = accountId;
       if (isUnplanned !== originalIsUnplanned) fields.isUnplanned = isUnplanned;
+      if (eventId !== originalEventId) fields.eventId = eventId;
 
       await expenseService.updateExpense(id, fields);
       await load();
@@ -565,7 +578,7 @@ export function useExpenseEdit(id: number): {
       setError(e instanceof Error ? e.message : i18n.t('errors.updateExpense', { ns: 'expenses' }));
       return false;
     }
-  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, isUnplanned, originalIsUnplanned, load]);
+  }, [id, numericAmount, originalAmount, categoryId, originalCategoryId, subcategoryId, originalSubcategoryId, note, originalNote, date, originalDate, accountId, originalAccountId, isUnplanned, originalIsUnplanned, eventId, originalEventId, load]);
 
   const remove = useCallback(async (): Promise<boolean> => {
     try {
@@ -592,6 +605,8 @@ export function useExpenseEdit(id: number): {
     setAccountId,
     isUnplanned,
     setIsUnplanned,
+    eventId,
+    setEventId,
     originalAmount,
     originalCategoryId,
     originalDate,

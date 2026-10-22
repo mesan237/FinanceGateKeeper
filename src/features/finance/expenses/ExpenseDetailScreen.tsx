@@ -16,6 +16,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { ICON_SIZE } from '@/constants/icons';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { EventPicker } from '@/features/finance/events/EventPicker';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
 import { useOverBudgetCheck } from '@/features/finance/budget/budget.hooks';
@@ -123,6 +124,8 @@ export function ExpenseDetailScreen({ expenseId }: ExpenseDetailScreenProps) {
             value={edit.isUnplanned}
             onValueChange={edit.setIsUnplanned}
           />
+
+          <EventPicker value={edit.eventId} onChange={edit.setEventId} />
 
           <TextInput
             value={edit.note}

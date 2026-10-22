@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building2,
   Calendar,
+  CalendarHeart,
   Check,
   Circle,
   CheckCircle2,
@@ -104,6 +105,7 @@ export const ICONS = {
   show: Eye,
   goal: Target,
   tontine: Users,
+  event: CalendarHeart,
   profile: UserRound,
   lock: Lock,
 } satisfies Record<string, LucideIcon>;

@@ -15,6 +15,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { ICON_SIZE } from '@/constants/icons';
 import { RADIUS } from '@/constants/layout';
 import { AccountPicker } from '@/features/finance/accounts/AccountPicker';
+import { EventPicker } from '@/features/finance/events/EventPicker';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
 import { OverBudgetAlert } from '@/features/finance/budget/OverBudgetAlert';
 import { useCategoryOverBudgetCheck } from '@/features/finance/budget/budget.envelope.hooks';
@@ -158,6 +159,8 @@ export function ExpenseEntryPanel({
         value={log.isUnplanned}
         onValueChange={log.setIsUnplanned}
       />
+
+      <EventPicker value={log.eventId} onChange={log.setEventId} />
 
       <View>
         <Typography variant="muted" style={styles.noteLabel}>

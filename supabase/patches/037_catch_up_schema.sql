@@ -26,7 +26,8 @@
 --      quick_add_templates/recurring_expenses.account_id 037,
 --      transfers.deleted_at 038, debts.account_id/deleted_at 039,
 --      expenses.refund_of 040, allocations.surplus_seen 042,
---      goals.target_months 044, debts terms and debt_payments.instalment 047).
+--      goals.target_months 044, debts terms and debt_payments.instalment 047,
+--      expenses.event_id 049).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -40,7 +41,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments', 'month_snapshots'
+    'tontines', 'tontine_payments', 'month_snapshots', 'events'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -116,6 +117,7 @@ create table if not exists expenses (
   is_recurring   integer not null default 0,
   account_id     text,          -- uuid of the account, or null
   is_unplanned   integer not null default 0,  -- the "imprévu" flag (VS-38)
+  event_id       text,           -- uuid of the event it was for, or null (VS-61)
   refund_of      text,           -- uuid of the expense this refunds; amount is negative (VS-45)
   created_at     text not null,
   updated_at     text not null
@@ -363,6 +365,16 @@ create table if not exists tontine_payments (
   updated_at   text not null
 );
 
+create table if not exists events (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  name        text not null,
+  date        text,            -- YYYY-MM-DD, or null (VS-61)
+  created_at  text not null,
+  deleted_at  text,
+  updated_at  text not null
+);
+
 create table if not exists month_snapshots (
   uuid        text primary key,
   user_id     uuid not null default auth.uid(),
@@ -404,6 +416,7 @@ alter table debts                add column if not exists instalment_count integ
 alter table debts                add column if not exists instalment_frequency text;
 alter table debts                add column if not exists first_instalment_date text;
 alter table debt_payments        add column if not exists instalment integer;
+alter table expenses             add column if not exists event_id text;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).
@@ -416,7 +429,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments', 'month_snapshots'
+    'tontines', 'tontine_payments', 'month_snapshots', 'events'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

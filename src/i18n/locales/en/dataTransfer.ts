@@ -43,5 +43,6 @@ export const dataTransfer = {
     tontines: 'Tontines',
     tontine_payments: 'Tontine payments',
     month_snapshots: 'Month-end snapshots',
+    events: 'Events',
   },
 };

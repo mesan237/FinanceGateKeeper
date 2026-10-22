@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, month_snapshots, users
+  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, month_snapshots, events, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -97,6 +97,16 @@ create table accounts (
   updated_at      text not null
 );
 
+create table events (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  name        text not null,
+  date        text,            -- YYYY-MM-DD, or null (VS-61)
+  created_at  text not null,
+  deleted_at  text,
+  updated_at  text not null
+);
+
 create table expenses (
   uuid           text primary key,
   user_id        uuid not null default auth.uid(),
@@ -109,6 +119,7 @@ create table expenses (
   account_id     text,          -- uuid of the account, or null
   is_unplanned   integer not null default 0,  -- the "imprévu" flag (VS-38)
   refund_of      text,           -- uuid of the expense this refunds; amount is negative (VS-45)
+  event_id       text,           -- uuid of the event it was for, or null (VS-61)
   created_at     text not null,
   updated_at     text not null
 );
@@ -382,7 +393,7 @@ begin
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
     'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals',
-    'tontines','tontine_payments','month_snapshots'
+    'tontines','tontine_payments','month_snapshots','events'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

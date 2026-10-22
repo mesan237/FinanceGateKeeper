@@ -38,6 +38,7 @@ interface ExpenseRow {
   account_id: number | null;
   is_unplanned: number;
   refund_of: number | null;
+  event_id: number | null;
   created_at: string;
 }
 
@@ -51,7 +52,7 @@ interface CategoryRow {
 }
 
 const EXPENSE_COLUMNS =
-  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, refund_of, created_at';
+  'id, amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, refund_of, event_id, created_at';
 const CATEGORY_COLUMNS = 'id, name, parent_id, is_default, is_hidden, cost_type';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
@@ -67,6 +68,7 @@ function mapExpense(row: ExpenseRow): Expense {
     accountId: row.account_id,
     isUnplanned: row.is_unplanned === 1,
     refundOf: row.refund_of,
+    eventId: row.event_id,
     createdAt: row.created_at,
   };
 }
@@ -99,8 +101,8 @@ export async function createExpense(input: NewExpense): Promise<number> {
 
   await execute(
     `INSERT INTO expenses
-       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, event_id, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       input.amount,
       input.categoryId,
@@ -110,6 +112,7 @@ export async function createExpense(input: NewExpense): Promise<number> {
       input.isRecurring ? 1 : 0,
       input.accountId ?? null,
       input.isUnplanned ? 1 : 0,
+      input.eventId ?? null,
       new Date().toISOString(),
     ],
   );
@@ -791,6 +794,10 @@ export async function updateExpense(
     sets.push('is_unplanned = ?');
     params.push(fields.isUnplanned ? 1 : 0);
   }
+  if ('eventId' in fields) {
+    sets.push('event_id = ?');
+    params.push(fields.eventId ?? null);
+  }
   if (sets.length === 0) return;
 
   const [existing] = await query<{ id: number; refund_of: number | null }>(
@@ -807,6 +814,10 @@ export async function updateExpense(
 
   params.push(id);
   await execute(`UPDATE expenses SET ${sets.join(', ')} WHERE id = ?`, params);
+  // A purchase's refunds follow it to its new event (VS-61).
+  if ('eventId' in fields) {
+    await execute('UPDATE expenses SET event_id = ? WHERE refund_of = ?', [fields.eventId ?? null, id]);
+  }
 }
 
 /**

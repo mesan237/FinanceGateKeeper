@@ -75,14 +75,15 @@ export async function recordRefund(expenseId: number, refund: NewRefund): Promis
     category_id: number;
     subcategory_id: number | null;
     refund_of: number | null;
-  }>('SELECT amount, category_id, subcategory_id, refund_of FROM expenses WHERE id = ?', [expenseId]);
+    event_id: number | null;
+  }>('SELECT amount, category_id, subcategory_id, refund_of, event_id FROM expenses WHERE id = ?', [expenseId]);
   if (!purchase || purchase.refund_of !== null || purchase.amount <= 0) throw err('refundTarget');
   if (refund.amount > purchase.amount - (await getRefundedTotal(expenseId))) throw err('refundTooLarge');
 
   await execute(
     `INSERT INTO expenses
-       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, refund_of, created_at)
-     VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?)`,
+       (amount, category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned, refund_of, event_id, created_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, 0, ?, ?, ?)`,
     [
       -refund.amount,
       purchase.category_id,
@@ -91,6 +92,8 @@ export async function recordRefund(expenseId: number, refund: NewRefund): Promis
       refund.date,
       refund.accountId,
       expenseId,
+      // Same event as the purchase, so the event total nets the refund out (VS-61).
+      purchase.event_id,
       new Date().toISOString(),
     ],
   );
