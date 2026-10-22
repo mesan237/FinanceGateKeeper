@@ -22,10 +22,14 @@ Dashboard is read-only aggregation. No dedicated database tables.
   that scrolls with the page, sitting under the budget hero. Not a floating or fixed bar: pinned
   above the tab strip it crowded the system nav buttons.
 - In learning mode: hide budget remaining, fund status, project status. Show only today's spending and quick log action.
+- The path card (`journey.JourneyCard`, VS-63) sits under the quick log: the current step,
+  its goal and five segments; tapping opens the "My path" tab. It replaced the setup
+  checklist card, which moved onto the path.
 - Dashboard refreshes on every focus (when tab is selected or app returns to foreground).
 
 ## Cross-Feature Reads
 Imports services from: `expenses`, `budget`, `funds`, `projects`, `debt`. All read-only.
+Imports `JourneyCard` from `journey` (VS-63).
 
 ## Learning-Mode Gate
 The dashboard never imports `auth`. `app/(tabs)/dashboard.tsx` reads `useAppMode()` and passes
