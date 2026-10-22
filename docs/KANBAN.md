@@ -1982,6 +1982,35 @@ rest of the category is what the user chooses. Part 2 is events (VS-61).
 
 ---
 
+### VS-61: Events — Why the Money Went 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22 ("why" behind spending, part 2 of 2)
+**Blocked by:** VS-45 (refunds), VS-60
+
+**Decisions (2026-10-22):** one event per expense; an event is a name and an optional
+date, total only (no event budget yet); separate from planned lists.
+
+**Scope:**
+
+- Migration 049: synced `events` table (soft-delete) and `expenses.event_id`; `events`
+  before `expenses` in `SYNCED_TABLES`; sync FK map. Supabase patch 052 (folded into
+  037 and `schema.sql`).
+- New `events` slice: list with totals, event page (total, by category, its expenses),
+  create / edit / delete (frees its expenses). Drawer → Events.
+- Expenses: `eventId` on create/update; `EventPicker` on the log and detail screens,
+  with "New event" on the spot (approved `expenses → events`). Refunds take their
+  purchase's event and follow it.
+
+**TDD Anchor:**
+
+- Test: migration (event stamped for sync, expense link, trigger watches event_id, sync order).
+- Test: events service (create/validate, totals net of refunds, page, update, delete frees expenses).
+- Test: expense event saved/moved/cleared; refunds follow; hooks; list, page and picker screens.
+
+**Done when:** the user can tag spending with an occasion and see what it really cost.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

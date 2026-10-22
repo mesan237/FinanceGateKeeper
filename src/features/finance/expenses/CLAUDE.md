@@ -4,7 +4,7 @@
 Handles daily expense logging, quick-add templates, recurring expenses, zero-day confirmation, category/subcategory management, and the transaction list.
 
 ## Database Tables
-- `expenses` — id, amount (integer in FCFA), category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned (the "imprévu" flag, VS-38), created_at
+- `expenses` — id, amount (integer in FCFA), category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned (the "imprévu" flag, VS-38), event_id (the occasion it was for, VS-61; refunds take their purchase's and follow it), created_at
 - `categories` — id, name, parent_id (null = top-level), is_default, sort_order
 - `quick_add_templates` — id, label, amount, category_id, subcategory_id
 - `recurring_expenses` — id, amount, category_id, subcategory_id, note, frequency (monthly|weekly|weekdays), next_due_date, is_active
