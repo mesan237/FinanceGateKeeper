@@ -26,6 +26,10 @@ Reports are read-only aggregations across all other features. No dedicated datab
   "Compare by category" lists its subcategories under it (VS-59, from
   `ProfileCategory.subcategories`); a category in both the fixed and variable lists
   is added up, not overwritten.
+- **Why the month went (VS-62).** `report.why` (`reports.reasons.summariseReasons`) feeds
+  the shared `components/WhyBreakdown` under the imprévus card: routine · events ·
+  unexpected · everyday across every category, with the month's events listed and
+  opening `/events/[id]` by path. Same rule as the Budget category detail.
 - Charts: bar charts for comparison, a donut chart for breakdown. Use consistent colors per category — the shared `categoryColors` palette indexes by a category's position in the (amount-desc) breakdown so a donut slice and its breakdown-row dot always match.
 
 ## Cross-Feature Reads
