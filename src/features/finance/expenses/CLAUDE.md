@@ -7,7 +7,7 @@ Handles daily expense logging, quick-add templates, recurring expenses, zero-day
 - `expenses` — id, amount (integer in FCFA), category_id, subcategory_id, note, date, is_recurring, account_id, is_unplanned (the "imprévu" flag, VS-38), created_at
 - `categories` — id, name, parent_id (null = top-level), is_default, sort_order
 - `quick_add_templates` — id, label, amount, category_id, subcategory_id
-- `recurring_expenses` — id, amount, category_id, subcategory_id, note, frequency (monthly|weekly), next_due_date, is_active
+- `recurring_expenses` — id, amount, category_id, subcategory_id, note, frequency (monthly|weekly|weekdays), next_due_date, is_active
 - `zero_days` — id, date, confirmed_at
 
 ## Key Business Rules
@@ -17,6 +17,11 @@ Handles daily expense logging, quick-add templates, recurring expenses, zero-day
 - Default categories cannot be deleted, only hidden.
 - Quick-add logs an expense from a template after a one-field confirm sheet (date only, defaulting to today) — no other fields to fill in.
 - Recurring expenses auto-log when `next_due_date <= today` on app open. After logging, advance `next_due_date` by frequency.
+- **Weekdays (VS-60)** repeat Monday to Friday (`utils/weekdays`): Friday advances to
+  Monday, and a weekday bill created or switched with a weekend date starts on the
+  Monday. Being recurring, every occurrence counts as fixed (`spendKindOf`), so the
+  routine (the taxi to work) never reads as spending to cut. Migration 048 rebuilt the
+  table for the new CHECK value; Supabase stores `frequency` as plain text, no patch.
 - Zero-day: if no expenses exist for today AND no zero-day confirmed, the daily reminder triggers. User confirms "I spent nothing" or navigates to log.
 - Before saving any expense, call `budget.service.ts` `checkOverBudget()` to determine if alert is needed.
 
