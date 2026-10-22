@@ -1,0 +1,50 @@
+/** Copy for the events slice (VS-61): occasions that explain spending. */
+export const events = {
+  title: 'Events',
+  loading: 'Loading…',
+  intro: 'Tag the spending an occasion causes (a wedding, a funeral, a trip) to see what it really cost.',
+  list: {
+    emptyTitle: 'No events yet',
+    emptySubtitle:
+      'Create one for an occasion (a wedding, a funeral, a trip), then pick it when you log what it costs: transport, gifts, clothes.',
+    add: 'New event',
+    total: '{{amount}}',
+    count_one: '{{count}} expense',
+    count_other: '{{count}} expenses',
+    noDate: 'No date',
+  },
+  form: {
+    createTitle: 'New event',
+    editTitle: 'Edit event',
+    name: 'Name',
+    namePlaceholder: 'e.g. Marie’s wedding',
+    date: 'Date (optional)',
+    clearDate: 'No date',
+    save: 'Save',
+  },
+  detail: {
+    total: 'Total',
+    byCategory: 'By category',
+    expenses: 'Expenses',
+    noExpenses: 'Nothing is tagged with this event yet. Pick it when you log an expense.',
+    edit: 'Edit',
+    delete: 'Delete event',
+    deleteTitle: 'Delete this event?',
+    deleteBody: 'Its expenses stay as they are; they just lose the tag.',
+    refund: 'Refund · {{category}}',
+  },
+  picker: {
+    label: 'Event',
+    none: 'No event',
+    hint: 'Was this for an occasion?',
+    title: 'Which event was it for?',
+    create: 'New event',
+  },
+  errors: {
+    nameRequired: 'Give the event a name.',
+    dateFormat: 'The date must be YYYY-MM-DD.',
+    notFound: 'This event no longer exists.',
+    load: 'Failed to load events.',
+    save: 'Failed to save the event.',
+  },
+};

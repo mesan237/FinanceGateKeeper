@@ -19,6 +19,7 @@ export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
     subcategory_id: 'categories',
     account_id: 'accounts',
     refund_of: 'expenses',
+    event_id: 'events',
   },
   income: { account_id: 'accounts' },
   category_budgets: { category_id: 'categories' },

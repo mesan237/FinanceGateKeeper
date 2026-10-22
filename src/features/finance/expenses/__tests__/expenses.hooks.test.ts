@@ -202,6 +202,7 @@ const STORED_EXPENSE = {
   accountId: null,
   isUnplanned: false,
   refundOf: null,
+  eventId: null,
   createdAt: '2026-06-10T10:00:00.000Z',
 };
 
@@ -302,5 +303,36 @@ describe('useZeroDay', () => {
 
     expect(mocked.confirmZeroDay).toHaveBeenCalledTimes(1);
     expect(result.current.status).toEqual({ hasExpenses: false, zeroDayConfirmed: true });
+  });
+});
+
+describe('expense hooks — events (VS-61)', () => {
+  it('logs an expense with the event it was for', async () => {
+    const { result } = renderHook(() => useExpenseLog());
+    act(() => {
+      result.current.setAmount('4000');
+      result.current.setCategoryId(5);
+      result.current.setEventId(3);
+    });
+
+    await act(async () => {
+      await result.current.submit();
+    });
+
+    expect(mocked.createExpense).toHaveBeenCalledWith(expect.objectContaining({ eventId: 3 }));
+  });
+
+  it('loads an expense’s event and saves a change to it, and only that', async () => {
+    mocked.getExpenseById.mockResolvedValue({ ...STORED_EXPENSE, eventId: 3 });
+    const { result } = renderHook(() => useExpenseEdit(42));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.eventId).toBe(3);
+
+    act(() => result.current.setEventId(null));
+    await act(async () => {
+      await result.current.update();
+    });
+
+    expect(mocked.updateExpense).toHaveBeenCalledWith(42, { eventId: null });
   });
 });

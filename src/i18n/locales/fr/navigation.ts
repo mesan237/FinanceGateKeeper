@@ -24,6 +24,7 @@ export const navigation: Translation<typeof en> = {
     planned: 'Achats prévus',
     goals: 'Objectifs',
     tontines: 'Tontines',
+    events: 'Événements',
     exportImport: 'Export et import',
     backupRestore: 'Sauvegarde et restauration',
     deleteReset: 'Supprimer et réinitialiser',

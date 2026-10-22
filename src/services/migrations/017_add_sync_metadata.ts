@@ -12,6 +12,9 @@ export const SYNCED_TABLES = [
   'funds',
   'projects',
   'accounts',
+  // Before `expenses`: restore and pull insert in this order, and an expense
+  // points at its event (VS-61).
+  'events',
   'expenses',
   'income',
   'allocations',
@@ -53,6 +56,7 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'tontines',
   'tontine_payments',
   'month_snapshots',
+  'events',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -172,6 +176,7 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'deleted_at',
   ],
   tontine_payments: ['tontine_id', 'kind', 'cycle', 'amount', 'account_id', 'date', 'created_at', 'deleted_at'],
+  events: ['name', 'date', 'created_at', 'deleted_at'],
   month_snapshots: ['month', 'wallets', 'lent', 'owed', 'tontines', 'net_worth', 'income', 'spending', 'created_at'],
   debts: [
     'person_name',

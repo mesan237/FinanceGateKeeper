@@ -7,6 +7,7 @@ import { common as enCommon } from '@/i18n/locales/en/common';
 import { debt as enDebt } from '@/i18n/locales/en/debt';
 import { dashboard as enDashboard } from '@/i18n/locales/en/dashboard';
 import { dataTransfer as enDataTransfer } from '@/i18n/locales/en/dataTransfer';
+import { events as enEvents } from '@/i18n/locales/en/events';
 import { expenses as enExpenses } from '@/i18n/locales/en/expenses';
 import { income as enIncome } from '@/i18n/locales/en/income';
 import { navigation as enNavigation } from '@/i18n/locales/en/navigation';
@@ -26,6 +27,7 @@ import { common as frCommon } from '@/i18n/locales/fr/common';
 import { debt as frDebt } from '@/i18n/locales/fr/debt';
 import { dashboard as frDashboard } from '@/i18n/locales/fr/dashboard';
 import { dataTransfer as frDataTransfer } from '@/i18n/locales/fr/dataTransfer';
+import { events as frEvents } from '@/i18n/locales/fr/events';
 import { expenses as frExpenses } from '@/i18n/locales/fr/expenses';
 import { income as frIncome } from '@/i18n/locales/fr/income';
 import { navigation as frNavigation } from '@/i18n/locales/fr/navigation';
@@ -63,6 +65,7 @@ export const resources = {
     goals: enGoals,
     tontines: enTontines,
     networth: enNetworth,
+    events: enEvents,
   },
   fr: {
     common: frCommon,
@@ -84,6 +87,7 @@ export const resources = {
     goals: frGoals,
     tontines: frTontines,
     networth: frNetworth,
+    events: frEvents,
   },
 };
 

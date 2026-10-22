@@ -20,6 +20,7 @@ export const navigation = {
     planned: 'Planned purchases',
     goals: 'Goals',
     tontines: 'Tontines',
+    events: 'Events',
     exportImport: 'Export & Import',
     backupRestore: 'Backup & Restore',
     deleteReset: 'Delete & Reset',

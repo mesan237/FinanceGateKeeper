@@ -36,6 +36,14 @@ jest.mock('@/features/finance/expenses/expenses.service', () => ({
   getAllCategories: (...args: unknown[]) => mockGetAllCategories(...args),
 }));
 
+// The event picker (VS-61) reads the events list.
+jest.mock('@/features/finance/events/events.service', () => ({
+  getEvents: jest.fn().mockResolvedValue([
+    { id: 3, name: 'Marie’s wedding', date: '2026-11-07', createdAt: '', total: 0, count: 0 },
+  ]),
+  createEvent: jest.fn(),
+}));
+
 import { ExpenseDetailScreen } from '@/features/finance/expenses/ExpenseDetailScreen';
 
 const STORED_EXPENSE = {
@@ -204,5 +212,16 @@ describe('ExpenseDetailScreen', () => {
     // The stored 2 000 is already counted in June, so only the 3 000 rise is new.
     expect(mockCheckCategory).toHaveBeenCalledWith(1, 3000, '2026-06');
     expect(mockCheck).toHaveBeenCalledWith(3000, '2026-06');
+  });
+
+  it('tags an existing expense with the event it was for (VS-61)', async () => {
+    render(<ExpenseDetailScreen expenseId={5} />);
+    await screen.findByDisplayValue('2 000');
+
+    fireEvent.press(await screen.findByTestId('event-picker-trigger'));
+    fireEvent.press(await screen.findByTestId('event-picker-option-3'));
+    fireEvent.press(screen.getByText('Save'));
+
+    await waitFor(() => expect(mockUpdateExpense).toHaveBeenCalledWith(5, expect.objectContaining({ eventId: 3 })));
   });
 });
