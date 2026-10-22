@@ -1926,6 +1926,34 @@ how far their spending has moved since.
 
 ---
 
+### VS-59: Subcategory Detail 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22
+**Blocked by:** VS-56 (category detail), VS-58 (starting point)
+
+**Scope:**
+
+- `getCategoryDetail(month, category, sub?)`: narrows to one subcategory (or `'none'`):
+  its spend, repeats and its own usual month; no split.
+- Category detail: each "Where it went" line opens `/budget/category/[id]?month=&sub=`;
+  the narrowed screen shows spend with a % chip, repeats and transactions, and no
+  envelope, editing or next-month plan (budgets are per category).
+- `buildSpendingProfile`: each category carries its subcategory averages; "Compare by
+  category" in the starting point lists them under their category, start vs now.
+- Fix: a category in both the fixed and variable lists is added up in the comparison.
+- No migration.
+
+**TDD Anchor:**
+
+- Test: narrowed detail (spend, repeats, usual, no split; 'none'; unnarrowed).
+- Test: part lines open the subcategory; narrowed screen title, pace %, filtered transactions, no envelope or plan.
+- Test: profile subcategory averages; comparison sub rows; partly-fixed category added up.
+
+**Done when:** from any category the user can open each subcategory, and the
+starting-point comparison shows subcategories too.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
