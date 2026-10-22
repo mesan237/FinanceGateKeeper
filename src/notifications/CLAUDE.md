@@ -23,7 +23,12 @@ notifications/
 - Each trigger file is a pure function: takes input data, returns a notification payload. Does NOT call the database.
 - Features call triggers, then pass the result to `notifications.service.scheduleNotification()`.
 - Over-budget alert is in-app only (modal), not a push notification. The trigger file just formats the message.
-- Daily reminder defaults to 21:00 local time. Configurable in settings.
+- Daily reminder defaults to 21:00 local time. Configurable in settings. Since VS-57 it is
+  one dated notification per day for the next 14 days, not a repeating alarm, and a day
+  that already has an entry (expense, income, transfer or no-spend confirmation, read by
+  the feature via `services/transactions.getLoggedDays`) gets none. `DailyReminderScheduler`
+  re-plans on open, on going to the background (so today's entry cancels today's
+  reminder) and on return.
 - Debt reminders fire 3 days before due date, then daily after due date until settled.
 - Planned-purchase reminders: 09:00 three days before a list's day, 09:00 on the day, then the next 09:00 while overdue. One per list and day; re-planned (cancel + schedule) on every open, foreground and planned change.
 
