@@ -25,6 +25,17 @@ export const common = {
   change: {
     new: 'New',
   },
+  why: {
+    title: 'Why you spent',
+    routine: 'Routine',
+    routineHint: 'Recurring bills and fixed costs',
+    event: 'Events',
+    eventHint: 'Occasions you tagged',
+    unexpected: 'Unexpected',
+    unexpectedHint: 'Spending that caught you off guard',
+    everyday: 'Everyday',
+    everydayHint: 'The habits you can change',
+  },
   errors: {
     syncFailed: 'Sync failed.',
   },

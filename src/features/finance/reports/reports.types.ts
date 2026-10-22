@@ -1,3 +1,5 @@
+import type { ReasonEvent, ReasonTotals } from '@/types/reasons';
+
 // Types for the reports slice. Reports is a read-only aggregation layer over the
 // other features, so these shapes are self-contained — no cross-feature type
 // imports.
@@ -79,6 +81,8 @@ export interface MonthlyReport {
   debtSummary: DebtSummaryData;
   /** null when there is no income/expense data for the previous month. */
   comparison: MonthComparison | null;
+  /** Why the money went (VS-62). */
+  why: MonthReasons;
 }
 
 // ---- VS-41: the typical month ------------------------------------------------
@@ -155,4 +159,12 @@ export interface StartingPoint {
   needed: number;
   /** The profile of those months once all are recorded; null before. */
   profile: SpendingProfile | null;
+}
+
+// ---- VS-62: why the month went ---------------------------------------------
+
+/** The month's spending by reason, and the events behind the "Events" share. */
+export interface MonthReasons {
+  totals: ReasonTotals;
+  events: ReasonEvent[];
 }

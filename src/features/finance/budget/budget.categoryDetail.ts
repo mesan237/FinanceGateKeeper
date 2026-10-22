@@ -1,4 +1,5 @@
 import { costTypeResolver, spendKindOf } from '@/features/finance/expenses/expenses.costType';
+import { groupByEvent, sumByReason } from '@/features/finance/expenses/expenses.reason';
 import { getMonthCoverage } from '@/features/finance/expenses/expenses.coverage';
 import {
   getAllCategories,
@@ -6,6 +7,7 @@ import {
 } from '@/features/finance/expenses/expenses.service';
 import type { Category, Expense } from '@/features/finance/expenses/expenses.types';
 import { query } from '@/services/database';
+import { getEventNames } from '@/services/transactions';
 import { firstDayOfMonth, lastDayOfMonth, prevMonthISO } from '@/utils/monthMath';
 
 import type {
@@ -103,6 +105,7 @@ function buildRepeats(expenses: ReadonlyArray<Expense>): RepeatedSpend[] {
  * @param usual The category's usual month.
  * @param subcategory When set, `expenses` are already that subcategory's and
  *   `usual` is its own; the split is left empty (VS-59).
+ * @param eventNames Names of the events the expenses are tagged with (VS-62).
  */
 export function buildCategoryDetail(
   categoryId: number,
@@ -111,6 +114,7 @@ export function buildCategoryDetail(
   categories: ReadonlyArray<Category>,
   usual: UsualSpend,
   subcategory: CategoryDetail['subcategory'] = null,
+  eventNames: Map<number, string> = new Map(),
 ): CategoryDetail {
   const nameOf = new Map(categories.map((c) => [c.id, c.name]));
   const spent = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -133,6 +137,8 @@ export function buildCategoryDetail(
       unexpected: Math.max(0, kinds.unexpected),
     },
     average: usual.total,
+    reasons: sumByReason(expenses, kindOf),
+    reasonEvents: groupByEvent(expenses, eventNames),
   };
 }
 
@@ -182,7 +188,10 @@ export async function getCategoryDetail(
     getUsualSpend(monthISO, categoryId),
   ]);
   const inCategory = expenses.filter((e) => e.categoryId === categoryId);
-  if (subcategory === undefined) return buildCategoryDetail(categoryId, monthISO, inCategory, categories, usual);
+  const eventNames = await getEventNames(inCategory.flatMap((e) => (e.eventId === null ? [] : [e.eventId])));
+  if (subcategory === undefined) {
+    return buildCategoryDetail(categoryId, monthISO, inCategory, categories, usual, null, eventNames);
+  }
 
   const subId = subcategory === 'none' ? null : subcategory;
   const subUsual: UsualSpend = {
@@ -197,5 +206,6 @@ export async function getCategoryDetail(
     categories,
     subUsual,
     { id: subId, name: subId === null ? null : categories.find((c) => c.id === subId)?.name ?? null },
+    eventNames,
   );
 }

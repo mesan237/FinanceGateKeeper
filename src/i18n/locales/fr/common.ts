@@ -28,6 +28,17 @@ export const common: Translation<typeof en> = {
   change: {
     new: 'Nouveau',
   },
+  why: {
+    title: 'Pourquoi vous avez dépensé',
+    routine: 'Routine',
+    routineHint: 'Factures récurrentes et dépenses fixes',
+    event: 'Événements',
+    eventHint: 'Les occasions que vous avez rattachées',
+    unexpected: 'Imprévus',
+    unexpectedHint: 'Les dépenses qui vous ont pris de court',
+    everyday: 'Quotidien',
+    everydayHint: 'Les habitudes que vous pouvez changer',
+  },
   errors: {
     syncFailed: 'La synchronisation a échoué.',
   },

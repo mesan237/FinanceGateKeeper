@@ -95,6 +95,8 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
     repeats: [{ label: 'Bread', count: 6, total: 3_000 }],
     kinds: { fixed: 10_000, variable: 31_000, unexpected: 4_000 },
     average: 60_000,
+    reasons: { routine: 10_000, event: 0, unexpected: 4_000, everyday: 31_000 },
+    reasonEvents: [],
     ...overrides,
   };
 }
@@ -382,5 +384,22 @@ describe('CategoryDetailScreen — one subcategory (VS-59)', () => {
     await screen.findByTestId('category-detail');
 
     expect(screen.getByTestId('screen-header-title')).toHaveTextContent('Food › No subcategory');
+  });
+});
+
+describe('CategoryDetailScreen — why (VS-62)', () => {
+  it('shows why the money went and opens an event behind it', async () => {
+    mockedDetail.mockResolvedValue(
+      detail({
+        reasons: { routine: 10_000, event: 15_000, unexpected: 4_000, everyday: 16_000 },
+        reasonEvents: [{ eventId: 4, name: 'Marie’s wedding', amount: 15_000 }],
+      }),
+    );
+    await renderScreen();
+
+    expect(screen.getByTestId('why-event')).toHaveTextContent(/Events.*15.000 FCFA/);
+    fireEvent.press(screen.getByTestId('why-event-4'));
+
+    expect(mockPush).toHaveBeenCalledWith('/events/4');
   });
 });

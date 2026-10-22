@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { WhyBreakdown } from '@/components/WhyBreakdown';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
@@ -123,6 +124,13 @@ export function MonthlyReport() {
           </View>
 
           <UnplannedCard summary={report.unplanned} />
+
+          {/* Why the month went (VS-62); an event opens its page, by path. */}
+          <WhyBreakdown
+            totals={report.why.totals}
+            events={report.why.events}
+            onOpenEvent={(id) => router.push(`/events/${id}`)}
+          />
 
           <View style={styles.section}>
             <Typography variant="subheading">{t('monthly.byCategory')}</Typography>

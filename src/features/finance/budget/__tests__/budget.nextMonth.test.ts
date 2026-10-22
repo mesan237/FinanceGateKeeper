@@ -12,6 +12,8 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
     repeats: [],
     kinds: { fixed: 0, variable: 60_000, unexpected: 0 },
     average: null,
+    reasons: { routine: 10_000, event: 0, unexpected: 4_000, everyday: 31_000 },
+    reasonEvents: [],
     ...overrides,
   };
 }

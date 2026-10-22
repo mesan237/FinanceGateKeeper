@@ -71,6 +71,7 @@ function buildReport(overrides: Partial<MonthlyReportData> = {}): MonthlyReportD
     unplanned: { count: 0, total: 0, sharePct: 0, previous: { count: 0, total: 0 } },
     debtSummary: { totalLent: 30000, totalOwed: 12000 },
     comparison: null,
+    why: { totals: { routine: 0, event: 0, unexpected: 0, everyday: 0 }, events: [] },
     ...overrides,
   };
 }
@@ -282,5 +283,21 @@ describe('MonthlyReport', () => {
     render(<MonthlyReport />);
 
     expect(await screen.findByTestId('typical-start-progress')).toHaveTextContent(/1 of 3 months recorded/);
+  });
+
+  it('shows why the month went and opens an event behind it (VS-62)', async () => {
+    mockGetMonthly.mockResolvedValue(
+      buildReport({
+        why: {
+          totals: { routine: 20_000, event: 33_000, unexpected: 3_000, everyday: 12_000 },
+          events: [{ eventId: 4, name: 'Marie’s wedding', amount: 33_000 }],
+        },
+      }),
+    );
+    render(<MonthlyReport />);
+
+    expect(await screen.findByTestId('why-everyday')).toHaveTextContent(/Everyday.*12.000 FCFA/);
+    fireEvent.press(screen.getByTestId('why-event-4'));
+    expect(mockPush).toHaveBeenCalledWith('/events/4');
   });
 });

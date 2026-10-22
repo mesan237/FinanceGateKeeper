@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { LoadingState } from '@/components/LoadingState';
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { WhyBreakdown } from '@/components/WhyBreakdown';
 import { Typography } from '@/components/Typography';
 import { SPACING } from '@/constants/layout';
 import { TransactionRow } from '@/features/finance/expenses/TransactionRow';
@@ -35,9 +36,9 @@ export interface CategoryDetailScreenProps {
 /**
  * One category's month, opened from its envelope on the Budget tab (VS-56).
  *
- * Four cards, top to bottom: the envelope and how the month compares with a
+ * Cards, top to bottom: the envelope and how the month compares with a
  * usual one (as a percentage); where the money went, each part with its own
- * change; next month's suggested budget and how to get there (the running month
+ * change; why it went — routine, events, unexpected, everyday (VS-62); next month's suggested budget and how to get there (the running month
  * only); and the transactions. Editing the envelope lives here, behind
  * "Edit budget".
  *
@@ -139,6 +140,12 @@ export function CategoryDetailScreen({ monthISO, categoryId, subcategory }: Cate
           ) : (
             <>
               <WhereItWentCard detail={view.detail} scale={scale} onOpenPart={openPart} />
+              {/* Why the money went (VS-62); an event opens its page, by path. */}
+              <WhyBreakdown
+                totals={view.detail.reasons}
+                events={view.detail.reasonEvents}
+                onOpenEvent={(id) => router.push(`/events/${id}`)}
+              />
               {plan ? (
                 <NextMonthCard
                   plan={plan}
