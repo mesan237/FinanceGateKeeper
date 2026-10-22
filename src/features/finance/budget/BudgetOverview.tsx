@@ -19,12 +19,10 @@ import { monthLabel, nextMonthISO, prevMonthISO } from '@/utils/monthMath';
 import { BudgetHeroCard } from './BudgetHeroCard';
 import { BudgetInsights } from './BudgetInsights';
 import { CategoryEnvelopeRow } from './CategoryEnvelopeRow';
-import { EnvelopeEditSheet } from './EnvelopeEditSheet';
 import { MoneyViewCard } from './MoneyViewCard';
 import { SurplusCard } from './SurplusCard';
 import { useCashflow } from './budget.cashflow.hooks';
-import { useBudgetOverview, useEnvelopeActions } from './budget.envelope.hooks';
-import type { CategoryBudgetProgress } from './budget.types';
+import { useBudgetOverview } from './budget.envelope.hooks';
 
 export interface BudgetOverviewProps {
   /** Defaults to the current month (`YYYY-MM`). Override in tests. */
@@ -45,10 +43,8 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
   const router = useRouter();
   const { t } = useTranslation(['budget', 'common']);
   const [month, setMonth] = useState(monthISO);
-  const [editing, setEditing] = useState<CategoryBudgetProgress | null>(null);
 
   const { overview, loading, error, refresh } = useBudgetOverview(month);
-  const { setBudget, remove, coverFrom, error: writeError } = useEnvelopeActions(month);
   // Cash and the surplus prompt are about now, so only the current month has them (VS-47).
   const isCurrent = month === currentMonthISO();
   const cashflow = useCashflow(month, isCurrent);
@@ -71,16 +67,9 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
   const openPlanner = () => router.push({ pathname: '/budget/plan', params: { month } });
 
-  /** Envelopes with spare budget, offered as sources when covering an overspend. */
-  const coverSources = (overview?.categories ?? []).filter(
-    (c) => c.categoryId !== editing?.categoryId && c.remaining > 0 && c.allocated > 0,
-  );
-
-  const handleEnvelopeWrite = async (write: Promise<boolean>): Promise<boolean> => {
-    const ok = await write;
-    if (ok) await refresh();
-    return ok;
-  };
+  // The envelope's drill-down, where it is also edited (VS-56).
+  const openCategory = (categoryId: number) =>
+    router.push({ pathname: '/budget/category/[id]', params: { id: String(categoryId), month } });
 
   return (
     <View style={styles.screen}>
@@ -167,7 +156,7 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
                     key={envelope.categoryId}
                     envelope={envelope}
                     first={index === 0}
-                    onPress={() => setEditing(envelope)}
+                    onPress={() => openCategory(envelope.categoryId)}
                   />
                 ))
               )}
@@ -183,18 +172,6 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
           </Typography>
         ) : null}
       </ScrollView>
-
-      <EnvelopeEditSheet
-        envelope={editing}
-        coverSources={coverSources}
-        error={writeError}
-        onClose={() => setEditing(null)}
-        onSave={(categoryId, amount, rollover) =>
-          handleEnvelopeWrite(setBudget(categoryId, amount, rollover))
-        }
-        onCoverFrom={(fromId, toId, amount) => handleEnvelopeWrite(coverFrom(fromId, toId, amount))}
-        onRemove={(categoryId) => handleEnvelopeWrite(remove(categoryId))}
-      />
     </View>
   );
 }

@@ -1829,6 +1829,44 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
+### VS-56: Category Detail — Where the Money Went 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22
+**Blocked by:** VS-33 (envelopes), VS-41 (cost types), VS-45 (refunds)
+
+**Decisions (2026-10-22):** tapping an envelope opens the detail, and editing moves
+inside it ("Edit budget"); Budget tab only for now. Reports can open the same route
+by path later, with no new import.
+
+**Scope:**
+
+- `budget.categoryDetail` (budget → expenses, already approved): one category's month
+  split by subcategory (share, count, usual month each), up to three repeated notes
+  ("Taxi ×18"), fixed / variable / unexpected (`spendKindOf`), and the usual month over
+  complete months (the planner's window).
+- `budget.nextMonth` (pure): a suggested budget for next month (back to usual when
+  more than 5% above it, else trim the non-fixed part by 10%), never below fixed bills,
+  with up to three steps and their savings.
+- `CategoryDetailScreen` at `/budget/category/[id]?month=`, four cards: envelope with a
+  % chip vs usual and "Edit budget"; where it went (per-part % vs usual, repeats); next
+  month (running month only; one tap sets the envelope); transactions.
+- Budget tab: an envelope tap opens the detail. Reports: a category row opens it (by path).
+- Duplicates removed (user audit request): Budget insights' "Biggest share" and
+  "Versus last month"; Reports' "Suggestions" (restated the comparison).
+- No migration.
+
+**TDD Anchor:**
+
+- Test: split, shares and per-part usual month; repeats by note (refunds skipped); kinds; usual over complete months only.
+- Test: next-month plan: back to usual, on pace, fixed floor, trim, no usual, all fixed, skip one in four.
+- Test: screen: % chips, closed vs running month, next-month card and setting it, empty month, edit and cover, French.
+- Test: Budget tab and Reports rows open the detail for the shown month.
+
+**Done when:** from any envelope the user can see where that category's money went
+and which purchases to cut.
+
+---
+
 ### VS-57: Quiet Daily Reminder 🔄 In Progress
 
 **Priority:** High — user request 2026-10-22

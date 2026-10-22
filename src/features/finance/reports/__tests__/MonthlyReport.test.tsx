@@ -66,7 +66,6 @@ function buildReport(overrides: Partial<MonthlyReportData> = {}): MonthlyReportD
     unplanned: { count: 0, total: 0, sharePct: 0, previous: { count: 0, total: 0 } },
     debtSummary: { totalLent: 30000, totalOwed: 12000 },
     comparison: null,
-    suggestions: [],
     ...overrides,
   };
 }
@@ -138,9 +137,13 @@ describe('MonthlyReport', () => {
     expect(screen.getByTestId('report-category-icon-1')).toBeTruthy();
   });
 
-  it('renders the optimization suggestions empty state', async () => {
+  it('opens the category detail for the month from its row (VS-56)', async () => {
     render(<MonthlyReport />);
-    expect(await screen.findByText(/no suggestions/i)).toBeTruthy();
+    fireEvent.press(await screen.findByTestId('month-category-1'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/budget/category/[id]',
+      params: { id: '1', month: '2026-06' },
+    });
   });
 
   it('renders the month comparison when comparison data is present', async () => {

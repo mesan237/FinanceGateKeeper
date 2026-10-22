@@ -30,7 +30,6 @@ import {
   getWeeklyReport,
   getMonthlyReport,
   getMonthComparison,
-  generateSuggestions,
   expenseSpentPct,
 } from '@/features/finance/reports/reports.service';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
@@ -232,38 +231,6 @@ describe('getMonthComparison', () => {
     const cmp = await getMonthComparison('2026-06', '2026-05');
     const food = cmp.categories.find((c) => c.categoryId === 1);
     expect(food?.pctChange).toBeCloseTo(20, 5);
-  });
-});
-
-describe('generateSuggestions', () => {
-  it('returns a suggestion for a category with pctChange > 10', () => {
-    const out = generateSuggestions({
-      categories: [
-        { categoryId: 1, categoryLabel: 'Food', current: 12000, previous: 10000, pctChange: 20 },
-      ],
-    });
-    expect(out).toHaveLength(1);
-    expect(out[0].categoryLabel).toBe('Food');
-    expect(out[0].message).toContain('Food');
-    expect(out[0].message).toContain('20%');
-  });
-
-  it('returns no suggestion when pctChange <= 10', () => {
-    const out = generateSuggestions({
-      categories: [
-        { categoryId: 1, categoryLabel: 'Food', current: 10500, previous: 10000, pctChange: 5 },
-      ],
-    });
-    expect(out).toHaveLength(0);
-  });
-
-  it('returns no suggestion when pctChange is null (previous was 0)', () => {
-    const out = generateSuggestions({
-      categories: [
-        { categoryId: 1, categoryLabel: 'Food', current: 5000, previous: 0, pctChange: null },
-      ],
-    });
-    expect(out).toHaveLength(0);
   });
 });
 
