@@ -118,6 +118,7 @@ export const expenses: Translation<typeof en> = {
     frequency: {
       monthly: 'Mensuelle',
       weekly: 'Hebdomadaire',
+      weekdays: 'Jours ouvrés',
     },
   },
   zeroDay: {

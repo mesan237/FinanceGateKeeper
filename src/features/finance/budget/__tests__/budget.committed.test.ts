@@ -40,7 +40,7 @@ afterEach(() => {
 
 async function bill(
   amount: number,
-  frequency: 'monthly' | 'weekly',
+  frequency: 'monthly' | 'weekly' | 'weekdays',
   nextDue: string,
   isActive = 1,
 ): Promise<void> {
@@ -100,6 +100,12 @@ describe('getCommitted', () => {
 
     const committed = await getCommitted('2026-10');
     expect(committed.recurring).toBe(45_000);
+  });
+
+  it('counts a weekday bill once per working day left in the month (VS-60)', async () => {
+    await bill(1_000, 'weekdays', '2026-10-26'); // Mon 26 – Fri 30; Sat 31 is skipped
+
+    expect((await getCommitted('2026-10')).recurring).toBe(5_000);
   });
 
   it('counts open planned items due by the end of the month, by their own date or their list', async () => {

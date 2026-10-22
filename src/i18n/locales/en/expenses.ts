@@ -114,6 +114,7 @@ export const expenses = {
     frequency: {
       monthly: 'Monthly',
       weekly: 'Weekly',
+      weekdays: 'Weekdays',
     },
   },
   zeroDay: {
