@@ -1,6 +1,6 @@
 import i18n from '@/i18n';
 import { notificationCopy } from '@/notifications/notifications.config';
-import { buildDailyReminder } from '@/notifications/triggers/dailyReminder';
+import { buildDailyReminders } from '@/notifications/triggers/dailyReminder';
 import { buildDebtDueAlert } from '@/notifications/triggers/debtDueDate';
 import { buildOverBudgetAlert } from '@/notifications/triggers/overBudget';
 
@@ -17,7 +17,7 @@ describe('notification copy', () => {
 
   it('writes the daily reminder in French when the app is in French', async () => {
     await i18n.changeLanguage('fr');
-    expect(buildDailyReminder('21:00').title).toBe('Notez vos dépenses');
+    expect(buildDailyReminders('21:00', new Date(2026, 7, 15, 9), new Set())[0].title).toBe('Notez vos dépenses');
   });
 
   it('writes the over-budget alert in French, naming the envelope', async () => {
