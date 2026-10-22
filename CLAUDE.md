@@ -45,7 +45,7 @@ Three layers — never violate these:
 - `debt` → reads `accounts` (AccountPicker on the debt form and the repayment sheet, VS-44). Wallet balances read the `debts`/`debt_payments` tables by SQL, not by importing `debt`
 - `goals` → reads `accounts` (a goal's progress is its linked wallet's balance; AccountPicker on the goal form, VS-48), `expenses` (observed essential spending — `getObservedFixedAverage` — to size an emergency reserve, VS-50). "Save now" opens `/transfers/log?to=<wallet>` by path. Nothing imports `goals`
 - `tontines` → reads `accounts` (AccountPicker and the default wallet on the tontine form and payment sheet, VS-51). Wallet balances read `tontine_payments` by SQL, not by importing `tontines`; tontine money is never spending or income. Only `budget` imports `tontines` (one read, above)
-- `events` → imports no other slice. Its page reads `expenses` (with `event_id`) and `categories` by SQL and opens `/expenses/[id]` by path. Only `expenses` imports `events` (VS-61)
+- `events` → imports no other slice. Budget and Reports group spending by event (VS-62) through `expenses.reason` and read event names with the shared `services/transactions.getEventNames`, so neither imports `events`. Its page reads `expenses` (with `event_id`) and `categories` by SQL and opens `/expenses/[id]` by path. Only `expenses` imports `events` (VS-61)
 - `networth` → reads `accounts` (wallet balances as of a month's last day, VS-53). Debts, tontines, income, expenses and recurring bills are read by SQL. Only `reports` imports `networth`
 All other cross-feature imports are forbidden.
 

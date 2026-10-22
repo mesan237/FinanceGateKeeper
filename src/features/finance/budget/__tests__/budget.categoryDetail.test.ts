@@ -17,6 +17,7 @@ jest.mock('@/services/database', () => {
 });
 
 import { getCategoryDetail } from '@/features/finance/budget/budget.categoryDetail';
+import { createEvent } from '@/features/finance/events/events.service';
 import { setCategoryCostType } from '@/features/finance/expenses/expenses.costType';
 import { recordRefund } from '@/features/finance/expenses/expenses.refunds';
 import {
@@ -49,6 +50,7 @@ interface SpendOptions {
   note?: string | null;
   isRecurring?: boolean;
   isUnplanned?: boolean;
+  eventId?: number | null;
 }
 
 async function spend(date: string, amount: number, options: SpendOptions = {}): Promise<number> {
@@ -60,6 +62,7 @@ async function spend(date: string, amount: number, options: SpendOptions = {}): 
     date,
     isRecurring: options.isRecurring ?? false,
     isUnplanned: options.isUnplanned ?? false,
+    eventId: options.eventId ?? null,
   });
 }
 
@@ -268,5 +271,36 @@ describe('getCategoryDetail — one subcategory (VS-59)', () => {
     await spend('2026-08-05', 1_000);
 
     expect((await getCategoryDetail('2026-08', FOOD)).subcategory).toBeNull();
+  });
+});
+
+describe('getCategoryDetail — why the money went (VS-62)', () => {
+  it('splits the month into routine, events, unexpected and everyday, naming the events', async () => {
+    const wedding = await createEvent({ name: 'Marie’s wedding', date: '2026-08-15' });
+    const funeral = await createEvent({ name: 'Funeral', date: '2026-08-20' });
+    await spend('2026-08-01', 1_000, { categoryId: TRANSPORT, isRecurring: true });
+    await spend('2026-08-02', 1_000, { categoryId: TRANSPORT, isRecurring: true });
+    await spend('2026-08-15', 6_000, { categoryId: TRANSPORT, eventId: wedding });
+    await spend('2026-08-20', 9_000, { categoryId: TRANSPORT, eventId: funeral });
+    await spend('2026-08-21', 3_000, { categoryId: TRANSPORT, isUnplanned: true });
+    await spend('2026-08-22', 2_500, { categoryId: TRANSPORT });
+
+    const detail = await getCategoryDetail('2026-08', TRANSPORT);
+
+    expect(detail.reasons).toEqual({ routine: 2_000, event: 15_000, unexpected: 3_000, everyday: 2_500 });
+    expect(detail.reasonEvents).toEqual([
+      { eventId: funeral, name: 'Funeral', amount: 9_000 },
+      { eventId: wedding, name: 'Marie’s wedding', amount: 6_000 },
+    ]);
+  });
+
+  it('reads the reasons of one subcategory only when narrowed', async () => {
+    const taxi = await createCategory({ name: 'Moto', parentId: TRANSPORT });
+    await spend('2026-08-01', 1_000, { categoryId: TRANSPORT, subcategoryId: taxi });
+    await spend('2026-08-02', 5_000, { categoryId: TRANSPORT, isRecurring: true });
+
+    const detail = await getCategoryDetail('2026-08', TRANSPORT, taxi);
+
+    expect(detail.reasons).toEqual({ routine: 0, event: 0, unexpected: 0, everyday: 1_000 });
   });
 });

@@ -156,3 +156,18 @@ export async function getLoggedDays(from: string, to: string): Promise<Set<strin
   );
   return new Set(rows.map((r) => r.date));
 }
+
+/**
+ * Names of events by id (VS-62), for labelling spending grouped by event. Read
+ * here, in shared infrastructure, so the slices that group by event (budget,
+ * reports) need not import the events slice.
+ */
+export async function getEventNames(ids: ReadonlyArray<number>): Promise<Map<number, string>> {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return new Map();
+  const rows = await query<{ id: number; name: string }>(
+    `SELECT id, name FROM events WHERE id IN (${unique.map(() => '?').join(', ')})`,
+    unique,
+  );
+  return new Map(rows.map((r) => [r.id, r.name]));
+}

@@ -13,6 +13,8 @@ import type { Expense, Category } from '@/features/finance/expenses/expenses.typ
 import { toISODate } from '@/utils/formatDate';
 import { lastDayOfMonth, prevMonthISO } from '@/utils/monthMath';
 
+import { summariseReasons } from './reports.reasons';
+
 import type {
   CategorySpend,
   CategoryDelta,
@@ -204,6 +206,7 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
   const labelOf = categoryLabelResolver(categories);
   const actual = sumAmounts(expenses);
   const unplanned = await summariseUnplanned(expenses, actual, prevMonthISO(monthISO));
+  const why = await summariseReasons(expenses, categories);
 
   let comparison: MonthComparison | null = null;
   try {
@@ -225,5 +228,6 @@ export async function getMonthlyReport(monthISO: string): Promise<MonthlyReport>
     unplanned,
     debtSummary: { totalLent: debt.lent, totalOwed: debt.owed },
     comparison,
+    why,
   };
 }

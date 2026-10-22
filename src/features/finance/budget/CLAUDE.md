@@ -140,6 +140,10 @@ reasoning that kept the `funds` and `projects` tables.
   spend, % against the subcategory's own usual month (on the category's pace), its
   repeats and its transactions. No envelope, editing or next-month plan there:
   budgets are per category.
+- **Why it went (VS-62).** `CategoryDetail.reasons` and `reasonEvents` (from
+  `expenses.reason`) feed the shared `components/WhyBreakdown`: routine · events ·
+  unexpected · everyday, the events listed under "Events" and opening `/events/[id]`
+  by path. Narrowed to a subcategory, it is that subcategory's.
 - Refunds net out of totals and the split by themselves; repeats skip them.
 - Removed as duplicates in VS-56: the tab's "Biggest share of your budget" (repeated
   the envelope list) and "Versus last month" (Reports owns the comparison); the

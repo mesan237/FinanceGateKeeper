@@ -2011,6 +2011,30 @@ date, total only (no event budget yet); separate from planned lists.
 
 ---
 
+### VS-62: Why the Money Went 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22 ("why" behind spending, closes VS-60/61)
+**Blocked by:** VS-60 (weekdays), VS-61 (events)
+
+**Scope:**
+
+- `expenses.reason`: `reasonOf` (event → unexpected → routine → everyday), `sumByReason`,
+  `groupByEvent`; shared types in `types/reasons`; `services/transactions.getEventNames`.
+- Shared `components/WhyBreakdown`: one bar, a row per reason with amount and share,
+  events listed under "Events" and tappable. Draws its own card; nothing without spending.
+- Budget category detail (and a narrowed subcategory) and Reports' month both show it.
+- No migration.
+
+**TDD Anchor:**
+
+- Test: reason rule and precedence; sums with refunds netted; grouping by event.
+- Test: component rows, shares, events and empty; category detail and Reports reasons; screens open events.
+
+**Done when:** for any category or month the user sees how much was routine, events,
+surprises and everyday habits.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
