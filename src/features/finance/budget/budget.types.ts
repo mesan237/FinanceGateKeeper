@@ -233,11 +233,22 @@ export interface RepeatedSpend {
   total: number;
 }
 
+/**
+ * Narrows the drill-down to one subcategory (VS-59): its id, or `'none'` for the
+ * spending filed under the category itself.
+ */
+export type SubcategoryFilter = number | 'none';
+
 /** Where a category's money went in one month: the Budget tab's drill-down (VS-56). */
 export interface CategoryDetail {
   categoryId: number;
   /** Stored name; show it with `displayCategoryName`. */
   categoryName: string;
+  /**
+   * The subcategory the detail is narrowed to (VS-59): `id` and `name` null for
+   * spending with no subcategory. null for the whole category.
+   */
+  subcategory: { id: number | null; name: string | null } | null;
   month: string;
   /** Net spend, refunds included. */
   spent: number;

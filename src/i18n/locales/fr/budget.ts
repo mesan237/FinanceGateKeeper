@@ -188,6 +188,8 @@ export const budget: Translation<typeof en> = {
     useTarget: 'Utiliser {{amount}} comme budget du mois prochain',
     nextSet: 'Budget du mois prochain : {{amount}}',
     transactionsTitle: 'Transactions',
+    subTitle: '{{category}} › {{subcategory}}',
+    subSpent: '{{amount}} dépensés',
   },
   errors: {
     estimateAmount: 'Saisissez des montants entiers et positifs en FCFA.',

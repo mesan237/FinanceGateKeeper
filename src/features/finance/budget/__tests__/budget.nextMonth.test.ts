@@ -5,6 +5,7 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
   return {
     categoryId: 1,
     categoryName: 'Food',
+    subcategory: null,
     month: '2026-08',
     spent: 60_000,
     parts: [],

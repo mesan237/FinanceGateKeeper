@@ -58,6 +58,7 @@ export const reports = {
     startSame: 'Your starting point: {{amount}} a month ({{months}}). The comparison begins once a new month is complete.',
     byCategory: 'Compare by category',
     hideCategories: 'Hide categories',
+    noSubcategory: 'No subcategory',
   },
   estimate: {
     title: 'Estimate vs actual',

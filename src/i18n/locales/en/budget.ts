@@ -183,6 +183,8 @@ export const budget = {
     useTarget: 'Use {{amount}} as next month’s budget',
     nextSet: 'Next month’s budget: {{amount}}',
     transactionsTitle: 'Transactions',
+    subTitle: '{{category}} › {{subcategory}}',
+    subSpent: '{{amount}} spent',
   },
   errors: {
     estimateAmount: 'Enter whole, non-negative FCFA amounts.',

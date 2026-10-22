@@ -232,3 +232,41 @@ describe('getCategoryDetail — each subcategory against its usual month', () =>
     expect(detail.average).toBe(20_000);
   });
 });
+
+describe('getCategoryDetail — one subcategory (VS-59)', () => {
+  it('narrows the month to one subcategory: its spend, repeats and usual month, no split', async () => {
+    const market = await createCategory({ name: 'Market', parentId: FOOD });
+    const street = await createCategory({ name: 'Street food', parentId: FOOD });
+    await logWholeMonth('2026-07');
+    await spend('2026-07-10', 8_000, { subcategoryId: street });
+    await spend('2026-08-02', 30_000, { subcategoryId: market });
+    await spend('2026-08-03', 2_000, { subcategoryId: street, note: 'Beignets' });
+    await spend('2026-08-04', 2_500, { subcategoryId: street, note: 'beignets' });
+    await spend('2026-08-05', 1_000);
+
+    const detail = await getCategoryDetail('2026-08', FOOD, street);
+
+    expect(detail.subcategory).toEqual({ id: street, name: 'Street food' });
+    expect(detail.spent).toBe(4_500);
+    expect(detail.parts).toEqual([]);
+    expect(detail.repeats).toEqual([{ label: 'Beignets', count: 2, total: 4_500 }]);
+    expect(detail.average).toBe(8_000);
+  });
+
+  it('reads "none" as the spending filed under the category itself', async () => {
+    const market = await createCategory({ name: 'Market', parentId: FOOD });
+    await spend('2026-08-02', 30_000, { subcategoryId: market });
+    await spend('2026-08-05', 1_000);
+
+    const detail = await getCategoryDetail('2026-08', FOOD, 'none');
+
+    expect(detail.subcategory).toEqual({ id: null, name: null });
+    expect(detail.spent).toBe(1_000);
+  });
+
+  it('leaves the whole category unnarrowed without a subcategory', async () => {
+    await spend('2026-08-05', 1_000);
+
+    expect((await getCategoryDetail('2026-08', FOOD)).subcategory).toBeNull();
+  });
+});

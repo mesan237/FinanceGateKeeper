@@ -135,6 +135,11 @@ reasoning that kept the `funds` and `projects` tables.
   (100 under 10,000). Steps: up to two subcategories more than 10% above their usual,
   and "skip 1 in 4" for a purchase bought 4+ times. One tap writes the target as next
   month's envelope.
+- **One subcategory (VS-59).** A line in "Where it went" opens the same route with
+  `sub=<id>` (or `sub=none` for spending with no subcategory). The screen narrows to it:
+  spend, % against the subcategory's own usual month (on the category's pace), its
+  repeats and its transactions. No envelope, editing or next-month plan there:
+  budgets are per category.
 - Refunds net out of totals and the split by themselves; repeats skip them.
 - Removed as duplicates in VS-56: the tab's "Biggest share of your budget" (repeated
   the envelope list) and "Versus last month" (Reports owns the comparison); the

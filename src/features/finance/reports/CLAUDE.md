@@ -22,7 +22,10 @@ Reports are read-only aggregations across all other features. No dedicated datab
   recorded ("1 of 3 months recorded", nothing else changes), a note while "now" is still
   the same months, then a Starting point · Now table with a % chip per row and every
   category behind one tap. With the table showing, the card drops its plain
-  fixed/variable/unexpected rows so no figure appears twice.
+  fixed/variable/unexpected rows so no figure appears twice. Each category in
+  "Compare by category" lists its subcategories under it (VS-59, from
+  `ProfileCategory.subcategories`); a category in both the fixed and variable lists
+  is added up, not overwritten.
 - Charts: bar charts for comparison, a donut chart for breakdown. Use consistent colors per category — the shared `categoryColors` palette indexes by a category's position in the (amount-desc) breakdown so a donut slice and its breakdown-row dot always match.
 
 ## Cross-Feature Reads

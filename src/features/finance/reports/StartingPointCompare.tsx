@@ -16,37 +16,83 @@ import type { ProfileAverage, ProfileCategory, SpendingProfile, StartingPoint } 
 /**
  * "Starting point" beside "Now" inside the typical-month card (VS-58): the same
  * fixed / variable / unexpected rows, each with a % change, and every category
- * on tap. Kept as one table so the card never shows the same figure twice.
+ * on tap — each with its subcategories under it (VS-59). Kept as one table so
+ * the card never shows the same figure twice.
  */
 
 const ROWS: ReadonlyArray<keyof ProfileAverage> = ['total', 'fixed', 'variable', 'unexpected'];
 
-interface CategoryChange {
-  categoryId: number;
-  categoryLabel: string;
+interface Change {
   start: number;
   now: number;
 }
 
-/** Every category in either profile, biggest absolute change first. */
-function categoryChanges(start: SpendingProfile, now: SpendingProfile): CategoryChange[] {
-  const all = (p: SpendingProfile): ProfileCategory[] => [...p.variableCategories, ...p.fixedCategories];
-  const byId = new Map<number, CategoryChange>();
-  for (const c of all(start)) {
-    byId.set(c.categoryId, { categoryId: c.categoryId, categoryLabel: c.categoryLabel, start: c.average, now: 0 });
-  }
-  for (const c of all(now)) {
-    const row = byId.get(c.categoryId) ?? { categoryId: c.categoryId, categoryLabel: c.categoryLabel, start: 0, now: 0 };
-    byId.set(c.categoryId, { ...row, now: c.average });
-  }
-  return [...byId.values()].sort((a, b) => Math.abs(b.now - b.start) - Math.abs(a.now - a.start));
+interface SubcategoryChange extends Change {
+  subcategoryId: number | null;
+  label: string | null;
 }
 
-function CompareRow({ label, start, now, testID }: { label: string; start: number; now: number; testID: string }) {
+interface CategoryChange extends Change {
+  categoryId: number;
+  categoryLabel: string;
+  subcategories: SubcategoryChange[];
+}
+
+/** Biggest absolute change first. */
+const byChange = (a: Change, b: Change) => Math.abs(b.now - b.start) - Math.abs(a.now - a.start);
+
+/**
+ * Every category in either profile with its subcategories, biggest absolute
+ * change first. A category can sit in both the variable and fixed lists (a
+ * subcategory tagged fixed under a variable parent), so its parts are added.
+ */
+function categoryChanges(start: SpendingProfile, now: SpendingProfile): CategoryChange[] {
+  const byId = new Map<number, CategoryChange & { subs: Map<number | null, SubcategoryChange> }>();
+  const add = (profile: SpendingProfile, side: keyof Change) => {
+    const all: ProfileCategory[] = [...profile.variableCategories, ...profile.fixedCategories];
+    for (const c of all) {
+      const row = byId.get(c.categoryId) ?? {
+        categoryId: c.categoryId,
+        categoryLabel: c.categoryLabel,
+        start: 0,
+        now: 0,
+        subcategories: [],
+        subs: new Map<number | null, SubcategoryChange>(),
+      };
+      row[side] += c.average;
+      for (const sub of c.subcategories ?? []) {
+        const part = row.subs.get(sub.subcategoryId) ?? { subcategoryId: sub.subcategoryId, label: sub.label, start: 0, now: 0 };
+        part[side] += sub.average;
+        row.subs.set(sub.subcategoryId, part);
+      }
+      byId.set(c.categoryId, row);
+    }
+  };
+  add(start, 'start');
+  add(now, 'now');
+  return [...byId.values()]
+    .map(({ subs, ...row }) => ({ ...row, subcategories: [...subs.values()].sort(byChange) }))
+    .sort(byChange);
+}
+
+function CompareRow({
+  label,
+  start,
+  now,
+  testID,
+  indent = false,
+}: {
+  label: string;
+  start: number;
+  now: number;
+  testID: string;
+  /** A subcategory row, set under its category (VS-59). */
+  indent?: boolean;
+}) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.row} testID={testID}>
-      <Typography style={styles.label} numberOfLines={1}>{label}</Typography>
+      <Typography style={[styles.label, indent && styles.indent]} numberOfLines={1}>{label}</Typography>
       <Typography style={styles.amount}>{formatCurrency(start)}</Typography>
       <Typography style={[styles.amount, styles.now]}>{formatCurrency(now)}</Typography>
       <View style={styles.chip}>
@@ -97,13 +143,24 @@ export function StartingPointCompare({ start, now }: StartingPointCompareProps) 
       </Pressable>
       {showCategories
         ? categoryChanges(start, now).map((c) => (
-            <CompareRow
-              key={c.categoryId}
-              testID={`typical-compare-category-${c.categoryId}`}
-              label={displayCategoryName(c.categoryLabel)}
-              start={c.start}
-              now={c.now}
-            />
+            <React.Fragment key={c.categoryId}>
+              <CompareRow
+                testID={`typical-compare-category-${c.categoryId}`}
+                label={displayCategoryName(c.categoryLabel)}
+                start={c.start}
+                now={c.now}
+              />
+              {c.subcategories.map((sub) => (
+                <CompareRow
+                  key={sub.subcategoryId ?? 'none'}
+                  indent
+                  testID={`typical-compare-sub-${c.categoryId}-${sub.subcategoryId ?? 'none'}`}
+                  label={sub.label === null ? t('typical.noSubcategory') : displayCategoryName(sub.label)}
+                  start={sub.start}
+                  now={sub.now}
+                />
+              ))}
+            </React.Fragment>
           ))
         : null}
     </View>
@@ -115,6 +172,7 @@ const makeStyles = (c: ThemeColors) =>
     table: { gap: 6 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     label: { flex: 1 },
+    indent: { paddingLeft: 14, fontSize: 13 },
     amount: { width: 92, textAlign: 'right', fontSize: 13 },
     now: { fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, color: c.TEXT_PRIMARY },
     chip: { width: 60, alignItems: 'flex-end' },

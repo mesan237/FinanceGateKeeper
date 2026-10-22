@@ -14,6 +14,7 @@ import type {
   ProfileAverage,
   ProfileCategory,
   ProfileMonth,
+  ProfileSubcategory,
   SpendKind,
   SpendingProfile,
 } from './reports.types';
@@ -54,22 +55,41 @@ function spendKind(expense: ProfileExpense, input: SpendingProfileInput): SpendK
   return spendKindOf(expense, input.kindOf);
 }
 
+/** A category's subcategory sums over the window, averaged and ranked; undefined when never split. */
+function rankSubcategories(
+  sums: Map<number | null, number> | undefined,
+  months: number,
+  labelOf: (categoryId: number) => string,
+): ProfileSubcategory[] | undefined {
+  if (!sums || ![...sums.keys()].some((id) => id !== null)) return undefined;
+  return [...sums.entries()]
+    .map(([subcategoryId, sum]) => ({
+      subcategoryId,
+      label: subcategoryId === null ? null : labelOf(subcategoryId),
+      average: Math.round(sum / months),
+    }))
+    .sort((a, b) => b.average - a.average);
+}
+
 /** Turns per-category, per-month totals into ranked rows over `complete` months. */
 function rankCategories(
   byCategory: Map<number, Map<string, number>>,
   complete: ReadonlyArray<string>,
   labelOf: (categoryId: number) => string,
+  bySubcategory: Map<number, Map<number | null, number>> = new Map(),
 ): ProfileCategory[] {
   return [...byCategory.entries()]
     .map(([categoryId, perMonth]) => {
       const amounts = complete.map((m) => perMonth.get(m) ?? 0);
       const sum = amounts.reduce((total, a) => total + a, 0);
+      const subcategories = rankSubcategories(bySubcategory.get(categoryId), complete.length, labelOf);
       return {
         categoryId,
         categoryLabel: labelOf(categoryId),
         average: Math.round(sum / complete.length),
         lowest: Math.min(...amounts),
         highest: Math.max(...amounts),
+        ...(subcategories ? { subcategories } : {}),
       };
     })
     .sort((a, b) => b.average - a.average);
@@ -97,6 +117,11 @@ export function buildSpendingProfile(input: SpendingProfileInput): SpendingProfi
     fixed: new Map(),
     variable: new Map(),
   };
+  // Per category, the window's sum per subcategory (null = none), for the split (VS-59).
+  const subByKind: Record<'fixed' | 'variable', Map<number, Map<number | null, number>>> = {
+    fixed: new Map(),
+    variable: new Map(),
+  };
 
   for (const expense of input.expenses) {
     const month = expense.date.slice(0, 7);
@@ -107,6 +132,9 @@ export function buildSpendingProfile(input: SpendingProfileInput): SpendingProfi
     const perMonth = byKind[kind].get(expense.categoryId) ?? new Map<string, number>();
     perMonth.set(month, (perMonth.get(month) ?? 0) + expense.amount);
     byKind[kind].set(expense.categoryId, perMonth);
+    const subs = subByKind[kind].get(expense.categoryId) ?? new Map<number | null, number>();
+    subs.set(expense.subcategoryId, (subs.get(expense.subcategoryId) ?? 0) + expense.amount);
+    subByKind[kind].set(expense.categoryId, subs);
   }
 
   const perMonth = (sum: number) => Math.round(sum / complete.length);
@@ -123,8 +151,8 @@ export function buildSpendingProfile(input: SpendingProfileInput): SpendingProfi
         .filter((i) => counted.has(i.date.slice(0, 7)))
         .reduce((sum, i) => sum + i.amount, 0),
     ),
-    variableCategories: rankCategories(byKind.variable, complete, input.labelOf),
-    fixedCategories: rankCategories(byKind.fixed, complete, input.labelOf),
+    variableCategories: rankCategories(byKind.variable, complete, input.labelOf, subByKind.variable),
+    fixedCategories: rankCategories(byKind.fixed, complete, input.labelOf, subByKind.fixed),
   };
 }
 

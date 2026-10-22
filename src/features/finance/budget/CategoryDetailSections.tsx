@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -14,7 +14,7 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { percentChange } from '@/utils/percentChange';
 
-import type { CategoryDetail, NextMonthPlan, NextMonthStep } from './budget.types';
+import type { CategoryDetail, NextMonthPlan, NextMonthStep, SubcategoryFilter } from './budget.types';
 
 /**
  * The cards of the category drill-down (VS-56). Each answers one question —
@@ -50,8 +50,17 @@ export function UsualComparison({ detail, heading, running }: { detail: Category
  * usual month, then the purchases that keep coming back.
  *
  * @param scale `heading / spent`, so a running month's parts compare on pace.
+ * @param onOpenPart Opens a subcategory's own view (VS-59).
  */
-export function WhereItWentCard({ detail, scale }: { detail: CategoryDetail; scale: number }) {
+export function WhereItWentCard({
+  detail,
+  scale,
+  onOpenPart,
+}: {
+  detail: CategoryDetail;
+  scale: number;
+  onOpenPart?: (subcategory: SubcategoryFilter) => void;
+}) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('budget');
   if (detail.parts.length === 0 && detail.repeats.length === 0) return null;
@@ -62,7 +71,12 @@ export function WhereItWentCard({ detail, scale }: { detail: CategoryDetail; sca
       {detail.parts.map((part) => {
         const key = part.subcategoryId ?? 'none';
         return (
-          <View key={key} style={styles.part}>
+          <Pressable
+            key={key}
+            accessibilityRole="button"
+            onPress={() => onOpenPart?.(part.subcategoryId ?? 'none')}
+            style={styles.part}
+          >
             <View style={styles.line} testID={`detail-part-${key}`}>
               <View style={styles.grow}>
                 <Typography numberOfLines={1}>
@@ -81,7 +95,7 @@ export function WhereItWentCard({ detail, scale }: { detail: CategoryDetail; sca
               <Typography style={styles.amount}>{formatCurrency(part.amount)}</Typography>
             </View>
             <ProgressBar value={Math.min(100, part.sharePct)} style={styles.bar} />
-          </View>
+          </Pressable>
         );
       })}
 

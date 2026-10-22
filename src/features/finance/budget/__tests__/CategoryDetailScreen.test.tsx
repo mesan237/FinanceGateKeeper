@@ -85,6 +85,7 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
   return {
     categoryId: FOOD,
     categoryName: 'Food',
+    subcategory: null,
     month: '2026-08',
     spent: 45_000,
     parts: [
@@ -314,5 +315,72 @@ describe('CategoryDetailScreen — transactions and editing', () => {
         await i18n.changeLanguage('en');
       });
     }
+  });
+});
+
+describe('CategoryDetailScreen — one subcategory (VS-59)', () => {
+  const RESTAURANT_ONLY = (): CategoryDetail =>
+    detail({
+      subcategory: { id: RESTAURANT, name: 'Restaurant' },
+      spent: 20_000,
+      parts: [],
+      repeats: [{ label: 'Lunch', count: 5, total: 12_500 }],
+      kinds: { fixed: 0, variable: 20_000, unexpected: 0 },
+      average: 12_000,
+    });
+
+  it('opens a subcategory from its line in "Where it went"', async () => {
+    await renderScreen();
+
+    fireEvent.press(screen.getByTestId(`detail-part-${RESTAURANT}`));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/budget/category/[id]',
+      params: { id: String(FOOD), month: '2026-08', sub: String(RESTAURANT) },
+    });
+  });
+
+  it('opens the spending with no subcategory as "none"', async () => {
+    mockedDetail.mockResolvedValue(
+      detail({ parts: [{ subcategoryId: null, name: null, amount: 45_000, count: 9, sharePct: 100, usual: 0 }] }),
+    );
+    await renderScreen();
+
+    fireEvent.press(screen.getByTestId('detail-part-none'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/budget/category/[id]',
+      params: { id: String(FOOD), month: '2026-08', sub: 'none' },
+    });
+  });
+
+  it('narrows the screen to that subcategory, on the category’s pace', async () => {
+    mockedDetail.mockResolvedValue(RESTAURANT_ONLY());
+    mockedFeed.mockResolvedValue([
+      { ...ROW, id: 31, subcategoryId: RESTAURANT, subcategoryLabel: 'Restaurant' },
+      { ...ROW, id: 32, subcategoryId: MARKET, subcategoryLabel: 'Market' },
+    ]);
+    render(<CategoryDetailScreen monthISO="2026-08" categoryId={FOOD} subcategory={RESTAURANT} />);
+    await screen.findByTestId('category-detail');
+
+    expect(mockedDetail).toHaveBeenCalledWith('2026-08', FOOD, RESTAURANT);
+    expect(screen.getByTestId('screen-header-title')).toHaveTextContent('Food › Restaurant');
+    expect(screen.getByTestId('detail-sub-spent')).toHaveTextContent(/20.000 FCFA spent/);
+    // The category runs at twice its spend so far (90,000 projected on 45,000): 40,000 vs a usual 12,000.
+    expect(screen.getByTestId('detail-change')).toHaveTextContent('+233%');
+    expect(screen.getByTestId('detail-repeat-0')).toHaveTextContent(/Lunch ×5/);
+    expect(screen.getByTestId('tx-row-expense-31')).toBeTruthy();
+    expect(screen.queryByTestId('tx-row-expense-32')).toBeNull();
+    // Budgets are per category: no envelope, no edit, no next-month plan here.
+    expect(screen.queryByTestId('detail-edit-budget')).toBeNull();
+    expect(screen.queryByTestId('detail-next')).toBeNull();
+  });
+
+  it('names the spending with no subcategory', async () => {
+    mockedDetail.mockResolvedValue(detail({ subcategory: { id: null, name: null }, parts: [] }));
+    render(<CategoryDetailScreen monthISO="2026-08" categoryId={FOOD} subcategory="none" />);
+    await screen.findByTestId('category-detail');
+
+    expect(screen.getByTestId('screen-header-title')).toHaveTextContent('Food › No subcategory');
   });
 });

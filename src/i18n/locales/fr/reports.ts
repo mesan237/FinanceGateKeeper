@@ -62,6 +62,7 @@ export const reports: Translation<typeof en> = {
     startSame: 'Votre point de départ : {{amount}} par mois ({{months}}). La comparaison commence dès qu’un nouveau mois est complet.',
     byCategory: 'Comparer par catégorie',
     hideCategories: 'Masquer les catégories',
+    noSubcategory: 'Sans sous-catégorie',
   },
   estimate: {
     title: 'Estimation et réalité',
