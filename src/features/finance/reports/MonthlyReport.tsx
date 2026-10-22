@@ -42,7 +42,7 @@ export function MonthlyReport() {
     useMonthlyReport();
   // The typical month is not tied to the month being browsed; it is reloaded on
   // focus so a category re-tagged as fixed or variable shows on return (VS-41).
-  const { profile, refresh: refreshProfile } = useSpendingProfile();
+  const { profile, startingPoint, refresh: refreshProfile } = useSpendingProfile();
   const { baseline, refresh: refreshEstimates, accept } = useEstimatesForReport();
   // A category row opens the same drill-down as its envelope on the Budget tab,
   // by path, so Reports gains no import (VS-56).
@@ -59,7 +59,7 @@ export function MonthlyReport() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <NetWorthCard />
-      {profile ? <TypicalMonthCard profile={profile} /> : null}
+      {profile ? <TypicalMonthCard profile={profile} startingPoint={startingPoint} /> : null}
       {profile && baseline ? (
         <EstimateVsActualCard
           profile={profile}

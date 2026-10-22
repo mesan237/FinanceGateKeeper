@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { Pill, type PillTone } from '@/components/Pill';
+import { ChangeChip } from '@/components/ChangeChip';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
@@ -12,8 +12,8 @@ import { SPACING } from '@/constants/layout';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { percentChange } from '@/utils/percentChange';
 
-import { percentChange } from './budget.nextMonth';
 import type { CategoryDetail, NextMonthPlan, NextMonthStep } from './budget.types';
 
 /**
@@ -21,18 +21,6 @@ import type { CategoryDetail, NextMonthPlan, NextMonthStep } from './budget.type
  * how this month compares, where the money went, what to do next month — and
  * renders nothing when it has nothing to say, so a sparse month stays short.
  */
-
-/** Within ±this many percent, a change reads as neutral rather than good or bad. */
-const NEUTRAL_BAND = 10;
-
-/** "+50%" / "−25%" / "New", tinted: red when up, green when down. */
-export function ChangeChip({ change, testID }: { change: number | null; testID: string }) {
-  const { t } = useTranslation('budget');
-  if (change === null) return <Pill testID={testID} label={t('detail.newThisMonth')} tone="warning" />;
-  const tone: PillTone = change > NEUTRAL_BAND ? 'danger' : change < -NEUTRAL_BAND ? 'success' : 'neutral';
-  const label = change > 0 ? `+${change}%` : change < 0 ? `−${Math.abs(change)}%` : '0%';
-  return <Pill testID={testID} label={label} tone={tone} />;
-}
 
 /** The month against a usual one, under the envelope row. */
 export function UsualComparison({ detail, heading, running }: { detail: CategoryDetail; heading: number; running: boolean }) {

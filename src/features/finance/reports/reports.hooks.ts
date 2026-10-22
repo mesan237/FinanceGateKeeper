@@ -8,7 +8,8 @@ import type { Baseline } from '@/features/finance/budget/budget.types';
 
 import { getSpendingProfile } from './reports.profile';
 import * as reportsService from './reports.service';
-import type { MonthlyReport, SpendingProfile, WeeklyReport } from './reports.types';
+import { getStartingPoint } from './reports.startingPoint';
+import type { MonthlyReport, SpendingProfile, StartingPoint, WeeklyReport } from './reports.types';
 
 /** Returns the Monday of the current week as a `YYYY-MM-DD` string (UTC). */
 function currentWeekMonday(): string {
@@ -127,23 +128,28 @@ export function useMonthlyReport(initialMonthISO?: string) {
 }
 
 /**
- * Loads "your typical month" (VS-41). `refresh()` is caller-driven — the
+ * Loads "your typical month" (VS-41) and the starting point it is set against
+ * (VS-58). `refresh()` is caller-driven — the
  * Reports tab calls it on focus, so a category re-tagged as fixed or variable
  * shows up on return. A failed load leaves the card out rather than erroring
  * the whole report.
  */
 export function useSpendingProfile() {
   const [profile, setProfile] = useState<SpendingProfile | null>(null);
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null);
 
   const refresh = useCallback(async () => {
     try {
-      setProfile(await getSpendingProfile());
+      const [nextProfile, nextStart] = await Promise.all([getSpendingProfile(), getStartingPoint()]);
+      setProfile(nextProfile);
+      setStartingPoint(nextStart);
     } catch {
       setProfile(null);
+      setStartingPoint(null);
     }
   }, []);
 
-  return { profile, refresh };
+  return { profile, startingPoint, refresh };
 }
 
 /**

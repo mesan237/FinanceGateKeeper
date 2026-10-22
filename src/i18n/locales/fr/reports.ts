@@ -53,6 +53,15 @@ export const reports: Translation<typeof en> = {
     tagHint: 'Définir les catégories fixes ou variables',
     provisional: 'Provisoire',
     reliable: 'Fiable',
+    startColumn: 'Point de départ',
+    nowColumn: 'Maintenant',
+    total: 'Total',
+    startProgress:
+      'Point de départ : {{count}} mois sur {{needed}} enregistrés. Continuez à tout noter, même les petites dépenses : c’est ce que vous dépensez vraiment, avant tout changement.',
+    startMonths: 'Point de départ : vos premiers mois complets, {{months}}. Maintenant : vos derniers mois complets.',
+    startSame: 'Votre point de départ : {{amount}} par mois ({{months}}). La comparaison commence dès qu’un nouveau mois est complet.',
+    byCategory: 'Comparer par catégorie',
+    hideCategories: 'Masquer les catégories',
   },
   estimate: {
     title: 'Estimation et réalité',

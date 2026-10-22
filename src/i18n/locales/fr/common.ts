@@ -25,6 +25,9 @@ export const common: Translation<typeof en> = {
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
   },
+  change: {
+    new: 'Nouveau',
+  },
   errors: {
     syncFailed: 'La synchronisation a échoué.',
   },

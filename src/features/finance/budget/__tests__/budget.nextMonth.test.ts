@@ -1,4 +1,4 @@
-import { percentChange, planNextMonth } from '@/features/finance/budget/budget.nextMonth';
+import { planNextMonth } from '@/features/finance/budget/budget.nextMonth';
 import type { CategoryDetail } from '@/features/finance/budget/budget.types';
 
 function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
@@ -14,18 +14,6 @@ function detail(overrides: Partial<CategoryDetail> = {}): CategoryDetail {
     ...overrides,
   };
 }
-
-describe('percentChange (VS-56)', () => {
-  it('is the whole-percent change from the usual figure', () => {
-    expect(percentChange(90_000, 60_000)).toBe(50);
-    expect(percentChange(45_000, 60_000)).toBe(-25);
-  });
-
-  it('has no percentage against nothing', () => {
-    expect(percentChange(5_000, 0)).toBeNull();
-    expect(percentChange(5_000, null)).toBeNull();
-  });
-});
 
 describe('planNextMonth — above a usual month', () => {
   it('aims for the usual month, rounded to 500 FCFA', () => {

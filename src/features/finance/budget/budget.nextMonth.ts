@@ -1,3 +1,5 @@
+import { percentChange } from '@/utils/percentChange';
+
 import type { CategoryDetail, NextMonthPlan, NextMonthStep } from './budget.types';
 
 /**
@@ -23,15 +25,6 @@ const TRIM = 0.1;
 /** Purchases bought at least this often get the "skip one in four" step. */
 const MIN_REPEAT_COUNT = 4;
 const MAX_PART_STEPS = 2;
-
-/**
- * Whole-percent change from `usual` to `now`; null when there is no usual figure
- * or it is zero (a percentage against nothing means nothing).
- */
-export function percentChange(now: number, usual: number | null): number | null {
-  if (usual === null || usual <= 0) return null;
-  return Math.round(((now - usual) / usual) * 100);
-}
 
 /** Rounds down to a friendly amount: 500 FCFA steps, or 100 below 10,000. */
 function roundDown(amount: number): number {

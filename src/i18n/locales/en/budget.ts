@@ -164,7 +164,6 @@ export const budget = {
     nothingSpent: 'Nothing spent on {{category}} in {{month}}.',
     vsUsual: 'vs your usual month ({{amount}})',
     vsUsualPace: 'on this pace, vs your usual month ({{amount}})',
-    newThisMonth: 'New',
     noUsual: 'Your usual month appears once you have logged a full month.',
     whereTitle: 'Where it went',
     noSubcategory: 'No subcategory',

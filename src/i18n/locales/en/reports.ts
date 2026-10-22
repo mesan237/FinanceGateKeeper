@@ -49,6 +49,15 @@ export const reports = {
     tagHint: 'Set categories as fixed or variable',
     provisional: 'Provisional',
     reliable: 'Reliable',
+    startColumn: 'Starting point',
+    nowColumn: 'Now',
+    total: 'Total',
+    startProgress:
+      'Starting point: {{count}} of {{needed}} months recorded. Keep logging everything, small things too: this is what you really spend, before any change.',
+    startMonths: 'Starting point: your first complete months, {{months}}. Now: your last complete months.',
+    startSame: 'Your starting point: {{amount}} a month ({{months}}). The comparison begins once a new month is complete.',
+    byCategory: 'Compare by category',
+    hideCategories: 'Hide categories',
   },
   estimate: {
     title: 'Estimate vs actual',
