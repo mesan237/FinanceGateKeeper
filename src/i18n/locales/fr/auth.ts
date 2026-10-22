@@ -17,7 +17,7 @@ export const auth: Translation<typeof en> = {
     languageSubtitle: "Suivez l'appareil, ou choisissez la langue de l'application.",
     languageSystem: 'Système',
     reminderTitle: 'Rappel quotidien',
-    reminderSubtitle: 'Nous vous rappellerons de noter les dépenses du jour.',
+    reminderSubtitle: 'Nous vous rappellerons de noter les dépenses du jour, seulement les jours où rien n’est encore noté.',
     reminderTimeLabel: 'Heure du rappel',
     reminderSave: 'Enregistrer le rappel',
     reminderSaveError: "Impossible d'enregistrer le rappel.",

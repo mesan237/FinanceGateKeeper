@@ -1829,6 +1829,36 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
+### VS-57: Quiet Daily Reminder 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22
+**Blocked by:** VS-08 (daily reminder)
+
+**Decision (2026-10-22):** the reminder is not needed on a day the user has already
+logged an entry.
+
+**Scope:**
+
+- `services/transactions.getLoggedDays(from, to)`: days with an expense, income, live
+  transfer or confirmed no-spend day.
+- `notifications/triggers/dailyReminder.buildDailyReminders`: one dated reminder a day
+  for 14 days at the chosen time, skipping past times and logged days (replaces the
+  repeating daily trigger).
+- `auth.applyReminderSchedule` plans them; `DailyReminderScheduler` re-plans on open,
+  on background and on return. Settings copy says it only reminds on unlogged days.
+- No migration.
+
+**TDD Anchor:**
+
+- Test: logged days across the four sources, range and removed transfers.
+- Test: reminders start today, skip a logged today or later day, start tomorrow once the time has passed, reject bad times.
+- Test: scheduling cancels old reminders, skips today when logged; the scheduler re-plans on background and active.
+
+**Done when:** a user who has logged today gets no reminder tonight, and still gets one
+on a day they forget.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
