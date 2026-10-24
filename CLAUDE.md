@@ -36,7 +36,7 @@ Three layers — never violate these:
 - Shared infra NEVER imports from features or routes.
 
 ## Approved Cross-Feature Dependencies
-- `dashboard` → reads from `expenses`, `budget` (monthly figures and the resolved plan total), `accounts` (Wallets summary)
+- `dashboard` → reads from `expenses`, `budget` (monthly figures and the resolved plan total), `accounts` (Wallets summary), `journey` (the path card, VS-63)
 - `budget` → reads from `expenses` (categories and per-category spend for the monthly envelopes, VS-33; `advanceDueDate` for committed recurring bills, VS-47; cost types and `TransactionRow` for the category detail, VS-56), `accounts` (cash on hand for the Budget tab's money view, VS-47), `tontines` (`getDueContributions` — unpaid contributions in committed money, VS-52; their dates come from a derived schedule SQL cannot reproduce). Committed planned purchases and debts, and goals' set-asides and wallets (VS-49), are read by SQL, not by importing `planned`, `debt` or `goals`
 - `reports` → reads from `expenses`, `income`, `budget`, `debt`, `networth` (the Net worth card at the top of the Reports tab, VS-53)
 - `income` → reads `accounts` (AccountPicker on income log)
@@ -47,6 +47,7 @@ Three layers — never violate these:
 - `tontines` → reads `accounts` (AccountPicker and the default wallet on the tontine form and payment sheet, VS-51). Wallet balances read `tontine_payments` by SQL, not by importing `tontines`; tontine money is never spending or income. Only `budget` imports `tontines` (one read, above)
 - `events` → imports no other slice. Budget and Reports group spending by event (VS-62) through `expenses.reason` and read event names with the shared `services/transactions.getEventNames`, so neither imports `events`. Its page reads `expenses` (with `event_id`) and `categories` by SQL and opens `/expenses/[id]` by path. Only `expenses` imports `events` (VS-61)
 - `networth` → reads `accounts` (wallet balances as of a month's last day, VS-53). Debts, tontines, income, expenses and recurring bills are read by SQL. Only `reports` imports `networth`
+- `journey` → reads `budget` (its answers are `baseline_facts` kinds, via `getBaselineFactValue`/`setBaselineFact`; the setup `BaselineCard` sits on the path, VS-63), `reports` (`getStartingPoint` and one-month `getSpendingProfile`, which pass Observe and Optimize). Budgets are read by SQL. Only `dashboard` imports `journey`; the "My path" tab route renders `JourneyScreen`
 All other cross-feature imports are forbidden.
 
 **Attention counts (VS-39).** A feature that needs to surface "something here needs you"

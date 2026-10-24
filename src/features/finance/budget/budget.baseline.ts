@@ -34,6 +34,9 @@ const KINDS: ReadonlySet<BaselineKind> = new Set<BaselineKind>([
   'no_debts',
   'cost_types_reviewed',
   'checklist_hidden',
+  'picture_reviewed',
+  'journey_skipped',
+  'journey_reached',
 ]);
 
 /** A validation error in the active UI language. */
@@ -68,6 +71,11 @@ async function latestFacts(): Promise<Map<BaselineKind, BaselineFact>> {
      ORDER BY id`,
   );
   return new Map(rows.map((r) => [r.kind, { value: r.value, source: r.source, setAt: r.created_at }]));
+}
+
+/** The latest answer for one kind, or null when it was never answered. */
+export async function getBaselineFactValue(kind: BaselineKind): Promise<number | null> {
+  return (await latestFacts()).get(kind)?.value ?? null;
 }
 
 /** Everything the user has told the app so far; unanswered questions are null. */
