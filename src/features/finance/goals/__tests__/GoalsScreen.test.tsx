@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => {
@@ -14,10 +14,12 @@ jest.mock('@/features/finance/goals/goals.service', () => ({
   getGoals: jest.fn(),
 }));
 
+import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';
 import { GoalsScreen } from '@/features/finance/goals/GoalsScreen';
 import * as service from '@/features/finance/goals/goals.service';
 import type { GoalProgress, GoalWithProgress } from '@/features/finance/goals/goals.types';
 import i18n from '@/i18n';
+import type { JourneyStepKey } from '@/types/journey';
 
 const mockedGetGoals = service.getGoals as jest.MockedFunction<typeof service.getGoals>;
 
@@ -55,6 +57,78 @@ function goal(overrides: Partial<GoalWithProgress> = {}, progress: Partial<GoalP
 beforeEach(() => {
   jest.clearAllMocks();
   mockedGetGoals.mockResolvedValue([goal()]);
+});
+
+/** Publishes `stage` the way the journey slice does once it has read the path. */
+function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.ReactNode }) {
+  const publish = useSetJourneyStage();
+  useEffect(() => publish(stage), [publish, stage]);
+  return <>{children}</>;
+}
+
+function renderAt(stage: JourneyStepKey) {
+  render(
+    <JourneyStageProvider>
+      <AtStep stage={stage}>
+        <GoalsScreen />
+      </AtStep>
+    </JourneyStageProvider>,
+  );
+}
+
+describe('GoalsScreen — the journey step (UX-10)', () => {
+  it('explains, before Grow, that goals come at the last step', async () => {
+    mockedGetGoals.mockResolvedValue([]);
+    renderAt('plan');
+
+    expect(await screen.findByTestId('goals-preview')).toBeTruthy();
+    expect(screen.getByText('Goals come at the last step')).toBeTruthy();
+    expect(screen.queryByTestId('goals-empty')).toBeNull();
+  });
+
+  it('still lets the user start one: "Add a goal anyway" opens the form', async () => {
+    mockedGetGoals.mockResolvedValue([]);
+    renderAt('observe');
+
+    fireEvent.press(await screen.findByTestId('goals-preview-action'));
+
+    expect(mockPush).toHaveBeenCalledWith('/goals/create');
+  });
+
+  it('opens My path from the preview', async () => {
+    mockedGetGoals.mockResolvedValue([]);
+    renderAt('observe');
+
+    fireEvent.press(await screen.findByTestId('goals-preview-secondary'));
+
+    expect(mockPush).toHaveBeenCalledWith('/path');
+  });
+
+  it('invites the first goal plainly once on Grow', async () => {
+    mockedGetGoals.mockResolvedValue([]);
+    renderAt('grow');
+
+    expect(await screen.findByTestId('goals-empty')).toBeTruthy();
+    expect(screen.queryByTestId('goals-preview')).toBeNull();
+  });
+
+  it('never hides goals that exist, whatever the step', async () => {
+    renderAt('observe');
+
+    expect(await screen.findByText('75 000 FCFA of 300 000 FCFA')).toBeTruthy();
+    expect(screen.queryByTestId('goals-preview')).toBeNull();
+  });
+
+  it('reads in French', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('fr');
+    });
+    mockedGetGoals.mockResolvedValue([]);
+    renderAt('see');
+
+    expect(await screen.findByText('Les objectifs viennent à la dernière étape')).toBeTruthy();
+    expect(screen.getByText('Créer un objectif quand même')).toBeTruthy();
+  });
 });
 
 describe('GoalsScreen', () => {

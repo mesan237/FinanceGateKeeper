@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { EmptyState } from '@/components/EmptyState';
+import { useIsBeforeStep } from '@/components/JourneyStageProvider';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { Typography } from '@/components/Typography';
 import { SPACING } from '@/constants/layout';
@@ -17,12 +18,17 @@ import { useGoals } from './goals.hooks';
  * The goals list (VS-48): each starter buffer and sinking fund with its
  * progress, read from the wallet that holds its money. Re-reads on focus,
  * because saving into a goal happens on the transfer screen.
+ *
+ * Before the Grow step, an empty list explains that goals come last, with
+ * "Add a goal anyway" (UX-10). Goals that exist always show. This preview also
+ * covers the emergency reserve and pay-yourself-first, which are goals.
  */
 export function GoalsScreen() {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { t } = useTranslation('goals');
   const { goals, loading, error, refresh } = useGoals();
+  const beforeGrow = useIsBeforeStep('grow');
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +46,17 @@ export function GoalsScreen() {
         <Typography variant="muted" style={styles.body}>
           {t('loading')}
         </Typography>
+      ) : goals.length === 0 && beforeGrow ? (
+        <EmptyState
+          testID="goals-preview"
+          icon="path"
+          title={t('preview.title')}
+          subtitle={t('preview.body')}
+          actionLabel={t('preview.action')}
+          onAction={create}
+          secondaryActionLabel={t('preview.path')}
+          onSecondaryAction={() => router.push('/path')}
+        />
       ) : goals.length === 0 ? (
         <EmptyState
           testID="goals-empty"

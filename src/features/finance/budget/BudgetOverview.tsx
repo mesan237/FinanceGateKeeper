@@ -7,6 +7,7 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
+import { useIsBeforeStep, useJourneyStage } from '@/components/JourneyStageProvider';
 import { MonthStepper } from '@/components/MonthStepper';
 import { Skeleton, SkeletonRows } from '@/components/Skeleton';
 import { Typography } from '@/components/Typography';
@@ -38,12 +39,18 @@ export interface BudgetOverviewProps {
  *
  * A month stepper scopes the whole screen, so past months are reviewable and a
  * new month can be planned before it starts.
+ *
+ * Before the Plan step, a month without a plan explains why planning comes
+ * later, with "Plan anyway" (UX-10). The step sets emphasis, never access: a
+ * plan that exists always shows.
  */
 export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewProps) {
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const { t } = useTranslation(['budget', 'common']);
   const [month, setMonth] = useState(monthISO);
+  const stage = useJourneyStage();
+  const beforePlan = useIsBeforeStep('plan');
 
   const { overview, loading, error, refresh } = useBudgetOverview(month);
   // Cash and the surplus prompt are about now, so only the current month has them (VS-47).
@@ -97,7 +104,18 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
         {loading && !overview ? (
           <BudgetSkeleton />
-        ) : !overview ? null : overview.isUnplanned ? (
+        ) : !overview ? null : overview.isUnplanned && beforePlan ? (
+          <EmptyState
+            testID="budget-preview"
+            icon="path"
+            title={t('preview.title')}
+            subtitle={t(stage === 'see' ? 'preview.see' : 'preview.observe')}
+            actionLabel={t('preview.action')}
+            onAction={openPlanner}
+            secondaryActionLabel={t('preview.path')}
+            onSecondaryAction={() => router.push('/path')}
+          />
+        ) : overview.isUnplanned ? (
           <EmptyState
             testID="budget-empty"
             icon="budget"

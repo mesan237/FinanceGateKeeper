@@ -1,8 +1,10 @@
 import type { MonthLoggingStatus } from '@/features/finance/expenses/expenses.coverage';
 import type { ProfileAverage } from '@/features/finance/reports/reports.types';
 
-/** The five steps to control over spending, in order (VS-63). */
-export type JourneyStepKey = 'observe' | 'see' | 'plan' | 'optimize' | 'grow';
+import type { JourneyStepKey } from '@/types/journey';
+
+/** The five steps to control over spending (VS-63); shared in `types/journey` (UX-03). */
+export type { JourneyStepKey };
 
 /**
  * Where a step stands: passed on the evidence (`done`), jumped over with

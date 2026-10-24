@@ -18,6 +18,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { applyLanguagePreference } from '@/i18n';
 import { AttentionProvider } from '@/components/AttentionProvider';
+import { JourneyStageProvider } from '@/components/JourneyStageProvider';
 import { ToastProvider } from '@/components/Toast';
 import { PushedScreensStack } from '@/components/PushedScreensStack';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
@@ -96,30 +97,32 @@ export default function RootLayout() {
               onReminder={enableReminder}
               renderWallets={(next) => <OpeningBalancesStep onDone={next} />}
             >
-              <AttentionProvider>
-                <RecurringAutoLogger>
-                  <MonthCloser>
-                    <DebtReminderScheduler>
-                      <PlannedReminderScheduler>
-                        <TontineReminderScheduler>
-                          <DailyReminderScheduler>
-                            <ZeroDayGate
-                              reminderTime={settings?.reminderTime ?? '21:00'}
-                              notificationsEnabled={settings?.notificationsEnabled ?? false}
-                            >
-                              <ThemedShell>
-                                <ToastProvider>
-                                  <PushedScreensStack />
-                                </ToastProvider>
-                              </ThemedShell>
-                            </ZeroDayGate>
-                          </DailyReminderScheduler>
-                        </TontineReminderScheduler>
-                      </PlannedReminderScheduler>
-                    </DebtReminderScheduler>
-                  </MonthCloser>
-                </RecurringAutoLogger>
-              </AttentionProvider>
+              <JourneyStageProvider>
+                <AttentionProvider>
+                  <RecurringAutoLogger>
+                    <MonthCloser>
+                      <DebtReminderScheduler>
+                        <PlannedReminderScheduler>
+                          <TontineReminderScheduler>
+                            <DailyReminderScheduler>
+                              <ZeroDayGate
+                                reminderTime={settings?.reminderTime ?? '21:00'}
+                                notificationsEnabled={settings?.notificationsEnabled ?? false}
+                              >
+                                <ThemedShell>
+                                  <ToastProvider>
+                                    <PushedScreensStack />
+                                  </ToastProvider>
+                                </ThemedShell>
+                              </ZeroDayGate>
+                            </DailyReminderScheduler>
+                          </TontineReminderScheduler>
+                        </PlannedReminderScheduler>
+                      </DebtReminderScheduler>
+                    </MonthCloser>
+                  </RecurringAutoLogger>
+                </AttentionProvider>
+              </JourneyStageProvider>
             </OnboardingGate>
           </AuthGate>
         </AuthProvider>

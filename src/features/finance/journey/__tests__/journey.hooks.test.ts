@@ -1,4 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import React from 'react';
+
+import { JourneyStageProvider, useJourneyStage } from '@/components/JourneyStageProvider';
 
 jest.mock('@/features/finance/journey/journey.service', () => ({
   getJourney: jest.fn(),
@@ -49,6 +52,16 @@ describe('useJourney (VS-63)', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.journey).toEqual(JOURNEY);
+  });
+
+  it('publishes the current step for the rest of the app (UX-03)', async () => {
+    mocked.getJourney.mockResolvedValue({ ...JOURNEY, current: 'see' });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(JourneyStageProvider, null, children);
+
+    const { result } = renderHook(() => ({ journey: useJourney(), stage: useJourneyStage() }), { wrapper });
+
+    await waitFor(() => expect(result.current.stage).toBe('see'));
   });
 
   it('reports a load failure as an error', async () => {

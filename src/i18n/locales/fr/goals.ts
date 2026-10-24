@@ -11,6 +11,12 @@ export const goals: Translation<typeof en> = {
     reserve: 'Réserve d’urgence',
     sinking: 'Épargne dédiée',
   },
+  preview: {
+    title: 'Les objectifs viennent à la dernière étape',
+    body: 'Une fois vos dépenses planifiées et maîtrisées, un objectif, une réserve ou une somme mise de côté chaque mois se calent sur des chiffres réels. Vous pouvez en créer un dès maintenant si besoin.',
+    action: 'Créer un objectif quand même',
+    path: 'Voir mon parcours',
+  },
   list: {
     emptyTitle: 'Aucun objectif pour l’instant',
     emptySubtitle:

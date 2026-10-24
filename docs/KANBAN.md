@@ -2070,7 +2070,7 @@ what comes next; the dashboard shows the same in one card.
 
 ---
 
-### VS-64: Locked Previews Across the App ⏳ Backlog
+### VS-64: Locked Previews Across the App ➡️ Folded into VS-75 (UX-03 + UX-10)
 
 **Blocked by:** VS-63
 
@@ -2313,6 +2313,35 @@ bills and estimates only when planning.
   action (Transactions, Reports); the path and Net worth cards' placeholder and error.
 
 **Done when:** every tab and card shows the same skeleton, empty-with-action and error-with-retry.
+
+---
+### VS-75: The Step Sets Emphasis Across the App (UX-03 + UX-10, VS-64) 🔄 In Progress
+
+**Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, finding F-02)
+**Blocked by:** —
+
+**Scope:**
+
+- UX-03: `components/JourneyStageProvider`, modelled on `AttentionProvider`, holds the current step.
+  `useJourney` publishes it on every read (Home's path card reads it at launch); screens read it
+  with `useJourneyStage` / `useIsBeforeStep` and never import `journey`. The step key and order
+  moved to `types/journey` and `constants/journey` (the slice re-exports them). Unknown step → no
+  preview, so nothing flashes.
+- UX-10 previews, only where there is nothing to hide:
+  - Budget tab, Observe or See, month without a plan: why planning comes after the first months,
+    with *Plan anyway* (the planner) and *See my path*. From Plan on, the usual empty month.
+  - Goals screen before Grow, no goals yet: goals come last, with *Add a goal anyway* and *See my
+    path*. Covers the emergency reserve and pay-yourself-first, which are goals.
+- A plan or a goal that exists always shows; every "anyway" opens the real tool, so nothing
+  reachable before is unreachable after. Logging, wallets, debts, tontines and transfers are never staged.
+
+**TDD Anchor:**
+
+- Test: provider (unknown, publish, before-step, outside a provider); `useJourney` publishes.
+- Test: Budget and Goals previews by step, the "anyway" and path actions, existing data never
+  hidden, en and fr.
+
+**Done when:** a user observing is told why planning and goals come later, and can still use both.
 
 ---
 
