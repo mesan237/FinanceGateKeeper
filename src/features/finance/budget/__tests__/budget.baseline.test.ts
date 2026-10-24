@@ -21,6 +21,7 @@ import {
   getBaseline,
   getBaselineChecklist,
   countCompleteMonths,
+  getBaselineFactValue,
   saveEstimates,
   setBaselineFact,
 } from '@/features/finance/budget/budget.baseline';
@@ -153,5 +154,24 @@ describe('countCompleteMonths', () => {
     }
     expect(await countCompleteMonths('2026-10')).toBe(1);
     expect(await countCompleteMonths('2026-09')).toBe(0);
+  });
+});
+
+describe('getBaselineFactValue (VS-63)', () => {
+  it('is null for a kind never answered', async () => {
+    expect(await getBaselineFactValue('journey_skipped')).toBeNull();
+  });
+
+  it('returns the latest answer for a kind', async () => {
+    await setBaselineFact('journey_skipped', 3);
+    await setBaselineFact('journey_skipped', 4);
+    expect(await getBaselineFactValue('journey_skipped')).toBe(4);
+  });
+
+  it('keeps the journey answers out of the baseline itself', async () => {
+    await setBaselineFact('picture_reviewed', 1);
+    await setBaselineFact('journey_reached', 2);
+    expect((await getBaseline()).checklistHidden).toBe(false);
+    expect(await getBaselineFactValue('picture_reviewed')).toBe(1);
   });
 });

@@ -239,7 +239,7 @@ Some features legitimately need each other. These are the **approved cross-featu
 
 | Feature     | Can import from                                                                               |
 | ----------- | --------------------------------------------------------------------------------------------- |
-| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation); `accounts` (Wallets summary section) |
+| `dashboard` | `expenses`, `budget`, `funds`, `projects`, `debt` (read-only aggregation); `accounts` (Wallets summary section); `journey` (the path card, VS-63) |
 | `budget`    | `expenses` (reads categories and per-category spend for the monthly envelopes, VS-33; cost types and `TransactionRow` for the category detail, VS-56), `funds` (triggers redistribution), `projects` (funds on allocation confirm), `income` (reads held/pending income and marks it allocated — unallocated-pool screen, VS-19) |
 | `expenses`  | `budget` (pre-save over-budget checks — month-wide and per-category envelope — on the expense log, detail, and quick-add screens); `income` (the unified Add-Transaction sheet on the Transactions tab composes income entry); `accounts` (AccountPicker on the expense log and detail screens); `events` (EventPicker on the expense log and detail screens, VS-61) |
 | `reports`   | `expenses`, `income`, `budget`, `funds`, `projects`, `debt` (read-only for report generation) |
@@ -248,6 +248,7 @@ Some features legitimately need each other. These are the **approved cross-featu
 | `projects`  | `budget` (reads allocation percentages); `accounts` (AccountPicker on the manual contribution section) |
 | `planned`   | `expenses` (ticking an item creates the expense, unticking deletes it, VS-36); `accounts` (AccountPicker on the purchase sheet). No feature imports `planned` — planned items never affect the budget |
 | `debt`      | `accounts` (AccountPicker on the debt form and the repayment sheet, VS-44). `accounts` reads the `debts` and `debt_payments` tables by SQL for wallet balances; it does not import `debt` |
+| `journey`   | `budget` (baseline facts for its answers; `BaselineCard` on the path, VS-63); `reports` (the starting point and one-month spending profiles). Only `dashboard` imports `journey` |
 
 All other cross-feature imports are **forbidden** unless explicitly justified and documented.
 

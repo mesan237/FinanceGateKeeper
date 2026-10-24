@@ -14,9 +14,9 @@ import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
-import { BaselineCard } from '@/features/finance/budget/BaselineCard';
 import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
+import { JourneyCard } from '@/features/finance/journey/JourneyCard';
 import { formatDateLong } from '@/utils/formatDate';
 
 import { MonthOverviewCard } from './MonthOverviewCard';
@@ -113,8 +113,9 @@ export function DashboardScreen() {
           onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
 
-        {/* Setup checklist — hidden once done or dismissed (VS-46). */}
-        <BaselineCard />
+        {/* Where the user is on the path to control (VS-63); the setup
+            checklist moved onto the path itself. */}
+        <JourneyCard />
 
         {/* Planned purchases coming due — hidden while nothing is (VS-39). */}
         <PlannedDueCard />

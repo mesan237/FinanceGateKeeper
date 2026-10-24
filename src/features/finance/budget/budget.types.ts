@@ -143,7 +143,13 @@ export type BaselineKind =
   | 'monthly_essentials'
   | 'no_debts'
   | 'cost_types_reviewed'
-  | 'checklist_hidden';
+  | 'checklist_hidden'
+  // The journey's answers (VS-63), kept with the other things the user told the app:
+  // "I've seen it" (1), the step skipped ahead to, and the furthest step reached
+  // passed (0–4), so a step never locks again.
+  | 'picture_reviewed'
+  | 'journey_skipped'
+  | 'journey_reached';
 
 /** Whether the user typed a value or accepted one observed from logged months. */
 export type FactSource = 'user' | 'observed';

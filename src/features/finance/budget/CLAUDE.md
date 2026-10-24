@@ -149,6 +149,12 @@ reasoning that kept the `funds` and `projects` tables.
   the envelope list) and "Versus last month" (Reports owns the comparison); the
   detail's "Biggest purchases" (repeated its transactions).
 
+### Baseline facts for the journey (VS-63)
+- `baseline_facts` also holds the journey's answers: `picture_reviewed`,
+  `journey_skipped`, `journey_reached`. `getBaselineFactValue(kind)` reads the latest
+  one. They are not part of `Baseline`; the `journey` slice owns what they mean.
+- `BaselineCard` (the setup checklist) now sits on the "My path" tab, not the dashboard.
+
 ## Module Map
 
 Split for the 300-line ceiling; each file has one job.
@@ -192,6 +198,7 @@ callers import `budget.envelopes` / `budget.plan` directly.
 - `MoneyViewCard.tsx` — budget left · cash in wallets · committed (VS-47)
 - `BudgetInsights.tsx` + `BudgetBurndown.tsx` — burn-down and weekly pace (collapsed by default)
 - `OverBudgetAlert.tsx` — warning modal, category-aware
+- `BaselineCard.tsx` — the setup checklist (VS-46), shown on the "My path" tab (VS-63)
 
 ## Visualizations: what is deliberately absent
 Reports owns the spending donut and the month-over-month comparison, and the Dashboard

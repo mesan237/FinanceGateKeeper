@@ -137,6 +137,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => tabIcon('reports', focused, color),
         }}
       />
+      <Tabs.Screen
+        name="path"
+        options={{
+          title: t('tabs.path'),
+          tabBarIcon: ({ color, focused }) => tabIcon('path', focused, color),
+        }}
+      />
     </Tabs>
   );
 }
