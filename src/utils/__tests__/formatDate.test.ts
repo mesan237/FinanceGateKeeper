@@ -6,6 +6,7 @@ import {
   formatDateLong,
   formatDateShort,
   formatSectionDate,
+  isoDaysBefore,
   toISODate,
 } from '@/utils/formatDate';
 
@@ -132,5 +133,17 @@ describe('localized date labels', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+});
+
+describe('isoDaysBefore', () => {
+  it('steps back whole calendar days across month and year ends', () => {
+    expect(isoDaysBefore('2026-06-08', 7)).toBe('2026-06-01');
+    expect(isoDaysBefore('2026-03-01', 1)).toBe('2026-02-28');
+    expect(isoDaysBefore('2026-01-01', 1)).toBe('2025-12-31');
+  });
+
+  it('goes forward for a negative count', () => {
+    expect(isoDaysBefore('2026-06-30', -1)).toBe('2026-07-01');
   });
 });

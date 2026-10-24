@@ -14,6 +14,10 @@ jest.mock('expo-router', () => {
 
 jest.mock('@/features/finance/budget/BaselineCard', () => ({ BaselineCard: () => null }));
 
+jest.mock('@/features/finance/journey/journey.logging', () => ({
+  markNoSpendDay: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/features/finance/journey/journey.service', () => ({
   getJourney: jest.fn(),
   markPictureReviewed: jest.fn().mockResolvedValue(undefined),
@@ -21,13 +25,31 @@ jest.mock('@/features/finance/journey/journey.service', () => ({
 }));
 
 import { JourneyScreen } from '@/features/finance/journey/JourneyScreen';
+import * as logging from '@/features/finance/journey/journey.logging';
 import * as service from '@/features/finance/journey/journey.service';
-import type { Journey, JourneyStepKey, JourneyStepStatus } from '@/features/finance/journey/journey.types';
+import type {
+  Journey,
+  JourneyStepKey,
+  JourneyStepStatus,
+  ObserveLogging,
+} from '@/features/finance/journey/journey.types';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { toISODate } from '@/utils/formatDate';
 import { nextMonthISO } from '@/utils/monthMath';
 
 const mocked = service as jest.Mocked<typeof service>;
+const mockedLogging = logging as jest.Mocked<typeof logging>;
+
+const LOGGING: ObserveLogging = {
+  month: '2026-10',
+  loggedDays: 12,
+  daysSoFar: 15,
+  daysInMonth: 31,
+  needed: 25,
+  canStillCount: true,
+  missedDays: [],
+  startedOn: null,
+};
 
 const KEYS: JourneyStepKey[] = ['observe', 'see', 'plan', 'optimize', 'grow'];
 
@@ -40,6 +62,7 @@ function journeyAt(current: JourneyStepKey, overrides: Partial<Journey> = {}): J
       status: (i < at ? 'done' : i === at ? 'current' : 'locked') as JourneyStepStatus,
     })),
     observe: { recorded: 1, needed: 3 },
+    logging: LOGGING,
     start: null,
     latest: null,
     plannedMonth: null,
@@ -67,6 +90,58 @@ describe('JourneyScreen (VS-63)', () => {
     render(<JourneyScreen />);
 
     expect(await screen.findByText('1 of 3 complete months')).toBeTruthy();
+  });
+
+  it('shows the running month and its logged days, so progress shows before a month completes (UX-05)', async () => {
+    render(<JourneyScreen />);
+
+    expect(await screen.findByTestId('journey-this-month')).toHaveTextContent(
+      'October 2026: 12 of 15 days logged',
+    );
+    expect(screen.getByTestId('journey-month-status')).toHaveTextContent(
+      'On track to count: it needs 25 of its 31 days.',
+    );
+  });
+
+  it('lets a missed recent day be marked as no-spend (UX-06)', async () => {
+    mocked.getJourney.mockResolvedValue(
+      journeyAt('observe', { logging: { ...LOGGING, missedDays: ['2026-10-14', '2026-10-11'] } }),
+    );
+    render(<JourneyScreen />);
+
+    fireEvent.press(await screen.findByTestId('journey-no-spend-2026-10-11'));
+
+    await waitFor(() => expect(mockedLogging.markNoSpendDay).toHaveBeenCalledWith('2026-10-11'));
+    expect(screen.getByTestId('journey-no-spend-2026-10-14')).toBeTruthy();
+  });
+
+  it('shows no missed-days list when nothing is missing', async () => {
+    render(<JourneyScreen />);
+
+    await screen.findByTestId('journey-this-month');
+    expect(screen.queryByTestId('journey-missed')).toBeNull();
+  });
+
+  it('explains a first month that started too late to count (UX-07)', async () => {
+    mocked.getJourney.mockResolvedValue(
+      journeyAt('observe', { logging: { ...LOGGING, loggedDays: 5, canStillCount: false, startedOn: 18 } }),
+    );
+    render(<JourneyScreen />);
+
+    expect(await screen.findByTestId('journey-month-status')).toHaveTextContent(
+      'You started on 18 Oct, so October 2026 can’t reach 80%. It still shows your habits — your first full month is November 2026.',
+    );
+  });
+
+  it('says plainly when a later month can no longer count', async () => {
+    mocked.getJourney.mockResolvedValue(
+      journeyAt('observe', { logging: { ...LOGGING, loggedDays: 2, canStillCount: false } }),
+    );
+    render(<JourneyScreen />);
+
+    expect(await screen.findByTestId('journey-month-status')).toHaveTextContent(
+      'October 2026 can no longer reach 80%. Keep logging: it still shows your habits, and November 2026 counts.',
+    );
   });
 
   it('shows what a locked step unlocks, as a preview', async () => {
@@ -147,6 +222,7 @@ describe('JourneyScreen (VS-63)', () => {
       render(<JourneyScreen />);
       expect(await screen.findByText('Observer')).toBeTruthy();
       expect(screen.getByText('1 mois complets sur 3')).toBeTruthy();
+      expect(screen.getByTestId('journey-this-month')).toHaveTextContent('Octobre 2026 : jours notés 12 sur 15');
     } finally {
       await act(() => i18n.changeLanguage('en'));
     }

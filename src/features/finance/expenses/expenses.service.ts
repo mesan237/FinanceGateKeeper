@@ -837,9 +837,14 @@ export async function deleteExpense(id: number): Promise<void> {
  * Records that the user spent nothing on `dateISO` (default: today). Idempotent
  * via the `zero_days.date` UNIQUE constraint — a repeat confirmation of the same
  * day is ignored rather than duplicated.
+ *
+ * @throws when the day already holds an expense: "spent nothing" would
+ *   contradict it. Past days can be marked since UX-06, so this is checked
+ *   here rather than trusted to the caller.
  */
 export async function confirmZeroDay(dateISO: string = toISODate(new Date())): Promise<void> {
   assertISODate(dateISO);
+  if (await hasExpensesOn(dateISO)) throw new Error(err('zeroDayHasSpending'));
   await execute('INSERT OR IGNORE INTO zero_days (date, confirmed_at) VALUES (?, ?)', [
     dateISO,
     new Date().toISOString(),

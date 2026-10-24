@@ -37,7 +37,7 @@ export function JourneyScreen() {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation(['journey', 'common']);
-  const { journey, loading, error, refresh, reviewPicture, skipTo } = useJourney();
+  const { journey, loading, error, refresh, reviewPicture, skipTo, markNoSpend } = useJourney();
   const [skipping, setSkipping] = useState<JourneyStepKey | null>(null);
 
   useFocusEffect(
@@ -82,7 +82,14 @@ export function JourneyScreen() {
         </View>
         <Typography variant="muted">{t(`steps.${step.key}.goal`)}</Typography>
         {step.status === 'locked' && unlocks ? <Typography variant="muted">{unlocks}</Typography> : null}
-        {open ? <JourneyStepDetail step={step.key} journey={journey} onReviewed={() => void reviewPicture()} /> : null}
+        {open ? (
+          <JourneyStepDetail
+            step={step.key}
+            journey={journey}
+            onReviewed={() => void reviewPicture()}
+            onNoSpend={(date) => void markNoSpend(date)}
+          />
+        ) : null}
         {step.status === 'locked' && index === nextIndex ? (
           <Button
             testID={`journey-skip-${step.key}`}
@@ -100,6 +107,11 @@ export function JourneyScreen() {
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.body}>
         <Typography variant="muted">{t('intro')}</Typography>
+        {error ? (
+          <Typography style={styles.inlineError} testID="journey-error">
+            {error}
+          </Typography>
+        ) : null}
         <BaselineCard />
         {journey.steps.map(renderStep)}
       </ScrollView>
@@ -134,5 +146,6 @@ const makeStyles = (c: ThemeColors) =>
     header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
     grow: { flex: 1 },
     error: { color: c.DANGER, padding: SPACING.lg },
+    inlineError: { color: c.DANGER_TEXT },
     modal: { gap: SPACING.md },
   });

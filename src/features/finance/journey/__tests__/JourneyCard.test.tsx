@@ -33,6 +33,16 @@ beforeEach(() => {
       { key: 'grow', status: 'locked' },
     ],
     observe: { recorded: 2, needed: 3 },
+    logging: {
+      month: '2026-10',
+      loggedDays: 12,
+      daysSoFar: 15,
+      daysInMonth: 31,
+      needed: 25,
+      canStillCount: true,
+      missedDays: [],
+      startedOn: null,
+    },
     start: null,
     latest: null,
     plannedMonth: null,
@@ -46,7 +56,7 @@ describe('JourneyCard (VS-63)', () => {
 
     expect(await screen.findByText('Step 1 of 5')).toBeTruthy();
     expect(screen.getByText('Observe')).toBeTruthy();
-    expect(screen.getByText('2 of 3 complete months')).toBeTruthy();
+    expect(screen.getByText('2 of 3 months · this month 12 of 15 days logged')).toBeTruthy();
   });
 
   it('opens the path tab', async () => {

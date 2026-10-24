@@ -4,19 +4,21 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { SPACING } from '@/constants/layout';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { toISODate } from '@/utils/formatDate';
 import { monthLabel, nextMonthISO } from '@/utils/monthMath';
 
+import { ObserveProgress } from './ObserveProgress';
 import type { Journey, JourneyStepKey } from './journey.types';
 
 interface JourneyStepDetailProps {
   step: JourneyStepKey;
   journey: Journey;
   onReviewed: () => void;
+  /** Marks a recent missed day as no-spend, on Observe (UX-06). */
+  onNoSpend: (dateISO: string) => void;
 }
 
 /**
@@ -24,20 +26,11 @@ interface JourneyStepDetailProps {
  * action that moves it forward. Shown for the current step and for skipped
  * ones, which can still be completed. Screens are opened by path.
  */
-export function JourneyStepDetail({ step, journey, onReviewed }: JourneyStepDetailProps) {
+export function JourneyStepDetail({ step, journey, onReviewed, onNoSpend }: JourneyStepDetailProps) {
   const router = useRouter();
   const { t } = useTranslation('journey');
 
-  if (step === 'observe') {
-    const { recorded, needed } = journey.observe;
-    return (
-      <View style={styles.body}>
-        <Typography>{t('observe.progress', { recorded, needed })}</Typography>
-        <ProgressBar value={Math.round((recorded / needed) * 100)} />
-        <Typography variant="muted">{t('observe.hint')}</Typography>
-      </View>
-    );
-  }
+  if (step === 'observe') return <ObserveProgress journey={journey} onNoSpend={onNoSpend} />;
 
   if (step === 'see') {
     const { start } = journey;

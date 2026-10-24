@@ -139,6 +139,7 @@ export const expenses = {
     removeBody: 'The spending and the wallet balance go back to what they were without it.',
   },
   errors: {
+    zeroDayHasSpending: 'That day already has spending, so it cannot be a no-spend day.',
     refundAmount: 'A refund must be a positive whole amount.',
     refundDate: 'Pick a valid date for the refund.',
     refundTooLarge: 'That is more than is left to refund.',

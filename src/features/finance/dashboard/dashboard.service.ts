@@ -3,7 +3,7 @@ import type { BudgetHealth } from '@/features/finance/budget/budget.types';
 import { getLoggedDates } from '@/features/finance/expenses/expenses.coverage';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
 import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
-import { toISODate } from '@/utils/formatDate';
+import { isoDaysBefore, toISODate } from '@/utils/formatDate';
 import { daysInMonth, daysRemainingInMonth, lastDayOfMonth } from '@/utils/monthMath';
 
 import type {
@@ -32,15 +32,6 @@ export function paceFromHealth(health: BudgetHealth): PaceLevel {
 
 /** Number of calendar days covered by the dashboard's spending sparkline. */
 const TREND_DAYS = 7;
-
-/** Returns the ISO date `days` calendar days before `iso` (UTC math — no DST drift). */
-function isoDaysBefore(iso: string, days: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - days);
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${d.getUTCFullYear()}-${month}-${day}`;
-}
 
 /**
  * Buckets expenses into per-day totals for the `days` calendar days ending at

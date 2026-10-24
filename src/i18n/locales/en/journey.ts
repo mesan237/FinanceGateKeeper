@@ -39,6 +39,17 @@ export const journey = {
   observe: {
     progress: '{{recorded}} of {{needed}} complete months',
     hint: 'A month counts once 80% of its days are logged, spending or a no-spend day.',
+    card_one: '{{recorded}} of {{needed}} months · this month {{logged}} of {{count}} day logged',
+    card_other: '{{recorded}} of {{needed}} months · this month {{logged}} of {{count}} days logged',
+    thisMonth_one: '{{month}}: {{logged}} of {{count}} day logged',
+    thisMonth_other: '{{month}}: {{logged}} of {{count}} days logged',
+    onTrack: 'On track to count: it needs {{needed}} of its {{days}} days.',
+    cannotCount: '{{month}} can no longer reach 80%. Keep logging: it still shows your habits, and {{next}} counts.',
+    startedMidMonth: 'You started on {{date}}, so {{month}} can’t reach 80%. It still shows your habits — your first full month is {{next}}.',
+    missedTitle: 'Nothing logged on these days',
+    missedHint: 'Spent nothing? Mark the day. Spent something? Add it from Transactions with its date.',
+    noSpend: 'No spending',
+    noSpendA11y: 'Mark {{date}} as a no-spend day',
   },
   see: {
     summary: 'Your first months cost {{total}} a month: {{fixed}} fixed, {{variable}} variable.',
@@ -67,5 +78,6 @@ export const journey = {
   },
   errors: {
     load: 'Could not load your path.',
+    outsideWindow: 'Only the last {{days}} days can be marked as no-spend.',
   },
 };

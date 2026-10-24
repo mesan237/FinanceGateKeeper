@@ -1,3 +1,4 @@
+import type { MonthLoggingStatus } from '@/features/finance/expenses/expenses.coverage';
 import type { ProfileAverage } from '@/features/finance/reports/reports.types';
 
 /** The five steps to control over spending, in order (VS-63). */
@@ -34,12 +35,22 @@ export interface JourneyEvidence {
   skippedTo: number;
 }
 
+/** The running month's logging, as the Observe step shows it (UX-05–07). */
+export interface ObserveLogging extends MonthLoggingStatus {
+  /** Recent days before today with nothing logged, newest first, that may still be marked as no-spend. */
+  missedDays: string[];
+  /** The day of the month the user began, when this is their first month and it can no longer count. */
+  startedOn: number | null;
+}
+
 /** The journey as the path screen and dashboard card read it. */
 export interface Journey {
   current: JourneyStepKey;
   steps: JourneyStep[];
   /** Complete months recorded toward the starting point, out of `needed`. */
   observe: { recorded: number; needed: number };
+  /** The running month's logging, so the Observe step shows progress before a month completes. */
+  logging: ObserveLogging;
   /** What a month cost on average in the starting point; null until it is recorded. */
   start: ProfileAverage | null;
   /** The latest complete month after the starting point and its variable spending. */

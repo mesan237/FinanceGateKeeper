@@ -143,6 +143,7 @@ export const expenses: Translation<typeof en> = {
     removeBody: 'Les dépenses et le solde du portefeuille reviennent à ce qu’ils étaient sans lui.',
   },
   errors: {
+    zeroDayHasSpending: 'Ce jour a déjà des dépenses : ce ne peut pas être une journée sans dépense.',
     refundAmount: 'Un remboursement doit être un montant entier positif.',
     refundDate: 'Choisissez une date valide pour le remboursement.',
     refundTooLarge: 'C’est plus que ce qui reste à rembourser.',

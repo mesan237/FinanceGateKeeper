@@ -46,7 +46,13 @@ export function JourneyCard() {
         <Typography variant="subheading">{t(`steps.${journey.current}.title`)}</Typography>
         <Typography variant="muted">{t(`steps.${journey.current}.goal`)}</Typography>
         {journey.current === 'observe' ? (
-          <Typography>{t('observe.progress', journey.observe)}</Typography>
+          <Typography>
+            {t('observe.card', {
+              ...journey.observe,
+              logged: journey.logging.loggedDays,
+              count: journey.logging.daysSoFar,
+            })}
+          </Typography>
         ) : null}
         <View style={styles.segments}>
           {journey.steps.map((step) => (
