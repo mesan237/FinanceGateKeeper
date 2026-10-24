@@ -2286,6 +2286,35 @@ bills and estimates only when planning.
 **Done when:** Home and the Budget tab show the same amount a day for the same month.
 
 ---
+### VS-74: One Loading, Empty and Error Pattern on Every Tab (UX-16) 🔄 In Progress
+
+**Priority:** P1 — release cut (docs/ux-redesign/06 §12.1, finding F-23)
+**Blocked by:** —
+
+**Scope:**
+
+- New shared `components/ErrorState`: what failed, "Nothing you logged is lost", the underlying
+  message small, and *Try again*. A full block in place of a screen's content, or a compact card
+  for one section or above figures still on screen.
+- Loading is a skeleton shaped like the screen: Home (`DashboardSkeleton`, first load only, so a
+  focus refresh no longer blanks Home), Transactions (row skeletons), My path and its Home card
+  (`JourneySkeleton`), Reports (`ReportSkeleton`) and the Net worth card. Budget already had one.
+- Errors use `ErrorState` everywhere. Before: a red row on Home, plain text on Budget, Reports and
+  My path with no retry, and nothing at all from the Net worth and path cards.
+- Empty with one action: a Transactions month offers *Add a transaction* (the FAB's sheet); a Reports
+  month with nothing logged says so and leads to Transactions instead of a page of zeros.
+- `useMonthlyReport` gains `refresh()`; the Reports tab now also re-reads the month on focus.
+- Home hides the Today card when the month could not load, rather than showing 0.
+
+**TDD Anchor:**
+
+- Test: `ErrorState` full and compact, retry, detail, French.
+- Test: per tab, the skeleton on a first load, the error with a working *Try again*, and the empty
+  action (Transactions, Reports); the path and Net worth cards' placeholder and error.
+
+**Done when:** every tab and card shows the same skeleton, empty-with-action and error-with-retry.
+
+---
 
 ## DEPENDENCY GRAPH
 
