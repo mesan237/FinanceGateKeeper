@@ -2,8 +2,12 @@ import type { BaselineStep } from '@/features/finance/budget/budget.types';
 
 import type { JourneyStepKey } from './journey.types';
 
-/** The journey's steps, in order (VS-63). Kept apart from the service so screens can read it without the database. */
-export const JOURNEY_STEPS: readonly JourneyStepKey[] = ['observe', 'see', 'plan', 'optimize', 'grow'];
+/**
+ * The journey's steps, in order (VS-63). Kept apart from the service so screens
+ * can read it without the database; defined in `constants/journey` so the
+ * shared stage provider can order steps too (UX-03).
+ */
+export { JOURNEY_STEPS } from '@/constants/journey';
 
 /**
  * The set-up checklist items each step asks for (UX-09); undefined means all of

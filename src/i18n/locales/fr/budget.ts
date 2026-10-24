@@ -11,6 +11,14 @@ export const budget: Translation<typeof en> = {
     at_risk: 'Attention',
     over: 'Budget dépassé',
   },
+  preview: {
+    title: 'Le budget vient après vos premiers mois',
+    observe:
+      'Votre budget partira de ce que vos 3 premiers mois ont vraiment coûté, pas d’une estimation. Continuez à noter : le budget est l’étape 3 de votre parcours.',
+    see: 'Vos premiers mois sont là. Lisez ce qu’ils ont coûté dans Mon parcours, puis faites votre budget sur des chiffres réels.',
+    action: 'Faire un budget quand même',
+    path: 'Voir mon parcours',
+  },
   overview: {
     emptyTitle: 'Aucun plan pour {{month}}',
     emptySubtitle:

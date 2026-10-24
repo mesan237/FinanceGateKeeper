@@ -8,6 +8,14 @@ export const budget = {
     at_risk: 'Watch out',
     over: 'Over budget',
   },
+  preview: {
+    title: 'Planning comes after your first months',
+    observe:
+      'Your budget will start from what your first 3 months really cost, not a guess. Keep logging: planning is step 3 of your path.',
+    see: 'Your first months are in. Read what they cost on My path, then plan from real numbers.',
+    action: 'Plan anyway',
+    path: 'See my path',
+  },
   overview: {
     emptyTitle: 'No plan for {{month}} yet',
     emptySubtitle:

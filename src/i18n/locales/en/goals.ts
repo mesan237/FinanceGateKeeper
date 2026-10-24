@@ -8,6 +8,12 @@ export const goals = {
     reserve: 'Emergency reserve',
     sinking: 'Sinking fund',
   },
+  preview: {
+    title: 'Goals come at the last step',
+    body: 'Once your spending is planned and under control, a goal, a reserve or money set aside each month is sized on real numbers. You can start one now if you need to.',
+    action: 'Add a goal anyway',
+    path: 'See my path',
+  },
   list: {
     emptyTitle: 'No goals yet',
     emptySubtitle:
