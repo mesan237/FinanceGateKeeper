@@ -180,6 +180,6 @@ const makeStyles = (c: ThemeColors) =>
     meta: { fontSize: 11 },
     amount: { fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD },
     bar: { height: 4 },
-    action: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+    action: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
     modal: { gap: SPACING.md },
   });

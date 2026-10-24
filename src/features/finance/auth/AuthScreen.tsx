@@ -165,6 +165,6 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 8,
     },
     forgotText: {
-      color: c.PRIMARY_GREEN,
+      color: c.PRIMARY_TEXT,
     },
   });

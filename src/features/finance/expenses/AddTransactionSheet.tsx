@@ -120,7 +120,7 @@ export function AddTransactionSheet({
           router.push('/transfers/log');
         }}
       >
-        <Icon name="transfer" size={18} color={c.PRIMARY_GREEN} />
+        <Icon name="transfer" size={18} color={c.PRIMARY_TEXT} />
         <Typography style={styles.transferText}>{t('sheet.transferLink')}</Typography>
       </Pressable>
     </BottomSheet>
@@ -144,7 +144,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 8,
   },
   transferText: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

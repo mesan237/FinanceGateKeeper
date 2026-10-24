@@ -5,6 +5,8 @@
  */
 export interface ThemeColors {
   PRIMARY_GREEN: string;
+  /** Accent green for text and small glyphs; meets 4.5:1 on the theme's surfaces (UX-02). */
+  PRIMARY_TEXT: string;
   PRIMARY_LIGHT: string;
   BACKGROUND: string;
   SURFACE: string;
@@ -30,6 +32,7 @@ export interface ThemeColors {
 /** Every token name — used to validate palettes cover the full set. */
 export const COLOR_TOKENS: ReadonlyArray<keyof ThemeColors> = [
   'PRIMARY_GREEN',
+  'PRIMARY_TEXT',
   'PRIMARY_LIGHT',
   'BACKGROUND',
   'SURFACE',

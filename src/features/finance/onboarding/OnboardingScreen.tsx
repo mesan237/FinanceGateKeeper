@@ -126,7 +126,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingTop: 8,
     },
     skip: {
-      color: c.PRIMARY_GREEN,
+      color: c.PRIMARY_TEXT,
     },
     body: {
       flex: 1,
@@ -155,7 +155,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 6,
     },
     chipText: {
-      color: c.PRIMARY_GREEN,
+      color: c.PRIMARY_TEXT,
     },
     footer: {
       gap: 20,

@@ -176,7 +176,7 @@ const makeStyles = (c: ThemeColors) =>
     amount: { width: 92, textAlign: 'right', fontSize: 13 },
     now: { fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, color: c.TEXT_PRIMARY },
     chip: { width: 60, alignItems: 'flex-end' },
-    toggle: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, marginTop: 4 },
+    toggle: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, marginTop: 4 },
   });
 
 /** Whether the card should show the comparison table (and so drop its plain rows). */

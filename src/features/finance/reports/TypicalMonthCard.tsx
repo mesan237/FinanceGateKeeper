@@ -172,5 +172,5 @@ const makeStyles = (c: ThemeColors) =>
     grow: { flex: 1 },
     sectionTitle: { marginTop: 6 },
     potential: { color: c.SUCCESS_TEXT },
-    link: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+    link: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   });

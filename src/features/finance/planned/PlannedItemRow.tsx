@@ -126,5 +126,5 @@ const makeStyles = (c: ThemeColors) =>
     body: { flex: 1 },
     nameBought: { textDecorationLine: 'line-through', color: c.TEXT_MUTED },
     dueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
-    postpone: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+    postpone: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   });

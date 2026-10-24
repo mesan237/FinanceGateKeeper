@@ -2118,6 +2118,28 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** no two different figures share a key word, and no figure has two labels.
 
 ---
+### VS-67: Readable Green Text (UX-02) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1)
+**Blocked by:** —
+
+**Scope:**
+
+- New token `PRIMARY_TEXT` (light `#047857`, dark `#34d399`) for green text and small glyphs:
+  links, ghost/secondary button labels, selected rows, the income tile, icons beside green text.
+  `PRIMARY_GREEN` stays for fills, bars, charts and the active tab.
+- Shared `utils/contrastRatio` (WCAG 2 formula) so palettes are checked by tests.
+- Not in scope, decision pending: white labels on `PRIMARY_GREEN` fills (primary buttons, FAB,
+  selected pills and segments) are also ~2.5:1.
+
+**TDD Anchor:**
+
+- Test: contrast ratio math (1, 21, order-free, rejects translucent colours).
+- Test: `PRIMARY_TEXT` ≥ 4.5:1 on every light and dark surface; secondary/ghost buttons use it.
+
+**Done when:** every green text in the light theme reaches WCAG AA.
+
+---
 ## DEPENDENCY GRAPH
 
 ```

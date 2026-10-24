@@ -242,5 +242,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   progressBlock: { gap: 4, paddingVertical: 4 },
   progressLabel: { flexDirection: 'row', justifyContent: 'space-between' },
   weeklyLink: { paddingVertical: 12, alignItems: 'center' },
-  weeklyLinkText: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  weeklyLinkText: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
 });

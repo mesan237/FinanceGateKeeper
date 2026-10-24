@@ -92,6 +92,18 @@ describe('shared primitives', () => {
       : label.props.style;
     expect(flattened.color).toBe('#C62828'); // DANGER_TEXT
   });
+
+  it.each(['secondary', 'ghost'] as const)(
+    'Button writes the %s label in the readable green, not the fill green (UX-02)',
+    (variant) => {
+      render(<Button label="Open" variant={variant} onPress={() => undefined} />);
+      const label = screen.getByText('Open');
+      const flattened = Array.isArray(label.props.style)
+        ? Object.assign({}, ...label.props.style)
+        : label.props.style;
+      expect(flattened.color).toBe('#047857'); // PRIMARY_TEXT
+    },
+  );
 });
 
 describe('AmountInput', () => {

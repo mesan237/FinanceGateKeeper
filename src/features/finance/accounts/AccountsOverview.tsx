@@ -104,7 +104,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   card: { gap: 8 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   cardName: { flex: 1 },
-  badge: { color: c.PRIMARY_GREEN },
+  badge: { color: c.PRIMARY_TEXT },
   statsRow: { flexDirection: 'row', gap: 16 },
   statIn: { color: c.SUCCESS_TEXT },
   unassigned: { gap: 4, borderLeftWidth: 3, borderLeftColor: c.WARNING },

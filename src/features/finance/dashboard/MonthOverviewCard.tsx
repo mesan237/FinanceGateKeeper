@@ -133,9 +133,9 @@ export function MonthOverviewCard({
           onPress={onSetBudget}
           style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
         >
-          <Icon name="add" size={ICON_SIZE.md} color={c.PRIMARY_GREEN} />
+          <Icon name="add" size={ICON_SIZE.md} color={c.PRIMARY_TEXT} />
           <Typography style={styles.ctaText}>{t('month.setBudget')}</Typography>
-          <Icon name="forward" size={ICON_SIZE.md} color={c.PRIMARY_GREEN} />
+          <Icon name="forward" size={ICON_SIZE.md} color={c.PRIMARY_TEXT} />
         </Pressable>
       )}
 
@@ -245,7 +245,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   ctaText: {
     flex: 1,
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   cashflowRow: {

@@ -65,7 +65,7 @@ export function DateField({ value, onChange, onClear, accessibilityLabel, testID
           onPress={() => setOpen(true)}
           style={styles.pill}
         >
-          <Icon name="calendar" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} />
+          <Icon name="calendar" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} />
           <Typography style={styles.label}>{label}</Typography>
         </Pressable>
         {onClear && isISO ? (

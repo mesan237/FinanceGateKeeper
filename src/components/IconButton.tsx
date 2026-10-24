@@ -50,7 +50,7 @@ export function IconButton({
       : tone === 'danger'
         ? c.DANGER
         : tone === 'primary'
-          ? c.PRIMARY_GREEN
+          ? c.PRIMARY_TEXT
           : c.TEXT_SECONDARY;
 
   return (

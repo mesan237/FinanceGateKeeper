@@ -253,7 +253,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   retryText: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

@@ -99,7 +99,7 @@ export function PlannerCategoryRow({
           testID={`${testID}-rollover`}
           style={[styles.rolloverChip, rollover && styles.rolloverChipOn]}
         >
-          <Typography style={[styles.rolloverText, rollover && { color: c.PRIMARY_GREEN }]}>
+          <Typography style={[styles.rolloverText, rollover && { color: c.PRIMARY_TEXT }]}>
             {rollover ? t('planner.rollsOver') : t('planner.rollover')}
           </Typography>
         </Pressable>
@@ -139,7 +139,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: SPACING.xs,
   },
   remainderText: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontSize: 12,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },

@@ -174,7 +174,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 8,
   },
   badge: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
     textTransform: 'capitalize',
   },
@@ -192,7 +192,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   action: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   disabled: {

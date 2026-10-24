@@ -144,7 +144,7 @@ export function ExpenseEntryPanel({
           <Icon
             name="categories"
             size={18}
-            color={categoryLabel ? c.TEXT_PRIMARY : c.PRIMARY_GREEN}
+            color={categoryLabel ? c.TEXT_PRIMARY : c.PRIMARY_TEXT}
           />
           <Typography style={categoryLabel ? undefined : styles.categoryPlaceholder}>
             {categoryLabel ?? t('selectCategory')}
@@ -240,7 +240,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingVertical: 12,
   },
   categoryContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  categoryPlaceholder: { color: c.PRIMARY_GREEN },
+  categoryPlaceholder: { color: c.PRIMARY_TEXT },
   invalid: { borderColor: c.DANGER, borderWidth: 1 },
   noteLabel: { marginBottom: 6 },
   note: {
