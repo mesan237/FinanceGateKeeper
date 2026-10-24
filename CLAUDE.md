@@ -57,6 +57,12 @@ root `TontineReminderScheduler` (VS-52); the drawer dots, the menu button and th
 dashboard's `PlannedDueCard` read the keys from `components/`. Nobody imports either
 scheduler's slice for this, so the graph above is unchanged.
 
+**Journey stage (UX-03).** The current journey step is shared the same way, through
+`components/JourneyStageProvider`: `journey`'s `useJourney` publishes it on every read, and
+`budget` and `goals` read it (`useIsBeforeStep`) to show a preview with an "anyway" action
+before Plan / Grow (UX-10). The step key and order live in `types/journey` and
+`constants/journey`. The step sets emphasis, never access, and no new edge is needed.
+
 The list covers **source** imports. Service tests that seed an in-memory database may
 import another slice's `create*` helper to build fixtures (`budget` and `dashboard`
 tests call `income.service.createIncome`); that is fixture setup, not a runtime
