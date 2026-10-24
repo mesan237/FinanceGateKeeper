@@ -2,10 +2,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { Icon } from '@/components/Icon';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { getTransactionIcon } from '@/constants/categoryIcons';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { ICON_SIZE } from '@/constants/icons';
 import { SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -19,21 +21,27 @@ export interface CategoryEnvelopeRowProps {
   /** Suppresses the top divider on the first row of a card. */
   first: boolean;
   onPress: () => void;
+  /**
+   * The full row, for the category detail: spent of available and the run-rate
+   * line always. The Budget tab's list leaves it off (UX-13).
+   */
+  detailed?: boolean;
 }
 
 /**
  * One category envelope in the Budget tab's list.
  *
- * Carries the full picture the brief asks for per category — allocated, spent,
- * remaining, percentage consumed, daily average and projection — but ranked so
- * a glance costs nothing: name and remaining on the first line, a paced meter on
- * the second, and the run-rate detail on the third for anyone who wants it.
+ * Two lines on the Budget tab (UX-13): name and what is left, then a paced
+ * meter. The run-rate line (percentage used, daily average, projection) joins
+ * only when the envelope is at risk or over, where it explains the status; the
+ * category detail passes `detailed` and always shows it, with spent of
+ * available. Rollover is a small icon with an accessible label.
  *
  * A category with no envelope but some spending renders as an "unbudgeted" row
  * rather than being hidden — silently omitting real spending would make the
  * list flatter and less honest than the month actually is.
  */
-export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelopeRowProps) {
+export function CategoryEnvelopeRow({ envelope, first, onPress, detailed = false }: CategoryEnvelopeRowProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation(['budget', 'common']);
@@ -42,6 +50,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
   const status = healthDisplay(envelope.health, c);
   const unbudgeted = envelope.available <= 0;
   const isOver = envelope.remaining < 0;
+  const showRunRate = detailed || envelope.health !== 'on_track';
 
   return (
     <Pressable
@@ -54,15 +63,28 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
       <View style={styles.header}>
         <Typography style={styles.icon}>{icon ?? '•'}</Typography>
         <View style={styles.title}>
-          <Typography>{name}</Typography>
-          <Typography variant="muted">
-            {unbudgeted
-              ? t('envelope.noBudget')
-              : t('envelope.spentOf', {
-                  spent: formatCurrency(envelope.spent),
-                  available: formatCurrency(envelope.available),
-                })}
-          </Typography>
+          <View style={styles.nameRow}>
+            <Typography>{name}</Typography>
+            {envelope.rolloverEnabled && !unbudgeted ? (
+              <View
+                testID={`envelope-rollover-${envelope.categoryId}`}
+                accessible
+                accessibilityLabel={t('envelope.rollsOver')}
+              >
+                <Icon name="rollover" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} />
+              </View>
+            ) : null}
+          </View>
+          {unbudgeted ? (
+            <Typography variant="muted">{t('envelope.noBudget')}</Typography>
+          ) : detailed ? (
+            <Typography variant="muted">
+              {t('envelope.spentOf', {
+                spent: formatCurrency(envelope.spent),
+                available: formatCurrency(envelope.available),
+              })}
+            </Typography>
+          ) : null}
         </View>
         <View style={styles.amounts}>
           <Typography style={[styles.remaining, isOver && styles.remainingOver]}>
@@ -86,6 +108,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
             style={styles.meter}
           />
 
+          {showRunRate ? (
           <View style={styles.footer}>
             <Typography variant="muted" style={styles.footerText}>
               {t('envelope.usedPerDay', {
@@ -104,15 +127,6 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
               {t('envelope.headingFor', { amount: formatCurrency(Math.round(envelope.projected)) })}
             </Typography>
           </View>
-
-          {envelope.rolloverEnabled ? (
-            <Typography
-              variant="muted"
-              style={styles.rollover}
-              testID={`envelope-rollover-${envelope.categoryId}`}
-            >
-              {t('envelope.rollsOver')}
-            </Typography>
           ) : null}
         </>
       )}
@@ -146,6 +160,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   title: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
   amounts: {
     alignItems: 'flex-end',
   },
@@ -175,9 +194,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   footerAlert: {
     color: c.DANGER_TEXT,
-  },
-  rollover: {
-    fontSize: 11,
-    color: c.PRIMARY_TEXT,
   },
 });

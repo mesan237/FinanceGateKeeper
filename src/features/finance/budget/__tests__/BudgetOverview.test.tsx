@@ -256,28 +256,22 @@ describe('BudgetOverview — the hero', () => {
     expect(screen.getByTestId('budget-meter-marker')).toBeTruthy();
   });
 
-  it('surfaces days left, the daily amount that stays on plan, and the projection', async () => {
+  it('says a day to stay on plan, and where the month is heading once past the plan (UX-13)', async () => {
     await renderTab();
 
-    expect(screen.getByTestId('budget-stat-days')).toHaveTextContent('21Days left');
-    expect(screen.getByTestId('budget-stat-daily')).toHaveTextContent(
-      '9 523 FCFAA day to stay on plan',
-    );
-    expect(screen.getByTestId('budget-stat-projected')).toHaveTextContent(
-      '310 000 FCFAHeading for',
+    expect(screen.getByTestId('budget-per-day')).toHaveTextContent('A day to stay on plan: 9 523 FCFA');
+    expect(screen.getByTestId('budget-heading-for')).toHaveTextContent(
+      'Heading for ≈ 310 000 FCFA by month end',
     );
   });
 
-  it('mentions carried-over budget only when there is some', async () => {
-    await renderTab();
-    expect(screen.queryByTestId('budget-carried')).toBeNull();
-
+  it('keeps carried-over budget in "How this plan is built"', async () => {
     mockedGetOverview.mockResolvedValue(overviewData({ totalCarried: 12_000 }));
     await renderTab();
 
-    expect(screen.getByTestId('budget-carried')).toHaveTextContent(
-      'Includes 12 000 FCFA carried over from last month.',
-    );
+    expect(screen.queryByTestId('budget-carried')).toBeNull();
+    fireEvent.press(screen.getByTestId('budget-how-built'));
+    expect(screen.getByTestId('plan-build-carried')).toHaveTextContent('+12 000 FCFA');
   });
 });
 

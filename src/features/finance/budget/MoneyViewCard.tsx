@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { ICON_SIZE } from '@/constants/icons';
 import { SPACING } from '@/constants/layout';
-import { useThemedStyles, type ThemeColors } from '@/theme';
+import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 
+import { BudgetBreakdownSheet, type BreakdownLine } from './BudgetBreakdownSheet';
 import type { MoneyView } from './budget.types';
 
 /** The sources of committed money, in the order the breakdown names them. */
@@ -19,73 +22,76 @@ export interface MoneyViewCardProps {
 }
 
 /**
- * "Your money now" (VS-47): the cash and the money already promised, kept as
- * separate figures. The plan's remainder is the hero above, so it is not
- * repeated here under a second name (UX-01). The budget is a plan, the cash is
- * a fact, and committed money is neither, so the budget is never subtracted
- * from either. Free cash (safe to spend, VS-49) is the one derived figure: cash
- * outside the goal wallets, less what is due by month end. When that is
- * negative the card says so in words.
+ * Free cash (VS-47, VS-49): cash outside the goal wallets, less what is due by
+ * month end. The plan's remainder is the hero above, so it is not repeated
+ * here (UX-01). The budget is a plan, the cash is a fact, and committed money is
+ * neither, so the budget is never subtracted from either.
+ *
+ * One line on the tab (UX-13); tapping it opens the subtraction — cash, goal
+ * wallets, what is due and its parts — so the arithmetic can be checked. A
+ * shortfall is stated on the line itself, in words.
  */
 export function MoneyViewCard({ money }: MoneyViewCardProps) {
   const styles = useThemedStyles(makeStyles);
+  const c = useTheme();
   const { t } = useTranslation('budget');
+  const [open, setOpen] = useState(false);
   const { committed } = money;
+  const shortfall =
+    money.safeToSpend < 0 ? t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) }) : null;
 
-  return (
-    <Card testID="money-view" style={styles.card}>
-      <Typography variant="label">{t('money.title')}</Typography>
-
-      <Figure label={t('money.cash')} hint={t('money.cashHint')} amount={money.cash} testID="money-cash" />
-      {money.goalCash > 0 ? (
-        <Typography variant="muted" testID="money-goal-cash">
-          {t('money.goalCash', { amount: formatCurrency(money.goalCash) })}
-        </Typography>
-      ) : null}
-      <Figure
-        label={t('money.committed')}
-        hint={t('money.committedHint')}
-        amount={committed.total}
-        testID="money-committed"
-      />
-      {committed.total > 0 ? (
-        <Typography variant="muted">
-          {COMMITTED_PARTS.filter((part) => committed[part] > 0)
+  const lines: BreakdownLine[] = [
+    { label: t('money.cash'), hint: t('money.cashHint'), amount: money.cash, testID: 'money-cash' },
+  ];
+  if (money.goalCash > 0) {
+    lines.push({ label: t('money.inGoals'), amount: money.goalCash, sign: 'minus', testID: 'money-goal-cash' });
+  }
+  lines.push({
+    label: t('money.committed'),
+    hint: t('money.committedHint'),
+    amount: committed.total,
+    sign: 'minus',
+    detail:
+      committed.total > 0
+        ? COMMITTED_PARTS.filter((part) => committed[part] > 0)
             .map((part) => t(`money.parts.${part}`, { amount: formatCurrency(committed[part]) }))
-            .join(' · ')}
-        </Typography>
-      ) : null}
+            .join(' · ')
+        : undefined,
+    testID: 'money-committed',
+  });
 
-      <Figure label={t('money.safe')} hint={t('money.safeHint')} amount={money.safeToSpend} testID="money-safe" />
-      {money.safeToSpend < 0 ? (
-        <Typography style={styles.shortfall} testID="money-shortfall">
-          {t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) })}
-        </Typography>
-      ) : null}
-    </Card>
-  );
-}
-
-interface FigureProps {
-  label: string;
-  hint: string;
-  amount: number;
-  testID: string;
-}
-
-/** One labelled figure with its one-line meaning. */
-function Figure({ label, hint, amount, testID }: FigureProps) {
-  const styles = useThemedStyles(makeStyles);
   return (
-    <View style={styles.row}>
-      <View style={styles.grow}>
-        <Typography>{label}</Typography>
-        <Typography variant="muted">{hint}</Typography>
-      </View>
-      <Typography style={styles.amount} testID={testID}>
-        {formatCurrency(amount)}
-      </Typography>
-    </View>
+    <>
+      <Pressable testID="money-view" accessibilityRole="button" onPress={() => setOpen(true)}>
+        <Card style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.grow}>
+              <Typography variant="label">{t('money.safe')}</Typography>
+              <Typography variant="muted">{t('money.safeHint')}</Typography>
+            </View>
+            <Typography style={styles.amount} testID="money-safe">
+              {formatCurrency(money.safeToSpend)}
+            </Typography>
+            <Icon name="forward" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
+          </View>
+          {shortfall ? (
+            <Typography style={styles.shortfall} testID="money-shortfall">
+              {shortfall}
+            </Typography>
+          ) : null}
+        </Card>
+      </Pressable>
+
+      <BudgetBreakdownSheet
+        visible={open}
+        onClose={() => setOpen(false)}
+        testID="money-sheet"
+        title={t('money.safe')}
+        lines={lines}
+        total={{ label: t('money.safe'), amount: money.safeToSpend, testID: 'money-total' }}
+        note={shortfall}
+      />
+    </>
   );
 }
 
@@ -95,5 +101,5 @@ const makeStyles = (c: ThemeColors) =>
     row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
     grow: { flex: 1 },
     amount: { fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD },
-    shortfall: { color: c.DANGER },
+    shortfall: { color: c.DANGER_TEXT },
   });

@@ -112,7 +112,7 @@ export function CategoryDetailScreen({ monthISO, categoryId, subcategory }: Cate
 
           {envelope ? (
             <Card style={styles.card}>
-              <CategoryEnvelopeRow envelope={envelope} first onPress={() => setEditing(true)} />
+              <CategoryEnvelopeRow envelope={envelope} first detailed onPress={() => setEditing(true)} />
               {spent > 0 ? <UsualComparison detail={view.detail} heading={heading} running={running} /> : null}
               <Button
                 testID="detail-edit-budget"

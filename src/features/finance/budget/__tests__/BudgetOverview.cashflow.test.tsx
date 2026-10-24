@@ -114,21 +114,21 @@ beforeEach(() => {
 });
 
 describe('BudgetOverview — cash flow (VS-47)', () => {
-  it('says the plan rests on expected income and how much has come in', async () => {
+  it('says the plan rests on expected income while less has come in', async () => {
+    mockedGetOverview.mockResolvedValue(overviewData({ receivedIncome: 200_000, surplusNeedsJob: false }));
     await renderTab();
 
     expect(screen.getByTestId('budget-expected-income')).toHaveTextContent(
-      'Planned on expected income · 290 000 FCFA of 250 000 FCFA received',
+      'Planned on expected income · 200 000 FCFA of 250 000 FCFA received',
     );
   });
 
-  it('says how much the goals took before the budget (VS-49)', async () => {
+  it('says how much the goals took before the budget, in "How this plan is built" (VS-49)', async () => {
     mockedGetOverview.mockResolvedValue(overviewData({ setAside: 30_000, spendable: 220_000 }));
     await renderTab();
 
-    expect(screen.getByTestId('budget-set-aside')).toHaveTextContent(
-      'After 30 000 FCFA set aside for your goals.',
-    );
+    fireEvent.press(screen.getByTestId('budget-how-built'));
+    expect(screen.getByTestId('plan-build-set-aside')).toHaveTextContent('−30 000 FCFA');
   });
 
   it('does not mention expected income once the user set the total', async () => {
@@ -160,6 +160,21 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
     await waitFor(() => expect(cashflow.leaveSurplusUnbudgeted).toHaveBeenCalledWith('2026-10', 40_000));
   });
 
+  it('offers one action at a time: the surplus first, then what is left to share out (UX-13)', async () => {
+    mockedGetOverview.mockResolvedValue(overviewData({ unassigned: 45_000, assigned: 205_000 }));
+    await renderTab();
+
+    expect(screen.getByTestId('surplus-card')).toBeTruthy();
+    expect(screen.queryByTestId('budget-unassigned-strip')).toBeNull();
+  });
+
+  it('shows the share-out strip once the surplus has an answer', async () => {
+    mockedGetOverview.mockResolvedValue(overviewData({ surplusNeedsJob: false, unassigned: 45_000, assigned: 205_000 }));
+    await renderTab();
+
+    expect(screen.getByTestId('budget-unassigned-strip')).toBeTruthy();
+  });
+
   it('stays quiet when the surplus already has an answer', async () => {
     mockedGetOverview.mockResolvedValue(overviewData({ surplusNeedsJob: false }));
     await renderTab();
@@ -170,11 +185,12 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
   it('shows cash and what is due for the current month, not the plan figure again', async () => {
     await renderTab();
 
-    await waitFor(() => expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA'));
-    expect(screen.queryByTestId('money-budget-left')).toBeNull();
-    expect(screen.getByTestId('money-committed')).toHaveTextContent('52 000 FCFA');
     // 90 000 cash − 25 000 in goal wallets − 52 000 due (VS-49).
-    expect(screen.getByTestId('money-safe')).toHaveTextContent('13 000 FCFA');
+    await waitFor(() => expect(screen.getByTestId('money-safe')).toHaveTextContent('13 000 FCFA'));
+    expect(screen.queryByTestId('money-budget-left')).toBeNull();
+    fireEvent.press(screen.getByTestId('money-view'));
+    expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA');
+    expect(screen.getByTestId('money-committed')).toHaveTextContent('−52 000 FCFA');
     expect(mockedCommitted).toHaveBeenCalledWith('2026-10');
   });
 
