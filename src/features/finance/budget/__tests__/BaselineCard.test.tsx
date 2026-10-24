@@ -50,7 +50,7 @@ describe('BaselineCard (VS-46)', () => {
 
     expect(await screen.findByText('Set up your baseline')).toBeTruthy();
     expect(screen.getByText('2 of 5 done')).toBeTruthy();
-    expect(screen.getByTestId('baseline-step-balances')).toHaveTextContent(/Confirm your account balances/);
+    expect(screen.getByTestId('baseline-step-balances')).toHaveTextContent(/Confirm your wallet balances/);
   });
 
   it('opens the screen that completes a step', async () => {

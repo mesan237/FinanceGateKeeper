@@ -70,7 +70,7 @@ describe('TransferLogScreen', () => {
     await screen.findByTestId('transfer-from-trigger');
     await pickTo(1); // same as the default from-account (Cash)
     fireEvent.changeText(screen.getByTestId('transfer-amount'), '3000');
-    expect(screen.getByText(/same account/i)).toBeTruthy();
+    expect(screen.getByText(/same wallet/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 

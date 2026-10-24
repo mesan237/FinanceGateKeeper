@@ -156,7 +156,7 @@ describe('DebtForm', () => {
     render(<DebtForm />);
     fireEvent.changeText(screen.getByTestId('debt-person'), 'Paul');
     fireEvent.changeText(screen.getByTestId('debt-amount'), '10000');
-    fireEvent.press(screen.getByRole('switch', { name: 'Through an account' }));
+    fireEvent.press(screen.getByRole('switch', { name: 'Through a wallet' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() =>

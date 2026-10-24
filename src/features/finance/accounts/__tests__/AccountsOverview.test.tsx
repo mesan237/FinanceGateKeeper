@@ -75,7 +75,7 @@ describe('AccountsOverview', () => {
     await i18n.changeLanguage('fr');
     render(<AccountsOverview />);
     await waitFor(() => expect(screen.getByTestId('account-card-1')).toBeTruthy());
-    expect(screen.getByText('Comptes')).toBeTruthy();
+    expect(screen.getByText('Portefeuilles')).toBeTruthy();
     expect(screen.getAllByText('Dépenses').length).toBeGreaterThan(0);
     await waitFor(() => expect(screen.getAllByText('↑ 80 % entrées').length).toBeGreaterThan(0));
   });
@@ -86,7 +86,7 @@ describe('AccountsOverview', () => {
       render(<AccountsOverview />);
 
       expect(await screen.findByTestId('unassigned-spending')).toBeTruthy();
-      expect(screen.getByText('4 expenses (12 000 FCFA) are not linked to an account.')).toBeTruthy();
+      expect(screen.getByText('4 expenses (12 000 FCFA) are not linked to a wallet.')).toBeTruthy();
     });
 
     it('stays quiet when every expense has a wallet', async () => {

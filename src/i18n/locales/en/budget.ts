@@ -133,7 +133,7 @@ export const budget = {
     progress: '{{done}} of {{total}} done',
     open: 'Open',
     steps: {
-      balances: 'Confirm your account balances',
+      balances: 'Confirm your wallet balances',
       bills: 'Add your regular bills',
       debts: 'Record money you lent or owe',
       costTypes: 'Check which categories are fixed',

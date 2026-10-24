@@ -23,45 +23,40 @@ type DrawerKey = keyof (typeof navigation)['drawer'];
 interface DrawerRow {
   labelKey: DrawerKey;
   icon: IconName;
-  /** Stack route to navigate to. Mutually exclusive with `onPress`/`soon`. */
+  /** Stack route to navigate to. Mutually exclusive with `onPress`. */
   route?: string;
-  /** Custom handler (e.g. open mailto). Mutually exclusive with `route`/`soon`. */
+  /** Custom handler (e.g. open mailto). Mutually exclusive with `route`. */
   onPress?: () => void;
-  /** Marks a planned destination that has no screen yet — rendered disabled. */
-  soon?: boolean;
   /** `AttentionProvider` section whose counts light this row's dot. */
   attentionKey?: string;
 }
 
 interface DrawerSection {
-  titleKey?: DrawerKey;
+  titleKey: DrawerKey;
   rows: DrawerRow[];
 }
 
-// The full intended menu. Rows with a `route` navigate to an existing screen;
-// `soon` rows are placeholders for screens not yet built (Delete & Reset,
-// Help) and render disabled so navigation never dead-ends.
+// Two groups (UX-18): the user's money objects, then the app itself. Only
+// screens that exist are listed — a disabled "soon" row reads as unfinished.
 const SECTIONS: DrawerSection[] = [
-  { rows: [{ labelKey: 'preferences', icon: 'settings', route: '/settings' }] },
   {
-    titleKey: 'management',
+    titleKey: 'myMoney',
     rows: [
       { labelKey: 'accounts', icon: 'wallet', route: '/accounts' },
-      { labelKey: 'categories', icon: 'categories', route: '/expenses/categories' },
-      { labelKey: 'debts', icon: 'debt', route: '/debt' },
-      { labelKey: 'planned', icon: 'planned', route: '/planned', attentionKey: ATTENTION_PLANNED },
       { labelKey: 'goals', icon: 'goal', route: '/goals' },
+      { labelKey: 'debts', icon: 'debt', route: '/debt' },
       { labelKey: 'tontines', icon: 'tontine', route: '/tontines', attentionKey: ATTENTION_TONTINES },
+      { labelKey: 'planned', icon: 'planned', route: '/planned', attentionKey: ATTENTION_PLANNED },
       { labelKey: 'events', icon: 'event', route: '/events' },
-      { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
-      { labelKey: 'backupRestore', icon: 'backup', route: '/backup' },
-      { labelKey: 'deleteReset', icon: 'delete', soon: true },
     ],
   },
   {
-    titleKey: 'application',
+    titleKey: 'app',
     rows: [
-      { labelKey: 'help', icon: 'help', soon: true },
+      { labelKey: 'categories', icon: 'categories', route: '/expenses/categories' },
+      { labelKey: 'preferences', icon: 'settings', route: '/settings' },
+      { labelKey: 'backupRestore', icon: 'backup', route: '/backup' },
+      { labelKey: 'exportImport', icon: 'export', route: '/data-transfer' },
       {
         labelKey: 'feedback',
         icon: 'feedback',
@@ -72,10 +67,10 @@ const SECTIONS: DrawerSection[] = [
 ];
 
 /**
- * Custom content for the app's left navigation drawer. Renders a branded header
- * plus grouped links to settings, data management, and app meta. Pressing a row
- * closes the drawer and pushes its stack route (or runs its handler); disabled
- * "soon" rows are inert placeholders for screens not yet built.
+ * Custom content for the app's left navigation drawer: a branded header, then
+ * the user's money (wallets, goals, debts, tontines, planned purchases, events)
+ * and the app (categories, preferences, backup, export, feedback). Pressing a
+ * row closes the drawer and pushes its stack route (or runs its handler).
  */
 export function AppDrawerContent(props: DrawerContentComponentProps) {
   const router = useRouter();
@@ -84,7 +79,6 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const handlePress = (row: DrawerRow) => {
-    if (row.soon) return;
     props.navigation.closeDrawer();
     if (row.route) {
       router.push(row.route as never);
@@ -100,19 +94,16 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
         <Typography variant="muted">v{version}</Typography>
       </View>
 
-      {SECTIONS.map((section, i) => (
-        <View key={section.titleKey ?? `section-${i}`} style={styles.section}>
-          {section.titleKey ? (
-            <Typography variant="label" style={styles.sectionTitle}>
-              {t(`drawer.${section.titleKey}`)}
-            </Typography>
-          ) : null}
+      {SECTIONS.map((section) => (
+        <View key={section.titleKey} style={styles.section}>
+          <Typography variant="label" style={styles.sectionTitle}>
+            {t(`drawer.${section.titleKey}`)}
+          </Typography>
           {section.rows.map((row) => (
             <DrawerItem
               key={row.labelKey}
               row={row}
               label={t(`drawer.${row.labelKey}`)}
-              soonLabel={t('drawer.soon')}
               onPress={() => handlePress(row)}
               styles={styles}
             />
@@ -126,13 +117,11 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
 function DrawerItem({
   row,
   label,
-  soonLabel,
   onPress,
   styles,
 }: {
   row: DrawerRow;
   label: string;
-  soonLabel: string;
   onPress: () => void;
   styles: ReturnType<typeof makeStyles>;
 }) {
@@ -143,19 +132,12 @@ function DrawerItem({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={attentionHint(attention)}
-      accessibilityState={{ disabled: !!row.soon }}
-      disabled={row.soon}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && !row.soon ? styles.rowPressed : null]}
+      style={({ pressed }) => [styles.row, pressed ? styles.rowPressed : null]}
     >
       <Icon name={row.icon} size={ICON_SIZE.md} />
-      <Typography style={row.soon ? styles.rowLabelDisabled : styles.rowLabel}>{label}</Typography>
+      <Typography style={styles.rowLabel}>{label}</Typography>
       <AttentionDot counts={attention} testID={`drawer-dot-${row.attentionKey}`} />
-      {row.soon ? (
-        <Typography variant="label" style={styles.soonTag}>
-          {soonLabel}
-        </Typography>
-      ) : null}
     </Pressable>
   );
 }
@@ -194,12 +176,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   rowLabel: {
     flex: 1,
     color: c.TEXT_PRIMARY,
-  },
-  rowLabelDisabled: {
-    flex: 1,
-    color: c.TEXT_MUTED,
-  },
-  soonTag: {
-    color: c.TEXT_MUTED,
   },
 });

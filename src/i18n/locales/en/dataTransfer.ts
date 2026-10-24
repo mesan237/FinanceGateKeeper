@@ -22,7 +22,7 @@ export const dataTransfer = {
     categories: 'Categories',
     funds: 'Funds',
     projects: 'Projects',
-    accounts: 'Accounts',
+    accounts: 'Wallets',
     expenses: 'Expenses',
     income: 'Income',
     allocations: 'Monthly budgets',

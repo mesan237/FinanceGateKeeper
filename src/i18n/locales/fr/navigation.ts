@@ -18,8 +18,8 @@ export const navigation: Translation<typeof en> = {
   },
   drawer: {
     preferences: 'Préférences',
-    management: 'Gestion',
-    accounts: 'Comptes',
+    myMoney: 'Mon argent',
+    accounts: 'Portefeuilles',
     categories: 'Catégories',
     debts: 'Dettes',
     planned: 'Achats prévus',
@@ -28,10 +28,7 @@ export const navigation: Translation<typeof en> = {
     events: 'Événements',
     exportImport: 'Export et import',
     backupRestore: 'Sauvegarde et restauration',
-    deleteReset: 'Supprimer et réinitialiser',
-    application: 'Application',
-    help: 'Aide',
+    app: 'Application',
     feedback: 'Avis',
-    soon: 'Bientôt',
   },
 };

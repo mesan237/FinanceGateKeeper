@@ -5,7 +5,7 @@ import type { Translation } from '@/i18n/translation.types';
 export const income: Translation<typeof en> = {
   notePlaceholder: 'Note (facultatif)',
   noteLabel: 'Note',
-  account: 'Compte',
+  account: 'Portefeuille',
   log: {
     title: 'Nouveau revenu',
   },

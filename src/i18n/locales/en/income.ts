@@ -2,7 +2,7 @@
 export const income = {
   notePlaceholder: 'Note (optional)',
   noteLabel: 'Note',
-  account: 'Account',
+  account: 'Wallet',
   log: {
     title: 'Log income',
   },

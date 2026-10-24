@@ -138,7 +138,7 @@ export const budget: Translation<typeof en> = {
     progress: '{{done}} sur {{total}} faits',
     open: 'Ouvrir',
     steps: {
-      balances: 'Confirmer le solde de vos comptes',
+      balances: 'Confirmer le solde de vos portefeuilles',
       bills: 'Ajouter vos factures régulières',
       debts: 'Noter l’argent prêté ou dû',
       costTypes: 'Vérifier les catégories fixes',
