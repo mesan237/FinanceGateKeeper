@@ -73,6 +73,60 @@ function renderMark({ test, bounds, size, contentFraction, fg, background = null
   return canvas;
 }
 
+/**
+ * Renders coloured layers into an RGBA canvas. Each sub-sample takes the colour
+ * of the topmost layer it hits, so layers that share an edge meet without a
+ * fringe. `frame` is the local-space box fitted to `fraction` of the canvas.
+ *
+ * @param {object} options
+ * @param {{fill:string, shape:object}[]} options.layers Bottom layer first.
+ * @param {(shape:object, x:number, y:number) => boolean} options.contains Hit test.
+ * @param {number} options.size Output edge length in pixels.
+ * @param {{x0:number,y0:number,x1:number,y1:number}} options.frame Local box to fit.
+ * @param {number} options.fraction How much of the canvas the frame fills.
+ * @param {object|null} [options.clip] Shape outside which nothing is drawn.
+ * @param {string|null} [options.background] Hex fill, or null for transparency.
+ */
+function renderLayers({ layers, contains, size, frame, fraction, clip = null, background = null }) {
+  const canvas = createCanvas(size, size);
+  const top = [...layers].reverse().map(({ fill, shape }) => ({ rgb: parseHex(fill), shape }));
+  const bg = background ? parseHex(background) : null;
+
+  const boxW = frame.x1 - frame.x0;
+  const boxH = frame.y1 - frame.y0;
+  const scale = (size * fraction) / Math.max(boxW, boxH);
+  const offsetX = size / 2 - (frame.x0 + boxW / 2) * scale;
+  const offsetY = size / 2 - (frame.y0 + boxH / 2) * scale;
+  const step = 1 / SUPERSAMPLE;
+  const samples = SUPERSAMPLE * SUPERSAMPLE;
+
+  for (let py = 0; py < size; py += 1) {
+    for (let px = 0; px < size; px += 1) {
+      let hits = 0;
+      const sum = [0, 0, 0];
+      for (let sy = 0; sy < SUPERSAMPLE; sy += 1) {
+        const ly = (py + (sy + 0.5) * step - offsetY) / scale;
+        for (let sx = 0; sx < SUPERSAMPLE; sx += 1) {
+          const lx = (px + (sx + 0.5) * step - offsetX) / scale;
+          if (clip && !contains(clip, lx, ly)) continue;
+          const layer = top.find(({ shape }) => contains(shape, lx, ly));
+          if (!layer) continue;
+          hits += 1;
+          for (let c = 0; c < 3; c += 1) sum[c] += layer.rgb[c];
+        }
+      }
+      const i = (py * size + px) * 4;
+      const alpha = hits / samples;
+      for (let c = 0; c < 3; c += 1) {
+        const color = hits ? sum[c] / hits : 0;
+        canvas.data[i + c] = Math.round(bg ? bg[c] + (color - bg[c]) * alpha : color);
+      }
+      canvas.data[i + 3] = bg ? 255 : Math.round(alpha * 255);
+    }
+  }
+  return canvas;
+}
+
 /** Fills a canvas with a solid opaque colour. */
 function solidCanvas(width, height, hex) {
   const canvas = createCanvas(width, height);
@@ -116,4 +170,4 @@ async function writePng(canvas, filePath) {
   return buffer.length;
 }
 
-module.exports = { renderMark, solidCanvas, createCanvas, blit, writePng, parseHex };
+module.exports = { renderMark, renderLayers, solidCanvas, createCanvas, blit, writePng, parseHex };
