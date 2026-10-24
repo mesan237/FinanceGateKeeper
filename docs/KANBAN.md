@@ -2344,6 +2344,37 @@ bills and estimates only when planning.
 **Done when:** a user observing is told why planning and goals come later, and can still use both.
 
 ---
+### VS-76: A Budget Tab That Reads in Five Figures (UX-13) 🔄 In Progress
+
+**Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-04, F-07;
+money-view layout change approved)
+**Blocked by:** —
+
+**Scope:**
+
+- Hero: what is left, the status chip, the paced bar, "X of Y spent" and *A day to stay on plan: X*
+  (Home's words, UX-11). *Heading for ≈ X by month end* only when the projection passes the plan.
+  The days-left / per-day / heading-for stat row and the percentage are gone.
+- *How this plan is built* opens a sheet with the sum: monthly total (and where it comes from),
+  − set aside for goals, ± carried over, = to spend this month. The expected-income line stays in the
+  hero only while less has come in than expected; it is always in the sheet.
+- One action strip at a time: the surplus prompt first, then *… to share out*.
+- *Free cash* is one line; it opens the subtraction: cash in wallets − in goal wallets − due before
+  month end (with its parts) = free cash. A shortfall is still stated on the line.
+- Envelope rows are two lines (name and what is left, then the paced bar). The run-rate line only
+  when at risk or over; rollover is an icon with an accessible label. The category detail keeps the
+  full row (`detailed`).
+- `BudgetBreakdownSheet` shows both sums. Presentation only: no calculation changed.
+
+**TDD Anchor:**
+
+- Test: hero figures, heading-for only past the plan, expected-income rule, plan sheet sums, fr.
+- Test: free-cash line and its subtraction, shortfall on the line, fr.
+- Test: envelope row compact vs at risk / over vs detailed, rollover label; one strip at a time.
+
+**Done when:** six figures or fewer stand before the category list, and each sum is one tap away.
+
+---
 
 ## DEPENDENCY GRAPH
 
