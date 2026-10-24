@@ -57,6 +57,20 @@ export function addMonths(d: Date | string, n: number): string {
 const MS_PER_DAY = 86_400_000;
 
 /**
+ * The ISO date `days` calendar days before `iso` (a negative `days` goes
+ * forward). UTC arithmetic, so no DST drift. Pure.
+ *
+ * @returns e.g. `isoDaysBefore('2026-03-01', 1)` -> `'2026-02-28'`.
+ */
+export function isoDaysBefore(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - days);
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${month}-${day}`;
+}
+
+/**
  * Whole-day signed delta from `a` to `b` (a future `b` is positive). Both ends
  * are floored to their UTC calendar day first, so a late-evening and an
  * early-morning timestamp on adjacent days count as one day apart — the

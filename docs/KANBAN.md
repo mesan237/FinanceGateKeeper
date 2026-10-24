@@ -2205,6 +2205,32 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** Home and the Budget tab always agree on whether there is a plan.
 
 ---
+### VS-71: Observe Gives Feedback Before a Month Completes (UX-05/06/07) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decisions D4a, D5a, D-arch-2)
+**Blocked by:** —
+
+**Scope:**
+
+- The Observe step and the Home path card show the running month: days logged so far, and whether
+  it can still reach 80% (counting today, the days ahead and the missed days that can still be marked).
+- Missed days: the last 7 days before today with nothing logged, never before the first day the user
+  logged anything, each with *No spending*. Spending is added from Transactions.
+- `confirmZeroDay` now refuses a day that already has spending (it was unchecked; past days make it reachable).
+- A first month that began too late to count says so, with its start day and the first full month;
+  a later month that can no longer count says so too. Copy only: the 80% rule is unchanged (D4a).
+- New approved edge `journey → expenses` (`expenses.coverage`, `confirmZeroDay`); `isoDaysBefore`
+  moved to `utils/formatDate`.
+
+**TDD Anchor:**
+
+- Test: `missedDays`, `monthLoggingStatus`, `getFirstLoggedDate`, the no-spend guard.
+- Test: `getObserveLogging` and `markNoSpendDay` (window, first-day limit); hook refusal stays on screen;
+  screen and card copy in en and fr.
+
+**Done when:** a user observing sees progress every day, and can repair a forgotten day honestly.
+
+---
 ## DEPENDENCY GRAPH
 
 ```

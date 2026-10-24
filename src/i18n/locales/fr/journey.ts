@@ -42,6 +42,17 @@ export const journey: Translation<typeof en> = {
   observe: {
     progress: '{{recorded}} mois complets sur {{needed}}',
     hint: 'Un mois compte dès que 80 % de ses jours sont notés, dépense ou journée sans dépense.',
+    card_one: '{{recorded}} mois sur {{needed}} · ce mois-ci : jours notés {{logged}} sur {{count}}',
+    card_other: '{{recorded}} mois sur {{needed}} · ce mois-ci : jours notés {{logged}} sur {{count}}',
+    thisMonth_one: '{{month}} : jours notés {{logged}} sur {{count}}',
+    thisMonth_other: '{{month}} : jours notés {{logged}} sur {{count}}',
+    onTrack: 'En bonne voie : il lui faut {{needed}} jours notés sur {{days}}.',
+    cannotCount: '{{month}} ne peut plus atteindre 80 %. Continuez à tout noter : il montre vos habitudes, et {{next}} comptera.',
+    startedMidMonth: 'Vous avez commencé le {{date}} : {{month}} ne peut pas atteindre 80 %. Il montre quand même vos habitudes — votre premier mois complet sera {{next}}.',
+    missedTitle: 'Rien de noté ces jours-là',
+    missedHint: 'Rien dépensé ? Marquez le jour. Une dépense ? Ajoutez-la depuis Transactions, à sa date.',
+    noSpend: 'Aucune dépense',
+    noSpendA11y: 'Marquer le {{date}} comme journée sans dépense',
   },
   see: {
     summary: 'Vos premiers mois ont coûté {{total}} par mois : {{fixed}} de fixe, {{variable}} de variable.',
@@ -70,5 +81,6 @@ export const journey: Translation<typeof en> = {
   },
   errors: {
     load: 'Impossible de charger votre parcours.',
+    outsideWindow: 'Seuls les {{days}} derniers jours peuvent être marqués sans dépense.',
   },
 };

@@ -1,11 +1,13 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
+import { markNoSpendDay } from './journey.logging';
 import { getJourney, markPictureReviewed, skipToStep } from './journey.service';
 import type { Journey, JourneyStepKey } from './journey.types';
 
 /**
- * The journey (VS-63) with its two answers: "I've seen it" and skip ahead.
+ * The journey (VS-63) with its answers: "I've seen it", skip ahead, and
+ * marking a missed day as no-spend (UX-06).
  * `refresh` is caller-driven — the tab and the dashboard card re-read on focus,
  * because the evidence comes from logging done on other screens.
  */
@@ -44,5 +46,20 @@ export function useJourney() {
     [refresh],
   );
 
-  return { journey, loading, error, refresh, reviewPicture, skipTo };
+  /** Marks a recent missed day as no-spend and re-reads the journey; a refusal shows as the error. */
+  const markNoSpend = useCallback(
+    async (dateISO: string) => {
+      try {
+        await markNoSpendDay(dateISO);
+        await refresh();
+      } catch (e) {
+        // Re-read first: a successful refresh clears the error it would show.
+        await refresh();
+        setError(e instanceof Error ? e.message : i18n.t('errors.load', { ns: 'journey' }));
+      }
+    },
+    [refresh],
+  );
+
+  return { journey, loading, error, refresh, reviewPicture, skipTo, markNoSpend };
 }

@@ -5,6 +5,7 @@ import { query } from '@/services/database';
 import { toISODate } from '@/utils/formatDate';
 import { firstDayOfMonth, nextMonthISO, prevMonthISO } from '@/utils/monthMath';
 
+import { getObserveLogging } from './journey.logging';
 import { JOURNEY_STEPS } from './journey.steps';
 import type { Journey, JourneyEvidence, JourneyStep, JourneyStepKey } from './journey.types';
 
@@ -87,11 +88,12 @@ async function getCompleteMonthsAfter(
  * than were stored, the new count is stored, so those steps never lock again.
  */
 export async function getJourney(todayISO: string = toISODate(new Date())): Promise<Journey> {
-  const [point, reviewed, reached, skipped] = await Promise.all([
+  const [point, reviewed, reached, skipped, logging] = await Promise.all([
     getStartingPoint(todayISO),
     getBaselineFactValue('picture_reviewed'),
     getBaselineFactValue('journey_reached'),
     getBaselineFactValue('journey_skipped'),
+    getObserveLogging(todayISO),
   ]);
   const start = point.profile?.average ?? null;
 
@@ -128,6 +130,7 @@ export async function getJourney(todayISO: string = toISODate(new Date())): Prom
     current: resolved.current,
     steps: resolved.steps,
     observe: { recorded: point.recorded.length, needed: point.needed },
+    logging,
     start,
     latest,
     plannedMonth,

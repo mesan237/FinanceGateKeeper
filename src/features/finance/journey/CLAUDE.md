@@ -40,6 +40,9 @@ New kinds need no migration, so the slice shipped without one and without a Supa
   of the path.
 - `journey → reports`: `getStartingPoint`, and `getSpendingProfile` for one month's
   variable spending (`ProfileAverage` in the types).
+- `journey → expenses` (UX-05/06, approved 2026-10-24): `expenses.coverage` (the running
+  month's logged days, missed days, the first day ever logged) and `confirmZeroDay` to mark a
+  missed day as no-spend — one definition of "logged day" for complete months and the path.
 - `dashboard → journey`: `JourneyCard`. The tab route renders `JourneyScreen`.
 - Nothing else imports `journey`. VS-64's previews on other screens will read the step
   from a shared provider in `components/` (like `AttentionProvider`), not by importing

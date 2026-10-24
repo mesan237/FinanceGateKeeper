@@ -1,5 +1,6 @@
 import { query } from '@/services/database';
 import { daysInMonth, firstDayOfMonth, lastDayOfMonth } from '@/utils/monthMath';
+import { isoDaysBefore } from '@/utils/formatDate';
 
 /**
  * Logging coverage (VS-41): how much of a month the user actually accounted
@@ -61,4 +62,67 @@ export async function getLoggedDates(from: string, to: string): Promise<Set<stri
 export async function getMonthCoverage(monthISO: string): Promise<MonthCoverage> {
   const dates = await getLoggedDates(firstDayOfMonth(monthISO), lastDayOfMonth(monthISO));
   return monthCoverage(monthISO, dates);
+}
+
+/**
+ * The days in `[from, to]` that hold neither an expense nor a no-spend day,
+ * newest first. Pure.
+ */
+export function missedDays(from: string, to: string, loggedDates: ReadonlySet<string>): string[] {
+  const missed: string[] = [];
+  for (let date = to; date >= from; date = isoDaysBefore(date, 1)) {
+    if (!loggedDates.has(date)) missed.push(date);
+  }
+  return missed;
+}
+
+/** Where the running month stands against the complete-month rule (UX-05). */
+export interface MonthLoggingStatus {
+  /** `YYYY-MM`. */
+  month: string;
+  loggedDays: number;
+  /** Days of the month up to and including today. */
+  daysSoFar: number;
+  daysInMonth: number;
+  /** Logged days the month needs to count: {@link COMPLETE_MONTH_COVERAGE} of its days, rounded up. */
+  needed: number;
+  /**
+   * Whether the month can still reach `needed`: what is logged, plus today if it
+   * is not logged yet, every day after it, and the missed days that can still be
+   * marked.
+   */
+  canStillCount: boolean;
+}
+
+/**
+ * The running month's logging against the complete-month rule, as of
+ * `todayISO`. `recoverable` is how many missed days of this month can still be
+ * marked as no-spend. Pure.
+ */
+export function monthLoggingStatus(
+  monthISO: string,
+  todayISO: string,
+  loggedDates: ReadonlySet<string>,
+  recoverable: number,
+): MonthLoggingStatus {
+  const { loggedDays, daysInMonth: total } = monthCoverage(monthISO, loggedDates);
+  const daysSoFar = Number(todayISO.slice(8, 10));
+  const needed = Math.ceil(total * COMPLETE_MONTH_COVERAGE);
+  const ahead = total - daysSoFar + (loggedDates.has(todayISO) ? 0 : 1);
+  return {
+    month: monthISO,
+    loggedDays,
+    daysSoFar,
+    daysInMonth: total,
+    needed,
+    canStillCount: loggedDays + ahead + recoverable >= needed,
+  };
+}
+
+/** The earliest day with an expense or a no-spend day, or null before anything is logged. */
+export async function getFirstLoggedDate(): Promise<string | null> {
+  const [row] = await query<{ first: string | null }>(
+    `SELECT MIN(date) AS first FROM (SELECT date FROM expenses UNION SELECT date FROM zero_days)`,
+  );
+  return row?.first ?? null;
 }
