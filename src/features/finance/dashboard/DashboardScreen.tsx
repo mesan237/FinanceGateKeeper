@@ -131,7 +131,7 @@ export function DashboardScreen() {
             carrying the 7-day trend. */}
         <TodaySpendingCard
           todaySpending={state?.todaySpending ?? 0}
-          dailyPace={state?.dailyPace ?? null}
+          safeDailySpend={state?.safeDailySpend ?? null}
           spendingTrend={state?.spendingTrend ?? []}
           today={today}
         />

@@ -11,26 +11,30 @@ import { SpendingSparkline } from './SpendingSparkline';
 
 interface TodaySpendingCardProps {
   todaySpending: number;
-  /** Recommended daily spend; drives the over/within-pace caption. null hides it. */
-  dailyPace: number | null;
+  /** The Budget tab's per-day figure (UX-11). null, for a month without a plan, hides it. */
+  safeDailySpend: number | null;
   spendingTrend: number[];
   /** Long-formatted current date for the subtitle. */
   today: string;
 }
 
 /**
- * Today's total spending: a compact row beneath the budget hero, annotated with
- * how today compares to the recommended daily pace, over a 7-day sparkline.
+ * Today's total spending: a compact row beneath the budget hero, with the
+ * Budget tab's "A day to stay on plan" figure, over a 7-day sparkline.
  *
  * The card used to switch layouts on app mode — a hero figure with the trend in
  * learning mode, this compact row in control mode. With the mode gone (VS-34)
  * the budget hero always leads, so the compact row is the only layout; the
  * sparkline moved into it rather than being dropped, since the dashboard is
  * where the architecture puts the daily trend.
+ *
+ * The daily figure is the Budget tab's `safeDailySpend`, rounded the same way,
+ * so Home and Budget never show two different amounts a day (UX-11). It
+ * replaced an even budget ÷ days-in-month pace that ignored what was spent.
  */
 export function TodaySpendingCard({
   todaySpending,
-  dailyPace,
+  safeDailySpend,
   spendingTrend,
   today,
 }: TodaySpendingCardProps) {
@@ -38,11 +42,9 @@ export function TodaySpendingCard({
   const peak = Math.max(0, ...spendingTrend);
   const hasTrend = peak > 0;
 
-  const paceCaption =
-    dailyPace !== null && dailyPace > 0
-      ? todaySpending > dailyPace
-        ? t('today.overPace', { amount: formatCurrency(dailyPace) })
-        : t('today.withinPace', { amount: formatCurrency(dailyPace) })
+  const perDayCaption =
+    safeDailySpend !== null
+      ? t('today.perDayOnPlan', { amount: formatCurrency(Math.round(safeDailySpend)) })
       : null;
 
   return (
@@ -56,9 +58,9 @@ export function TodaySpendingCard({
         </View>
         <AnimatedCounter value={todaySpending} variant="subheading" />
       </View>
-      {paceCaption ? (
-        <Typography variant="muted" style={styles.paceCaption}>
-          {paceCaption}
+      {perDayCaption ? (
+        <Typography variant="muted" style={styles.perDayCaption} testID="today-per-day">
+          {perDayCaption}
         </Typography>
       ) : null}
       {hasTrend ? (
@@ -85,7 +87,7 @@ const styles = StyleSheet.create({
   todayDate: {
     marginTop: 2,
   },
-  paceCaption: {
+  perDayCaption: {
     marginTop: 8,
   },
   trend: {

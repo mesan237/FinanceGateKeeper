@@ -2,16 +2,17 @@ import { render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { TodaySpendingCard } from '@/features/finance/dashboard/TodaySpendingCard';
+import i18n from '@/i18n';
 
 const TREND = [0, 1000, 0, 2500, 0, 0, 5000];
 
 describe('TodaySpendingCard', () => {
-  describe('the pace row', () => {
+  describe('today and the daily figure', () => {
     it("shows today's spending and date", () => {
       render(
         <TodaySpendingCard
           todaySpending={5000}
-          dailyPace={2000}
+          safeDailySpend={2000}
           spendingTrend={TREND}
           today="Thursday, 18 June 2026"
         />,
@@ -21,40 +22,71 @@ describe('TodaySpendingCard', () => {
       expect(screen.getByText('Thursday, 18 June 2026')).toBeTruthy();
     });
 
-    it('flags spending over the daily pace', () => {
+    it("shows the Budget tab's per-day figure as 'A day to stay on plan' (UX-11)", () => {
       render(
         <TodaySpendingCard
           todaySpending={5000}
-          dailyPace={2000}
+          safeDailySpend={2000}
           spendingTrend={TREND}
           today="today"
         />,
       );
-      expect(screen.getByText(/over your daily pace of 2 000 FCFA/i)).toBeTruthy();
+      expect(screen.getByTestId('today-per-day')).toHaveTextContent(
+        'A day to stay on plan: 2 000 FCFA',
+      );
     });
 
-    it('reassures when spending is within the daily pace', () => {
+    it('rounds the figure as the Budget tab does', () => {
+      render(
+        <TodaySpendingCard
+          todaySpending={0}
+          safeDailySpend={90000 / 22}
+          spendingTrend={TREND}
+          today="today"
+        />,
+      );
+      // 4 090.9… shows as 4 091 on both screens.
+      expect(screen.getByTestId('today-per-day')).toHaveTextContent(/4 091 FCFA$/);
+    });
+
+    it('shows 0 once the plan is used up, as the Budget tab does', () => {
+      render(
+        <TodaySpendingCard
+          todaySpending={3000}
+          safeDailySpend={0}
+          spendingTrend={TREND}
+          today="today"
+        />,
+      );
+      expect(screen.getByTestId('today-per-day')).toHaveTextContent('A day to stay on plan: 0 FCFA');
+    });
+
+    it('omits the figure when the month has no plan', () => {
       render(
         <TodaySpendingCard
           todaySpending={1000}
-          dailyPace={2000}
+          safeDailySpend={null}
           spendingTrend={TREND}
           today="today"
         />,
       );
-      expect(screen.getByText(/within your daily pace of 2 000 FCFA/i)).toBeTruthy();
+      expect(screen.queryByTestId('today-per-day')).toBeNull();
+      expect(screen.queryByText(/stay on plan/i)).toBeNull();
     });
 
-    it('omits the pace caption when no pace is available', () => {
+    it('reads in French', async () => {
+      await i18n.changeLanguage('fr');
       render(
         <TodaySpendingCard
           todaySpending={1000}
-          dailyPace={null}
+          safeDailySpend={2000}
           spendingTrend={TREND}
           today="today"
         />,
       );
-      expect(screen.queryByText(/daily pace/i)).toBeNull();
+      expect(screen.getByTestId('today-per-day')).toHaveTextContent(
+        'Par jour pour tenir le budget : 2 000 FCFA',
+      );
     });
   });
 
@@ -63,7 +95,7 @@ describe('TodaySpendingCard', () => {
       render(
         <TodaySpendingCard
           todaySpending={5000}
-          dailyPace={null}
+          safeDailySpend={null}
           spendingTrend={TREND}
           today="today"
         />,
@@ -77,7 +109,7 @@ describe('TodaySpendingCard', () => {
       render(
         <TodaySpendingCard
           todaySpending={0}
-          dailyPace={null}
+          safeDailySpend={null}
           spendingTrend={[0, 0, 0, 0, 0, 0, 0]}
           today="today"
         />,

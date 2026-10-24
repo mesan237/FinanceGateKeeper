@@ -36,8 +36,7 @@ export const dashboard: Translation<typeof en> = {
   },
   today: {
     title: "Dépenses d'aujourd'hui",
-    overPace: 'Au-dessus de votre rythme quotidien de {{amount}}',
-    withinPace: 'Dans votre rythme quotidien de {{amount}}',
+    perDayOnPlan: 'Par jour pour tenir le budget : {{amount}}',
     trend: '7 derniers jours · pic à {{amount}}',
   },
   quickLog: {
