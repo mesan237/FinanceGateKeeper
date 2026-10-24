@@ -36,6 +36,7 @@ import {
   Palette,
   Pencil,
   Plus,
+  Repeat,
   Route,
   Settings,
   Smartphone,
@@ -110,6 +111,8 @@ export const ICONS = {
   profile: UserRound,
   lock: Lock,
   path: Route,
+  /** An envelope whose leftover carries into next month (UX-13). */
+  rollover: Repeat,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

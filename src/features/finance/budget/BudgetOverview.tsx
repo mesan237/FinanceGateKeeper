@@ -138,7 +138,9 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
 
             {cashflow.money ? <MoneyViewCard money={cashflow.money} /> : null}
 
-            {overview.plan.unassigned !== 0 ? (
+            {/* One action strip at a time (UX-13): the surplus prompt first, then
+                what is left to share out. */}
+            {overview.plan.unassigned !== 0 && !(isCurrent && overview.plan.surplusNeedsJob) ? (
               <Pressable
                 testID="budget-unassigned-strip"
                 accessibilityRole="button"
