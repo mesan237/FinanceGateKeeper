@@ -18,12 +18,12 @@ jest.mock('@/services/database', () => {
 
 import { execute } from '@/services/database';
 import { setTotalBudget } from '@/features/finance/budget/budget.envelopes';
+import { getBudgetOverview } from '@/features/finance/budget/budget.plan';
 import { ensureMonthRow } from '@/features/finance/budget/budget.service';
 import { confirmZeroDay, createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 import {
   buildSpendingTrend,
-  dailyBudgetPace,
   daysInMonth,
   daysRemainingInMonth,
   daysSoFarInMonth,
@@ -114,18 +114,6 @@ describe('spentPct', () => {
 
   it('returns 0 when nothing is spent', () => {
     expect(spentPct(0, 65000)).toBe(0);
-  });
-});
-
-// ---- dailyBudgetPace (pure) -------------------------------------------------
-
-describe('dailyBudgetPace', () => {
-  it('divides the expense budget across the days in the month', () => {
-    expect(dailyBudgetPace(60000, '2026-06')).toBe(2000); // 60 000 / 30
-  });
-
-  it('returns 0 when there is no expense budget', () => {
-    expect(dailyBudgetPace(0, '2026-06')).toBe(0);
   });
 });
 
@@ -236,17 +224,37 @@ describe('getDashboardSnapshot', () => {
 
     expect(state.budget!.isPlanned).toBe(false);
     // No plan, no pace to be measured against.
-    expect(state.dailyPace).toBeNull();
+    expect(state.safeDailySpend).toBeNull();
   });
 
-  it('counts a month with an explicit total as planned, with a daily pace', async () => {
+  it('counts a month with an explicit total as planned, with a daily figure', async () => {
     await ensureMonthRow(MONTH);
     await setTotalBudget(MONTH, 90000);
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
 
     expect(state.budget!.isPlanned).toBe(true);
-    expect(state.dailyPace).toBeCloseTo(90000 / 30);
+    // Nothing spent yet: the whole plan over the 22 days left after the 8th.
+    expect(state.safeDailySpend).toBeCloseTo(90000 / 22);
+  });
+
+  it("shows the Budget tab's own per-day figure: what is left over the days left (UX-11)", async () => {
+    await ensureMonthRow(MONTH);
+    await setTotalBudget(MONTH, 90000);
+    await createExpense({
+      amount: 24000,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: TODAY,
+      isRecurring: false,
+    });
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+    const overview = await getBudgetOverview(MONTH, TODAY);
+
+    expect(state.safeDailySpend).toBeCloseTo((90000 - 24000) / 22);
+    expect(state.safeDailySpend).toBe(overview.safeDailySpend);
   });
 
   it('counts an expected-income month as planned (VS-47)', async () => {

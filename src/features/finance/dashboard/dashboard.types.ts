@@ -54,7 +54,7 @@ export interface DashboardState {
   logging: DayLogging;
   /** The month's imprévus — expenses the user marked as unplanned (VS-38). */
   unplanned: UnplannedTotals;
-  /** Recommended daily expense spend (expense budget ÷ days in month). null
-   * when the month has no plan. */
-  dailyPace: number | null;
+  /** The Budget tab's per-day figure: what is left in the plan over the days
+   * left (UX-11). null when the month has no plan. */
+  safeDailySpend: number | null;
 }

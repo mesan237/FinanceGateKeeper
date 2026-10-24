@@ -2261,6 +2261,31 @@ what comes next; the dashboard shows the same in one card.
 bills and estimates only when planning.
 
 ---
+### VS-73: One Daily Figure on Home and Budget (UX-11) 🔄 In Progress
+
+**Priority:** P1 — release cut (docs/ux-redesign/06 §12.1, decision D3)
+**Blocked by:** —
+
+**Scope:**
+
+- Home's Today card showed *Within/Over your daily pace of X*, where X was the budget ÷ every day
+  of the month. The Budget tab showed a different amount a day: what is left ÷ the days left.
+- Home now shows the Budget tab's `safeDailySpend` (from `getBudgetOverview`, which Home already
+  reads), rounded the same way, as *A day to stay on plan: X* / *Par jour pour tenir le budget : X*.
+- The within/over verdict is gone: the figure already counts today's spending, so comparing today
+  against it would count it twice. Once the plan is used up the figure is 0, as on the Budget tab.
+- No plan: no figure (unchanged from VS-70). `dailyBudgetPace` and the `overPace`/`withinPace` copy
+  are removed; `DashboardState.dailyPace` is now `safeDailySpend`.
+
+**TDD Anchor:**
+
+- Test: the snapshot's figure equals `getBudgetOverview(...).safeDailySpend` for the same data; null
+  without a plan.
+- Test: Today card label, rounding, 0 when used up, hidden without a plan, en and fr.
+
+**Done when:** Home and the Budget tab show the same amount a day for the same month.
+
+---
 
 ## DEPENDENCY GRAPH
 

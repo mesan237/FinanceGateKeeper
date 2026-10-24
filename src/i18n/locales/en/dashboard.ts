@@ -33,8 +33,7 @@ export const dashboard = {
   },
   today: {
     title: "Today's spending",
-    overPace: 'Over your daily pace of {{amount}}',
-    withinPace: 'Within your daily pace of {{amount}}',
+    perDayOnPlan: 'A day to stay on plan: {{amount}}',
     trend: 'Last 7 days · peak {{amount}}',
   },
   quickLog: {

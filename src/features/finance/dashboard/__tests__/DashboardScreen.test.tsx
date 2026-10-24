@@ -58,7 +58,7 @@ const FULL_STATE: DashboardState = {
   cashflow: { income: 100000, expenses: 20000 },
   logging: { loggedDays: 18, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
-  dailyPace: 2167,
+  safeDailySpend: 2167,
 };
 
 const BARE_STATE: DashboardState = {
@@ -71,7 +71,7 @@ const BARE_STATE: DashboardState = {
   cashflow: null,
   logging: { loggedDays: 0, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
-  dailyPace: null,
+  safeDailySpend: null,
 };
 
 function setupHooks(state: DashboardState | null, loading = false) {

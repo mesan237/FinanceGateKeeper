@@ -68,7 +68,7 @@ here keeps its own name in the UI.
 |---|---|---|
 | Budget remaining | Left in your plan (over: *Over your plan by*) | Reste au budget (*Budget dépassé de*) |
 | Safe to spend | Free cash | Argent libre |
-| Safe daily spend (`safeDailySpend`) | A day to stay on plan | Par jour pour tenir le budget |
+| Safe daily spend (`safeDailySpend`) — Budget hero and Home's Today card, one figure (UX-11) | A day to stay on plan | Par jour pour tenir le budget |
 | Committed money | Due before month end | À payer d’ici fin du mois |
 | Unassigned | … to share out | … à répartir |
 | Unbudgeted income, left alone | Keep it aside | Les garder de côté |

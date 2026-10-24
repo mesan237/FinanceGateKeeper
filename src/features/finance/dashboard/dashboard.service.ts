@@ -67,16 +67,6 @@ export function spentPct(expensesLogged: number, expenseBudget: number): number 
 }
 
 /**
- * The recommended even daily spend: the month's expense budget spread across
- * every calendar day of the month. Returns 0 when no budget is set. Pure.
- */
-export function dailyBudgetPace(expenseBudget: number, monthISO: string): number {
-  const days = daysInMonth(monthISO);
-  if (days <= 0 || expenseBudget <= 0) return 0;
-  return expenseBudget / days;
-}
-
-/**
  * Days of `monthISO` up to and including `todayISO`: the day of the month while
  * it runs, every day once it is over, none before it starts. Pure.
  */
@@ -144,8 +134,10 @@ export async function getDashboardSnapshot(
     daysSoFar: daysSoFarInMonth(monthISO, todayISO),
   };
 
-  // Without a plan there is no pace to keep: income alone is not a budget (UX-04).
-  const dailyPace = budget.isPlanned ? dailyBudgetPace(expenseBudget, monthISO) : null;
+  // Without a plan there is no daily figure: income alone is not a budget (UX-04).
+  // With one, it is the Budget tab's own figure, so the two screens show one
+  // number a day (UX-11).
+  const safeDailySpend = budget.isPlanned ? overview.safeDailySpend : null;
 
   return {
     monthISO,
@@ -157,6 +149,6 @@ export async function getDashboardSnapshot(
     cashflow,
     logging,
     unplanned,
-    dailyPace,
+    safeDailySpend,
   };
 }
