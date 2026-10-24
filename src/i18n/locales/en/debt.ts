@@ -30,7 +30,7 @@ export const debt = {
     removePayment: 'Remove',
   },
   form: {
-    title: 'New Debt',
+    title: 'New debt',
     throughAccount: 'Through an account',
     paidFrom: 'Paid from',
     receivedIn: 'Received in',

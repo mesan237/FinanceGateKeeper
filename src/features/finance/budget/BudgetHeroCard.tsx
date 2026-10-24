@@ -44,7 +44,7 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
     <Card testID="budget-hero">
       <View style={styles.headerRow}>
         <Typography variant="label">
-          {isOver ? t('hero.overBy') : t('hero.leftToSpend')}
+          {isOver ? t('hero.overBy') : t('hero.leftInPlan')}
         </Typography>
         <Pill label={status.label} tone={status.tone} testID="budget-health-chip" />
       </View>
@@ -102,12 +102,12 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
           testID="budget-stat-days"
         />
         <Stat
-          label={t('hero.safeDaily')}
+          label={t('hero.perDayOnPlan')}
           value={formatCurrency(Math.round(overview.safeDailySpend))}
           testID="budget-stat-daily"
         />
         <Stat
-          label={t('hero.onThisPace')}
+          label={t('hero.headingFor')}
           value={formatCurrency(Math.round(overview.projected))}
           emphasis={overview.projected > overview.available}
           testID="budget-stat-projected"

@@ -15,20 +15,19 @@ import type { MoneyView } from './budget.types';
 const COMMITTED_PARTS = ['recurring', 'planned', 'debts', 'tontines'] as const;
 
 export interface MoneyViewCardProps {
-  /** What the month's plan still allows (the hero's remainder). */
-  budgetLeft: number;
   money: MoneyView;
 }
 
 /**
- * "Your money now" (VS-47): the budget, the cash and the money already
- * promised, kept as separate figures. The budget is a plan, the cash is a
- * fact, and committed money is neither, so the budget is never subtracted from
- * either. Safe-to-spend (VS-49) is the one derived figure: cash outside the
- * goal wallets, less what is due by month end. When that is negative the card
- * says so in words.
+ * "Your money now" (VS-47): the cash and the money already promised, kept as
+ * separate figures. The plan's remainder is the hero above, so it is not
+ * repeated here under a second name (UX-01). The budget is a plan, the cash is
+ * a fact, and committed money is neither, so the budget is never subtracted
+ * from either. Free cash (safe to spend, VS-49) is the one derived figure: cash
+ * outside the goal wallets, less what is due by month end. When that is
+ * negative the card says so in words.
  */
-export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
+export function MoneyViewCard({ money }: MoneyViewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('budget');
   const { committed } = money;
@@ -37,7 +36,6 @@ export function MoneyViewCard({ budgetLeft, money }: MoneyViewCardProps) {
     <Card testID="money-view" style={styles.card}>
       <Typography variant="label">{t('money.title')}</Typography>
 
-      <Figure label={t('money.budgetLeft')} hint={t('money.budgetLeftHint')} amount={budgetLeft} testID="money-budget-left" />
       <Figure label={t('money.cash')} hint={t('money.cashHint')} amount={money.cash} testID="money-cash" />
       {money.goalCash > 0 ? (
         <Typography variant="muted" testID="money-goal-cash">

@@ -105,7 +105,7 @@ export function MonthlyReport() {
 
           <View style={styles.section}>
             <Typography variant="subheading">{t('monthly.performance')}</Typography>
-            <PerfRow label={t('monthly.planned')} value={report.expensePerformance.planned} />
+            <PerfRow label={t('monthly.budget')} value={report.expensePerformance.planned} />
             <ProgressBar
               testID="expense-performance-bar"
               value={expenseSpentPct(

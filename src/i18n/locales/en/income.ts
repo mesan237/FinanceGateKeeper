@@ -4,10 +4,10 @@ export const income = {
   noteLabel: 'Note',
   account: 'Account',
   log: {
-    title: 'Log Income',
+    title: 'Log income',
   },
   detail: {
-    title: 'Edit Income',
+    title: 'Edit income',
     invalidId: 'Invalid income id.',
     invalidEdit: 'Enter an amount greater than 0 and pick a source.',
     notFoundTitle: 'Income',

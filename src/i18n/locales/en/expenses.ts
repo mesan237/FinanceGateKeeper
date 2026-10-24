@@ -10,7 +10,7 @@ export const expenses = {
     transferLink: 'Log a transfer between accounts',
   },
   entry: {
-    description: 'Description',
+    description: 'Note',
     notePlaceholder: 'Note (optional)',
     noteLabel: 'Note',
     account: 'Account',
@@ -20,10 +20,10 @@ export const expenses = {
     unplannedHint: "Spending you didn't see coming",
   },
   log: {
-    title: 'Log Expense',
+    title: 'Log expense',
   },
   detail: {
-    title: 'Edit Expense',
+    title: 'Edit expense',
     invalidId: 'Invalid expense id.',
     delete: 'Delete expense',
     deleteTitle: 'Delete expense?',
@@ -75,7 +75,7 @@ export const expenses = {
     add: 'Add',
   },
   quickAdd: {
-    title: 'Quick Add',
+    title: 'Quick add',
     hint: 'Tap to log · long-press a tile to edit',
     addTemplate: 'Add template',
     log: 'Log',

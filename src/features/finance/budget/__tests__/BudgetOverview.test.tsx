@@ -212,11 +212,11 @@ describe('BudgetOverview — the hero', () => {
   it('states the hero and status in French', async () => {
     await i18n.changeLanguage('fr');
     await renderTab();
-    expect(screen.getByText('Reste à dépenser')).toBeTruthy();
+    expect(screen.getByText('Reste au budget')).toBeTruthy();
     expect(screen.getByTestId('budget-health-chip')).toHaveTextContent('Attention');
   });
 
-  it('leads with what is left to spend', async () => {
+  it('leads with what is left in the plan', async () => {
     await renderTab();
     expect(screen.getByTestId('budget-remaining')).toHaveTextContent('200 000 FCFA');
   });
@@ -232,7 +232,7 @@ describe('BudgetOverview — the hero', () => {
     );
     await renderTab();
 
-    expect(screen.getByText('Over budget by')).toBeTruthy();
+    expect(screen.getByText('Over your plan by')).toBeTruthy();
     expect(screen.getByTestId('budget-health-chip')).toHaveTextContent('Over budget');
   });
 
@@ -241,15 +241,15 @@ describe('BudgetOverview — the hero', () => {
     expect(screen.getByTestId('budget-meter-marker')).toBeTruthy();
   });
 
-  it('surfaces days left, safe daily spend, and the projection', async () => {
+  it('surfaces days left, the daily amount that stays on plan, and the projection', async () => {
     await renderTab();
 
     expect(screen.getByTestId('budget-stat-days')).toHaveTextContent('21Days left');
     expect(screen.getByTestId('budget-stat-daily')).toHaveTextContent(
-      '9 523 FCFASafe daily spend',
+      '9 523 FCFAA day to stay on plan',
     );
     expect(screen.getByTestId('budget-stat-projected')).toHaveTextContent(
-      '310 000 FCFAOn this pace',
+      '310 000 FCFAHeading for',
     );
   });
 
@@ -281,7 +281,7 @@ describe('BudgetOverview — distribution', () => {
     await renderTab();
 
     expect(screen.getByTestId('budget-unassigned-strip')).toBeTruthy();
-    expect(screen.getByText('45 000 FCFA unassigned')).toBeTruthy();
+    expect(screen.getByText('45 000 FCFA to share out')).toBeTruthy();
   });
 
   it('warns when the envelopes promise more than the budget', async () => {
@@ -327,7 +327,7 @@ describe('BudgetOverview — envelopes', () => {
     await renderTab();
 
     expect(screen.getByTestId(`envelope-meter-${FOOD}-marker`)).toBeTruthy();
-    expect(screen.getByTestId(`envelope-projected-${FOOD}`)).toHaveTextContent('ends ~90 000 FCFA');
+    expect(screen.getByTestId(`envelope-projected-${FOOD}`)).toHaveTextContent('heading for ≈ 90 000 FCFA');
   });
 
   it('marks a category that has spending but no budget', async () => {

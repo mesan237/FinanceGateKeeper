@@ -17,7 +17,7 @@ export const budget: Translation<typeof en> = {
       'Fixez ce que vous pouvez dépenser ce mois-ci, puis répartissez-le entre vos catégories. Vous verrez exactement où en est chacune au fil du mois.',
     emptyAction: 'Planifier ce mois',
     overAllocated: '{{amount}} de trop réparti',
-    unassigned: '{{amount}} non réparti',
+    unassigned: '{{amount}} à répartir',
     overAllocatedHint: 'Vos catégories promettent plus que votre budget.',
     unassignedHint: 'Donnez-lui une affectation avant de le dépenser.',
     assign: 'Répartir',
@@ -28,14 +28,14 @@ export const budget: Translation<typeof en> = {
   },
   hero: {
     overBy: 'Budget dépassé de',
-    leftToSpend: 'Reste à dépenser',
+    leftInPlan: 'Reste au budget',
     spentOf: '{{spent}} dépensés sur {{available}}',
     carried: 'Dont {{amount}} reporté du mois dernier.',
     expectedIncome: 'Prévu sur vos revenus attendus · {{received}} reçus sur {{expected}}',
     setAside: 'Après {{amount}} mis de côté pour vos objectifs.',
     daysLeft: 'Jours restants',
-    safeDaily: 'Dépense sûre par jour',
-    onThisPace: 'À ce rythme',
+    perDayOnPlan: 'Par jour pour tenir le budget',
+    headingFor: 'En route vers',
   },
   envelope: {
     a11y: 'Budget {{category}} — {{status}}',
@@ -45,7 +45,7 @@ export const budget: Translation<typeof en> = {
     over: 'de trop',
     left: 'restant',
     usedPerDay: '{{percent}} % utilisé · {{daily}}/jour',
-    endsAround: 'fin ~{{amount}}',
+    headingFor: 'en route vers ≈ {{amount}}',
     rollsOver: '↻ Reporté',
   },
   sheet: {
@@ -83,7 +83,7 @@ export const budget: Translation<typeof en> = {
     categoriesHint:
       'Donnez un montant à chaque catégorie. Touchez « + reste » pour y verser ce qui reste.',
     overAllocated: 'Trop réparti',
-    unassigned: 'Non réparti',
+    unassigned: 'À répartir',
     assignedOf: '{{assigned}} sur {{total}}',
     overWarning:
       'Vos catégories dépassent votre budget mensuel. Vous pouvez quand même enregistrer — sachez seulement que le plan ne tient pas.',
@@ -97,18 +97,16 @@ export const budget: Translation<typeof en> = {
   },
   surplus: {
     title: '{{amount}} reçus au-delà de votre budget',
-    hint: 'Donnez-leur un rôle : ajoutez-les au budget du mois, ou laissez-les non attribués.',
+    hint: 'Donnez-leur un rôle : ajoutez-les au budget du mois, ou gardez-les de côté.',
     add: 'Ajouter au budget',
-    leave: 'Laisser non attribué',
+    leave: 'Les garder de côté',
   },
   money: {
     title: 'Votre argent maintenant',
-    budgetLeft: 'Reste du budget',
-    budgetLeftHint: 'Ce que votre plan permet encore ce mois-ci',
     cash: 'Argent dans les portefeuilles',
     cashHint: 'Ce que contiennent vos portefeuilles aujourd’hui',
-    committed: 'Engagé',
-    committedHint: 'À payer avant la fin du mois',
+    committed: 'À payer d’ici fin du mois',
+    committedHint: 'Factures, achats prévus, dettes et tontines encore à payer',
     parts: {
       recurring: 'Factures {{amount}}',
       planned: 'Prévu {{amount}}',
@@ -116,8 +114,8 @@ export const budget: Translation<typeof en> = {
       tontines: 'Tontines {{amount}}',
     },
     goalCash: 'dont {{amount}} dans les portefeuilles d’objectifs',
-    safe: 'Disponible à dépenser',
-    safeHint: 'L’argent hors objectifs, moins ce qui est dû',
+    safe: 'Argent libre',
+    safeHint: 'L’argent hors objectifs, une fois payé ce qui est dû',
     shortfall: 'Ce qui est dû d’ici la fin du mois dépasse de {{amount}} l’argent hors objectifs.',
   },
   insights: {
