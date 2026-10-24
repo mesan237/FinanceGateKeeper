@@ -22,7 +22,7 @@ Report sections 11, 12, 13 and 14.
 
 | Change | Kind | Risk | Status |
 |---|---|---|---|
-| Dashboard daily caption uses `safeDailySpend` instead of `dailyBudgetPace` (D3) | Which existing figure is shown | The caption's meaning changes | Needs approval |
+| Dashboard daily caption uses `safeDailySpend` instead of `dailyBudgetPace` (D3) | Which existing figure is shown | The caption's meaning changes | Approved (D3); done in VS-73 |
 | Back-confirm no-spend days (D5) | New UI over existing `confirmZeroDay(date)`; **add a guard** against days with expenses | Coverage inflation if misused; a contradictory day today is possible via the service | Needs approval + test first |
 | Prorate a mid-month first month (D4, option B) | Changes `monthCoverage`, therefore *complete month*, averages, starting point, journey | Shifts every history-based figure for existing data | **Not recommended now**; copy-only option A first |
 | Free-cash readiness ("balances checked … ago") | Read of latest balance checks | None to figures | Presentation |
