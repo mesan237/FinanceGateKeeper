@@ -73,5 +73,6 @@ here keeps its own name in the UI.
 | Unbudgeted income, left alone | Keep it aside | Les garder de côté |
 | Projected spend | Heading for (≈ amount) | En route vers (≈ montant) |
 | Budget total (Reports) | Budget | Budget |
+| Month spend (Home, month without a plan) | Spent this month | Dépensé ce mois-ci |
 | Budget health | On track · Watch out · Over budget | Dans les clous · Attention · Budget dépassé |
 | Wallet (an `accounts` row) | Wallet — never "account", which means the cloud account | Portefeuille — jamais « compte » |
