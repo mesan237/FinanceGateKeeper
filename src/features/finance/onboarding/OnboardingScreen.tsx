@@ -1,54 +1,75 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
+import { SPACING } from '@/constants/layout';
 import { useThemeMode, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface OnboardingScreenProps {
-  /** Called when the user finishes the last panel or skips. */
+  /** Called when the set-up is finished or skipped. */
   onDone: () => void;
+  /**
+   * Saves the daily reminder time and asks for notification permission.
+   * Injected by the routing layer from the auth feature.
+   */
+  onReminder: (time: string) => Promise<unknown>;
+  /**
+   * Renders the wallets step, which calls `next` once its own balances are
+   * saved. Injected by the routing layer from the accounts feature.
+   */
+  renderWallets: (next: () => void) => React.ReactNode;
 }
 
-interface Panel {
-  /** Catalogue key under `onboarding.panels`. */
-  key: 'track' | 'budget' | 'reports' | 'done';
-  /** Optional chip row (used to preview what the app tracks). */
-  chips?: ReadonlyArray<'expenses' | 'income' | 'budgets' | 'debts'>;
-}
+type Step = 'intro' | 'wallets' | 'reminder';
+const STEPS: ReadonlyArray<Step> = ['intro', 'wallets', 'reminder'];
 
-// The intro panels; their copy lives in the `onboarding` catalogue.
-const PANELS: ReadonlyArray<Panel> = [
-  { key: 'track', chips: ['expenses', 'income', 'budgets', 'debts'] },
-  { key: 'budget' },
-  { key: 'reports' },
-  { key: 'done' },
-];
+/** The path's five steps, previewed on the first screen (VS-63). */
+const PATH = ['observe', 'see', 'plan', 'optimize', 'grow'] as const;
+
+/** When the daily reminder is set if the user keeps the suggestion. */
+const DEFAULT_REMINDER = '21:00';
 
 /**
- * First-run onboarding carousel (VS-23). Presentational only — it walks through a
- * few intro panels and calls `onDone` when the user finishes the last one or taps
- * Skip. The routing layer owns whether it is shown and persisting completion, so
- * this component never touches the auth feature or the database.
+ * First-run set-up (UX-08), replacing the four-card tutorial (NN/g found such
+ * decks add no success and make tasks feel harder). Three short steps, each
+ * doing something rather than explaining it:
+ *
+ * 1. What the app does: log for a few months, then plan — the path's five steps.
+ * 2. What the wallets hold today, so balances are right from day one.
+ * 3. When to remind the user to log.
+ *
+ * Steps 2 and 3 can wait ("Not now" / "No reminders"), and "Skip set-up" leaves
+ * from anywhere. The wallets step and the reminder come from other features
+ * through the routing layer, so this slice imports none of them.
  */
-export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
+export function OnboardingScreen({ onDone, onReminder, renderWallets }: OnboardingScreenProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('onboarding');
   const { scheme } = useThemeMode();
   const [index, setIndex] = useState(0);
+  const [time, setTime] = useState(DEFAULT_REMINDER);
+  const [saving, setSaving] = useState(false);
 
-  const panel = PANELS[index];
-  const isLast = index === PANELS.length - 1;
+  const step = STEPS[index];
+  const next = () => setIndex((i) => Math.min(i + 1, STEPS.length - 1));
 
-  const next = () => {
-    if (isLast) {
+  const remind = async () => {
+    setSaving(true);
+    try {
+      await onReminder(time);
+    } catch (e) {
+      // A refused permission or a failed save must not trap the user here;
+      // the reminder can be set later in Preferences.
+      console.error('Set-up reminder failed:', e);
+    } finally {
+      setSaving(false);
       onDone();
-      return;
     }
-    setIndex((i) => i + 1);
   };
 
   return (
@@ -56,56 +77,68 @@ export function OnboardingScreen({ onDone }: OnboardingScreenProps) {
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
 
       <View style={styles.header}>
-        {isLast ? null : (
-          <Pressable
-            testID="onboarding-skip"
-            accessibilityRole="button"
-            accessibilityLabel={t('skipLabel')}
-            onPress={onDone}
-            hitSlop={12}
-          >
-            <Typography variant="muted" style={styles.skip}>
-              {t('skip')}
-            </Typography>
-          </Pressable>
-        )}
+        <Typography variant="muted">{t('stepOf', { number: index + 1, total: STEPS.length })}</Typography>
+        <Pressable
+          testID="onboarding-skip"
+          accessibilityRole="button"
+          accessibilityLabel={t('skipLabel')}
+          onPress={onDone}
+          hitSlop={12}
+        >
+          <Typography style={styles.skip}>{t('skip')}</Typography>
+        </Pressable>
       </View>
 
-      <View style={styles.body}>
-        <Typography variant="display" style={styles.title}>
-          {t(`panels.${panel.key}.title`)}
-        </Typography>
-        <Typography variant="body" style={styles.text}>
-          {t(`panels.${panel.key}.body`)}
-        </Typography>
+      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Typography variant="display">{t(`${step}.title`)}</Typography>
+        <Typography style={styles.text}>{t(`${step}.body`)}</Typography>
 
-        {panel.chips ? (
-          <View style={styles.chips}>
-            {panel.chips.map((chip) => (
-              <View key={chip} style={styles.chip}>
-                <Typography variant="label" style={styles.chipText}>
-                  {t(`chips.${chip}`)}
-                </Typography>
+        {step === 'intro' ? (
+          <View style={styles.path}>
+            {PATH.map((key, i) => (
+              <View key={key} style={styles.pathRow}>
+                <Typography style={styles.pathNumber}>{i + 1}</Typography>
+                <View style={styles.grow}>
+                  <Typography variant="subheading">{t(`intro.steps.${key}.title`)}</Typography>
+                  <Typography variant="muted">{t(`intro.steps.${key}.body`)}</Typography>
+                </View>
               </View>
             ))}
           </View>
         ) : null}
-      </View>
+
+        {step === 'wallets' ? renderWallets(next) : null}
+
+        {step === 'reminder' ? (
+          <TimeField
+            testID="onboarding-reminder-time"
+            value={time}
+            onChange={setTime}
+            accessibilityLabel={t('reminder.time')}
+          />
+        ) : null}
+      </ScrollView>
 
       <View style={styles.footer}>
-        <View style={styles.dots}>
-          {PANELS.map((p, i) => (
-            <View
-              key={p.key}
-              style={[styles.dot, i === index ? styles.dotActive : null]}
-            />
-          ))}
-        </View>
-        <Button
-          testID="onboarding-next"
-          label={isLast ? t('getStarted') : t('next')}
-          onPress={next}
-        />
+        {step === 'intro' ? (
+          <Button testID="onboarding-next" label={t('intro.start')} onPress={next} />
+        ) : null}
+        {step === 'reminder' ? (
+          <Button
+            testID="onboarding-remind"
+            label={t('reminder.enable')}
+            onPress={() => void remind()}
+            loading={saving}
+          />
+        ) : null}
+        {step !== 'intro' ? (
+          <Button
+            testID="onboarding-later"
+            label={t(`${step}.later`)}
+            variant="ghost"
+            onPress={step === 'reminder' ? onDone : next}
+          />
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -116,63 +149,44 @@ const makeStyles = (c: ThemeColors) =>
     container: {
       flex: 1,
       backgroundColor: c.BACKGROUND,
-      paddingHorizontal: 24,
-      paddingBottom: 24,
+      paddingHorizontal: SPACING.xl,
+      paddingBottom: SPACING.xl,
     },
     header: {
       minHeight: 32,
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-      paddingTop: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: SPACING.sm,
     },
     skip: {
       color: c.PRIMARY_TEXT,
     },
     body: {
-      flex: 1,
+      flexGrow: 1,
       justifyContent: 'center',
-      gap: 16,
-    },
-    title: {
-      textAlign: 'center',
+      gap: SPACING.lg,
+      paddingVertical: SPACING.xl,
     },
     text: {
-      textAlign: 'center',
-      color: c.TEXT_MUTED,
+      color: c.TEXT_SECONDARY,
       lineHeight: 22,
     },
-    chips: {
+    path: {
+      gap: SPACING.md,
+    },
+    pathRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      gap: 8,
-      marginTop: 8,
+      gap: SPACING.md,
     },
-    chip: {
-      backgroundColor: c.PRIMARY_LIGHT,
-      borderRadius: 999,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-    },
-    chipText: {
+    pathNumber: {
+      width: 20,
       color: c.PRIMARY_TEXT,
     },
+    grow: {
+      flex: 1,
+    },
     footer: {
-      gap: 20,
-    },
-    dots: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: c.BORDER,
-    },
-    dotActive: {
-      backgroundColor: c.PRIMARY_GREEN,
-      width: 20,
+      gap: SPACING.sm,
     },
   });

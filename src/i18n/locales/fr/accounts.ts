@@ -72,6 +72,12 @@ export const accounts: Translation<typeof en> = {
     placeholder: 'Choisir un portefeuille',
     defaultBadge: '✓ Par défaut',
   },
+  opening: {
+    a11y: 'Ce que contient {{name}} aujourd’hui, en FCFA',
+    placeholder: 'Vide si incertain',
+    hint: 'Un chiffre approximatif suffit. Vous pourrez ajouter, renommer ou corriger vos portefeuilles plus tard dans Portefeuilles.',
+    save: 'Enregistrer et continuer',
+  },
   transfer: {
     title: 'Nouveau virement',
     from: 'De',
