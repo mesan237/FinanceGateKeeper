@@ -122,7 +122,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    checkboxChecked: { backgroundColor: c.PRIMARY_GREEN, borderColor: c.PRIMARY_GREEN },
+    checkboxChecked: { backgroundColor: c.PRIMARY_FILL, borderColor: c.PRIMARY_FILL },
     body: { flex: 1 },
     nameBought: { textDecorationLine: 'line-through', color: c.TEXT_MUTED },
     dueRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },

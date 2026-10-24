@@ -198,7 +198,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   pillActive: {
-    backgroundColor: c.PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_FILL,
   },
   pillText: {
     color: c.PRIMARY_TEXT,

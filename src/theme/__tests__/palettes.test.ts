@@ -27,6 +27,11 @@ describe('palettes', () => {
     }
   });
 
+  it('keeps white labels on green fills at WCAG AA (4.5:1) in both themes (UX-02b)', () => {
+    expect(contrastRatio(LIGHT_COLORS.TEXT_INVERSE, LIGHT_COLORS.PRIMARY_FILL)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(DARK_COLORS.TEXT_INVERSE, DARK_COLORS.PRIMARY_FILL)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('uses the requested dark ground and emerald accent', () => {
     expect(DARK_COLORS.BACKGROUND).toBe('#0f172a');
     expect(DARK_COLORS.PRIMARY_GREEN).toBe('#10b981');

@@ -15,7 +15,7 @@ export interface IncomeSourcePickerProps {
 
 /**
  * Visual source selector: one pill per `INCOME_SOURCES` entry, laid out in a
- * row. The selected pill is filled with `c.PRIMARY_GREEN`; the others are
+ * row. The selected pill is filled with `c.PRIMARY_FILL`; the others are
  * outlined. Selection state is exposed via `accessibilityState.selected`.
  */
 export function IncomeSourcePicker({ value, onChange }: IncomeSourcePickerProps) {
@@ -56,8 +56,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: c.PRIMARY_GREEN,
   },
   pillActive: {
-    backgroundColor: c.PRIMARY_GREEN,
-    borderColor: c.PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_FILL,
+    borderColor: c.PRIMARY_FILL,
   },
   pillTextActive: {
     color: c.TEXT_INVERSE,

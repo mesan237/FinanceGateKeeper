@@ -113,8 +113,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 20,
   },
   chipActive: {
-    backgroundColor: c.PRIMARY_GREEN,
-    borderColor: c.PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_FILL,
+    borderColor: c.PRIMARY_FILL,
   },
   chipTextActive: {
     color: c.TEXT_INVERSE,

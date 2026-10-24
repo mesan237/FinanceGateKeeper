@@ -21,7 +21,7 @@ export interface SegmentedControlProps {
 }
 
 /**
- * A horizontal pill toggle. The active segment is filled with `PRIMARY_GREEN`;
+ * A horizontal pill toggle. The active segment is filled with `PRIMARY_FILL`;
  * the rest read as muted labels on a neutral track. Each segment is a 44px-tall
  * tab for comfortable touch, exposing its selected state for accessibility.
  */
@@ -75,7 +75,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   segmentActive: {
-    backgroundColor: c.PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_FILL,
   },
   label: {
     color: c.TEXT_MUTED,

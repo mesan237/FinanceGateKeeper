@@ -93,6 +93,15 @@ describe('shared primitives', () => {
     expect(flattened.color).toBe('#C62828'); // DANGER_TEXT
   });
 
+  it('fills the primary Button with the deep green so its white label reads (UX-02b)', () => {
+    render(<Button label="Save" onPress={() => undefined} testID="save-btn" />);
+    const button = screen.getByTestId('save-btn');
+    const flattened = Array.isArray(button.props.style)
+      ? Object.assign({}, ...button.props.style.flat().filter(Boolean))
+      : button.props.style;
+    expect(flattened.backgroundColor).toBe('#047857'); // PRIMARY_FILL
+  });
+
   it.each(['secondary', 'ghost'] as const)(
     'Button writes the %s label in the readable green, not the fill green (UX-02)',
     (variant) => {
