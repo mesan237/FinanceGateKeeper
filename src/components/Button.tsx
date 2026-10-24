@@ -41,8 +41,8 @@ interface VariantStyle {
 function variantsFor(c: ThemeColors): Record<ButtonVariant, VariantStyle> {
   return {
     primary: { background: c.PRIMARY_GREEN, foreground: c.TEXT_INVERSE },
-    secondary: { background: c.PRIMARY_LIGHT, foreground: c.PRIMARY_GREEN },
-    ghost: { background: 'transparent', foreground: c.PRIMARY_GREEN },
+    secondary: { background: c.PRIMARY_LIGHT, foreground: c.PRIMARY_TEXT },
+    ghost: { background: 'transparent', foreground: c.PRIMARY_TEXT },
     danger: { background: c.DANGER_LIGHT, foreground: c.DANGER_TEXT },
   };
 }

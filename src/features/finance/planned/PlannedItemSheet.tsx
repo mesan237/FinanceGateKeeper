@@ -166,7 +166,7 @@ function ItemForm({ item, onClose, onSubmit, error }: ItemFormProps) {
             <Icon
               name="categories"
               size={18}
-              color={categoryId === null ? c.PRIMARY_GREEN : c.TEXT_PRIMARY}
+              color={categoryId === null ? c.PRIMARY_TEXT : c.TEXT_PRIMARY}
             />
             <Typography style={categoryId === null ? styles.placeholder : undefined}>
               {categoryId === null ? t('item.selectCategory') : displayLabelFor(categoryId, null)}
@@ -251,7 +251,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 12,
     },
     triggerContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    placeholder: { color: c.PRIMARY_GREEN },
+    placeholder: { color: c.PRIMARY_TEXT },
     invalid: { borderColor: c.DANGER, borderWidth: 1 },
     dateRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     dateField: { flex: 1 },

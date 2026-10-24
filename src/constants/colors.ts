@@ -1,6 +1,13 @@
 // Emerald — shared across light and dark themes so the accent green reads the
 // same in both (the dark palette uses this exact value).
 export const PRIMARY_GREEN = '#10b981';
+/**
+ * The accent green for *text and small glyphs* (links, ghost/secondary button
+ * labels, selected rows). PRIMARY_GREEN is ~2.5:1 on white, too faint for
+ * text; this deeper emerald is ~5.5:1 on SURFACE and ~4.9:1 on PRIMARY_LIGHT
+ * (WCAG AA, UX-02). PRIMARY_GREEN stays for fills, bars and the active tab.
+ */
+export const PRIMARY_TEXT = '#047857';
 export const PRIMARY_LIGHT = '#E8F5E9';
 export const BACKGROUND = '#F5F7FA';
 export const SURFACE = '#FFFFFF';

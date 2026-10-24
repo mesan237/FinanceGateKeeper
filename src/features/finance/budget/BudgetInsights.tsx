@@ -145,7 +145,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: SPACING.sm,
   },
   toggle: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontSize: 13,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },

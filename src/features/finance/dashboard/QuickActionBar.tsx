@@ -105,7 +105,7 @@ export function QuickActionBar({
           accessibilityLabel={t('quickLog.incomeA11y')}
           onPress={onLogIncome}
           tint={c.PRIMARY_LIGHT}
-          accent={c.PRIMARY_GREEN}
+          accent={c.PRIMARY_TEXT}
         />
       </View>
 

@@ -245,7 +245,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.PRIMARY_LIGHT,
   },
   chipText: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontSize: 13,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
@@ -275,7 +275,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.DANGER,
   },
   unassignedDone: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
   },
   warning: {
     color: c.DANGER_TEXT,

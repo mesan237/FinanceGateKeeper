@@ -82,7 +82,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 6,
   },
   emptyCta: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

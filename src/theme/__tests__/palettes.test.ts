@@ -1,6 +1,7 @@
 import * as constants from '@/constants/colors';
 import { DARK_COLORS, LIGHT_COLORS } from '@/theme/palettes';
 import { COLOR_TOKENS } from '@/theme/theme.types';
+import { contrastRatio } from '@/utils/contrastRatio';
 
 describe('palettes', () => {
   it('LIGHT_COLORS matches the legacy colour constants for every token', () => {
@@ -13,6 +14,16 @@ describe('palettes', () => {
     for (const token of COLOR_TOKENS) {
       expect(typeof DARK_COLORS[token]).toBe('string');
       expect(DARK_COLORS[token].length).toBeGreaterThan(0);
+    }
+  });
+
+  it('keeps green text at WCAG AA (4.5:1) on every surface it sits on (UX-02)', () => {
+    for (const ground of [LIGHT_COLORS.SURFACE, LIGHT_COLORS.BACKGROUND, LIGHT_COLORS.PRIMARY_LIGHT]) {
+      expect(contrastRatio(LIGHT_COLORS.PRIMARY_TEXT, ground)).toBeGreaterThanOrEqual(4.5);
+    }
+    // The dark PRIMARY_LIGHT is a translucent wash over SURFACE, so SURFACE stands in for it.
+    for (const ground of [DARK_COLORS.SURFACE, DARK_COLORS.BACKGROUND, DARK_COLORS.SURFACE_MUTED]) {
+      expect(contrastRatio(DARK_COLORS.PRIMARY_TEXT, ground)).toBeGreaterThanOrEqual(4.5);
     }
   });
 

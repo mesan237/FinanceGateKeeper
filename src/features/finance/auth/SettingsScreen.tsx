@@ -186,7 +186,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 16,
   },
   suggestion: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   error: {

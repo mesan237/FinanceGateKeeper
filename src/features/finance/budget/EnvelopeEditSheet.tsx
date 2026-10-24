@@ -265,7 +265,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: 2,
   },
   toggleMark: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
     fontSize: 18,
   },
@@ -285,7 +285,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flex: 1,
   },
   coverAmount: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
   },
   error: {

@@ -62,7 +62,7 @@ export function TimeField({ value, onChange, accessibilityLabel, testID }: TimeF
         onPress={() => setOpen(true)}
         style={styles.pill}
       >
-        <Icon name="reminder" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} />
+        <Icon name="reminder" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} />
         <Typography style={styles.label}>{label}</Typography>
       </Pressable>
 

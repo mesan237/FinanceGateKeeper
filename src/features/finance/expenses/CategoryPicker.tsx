@@ -143,7 +143,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
                 }
               >
                 <View style={styles.useParentIcon}>
-                  <Icon name="check" size={18} color={c.PRIMARY_GREEN} />
+                  <Icon name="check" size={18} color={c.PRIMARY_TEXT} />
                 </View>
                 <Typography style={[styles.rowLabel, styles.action]}>{t('picker.useParent', { name: displayCategoryName(parent.name, parent.isDefault) })}</Typography>
               </Pressable>,
@@ -176,7 +176,7 @@ export function CategoryPicker({ visible, onClose, onSelect }: CategoryPickerPro
           router.push('/expenses/categories');
         }}
       >
-        <Icon name="settings" size={16} color={c.PRIMARY_GREEN} />
+        <Icon name="settings" size={16} color={c.PRIMARY_TEXT} />
         <Typography style={styles.action}>{t('picker.manage')}</Typography>
       </Pressable>
     </Modal>
@@ -205,7 +205,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     textAlign: 'center',
   },
   action: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   list: {

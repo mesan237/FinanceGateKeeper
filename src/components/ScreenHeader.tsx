@@ -76,7 +76,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'flex-end',
   },
   cancelLabel: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

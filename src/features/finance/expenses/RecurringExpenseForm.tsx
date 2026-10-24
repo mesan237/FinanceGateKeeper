@@ -201,7 +201,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.PRIMARY_GREEN,
   },
   pillText: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
   pillTextActive: {

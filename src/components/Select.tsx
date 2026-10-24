@@ -97,7 +97,7 @@ export function Select({ options, value, onChange, title, placeholder, testID }:
                   <Icon
                     name={option.icon}
                     size={ICON_SIZE.md}
-                    color={isSelected ? c.PRIMARY_GREEN : undefined}
+                    color={isSelected ? c.PRIMARY_TEXT : undefined}
                   />
                 ) : null}
                 <Typography style={[styles.rowLabel, isSelected && styles.rowLabelSelected]}>
@@ -111,7 +111,7 @@ export function Select({ options, value, onChange, title, placeholder, testID }:
                     {option.badge}
                   </Typography>
                 ) : null}
-                {isSelected ? <Icon name="check" size={ICON_SIZE.sm} color={c.PRIMARY_GREEN} /> : null}
+                {isSelected ? <Icon name="check" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} /> : null}
               </Pressable>
             );
           })}
@@ -140,7 +140,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  action: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  action: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   list: { maxHeight: 320 },
   row: {
     flexDirection: 'row',
@@ -157,6 +157,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   rowLabel: { flex: 1 },
-  rowLabelSelected: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
-  badge: { color: c.PRIMARY_GREEN, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
+  rowLabelSelected: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+  badge: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD, fontSize: 12 },
 });

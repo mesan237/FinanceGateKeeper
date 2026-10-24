@@ -178,6 +178,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   rollover: {
     fontSize: 11,
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
   },
 });

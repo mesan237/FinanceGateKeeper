@@ -267,7 +267,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: c.PRIMARY_GREEN,
   },
   addLabel: {
-    color: c.PRIMARY_GREEN,
+    color: c.PRIMARY_TEXT,
     fontSize: 32,
     fontFamily: FONT_FAMILY.SPACE_GROTESK_BOLD,
   },
