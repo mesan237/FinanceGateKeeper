@@ -167,11 +167,11 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
     expect(screen.queryByTestId('surplus-card')).toBeNull();
   });
 
-  it('shows budget left, cash and committed money for the current month', async () => {
+  it('shows cash and what is due for the current month, not the plan figure again', async () => {
     await renderTab();
 
     await waitFor(() => expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA'));
-    expect(screen.getByTestId('money-budget-left')).toHaveTextContent('150 000 FCFA');
+    expect(screen.queryByTestId('money-budget-left')).toBeNull();
     expect(screen.getByTestId('money-committed')).toHaveTextContent('52 000 FCFA');
     // 90 000 cash − 25 000 in goal wallets − 52 000 due (VS-49).
     expect(screen.getByTestId('money-safe')).toHaveTextContent('13 000 FCFA');

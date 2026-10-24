@@ -105,7 +105,7 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
               />
             ) : null}
 
-            {cashflow.money ? <MoneyViewCard budgetLeft={overview.remaining} money={cashflow.money} /> : null}
+            {cashflow.money ? <MoneyViewCard money={cashflow.money} /> : null}
 
             {overview.plan.unassigned !== 0 ? (
               <Pressable

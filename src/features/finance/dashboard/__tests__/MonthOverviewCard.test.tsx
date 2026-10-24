@@ -79,15 +79,15 @@ describe('MonthOverviewCard', () => {
   });
 
   describe('with a budget set', () => {
-    it('leads with what is left to spend', () => {
+    it('leads with what is left in the plan', () => {
       renderCard();
-      expect(screen.getByText('Left to spend')).toBeTruthy();
+      expect(screen.getByText('Left in your plan')).toBeTruthy();
       expect(screen.getByText('45 000 FCFA')).toBeTruthy();
     });
 
     it('labels an overspent month as over budget and shows the shortfall unsigned', () => {
       renderCard({ summary: OVERSPENT });
-      expect(screen.getByText('Over budget by')).toBeTruthy();
+      expect(screen.getByText('Over your plan by')).toBeTruthy();
       expect(screen.getByText('5 000 FCFA')).toBeTruthy();
     });
 
@@ -125,6 +125,19 @@ describe('MonthOverviewCard', () => {
       expect(
         StyleSheet.flatten(screen.getByTestId('budget-pace-chip').props.style).backgroundColor,
       ).toBe(DANGER_LIGHT);
+    });
+
+    it('names the pace in the same words as the Budget tab (UX-01)', () => {
+      renderCard();
+      expect(screen.getByTestId('budget-pace-chip')).toHaveTextContent('On track');
+
+      screen.unmount();
+      renderCard({ summary: NEARLY_SPENT });
+      expect(screen.getByTestId('budget-pace-chip')).toHaveTextContent('Watch out');
+
+      screen.unmount();
+      renderCard({ summary: OVERSPENT });
+      expect(screen.getByTestId('budget-pace-chip')).toHaveTextContent('Over budget');
     });
 
     it('offers no "set a budget" prompt', () => {
@@ -198,7 +211,7 @@ describe('MonthOverviewCard', () => {
     renderCard();
     expect(screen.getByText('SEPTEMBRE')).toBeTruthy();
     expect(screen.getByText('6 jours restants')).toBeTruthy();
-    expect(screen.getByText('Reste à dépenser')).toBeTruthy();
+    expect(screen.getByText('Reste au budget')).toBeTruthy();
     expect(screen.getByText('Entrées')).toBeTruthy();
   });
 

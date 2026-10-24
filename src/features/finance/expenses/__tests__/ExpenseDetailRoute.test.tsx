@@ -34,7 +34,7 @@ describe('ExpenseDetailRoute', () => {
   it('renders ExpenseDetailScreen for a valid positive integer id', () => {
     mockParams = { id: '5' };
     render(<ExpenseDetailRoute />);
-    // ExpenseDetailScreen renders the ScreenHeader with title "Edit Expense"
-    expect(screen.getByText('Edit Expense')).toBeTruthy();
+    // ExpenseDetailScreen renders the ScreenHeader with title "Edit expense"
+    expect(screen.getByText('Edit expense')).toBeTruthy();
   });
 });

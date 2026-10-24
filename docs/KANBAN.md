@@ -2091,6 +2091,33 @@ what comes next; the dashboard shows the same in one card.
 
 ---
 
+## UX REDESIGN (pre-release, plan in docs/ux-redesign/)
+
+### VS-66: One Name per Figure (UX-01) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1); decisions D1–D10 approved 2026-10-24
+**Blocked by:** —
+
+**Scope:**
+
+- One visible label per figure, the same on every screen, in en and fr: *Left in your plan* /
+  *Reste au budget* (budget remaining), *Free cash* / *Argent libre* (safe to spend), *A day to
+  stay on plan* (safe daily spend), *Due before month end* (committed), *to share out*
+  (unassigned), *Keep it aside* (unbudgeted income), *Heading for* (projected spend).
+- The money view no longer repeats the plan figure as *Budget left*.
+- Reports: *Planned* → *Budget*, *Expense Performance* → *The month against your plan*.
+- Sentence case for every English title; Dashboard pace chip matches the Budget health chip.
+- Copy and key renames only: no calculation changes. The Dashboard's *Net* and daily pace
+  caption are left for UX-04 and UX-11.
+
+**TDD Anchor:**
+
+- Test: money view shows cash and what is due, never *Budget left*; names *Free cash*.
+- Test: hero, envelope and Reports labels in en and fr; Dashboard pace words equal Budget's.
+
+**Done when:** no two different figures share a key word, and no figure has two labels.
+
+---
 ## DEPENDENCY GRAPH
 
 ```

@@ -114,7 +114,7 @@ describe('TransferLogScreen', () => {
     it('opens pre-filled and saves the correction', async () => {
       render(<TransferLogScreen transferId={7} />);
 
-      expect(await screen.findByText('Edit Transfer')).toBeTruthy();
+      expect(await screen.findByText('Edit transfer')).toBeTruthy();
       await waitFor(() => expect(screen.getByTestId('transfer-amount').props.value).toBe('3000'));
       expect(screen.getByTestId('transfer-note').props.value).toBe('Top-up');
 

@@ -53,8 +53,8 @@ export const accounts = {
     repaidByMe: 'Repayment to {{person}}',
   },
   form: {
-    editTitle: 'Edit Account',
-    newTitle: 'New Account',
+    editTitle: 'Edit account',
+    newTitle: 'New account',
     name: 'Account name',
     type: 'Type',
     purpose: 'Purpose',
@@ -70,7 +70,7 @@ export const accounts = {
     defaultBadge: '✓ Default',
   },
   transfer: {
-    title: 'Log Transfer',
+    title: 'Log transfer',
     from: 'From',
     to: 'To',
     sameAccount: 'Cannot transfer to the same account.',
@@ -81,7 +81,7 @@ export const accounts = {
     notePlaceholder: 'Note (optional)',
     note: 'Note',
     logged: 'Transfer logged',
-    editTitle: 'Edit Transfer',
+    editTitle: 'Edit transfer',
     updated: 'Transfer updated',
     removed: 'Transfer removed',
     delete: 'Delete transfer',

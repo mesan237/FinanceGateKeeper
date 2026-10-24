@@ -57,3 +57,20 @@ are implemented.
 | **Event** | An occasion that causes spending (a wedding, a funeral, a trip), tagged on the expenses it caused across categories. One event per expense; refunds follow their purchase; no event budget yet. Its total is net spending tagged with it | Today (VS-61) | `events.service.getEvents` / `getEventDetail` |
 | **Why (spending reason)** | Why an expense happened, one of four, in this order: **Event** (tagged with an occasion), **Unexpected** (imprévu), **Routine** (fixed: recurring bills, weekdays included, and fixed categories), **Everyday** (the rest, the habits the user can change). Shown on the Budget category detail and Reports | Today (VS-62) | `expenses.reason.reasonOf` |
 | **Journey (my path)** | The five steps to control: **Observe** (3 complete months), **See** (read what they cost), **Plan** (a fully logged month with a budget), **Optimize** (a planned month under the starting point's variable spending), **Grow** (goals, reserve, net worth). Worked out from the data, never a mode; a passed step never locks again; the next step may be skipped to after a warning | Today (VS-63) | `journey.service.getJourney` |
+
+## Visible labels (UX-01)
+
+What the user reads for each term. One label per term, used on every screen; a term not listed
+here keeps its own name in the UI.
+
+| Term | English | French |
+|---|---|---|
+| Budget remaining | Left in your plan (over: *Over your plan by*) | Reste au budget (*Budget dépassé de*) |
+| Safe to spend | Free cash | Argent libre |
+| Safe daily spend (`safeDailySpend`) | A day to stay on plan | Par jour pour tenir le budget |
+| Committed money | Due before month end | À payer d’ici fin du mois |
+| Unassigned | … to share out | … à répartir |
+| Unbudgeted income, left alone | Keep it aside | Les garder de côté |
+| Projected spend | Heading for (≈ amount) | En route vers (≈ montant) |
+| Budget total (Reports) | Budget | Budget |
+| Budget health | On track · Watch out · Over budget | Dans les clous · Attention · Budget dépassé |

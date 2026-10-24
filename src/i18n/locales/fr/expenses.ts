@@ -13,7 +13,7 @@ export const expenses: Translation<typeof en> = {
     transferLink: 'Enregistrer un virement entre comptes',
   },
   entry: {
-    description: 'Description',
+    description: 'Note',
     notePlaceholder: 'Note (facultatif)',
     noteLabel: 'Note',
     account: 'Compte',

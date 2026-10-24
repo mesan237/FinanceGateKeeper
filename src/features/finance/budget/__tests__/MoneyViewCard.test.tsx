@@ -11,16 +11,28 @@ function money(overrides: Partial<MoneyView> = {}): MoneyView {
 }
 
 describe('MoneyViewCard', () => {
-  it('keeps budget left, cash and committed money apart', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money()} />);
+  it('keeps cash and what is due apart', () => {
+    render(<MoneyViewCard money={money()} />);
 
-    expect(screen.getByTestId('money-budget-left')).toHaveTextContent('120 000 FCFA');
     expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA');
     expect(screen.getByTestId('money-committed')).toHaveTextContent('52 000 FCFA');
   });
 
+  it('leaves the plan figure to the hero instead of repeating it (UX-01)', () => {
+    render(<MoneyViewCard money={money()} />);
+
+    expect(screen.queryByTestId('money-budget-left')).toBeNull();
+  });
+
+  it('names its figures so they cannot be mistaken for the plan', () => {
+    render(<MoneyViewCard money={money()} />);
+
+    expect(screen.getByText('Due before month end')).toBeTruthy();
+    expect(screen.getByText('Free cash')).toBeTruthy();
+  });
+
   it('says what the committed money is made of', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money()} />);
+    render(<MoneyViewCard money={money()} />);
 
     expect(
       screen.getByText('Bills 30 000 FCFA · Planned 12 000 FCFA · Debts 10 000 FCFA'),
@@ -30,7 +42,6 @@ describe('MoneyViewCard', () => {
   it('names tontine contributions due when there are some, and only the sources that are (VS-52)', () => {
     render(
       <MoneyViewCard
-        budgetLeft={120_000}
         money={money({ committed: { recurring: 30_000, planned: 0, debts: 0, tontines: 20_000, total: 50_000 } })}
       />,
     );
@@ -39,20 +50,20 @@ describe('MoneyViewCard', () => {
   });
 
   it('shows what is safe to spend: cash outside the goals, less what is due (VS-49)', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money({ goalCash: 25_000, safeToSpend: 13_000 })} />);
+    render(<MoneyViewCard money={money({ goalCash: 25_000, safeToSpend: 13_000 })} />);
 
     expect(screen.getByTestId('money-safe')).toHaveTextContent('13 000 FCFA');
     expect(screen.getByTestId('money-goal-cash')).toHaveTextContent('25 000 FCFA of it is in goal wallets');
   });
 
   it('says nothing about goal wallets when none hold money', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money()} />);
+    render(<MoneyViewCard money={money()} />);
 
     expect(screen.queryByTestId('money-goal-cash')).toBeNull();
   });
 
   it('warns when more is due than the cash outside the goals', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money({ goalCash: 50_000, safeToSpend: -12_000 })} />);
+    render(<MoneyViewCard money={money({ goalCash: 50_000, safeToSpend: -12_000 })} />);
 
     expect(screen.getByTestId('money-shortfall')).toHaveTextContent(
       'What is due by month end is 12 000 FCFA more than the cash outside your goals.',
@@ -60,7 +71,7 @@ describe('MoneyViewCard', () => {
   });
 
   it('stays calm when the cash covers what is due', () => {
-    render(<MoneyViewCard budgetLeft={120_000} money={money()} />);
+    render(<MoneyViewCard money={money()} />);
 
     expect(screen.queryByTestId('money-shortfall')).toBeNull();
   });

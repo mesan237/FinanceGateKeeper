@@ -125,12 +125,15 @@ describe('MonthlyReport', () => {
     expect(screen.getAllByText('53 000 FCFA').length).toBeGreaterThan(0);
   });
 
-  it('renders the expense performance section with the segmented bar', async () => {
+  it('sets the month against its plan, in the same words as the Budget tab (UX-01)', async () => {
     render(<MonthlyReport />);
     await screen.findByText('June 2026');
-    expect(screen.getByText(/^planned$/i)).toBeTruthy();
-    expect(screen.getByText(/actual spending/i)).toBeTruthy();
-    expect(screen.getByText(/remaining budget/i)).toBeTruthy();
+    expect(screen.getByText('The month against your plan')).toBeTruthy();
+    // "Planned" is kept for planned purchases; the month's plan is its budget.
+    expect(screen.getByText('Budget')).toBeTruthy();
+    expect(screen.queryByText(/^planned$/i)).toBeNull();
+    expect(screen.getByText('Spent')).toBeTruthy();
+    expect(screen.getByText('Left in your plan')).toBeTruthy();
     expect(screen.getByText('207 000 FCFA')).toBeTruthy();
     expect(screen.getByTestId('expense-performance-bar')).toBeTruthy();
   });

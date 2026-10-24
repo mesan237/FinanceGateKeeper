@@ -85,7 +85,7 @@ export function MonthOverviewCard({
       </View>
 
       <Typography variant="label" style={styles.remainingLabel}>
-        {isOver ? t('month.overBy') : t('month.leftToSpend')}
+        {isOver ? t('month.overBy') : t('month.leftInPlan')}
       </Typography>
 
       {hasBudget ? (

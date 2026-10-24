@@ -101,7 +101,7 @@ export function CategoryEnvelopeRow({ envelope, first, onPress }: CategoryEnvelo
                 envelope.projected > envelope.available && styles.footerAlert,
               ]}
             >
-              {t('envelope.endsAround', { amount: formatCurrency(Math.round(envelope.projected)) })}
+              {t('envelope.headingFor', { amount: formatCurrency(Math.round(envelope.projected)) })}
             </Typography>
           </View>
 
