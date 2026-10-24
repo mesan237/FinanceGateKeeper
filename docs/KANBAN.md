@@ -2231,6 +2231,37 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** a user observing sees progress every day, and can repair a forgotten day honestly.
 
 ---
+### VS-72: First-Run Set-Up and a Checklist by Step (UX-08/09) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decisions D10, D-arch-1)
+**Blocked by:** —
+
+**Scope:**
+
+- The four-card tutorial becomes a three-step set-up: what the app does (with the path's five
+  steps), what each wallet holds today, and when to be reminded. Wallets and reminder can wait
+  ("Not now", "No reminders"); "Skip set-up" leaves from any step.
+- Wallets: `accounts/OpeningBalancesStep` records a dated balance check per wallet filled in
+  (blank wallets untouched), which also ticks "Confirm your wallet balances".
+- Reminder: `useAppSettings().enableReminder(time)` saves the time, asks for notification
+  permission and turns reminders on only when granted. Default 21:00.
+- The onboarding gate renders before the navigator exists, so "open Accounts by path" was not
+  possible; the routing layer injects both steps into the gate, and onboarding still imports no
+  feature (D-arch-1 resolved without a new edge).
+- My path's checklist asks only for what the step needs: Observe → balances; See → + fixed
+  categories; Plan onward → everything (`BASELINE_BY_STEP`).
+
+**TDD Anchor:**
+
+- Test: set-up flow (steps, later, skip, default time, a failed reminder still finishes), en and fr.
+- Test: opening balances (only filled wallets, whole FCFA, nothing filled), `enableReminder` granted/refused.
+- Test: `BaselineCard only`, and My path passing it by step.
+
+**Done when:** a new user starts with true wallet balances and a reminder, and is asked about
+bills and estimates only when planning.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

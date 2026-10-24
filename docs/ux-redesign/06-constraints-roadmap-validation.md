@@ -248,7 +248,7 @@ French fit their containers.
 | D10 | Copy written for a non-expert (confirmed by the release) |
 | D-arch-2 | **Approved: option (a), new edge `journey → expenses`** (this month's logged days, missed-day confirmation). Add it to the approved list in `CLAUDE.md` with the slice that uses it |
 | Money view | **Approved: drop the repeated *Budget left*** (UX-13; can ship with UX-01) |
-| D-arch-1 | Not answered — recommendation (b), open Accounts by path, needs no new edge, so it is the default |
+| D-arch-1 | Not answered. Option (b), open Accounts by path, turned out impossible: the onboarding gate renders before the navigator exists. Built instead (VS-72) by having the routing layer inject the accounts wallet step and the auth reminder step into the gate — still no new edge |
 
 ### 14.1 Decisions requiring approval
 
