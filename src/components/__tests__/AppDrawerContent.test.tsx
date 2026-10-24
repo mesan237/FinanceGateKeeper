@@ -40,16 +40,49 @@ function renderDrawer(planned?: AttentionCounts, tontines?: AttentionCounts) {
 describe('AppDrawerContent', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('renders "Export & Import" as a live, non-disabled row', () => {
+  it('groups money apart from the app, in that order (UX-18)', () => {
     renderDrawer();
-    const row = screen.getByRole('button', { name: 'Export & Import' });
+    const labels = screen.getAllByRole('button').map((row) => row.props.accessibilityLabel);
+    expect(labels).toEqual([
+      'Wallets',
+      'Goals',
+      'Debts',
+      'Tontines',
+      'Planned purchases',
+      'Events',
+      'Categories',
+      'Preferences',
+      'Backup & restore',
+      'Export & import',
+      'Feedback',
+    ]);
+    expect(screen.getByText('My money')).toBeTruthy();
+    expect(screen.getByText('App')).toBeTruthy();
+  });
+
+  it('shows no placeholder rows for screens that do not exist yet (UX-18)', () => {
+    renderDrawer();
+    expect(screen.queryByText('Soon')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Help' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete & Reset' })).toBeNull();
+  });
+
+  it('opens the wallets list from "Wallets"', () => {
+    const { navigation } = renderDrawer();
+    fireEvent.press(screen.getByRole('button', { name: 'Wallets' }));
+    expect(mockPush).toHaveBeenCalledWith('/accounts');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders "Export & import" as a live, non-disabled row', () => {
+    renderDrawer();
+    const row = screen.getByRole('button', { name: 'Export & import' });
     expect(row.props.accessibilityState?.disabled).not.toBe(true);
-    expect(screen.queryAllByText('Soon').length).toBeGreaterThan(0); // other soon rows still exist
   });
 
   it('navigates to /data-transfer and closes the drawer when pressed', () => {
     const { navigation } = renderDrawer();
-    fireEvent.press(screen.getByRole('button', { name: 'Export & Import' }));
+    fireEvent.press(screen.getByRole('button', { name: 'Export & import' }));
     expect(mockPush).toHaveBeenCalledWith('/data-transfer');
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
@@ -84,9 +117,9 @@ describe('AppDrawerContent', () => {
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 
-  it('navigates to /backup and closes the drawer when "Backup & Restore" is pressed', () => {
+  it('navigates to /backup and closes the drawer when "Backup & restore" is pressed', () => {
     const { navigation } = renderDrawer();
-    const row = screen.getByRole('button', { name: 'Backup & Restore' });
+    const row = screen.getByRole('button', { name: 'Backup & restore' });
     expect(row.props.accessibilityState?.disabled).not.toBe(true);
     fireEvent.press(row);
     expect(mockPush).toHaveBeenCalledWith('/backup');
@@ -96,10 +129,10 @@ describe('AppDrawerContent', () => {
   it('labels the menu in French when the app is in French', async () => {
     await i18n.changeLanguage('fr');
     renderDrawer();
-    expect(screen.getByText('Gestion')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Comptes' })).toBeTruthy();
+    expect(screen.getByText('Mon argent')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Portefeuilles' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Dettes' })).toBeTruthy();
-    expect(screen.queryAllByText('Bientôt').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Bientôt')).toBeNull();
   });
 
   describe('attention dot', () => {

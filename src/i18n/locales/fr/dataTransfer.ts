@@ -26,7 +26,7 @@ export const dataTransfer: Translation<typeof en> = {
     categories: 'Catégories',
     funds: 'Fonds',
     projects: 'Projets',
-    accounts: 'Comptes',
+    accounts: 'Portefeuilles',
     expenses: 'Dépenses',
     income: 'Revenus',
     allocations: 'Budgets mensuels',

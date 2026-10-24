@@ -74,3 +74,4 @@ here keeps its own name in the UI.
 | Projected spend | Heading for (≈ amount) | En route vers (≈ montant) |
 | Budget total (Reports) | Budget | Budget |
 | Budget health | On track · Watch out · Over budget | Dans les clous · Attention · Budget dépassé |
+| Wallet (an `accounts` row) | Wallet — never "account", which means the cloud account | Portefeuille — jamais « compte » |

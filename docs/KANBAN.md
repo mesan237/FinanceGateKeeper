@@ -2140,6 +2140,28 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every green text in the light theme reaches WCAG AA.
 
 ---
+### VS-68: Drawer Grouped by Purpose, Wallets Everywhere (UX-18) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decision D7)
+**Blocked by:** —
+
+**Scope:**
+
+- Drawer in two groups: *My money* (Wallets, Goals, Debts, Tontines, Planned purchases, Events)
+  and *App* (Categories, Preferences, Backup & restore, Export & import, Feedback).
+- The disabled "Soon" rows (Delete & Reset, Help) and their mechanism are gone.
+- The money sense of *account* reads *wallet* / *portefeuille* in every string (accounts, expenses,
+  income, debts, export, baseline), as goals and tontines already did. *Cloud account* is unchanged.
+  Routes, code names and the `accounts` table keep their names.
+
+**TDD Anchor:**
+
+- Test: drawer order and group titles in en and fr; no placeholder rows; Wallets opens `/accounts`.
+- Test: wallet wording on Accounts, transfers, the baseline step and the debt form.
+
+**Done when:** every drawer row opens a screen, and one word names a wallet everywhere.
+
+---
 ## DEPENDENCY GRAPH
 
 ```
