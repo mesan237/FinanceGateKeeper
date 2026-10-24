@@ -8,6 +8,13 @@ export const PRIMARY_GREEN = '#10b981';
  * (WCAG AA, UX-02). PRIMARY_GREEN stays for fills, bars and the active tab.
  */
 export const PRIMARY_TEXT = '#047857';
+/**
+ * The solid green *behind white content* — primary buttons, the add FAB,
+ * active segments, chips and pills, a ticked checkbox. White on PRIMARY_GREEN
+ * is ~2.5:1; on this ~5.5:1 (WCAG AA, UX-02b). Fills with nothing on them
+ * (bars, dots, the toggle track) keep PRIMARY_GREEN.
+ */
+export const PRIMARY_FILL = '#047857';
 export const PRIMARY_LIGHT = '#E8F5E9';
 export const BACKGROUND = '#F5F7FA';
 export const SURFACE = '#FFFFFF';

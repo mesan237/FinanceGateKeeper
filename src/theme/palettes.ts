@@ -9,6 +9,7 @@ import type { ColorScheme, ThemeColors } from './theme.types';
 export const LIGHT_COLORS: ThemeColors = {
   PRIMARY_GREEN: colors.PRIMARY_GREEN,
   PRIMARY_TEXT: colors.PRIMARY_TEXT,
+  PRIMARY_FILL: colors.PRIMARY_FILL,
   PRIMARY_LIGHT: colors.PRIMARY_LIGHT,
   BACKGROUND: colors.BACKGROUND,
   SURFACE: colors.SURFACE,
@@ -39,6 +40,7 @@ export const LIGHT_COLORS: ThemeColors = {
 export const DARK_COLORS: ThemeColors = {
   PRIMARY_GREEN: '#10b981',
   PRIMARY_TEXT: '#34d399',
+  PRIMARY_FILL: '#047857',
   PRIMARY_LIGHT: 'rgba(16,185,129,0.15)',
   BACKGROUND: '#0f172a',
   SURFACE: '#1e293b',

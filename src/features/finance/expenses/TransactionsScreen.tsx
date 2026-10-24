@@ -68,7 +68,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: RADIUS.full,
-    backgroundColor: c.PRIMARY_GREEN,
+    backgroundColor: c.PRIMARY_FILL,
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOW.floating,
