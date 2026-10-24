@@ -7,6 +7,9 @@ export const reports = {
   noData: 'No data for this period.',
   totalCaps: 'TOTAL',
   monthly: {
+    emptyTitle: 'Nothing logged in {{month}}',
+    emptyHint: 'This report fills in as you log what comes in and what goes out.',
+    emptyAction: 'See transactions',
     incomeCaps: 'INCOME',
     expensesCaps: 'EXPENSES',
     performance: 'The month against your plan',
@@ -85,6 +88,7 @@ export const reports = {
     empty: 'No spending this week.',
   },
   errors: {
+    loadTitle: "Couldn't load this report",
     loadWeekly: 'Failed to load the weekly report.',
     loadMonthly: 'Failed to load the monthly report.',
   },

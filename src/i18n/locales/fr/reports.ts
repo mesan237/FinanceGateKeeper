@@ -10,6 +10,9 @@ export const reports: Translation<typeof en> = {
   noData: 'Aucune donnée pour cette période.',
   totalCaps: 'TOTAL',
   monthly: {
+    emptyTitle: 'Rien de noté en {{month}}',
+    emptyHint: 'Ce rapport se remplit à mesure que vous notez ce qui entre et ce qui sort.',
+    emptyAction: 'Voir les transactions',
     incomeCaps: 'REVENUS',
     expensesCaps: 'DÉPENSES',
     performance: 'Le mois face au budget',
@@ -89,6 +92,7 @@ export const reports: Translation<typeof en> = {
     empty: 'Aucune dépense cette semaine.',
   },
   errors: {
+    loadTitle: 'Impossible de charger ce rapport',
     loadWeekly: 'Impossible de charger le rapport hebdomadaire.',
     loadMonthly: 'Impossible de charger le rapport mensuel.',
   },

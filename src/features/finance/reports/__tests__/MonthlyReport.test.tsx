@@ -114,6 +114,68 @@ afterAll(() => {
 });
 
 describe('MonthlyReport', () => {
+  describe('loading, empty and error states (UX-16)', () => {
+    it('shows a skeleton shaped like the report on a first load', () => {
+      mockGetMonthly.mockReturnValue(new Promise(() => {}));
+      render(<MonthlyReport />);
+
+      expect(screen.getByTestId('report-skeleton')).toBeTruthy();
+    });
+
+    it('shows the shared error with "Try again", which reloads the month', async () => {
+      mockGetMonthly.mockRejectedValue(new Error('disk'));
+      render(<MonthlyReport />);
+
+      expect(await screen.findByTestId('report-error')).toBeTruthy();
+      expect(screen.getByText("Couldn't load this report")).toBeTruthy();
+
+      mockGetMonthly.mockResolvedValue(buildReport());
+      fireEvent.press(screen.getByTestId('report-error-retry'));
+
+      expect(await screen.findByText('400 000 FCFA')).toBeTruthy();
+      expect(screen.queryByTestId('report-error')).toBeNull();
+    });
+
+    it('says a month with nothing logged is empty, and leads to Transactions', async () => {
+      mockGetMonthly.mockResolvedValue(
+        buildReport({
+          incomeTotal: 0,
+          expensePerformance: { planned: 0, actual: 0, remaining: 0 },
+          categoryBreakdown: [],
+        }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByTestId('report-empty')).toBeTruthy();
+      expect(screen.getByText('Nothing logged in June 2026')).toBeTruthy();
+      expect(screen.queryByTestId('expense-performance-bar')).toBeNull();
+      fireEvent.press(screen.getByTestId('report-empty-action'));
+      expect(mockPush).toHaveBeenCalledWith('/transactions');
+    });
+
+    it('reads the empty month in French', async () => {
+      await i18n.changeLanguage('fr');
+      mockGetMonthly.mockResolvedValue(
+        buildReport({
+          incomeTotal: 0,
+          expensePerformance: { planned: 0, actual: 0, remaining: 0 },
+          categoryBreakdown: [],
+        }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText('Rien de noté en Juin 2026')).toBeTruthy();
+      expect(screen.getByText('Voir les transactions')).toBeTruthy();
+    });
+
+    it('re-reads the month when the tab comes into focus', async () => {
+      render(<MonthlyReport />);
+      await screen.findByText('400 000 FCFA');
+
+      await waitFor(() => expect(mockGetMonthly.mock.calls.length).toBeGreaterThanOrEqual(2));
+    });
+  });
+
   it('renders the month label', async () => {
     render(<MonthlyReport />);
     expect(await screen.findByText('June 2026')).toBeTruthy();
@@ -173,10 +235,12 @@ describe('MonthlyReport', () => {
     await screen.findByText('June 2026');
     const firstArg = mockGetMonthly.mock.calls[0][0];
 
+    // The mount and the first focus each read the month; the arrow adds one more.
+    const before = mockGetMonthly.mock.calls.length;
     fireEvent.press(screen.getByTestId('month-nav-prev'));
 
-    await waitFor(() => expect(mockGetMonthly).toHaveBeenCalledTimes(2));
-    const secondArg = mockGetMonthly.mock.calls[1][0];
+    await waitFor(() => expect(mockGetMonthly).toHaveBeenCalledTimes(before + 1));
+    const secondArg = mockGetMonthly.mock.calls[before][0];
     expect(secondArg < firstArg).toBe(true);
   });
 

@@ -67,11 +67,27 @@ describe('JourneyCard (VS-63)', () => {
     expect(mockPush).toHaveBeenCalledWith('/path');
   });
 
-  it('renders nothing when the journey cannot load', async () => {
+  it('holds its place with a placeholder while the journey loads (UX-16)', () => {
+    mocked.getJourney.mockReturnValue(new Promise(() => {}));
+    render(<JourneyCard />);
+
+    expect(screen.getByTestId('journey-card-skeleton')).toBeTruthy();
+    expect(screen.queryByTestId('journey-card')).toBeNull();
+  });
+
+  it('says when the journey cannot load, and "Try again" reloads it (UX-16)', async () => {
+    const journey = await mocked.getJourney();
+    mocked.getJourney.mockReset();
+    // The card loads on mount and on focus, so every load fails until retried.
     mocked.getJourney.mockRejectedValue(new Error('disk'));
     render(<JourneyCard />);
 
-    await waitFor(() => expect(mocked.getJourney).toHaveBeenCalled());
-    expect(screen.queryByTestId('journey-card')).toBeNull();
+    expect(await screen.findByTestId('journey-card-error')).toBeTruthy();
+    expect(screen.getByText("Couldn't load your path")).toBeTruthy();
+    mocked.getJourney.mockResolvedValue(journey);
+    fireEvent.press(screen.getByTestId('journey-card-error-retry'));
+
+    expect(await screen.findByTestId('journey-card')).toBeTruthy();
+    await waitFor(() => expect(screen.queryByTestId('journey-card-error')).toBeNull());
   });
 });

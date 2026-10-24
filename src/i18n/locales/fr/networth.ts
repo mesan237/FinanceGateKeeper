@@ -33,6 +33,7 @@ export const networth: Translation<typeof en> = {
     recalculated: '{{month}} recalculé.',
   },
   errors: {
+    loadTitle: 'Impossible de charger votre patrimoine',
     load: 'Impossible de charger votre patrimoine.',
     recalculate: 'Impossible de recalculer le mois.',
   },

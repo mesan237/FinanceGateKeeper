@@ -1,7 +1,5 @@
 /** Copy for the dashboard: the month overview, today's spending, quick log and wallets. */
 export const dashboard = {
-  loading: 'Loading…',
-  retry: 'Retry',
   pace: {
     green: 'On track',
     yellow: 'Watch out',
@@ -53,6 +51,7 @@ export const dashboard = {
     emptyCta: 'Set up your wallets →',
   },
   errors: {
+    loadTitle: "Couldn't load your month",
     loadFailed: 'Failed to load dashboard.',
   },
 };

@@ -77,13 +77,15 @@ export function useWeeklyReport(initialWeekStart?: string) {
 /**
  * Loads the monthly report for the given month (default: the current month) and
  * exposes prev/next navigation that shifts by one calendar month. `isCurrentMonth`
- * is true when viewing the live month — the UI disables "next".
+ * is true when viewing the live month — the UI disables "next". `refresh()`
+ * re-reads the month: the tab calls it on focus and from "Try again" (UX-16).
  */
 export function useMonthlyReport(initialMonthISO?: string) {
   const [monthISO, setMonthISO] = useState(initialMonthISO ?? currentMonthISO());
   const [report, setReport] = useState<MonthlyReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloads, setReloads] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -105,7 +107,9 @@ export function useMonthlyReport(initialMonthISO?: string) {
     return () => {
       active = false;
     };
-  }, [monthISO]);
+  }, [monthISO, reloads]);
+
+  const refresh = useCallback(() => setReloads((n) => n + 1), []);
 
   const goToPrevMonth = useCallback(
     () => setMonthISO((m) => addMonths(`${m}-01`, -1).slice(0, 7)),
@@ -121,6 +125,7 @@ export function useMonthlyReport(initialMonthISO?: string) {
     monthISO,
     loading,
     error,
+    refresh,
     goToPrevMonth,
     goToNextMonth,
     isCurrentMonth: monthISO >= currentMonthISO(),

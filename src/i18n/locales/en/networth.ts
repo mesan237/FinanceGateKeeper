@@ -30,6 +30,7 @@ export const networth = {
     recalculated: '{{month}} recalculated.',
   },
   errors: {
+    loadTitle: "Couldn't load your net worth",
     load: 'Failed to load your net worth.',
     recalculate: 'Failed to recalculate the month.',
   },

@@ -84,6 +84,28 @@ beforeEach(() => {
 });
 
 describe('JourneyScreen (VS-63)', () => {
+  describe('loading and error states (UX-16)', () => {
+    it('shows a skeleton shaped like the steps while the path loads', () => {
+      mocked.getJourney.mockReturnValue(new Promise(() => {}));
+      render(<JourneyScreen />);
+
+      expect(screen.getByTestId('journey-skeleton')).toBeTruthy();
+    });
+
+    it('shows the shared error with "Try again", which reloads the path', async () => {
+      mocked.getJourney.mockReset();
+      mocked.getJourney.mockRejectedValue(new Error('disk'));
+      render(<JourneyScreen />);
+
+      expect(await screen.findByTestId('journey-load-error')).toBeTruthy();
+      expect(screen.getByText("Couldn't load your path")).toBeTruthy();
+      mocked.getJourney.mockResolvedValue(journeyAt('observe'));
+      fireEvent.press(screen.getByTestId('journey-load-error-retry'));
+
+      expect(await screen.findByText('Observe')).toBeTruthy();
+    });
+  });
+
   it('lists the five steps with where each stands', async () => {
     render(<JourneyScreen />);
 

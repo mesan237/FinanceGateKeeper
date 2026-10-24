@@ -60,6 +60,27 @@ beforeEach(() => {
 });
 
 describe('NetWorthCard (VS-53)', () => {
+  it('holds its place with a placeholder while the figures load (UX-16)', () => {
+    mocked.getNetWorthAsOf.mockReturnValue(new Promise(() => {}));
+    render(<NetWorthCard />);
+
+    expect(screen.getByTestId('networth-skeleton')).toBeTruthy();
+  });
+
+  it('says when net worth cannot load, and "Try again" reloads it (UX-16)', async () => {
+    mocked.getNetWorthAsOf.mockRejectedValue(new Error('disk'));
+    render(<NetWorthCard />);
+
+    expect(await screen.findByTestId('networth-error')).toBeTruthy();
+    expect(screen.getByText("Couldn't load your net worth")).toBeTruthy();
+
+    mocked.getNetWorthAsOf.mockResolvedValue({ wallets: 260_000, lent: 30_000, owed: 40_000, tontines: 0, total: 250_000 });
+    fireEvent.press(screen.getByTestId('networth-error-retry'));
+
+    expect(await screen.findByTestId('networth-card')).toBeTruthy();
+    expect(screen.queryByTestId('networth-error')).toBeNull();
+  });
+
   it('shows today’s net worth and what it is made of, leaving empty parts out', async () => {
     render(<NetWorthCard />);
 

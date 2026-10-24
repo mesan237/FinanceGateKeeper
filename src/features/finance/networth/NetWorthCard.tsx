@@ -5,6 +5,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ErrorState } from '@/components/ErrorState';
+import { Skeleton } from '@/components/Skeleton';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
 import { SPACING } from '@/constants/layout';
@@ -19,7 +21,8 @@ import { useNetWorth } from './networth.hooks';
  * Net worth and savings rate on the Reports tab (VS-53): today's figure and
  * what it is made of, how it moved since the last closed month, this month's
  * savings rate so far and last month's. Re-reads on focus; "History" opens the
- * stored month-end figures.
+ * stored month-end figures. While loading it holds its place with a
+ * placeholder; a failed load shows the shared error card (UX-16).
  */
 export function NetWorthCard() {
   const styles = useThemedStyles(makeStyles);
@@ -33,8 +36,27 @@ export function NetWorthCard() {
     }, [refresh]),
   );
 
-  if (loading && !now) return null;
-  if (!now) return error ? <Typography variant="muted">{error}</Typography> : null;
+  if (loading && !now) {
+    return (
+      <Card testID="networth-skeleton" style={styles.card}>
+        <Skeleton width="30%" height={11} />
+        <Skeleton width="55%" height={28} />
+        <Skeleton width="80%" height={12} />
+        <Skeleton width="60%" height={12} />
+      </Card>
+    );
+  }
+  if (!now) {
+    return (
+      <ErrorState
+        compact
+        testID="networth-error"
+        title={t('errors.loadTitle')}
+        message={error}
+        onRetry={() => void refresh()}
+      />
+    );
+  }
 
   const last = snapshots[0] ?? null;
 

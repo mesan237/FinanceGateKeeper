@@ -34,8 +34,10 @@ export const expenses: Translation<typeof en> = {
   },
   list: {
     all: 'Toutes',
-    retry: 'Réessayer',
+    loadTitle: 'Impossible de charger vos transactions',
     empty: 'Aucune transaction en {{month}}.',
+    emptyHint: 'Notez chaque jour ce que vous dépensez : tous les chiffres de l’app partent de là.',
+    emptyAction: 'Ajouter une transaction',
     unplannedFilter: 'Imprévus',
     unplannedBadge: 'Imprévu',
     refundLabel: 'Remboursement · {{category}}',

@@ -5,8 +5,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
+import { ErrorState } from '@/components/ErrorState';
 import { Icon } from '@/components/Icon';
-import { LoadingState } from '@/components/LoadingState';
 import { Modal } from '@/components/Modal';
 import { Pill, type PillTone } from '@/components/Pill';
 import { Typography } from '@/components/Typography';
@@ -15,6 +15,7 @@ import { SPACING } from '@/constants/layout';
 import { BaselineCard } from '@/features/finance/budget/BaselineCard';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { JourneySkeleton } from './JourneySkeleton';
 import { JourneyStepDetail } from './JourneyStepDetail';
 import { useJourney } from './journey.hooks';
 import { BASELINE_BY_STEP, JOURNEY_STEPS } from './journey.steps';
@@ -47,11 +48,22 @@ export function JourneyScreen() {
     }, [refresh]),
   );
 
-  if (loading) return <LoadingState label={t('loading')} />;
+  if (loading) {
+    return (
+      <View style={styles.screen}>
+        <JourneySkeleton />
+      </View>
+    );
+  }
   if (journey === null) {
     return (
       <View style={styles.screen}>
-        <Typography style={styles.error}>{error ?? t('errors.load')}</Typography>
+        <ErrorState
+          testID="journey-load-error"
+          title={t('errors.loadTitle')}
+          message={error}
+          onRetry={() => void refresh()}
+        />
       </View>
     );
   }
@@ -146,7 +158,6 @@ const makeStyles = (c: ThemeColors) =>
     currentCard: { borderWidth: 1, borderColor: c.PRIMARY_GREEN },
     header: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
     grow: { flex: 1 },
-    error: { color: c.DANGER, padding: SPACING.lg },
     inlineError: { color: c.DANGER_TEXT },
     modal: { gap: SPACING.md },
   });

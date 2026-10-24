@@ -6,6 +6,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 import { MonthStepper } from '@/components/MonthStepper';
 import { Skeleton, SkeletonRows } from '@/components/Skeleton';
 import { Typography } from '@/components/Typography';
@@ -81,6 +82,18 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
           nextDisabled={month >= currentMonthISO()}
           testIDPrefix="budget-month"
         />
+
+        {/* The shared error (UX-16): a card above figures still on screen, the
+            full block in their place when there are none. */}
+        {error ? (
+          <ErrorState
+            compact={overview !== null}
+            testID="budget-error"
+            title={t('errors.loadTitle')}
+            message={error}
+            onRetry={() => void refresh()}
+          />
+        ) : null}
 
         {loading && !overview ? (
           <BudgetSkeleton />
@@ -166,11 +179,6 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
           </>
         )}
 
-        {error ? (
-          <Typography style={styles.error} testID="budget-error">
-            {error}
-          </Typography>
-        ) : null}
       </ScrollView>
     </View>
   );
@@ -248,8 +256,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     color: c.PRIMARY_TEXT,
     fontSize: 13,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
-  },
-  error: {
-    color: c.DANGER,
   },
 });
