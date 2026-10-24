@@ -245,6 +245,10 @@ The colour file already knows this pattern: it defines `*_TEXT` companions for d
 and success "because the base colours don't reach 4.5:1" (`src/constants/colors.ts`) — but not for
 the primary green.
 
+**Also found while fixing it (Verified):** white labels on `PRIMARY_GREEN` fills — primary
+buttons, the FAB icon, selected segments and pills — are the same ≈2.5:1. White on `#047857`
+would be ≈5.5:1. This changes the look of every primary button, so it is a separate decision.
+
 **Proposed change.** Add a `PRIMARY_TEXT` token (a darker emerald that reaches ≥4.5:1 on white and
 on `PRIMARY_LIGHT`) and use it wherever green is text. Keep `PRIMARY_GREEN` for fills.
 
