@@ -22,6 +22,7 @@ const MOCK_STATE: DashboardState = {
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: null,
   cashflow: null,
+  logging: { loggedDays: 0, daysSoFar: 0 },
   unplanned: { count: 0, total: 0 },
   dailyPace: null,
 };

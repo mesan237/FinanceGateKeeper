@@ -2,10 +2,10 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import { DANGER, DANGER_LIGHT, SUCCESS_LIGHT, SUCCESS_TEXT, WARNING_LIGHT } from '@/constants/colors';
+import { DANGER, DANGER_LIGHT, SUCCESS_LIGHT, WARNING_LIGHT } from '@/constants/colors';
 import { MonthOverviewCard } from '@/features/finance/dashboard/MonthOverviewCard';
 import i18n from '@/i18n';
-import type { BudgetSummary, Cashflow } from '@/features/finance/dashboard/dashboard.types';
+import type { BudgetSummary, Cashflow, DayLogging } from '@/features/finance/dashboard/dashboard.types';
 
 const FUNDED: BudgetSummary = {
   expenseBudget: 65000,
@@ -13,6 +13,7 @@ const FUNDED: BudgetSummary = {
   expensesRemaining: 45000,
   spentPct: 31,
   pace: 'green',
+  isPlanned: true,
 };
 const NEARLY_SPENT: BudgetSummary = {
   expenseBudget: 65000,
@@ -20,6 +21,7 @@ const NEARLY_SPENT: BudgetSummary = {
   expensesRemaining: 10000,
   spentPct: 85,
   pace: 'yellow',
+  isPlanned: true,
 };
 const OVERSPENT: BudgetSummary = {
   expenseBudget: 65000,
@@ -27,18 +29,23 @@ const OVERSPENT: BudgetSummary = {
   expensesRemaining: -5000,
   spentPct: 100,
   pace: 'red',
+  isPlanned: true,
 };
-/** What the service returns before the user has set a budget or logged income. */
-const UNSET: BudgetSummary = {
-  expenseBudget: 0,
-  expensesLogged: 0,
-  expensesRemaining: 0,
-  spentPct: 0,
+/**
+ * A month with no plan: income received sizes a budget behind the scenes, but
+ * the user never planned it, so the Budget tab shows its empty state (UX-04).
+ */
+const UNPLANNED: BudgetSummary = {
+  expenseBudget: 100000,
+  expensesLogged: 20000,
+  expensesRemaining: 80000,
+  spentPct: 20,
   pace: 'green',
+  isPlanned: false,
 };
 
-const CASHFLOW: Cashflow = { income: 100000, expenses: 20000, net: 80000 };
-const EMPTY_CASHFLOW: Cashflow = { income: 0, expenses: 0, net: 0 };
+const CASHFLOW: Cashflow = { income: 100000, expenses: 20000 };
+const LOGGING: DayLogging = { loggedDays: 18, daysSoFar: 23 };
 
 function renderCard(overrides: Partial<React.ComponentProps<typeof MonthOverviewCard>> = {}) {
   const onSetBudget = jest.fn();
@@ -48,6 +55,7 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof MonthOverview
       daysRemaining={6}
       summary={FUNDED}
       cashflow={CASHFLOW}
+      logging={LOGGING}
       onSetBudget={onSetBudget}
       {...overrides}
     />,
@@ -146,58 +154,60 @@ describe('MonthOverviewCard', () => {
     });
   });
 
-  describe('with no budget set', () => {
-    it('shows a placeholder instead of a meaningless zero', () => {
-      renderCard({ summary: UNSET, cashflow: EMPTY_CASHFLOW });
-      expect(screen.getByTestId('month-overview-amount')).toHaveTextContent('— FCFA');
+  describe('with no plan yet (UX-04)', () => {
+    it('leads with what was spent this month, a fact rather than a limit', () => {
+      renderCard({ summary: UNPLANNED });
+      expect(screen.getByText('Spent this month')).toBeTruthy();
+      expect(screen.getByTestId('month-overview-amount')).toHaveTextContent('20 000 FCFA');
+      expect(screen.queryByText('Left in your plan')).toBeNull();
     });
 
-    it('hides the bar, the spent caption and the pace chip, which would all read as "on track"', () => {
-      renderCard({ summary: UNSET, cashflow: EMPTY_CASHFLOW });
+    it('does not dress income up as a plan: no bar, no pace chip, no "spent of"', () => {
+      renderCard({ summary: UNPLANNED });
       expect(screen.queryByTestId('budget-progress')).toBeNull();
       expect(screen.queryByTestId('budget-pace-chip')).toBeNull();
       expect(screen.queryByText(/spent$/)).toBeNull();
     });
 
-    it('prompts the user to set a monthly budget', () => {
-      renderCard({ summary: UNSET, cashflow: EMPTY_CASHFLOW });
-      expect(screen.getByText('Set a monthly budget to track this')).toBeTruthy();
+    it('says how many days of the month are logged so far', () => {
+      renderCard({ summary: UNPLANNED });
+      expect(screen.getByTestId('month-overview-logging')).toHaveTextContent('18 of 23 days logged');
     });
 
-    it('calls onSetBudget when the prompt is tapped', () => {
-      const { onSetBudget } = renderCard({ summary: UNSET, cashflow: EMPTY_CASHFLOW });
+    it('says "1 of 1 day logged" on the first day of the month', () => {
+      renderCard({ summary: UNPLANNED, logging: { loggedDays: 1, daysSoFar: 1 } });
+      expect(screen.getByTestId('month-overview-logging')).toHaveTextContent('1 of 1 day logged');
+    });
+
+    it('shows the money that came in on its own line', () => {
+      renderCard({ summary: UNPLANNED });
+      expect(screen.getByTestId('month-overview-income')).toHaveTextContent(
+        'Money in this month: 100 000 FCFA',
+      );
+    });
+
+    it('keeps planning one quiet tap away', () => {
+      const { onSetBudget } = renderCard({ summary: UNPLANNED });
       fireEvent.press(screen.getByTestId('month-overview-set-budget'));
       expect(onSetBudget).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads in French', async () => {
+      await i18n.changeLanguage('fr');
+      renderCard({ summary: UNPLANNED });
+      expect(screen.getByText('Dépensé ce mois-ci')).toBeTruthy();
+      expect(screen.getByTestId('month-overview-logging')).toHaveTextContent('Jours notés : 18 sur 23');
     });
   });
 
   describe('cashflow row', () => {
-    it('renders money in, money out and the net', () => {
+    it('renders money in and money out, and no net (UX-04)', () => {
       renderCard();
       expect(screen.getByText('In')).toBeTruthy();
       expect(screen.getByText('Out')).toBeTruthy();
-      expect(screen.getByText('Net')).toBeTruthy();
+      expect(screen.queryByText('Net')).toBeNull();
       expect(screen.getByText('100 000 FCFA')).toBeTruthy();
-      expect(screen.getByText('80 000 FCFA')).toBeTruthy();
-    });
-
-    it('colours a surplus green', () => {
-      renderCard();
-      expect(StyleSheet.flatten(screen.getByTestId('cashflow-net').props.style).color).toBe(
-        SUCCESS_TEXT,
-      );
-    });
-
-    it('colours a deficit in danger', () => {
-      renderCard({ cashflow: { income: 5000, expenses: 20000, net: -15000 } });
-      expect(screen.getByText('-15 000 FCFA')).toBeTruthy();
-      expect(StyleSheet.flatten(screen.getByTestId('cashflow-net').props.style).color).toBe(DANGER);
-    });
-
-    it('still renders when no budget is set, since logged activity stands on its own', () => {
-      renderCard({ summary: UNSET, cashflow: { income: 0, expenses: 12000, net: -12000 } });
-      expect(screen.getByText('12 000 FCFA')).toBeTruthy();
-      expect(screen.getByText('-12 000 FCFA')).toBeTruthy();
+      expect(screen.getByText('20 000 FCFA')).toBeTruthy();
     });
   });
 

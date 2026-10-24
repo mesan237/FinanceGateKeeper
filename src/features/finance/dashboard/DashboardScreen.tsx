@@ -27,8 +27,9 @@ import { WalletsCard } from './WalletsCard';
 import { useDashboard } from './dashboard.hooks';
 
 /**
- * Home screen. Shows budget pace, fund balances, top active project, and
- * today's spending. Refreshes on every tab focus so numbers stay current.
+ * Home screen. Shows where the month stands (the plan, or what was spent and
+ * how many days are logged), quick log, the path, wallets and today's
+ * spending. Refreshes on every tab focus so numbers stay current.
  */
 export function DashboardScreen() {
   const { state, loading, error, refresh } = useDashboard();
@@ -97,6 +98,7 @@ export function DashboardScreen() {
             daysRemaining={state.daysRemaining}
             summary={state.budget}
             cashflow={state.cashflow}
+            logging={state.logging}
             unplanned={state.unplanned}
             onSetBudget={() =>
               router.push({ pathname: '/budget/plan', params: { month: state.monthISO } })

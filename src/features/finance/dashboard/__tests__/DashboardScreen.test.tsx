@@ -45,6 +45,7 @@ const MOCK_BUDGET = {
   expensesRemaining: 45000,
   spentPct: 31,
   pace: 'green' as const,
+  isPlanned: true,
 };
 
 const FULL_STATE: DashboardState = {
@@ -54,7 +55,8 @@ const FULL_STATE: DashboardState = {
   spendingTrend: [0, 1000, 0, 2500, 0, 0, 5000],
   zeroDay: { hasExpenses: true, zeroDayConfirmed: false },
   budget: MOCK_BUDGET,
-  cashflow: { income: 100000, expenses: 20000, net: 80000 },
+  cashflow: { income: 100000, expenses: 20000 },
+  logging: { loggedDays: 18, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
   dailyPace: 2167,
 };
@@ -67,6 +69,7 @@ const BARE_STATE: DashboardState = {
   zeroDay: { hasExpenses: false, zeroDayConfirmed: false },
   budget: null,
   cashflow: null,
+  logging: { loggedDays: 0, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
   dailyPace: null,
 };
@@ -108,10 +111,10 @@ describe('DashboardScreen', () => {
       expect(screen.getByText('6 days left')).toBeTruthy();
     });
 
-    it('opens the budget planner for the shown month from the no-budget prompt', () => {
+    it('opens the budget planner for the shown month from the no-plan link', () => {
       setupHooks({
         ...FULL_STATE,
-        budget: { ...MOCK_BUDGET, expenseBudget: 0, expensesRemaining: 0, spentPct: 0 },
+        budget: { ...MOCK_BUDGET, isPlanned: false },
       });
       render(<DashboardScreen />);
 

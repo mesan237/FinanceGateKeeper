@@ -17,13 +17,16 @@ jest.mock('@/services/database', () => {
 });
 
 import { execute } from '@/services/database';
-import { createExpense } from '@/features/finance/expenses/expenses.service';
+import { setTotalBudget } from '@/features/finance/budget/budget.envelopes';
+import { ensureMonthRow } from '@/features/finance/budget/budget.service';
+import { confirmZeroDay, createExpense } from '@/features/finance/expenses/expenses.service';
 import { createIncome } from '@/features/finance/income/income.service';
 import {
   buildSpendingTrend,
   dailyBudgetPace,
   daysInMonth,
   daysRemainingInMonth,
+  daysSoFarInMonth,
   getDashboardSnapshot,
   paceFromHealth,
   spentPct,
@@ -155,6 +158,18 @@ describe('buildSpendingTrend', () => {
 
 // ---- getDashboardSnapshot --------------------------------------------------
 
+describe('daysSoFarInMonth', () => {
+  it('is the day of the month while the month runs, today included', () => {
+    expect(daysSoFarInMonth('2026-06', '2026-06-01')).toBe(1);
+    expect(daysSoFarInMonth('2026-06', '2026-06-08')).toBe(8);
+  });
+
+  it('is every day once the month is over, and none before it starts', () => {
+    expect(daysSoFarInMonth('2026-06', '2026-07-03')).toBe(30);
+    expect(daysSoFarInMonth('2026-06', '2026-05-31')).toBe(0);
+  });
+});
+
 describe('getDashboardSnapshot', () => {
   const MONTH = '2026-06';
   const TODAY = '2026-06-08';
@@ -210,12 +225,53 @@ describe('getDashboardSnapshot', () => {
     expect(state.budget!.spentPct).toBe(5);
     expect(state.budget!.pace).toBe('green');
 
-    // cashflow — income 100 000 in, 5 000 out, net 95 000
-    expect(state.cashflow).toEqual({ income: 100000, expenses: 5000, net: 95000 });
+    // cashflow — income 100 000 in, 5 000 out
+    expect(state.cashflow).toEqual({ income: 100000, expenses: 5000 });
+  });
 
-    // dailyPace — 100 000 / 30 days in June
-    expect(state.dailyPace).toBeCloseTo(100000 / 30);
+  it('treats income alone as no plan, as the Budget tab does (UX-04)', async () => {
+    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
 
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+
+    expect(state.budget!.isPlanned).toBe(false);
+    // No plan, no pace to be measured against.
+    expect(state.dailyPace).toBeNull();
+  });
+
+  it('counts a month with an explicit total as planned, with a daily pace', async () => {
+    await ensureMonthRow(MONTH);
+    await setTotalBudget(MONTH, 90000);
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+
+    expect(state.budget!.isPlanned).toBe(true);
+    expect(state.dailyPace).toBeCloseTo(90000 / 30);
+  });
+
+  it('counts an expected-income month as planned (VS-47)', async () => {
+    await execute(
+      `INSERT INTO baseline_facts (kind, value, source, created_at)
+       VALUES ('monthly_income', 250000, 'user', '2026-06-01T08:00:00Z')`,
+    );
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+
+    expect(state.budget!.isPlanned).toBe(true);
+  });
+
+  it('counts the days logged so far this month, spending or a no-spend day (UX-04)', async () => {
+    const expense = { amount: 1000, categoryId: 1, subcategoryId: null, note: null, isRecurring: false };
+    await createExpense({ ...expense, date: '2026-06-01' });
+    await createExpense({ ...expense, date: '2026-06-01' });
+    await createExpense({ ...expense, date: '2026-06-03' });
+    await confirmZeroDay('2026-06-04');
+    // Last month does not count towards this one.
+    await createExpense({ ...expense, date: '2026-05-31' });
+
+    const state = await getDashboardSnapshot(MONTH, TODAY);
+
+    expect(state.logging).toEqual({ loggedDays: 3, daysSoFar: 8 });
   });
 
   it('budgets on expected income but reports only income received (VS-47)', async () => {
