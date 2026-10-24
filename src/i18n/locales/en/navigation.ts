@@ -5,6 +5,7 @@ export const navigation = {
     transactions: 'Transactions',
     budget: 'Budget',
     reports: 'Reports',
+    path: 'My path',
   },
   openMenu: 'Open menu',
   attention: {

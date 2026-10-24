@@ -2035,6 +2035,62 @@ surprises and everyday habits.
 
 ---
 
+### VS-63: My Path — Step-by-Step Journey 🔄 In Progress
+
+**Priority:** High — user request 2026-10-22 ("the app must feel like a step-by-step process")
+**Blocked by:** VS-58 (starting point), VS-46 (baseline facts)
+
+**User decisions (2026-10-22):** locked steps are previews, never hidden; skipping ahead
+is allowed with a warning; Optimize gives suggestions only, on variable spending; the
+path lives in a dashboard card and a new tab.
+
+**Scope:**
+
+- New `journey` slice: `resolveJourney` (pure) and `getJourney`. Observe = the starting
+  point's 3 complete months; See = "I've seen it"; Plan = a complete month after the start
+  with an envelope or explicit total; Optimize = a complete month, from the planned one on,
+  under the start's variable average; Grow = ongoing. Steps pass in order.
+- Answers as new `baseline_facts` kinds (`picture_reviewed`, `journey_skipped`,
+  `journey_reached`) with `budget.baseline.getBaselineFactValue`. No migration, no Supabase patch.
+- "My path" tab (5th tab): every step with its status, the current (or skipped) step's
+  progress and action, locked previews, skip to the next step after a warning.
+- Dashboard path card replaces the setup checklist card; the checklist moves onto the path.
+- Edges: `journey → budget`, `journey → reports`, `dashboard → journey`.
+
+**TDD Anchor:**
+
+- Test: pass rules and order; plans in the starting months, the running month or an
+  incomplete month do not count; a cheaper month before the first plan does not count;
+  skip forward only; a reached step survives corrected data.
+- Test: hook loads, errors, reviews and skips; screen statuses, progress, preview, skip
+  warning, See summary, planner link, Optimize comparison, goals link, French; card.
+
+**Done when:** the user opens "My path" and sees where they are, what moves them on and
+what comes next; the dashboard shows the same in one card.
+
+---
+
+### VS-64: Locked Previews Across the App ⏳ Backlog
+
+**Blocked by:** VS-63
+
+- The current step published through a shared provider in `components/` (like
+  `AttentionProvider`), so gated screens never import `journey`.
+- Budget planning and envelopes are previews before Plan; goals, emergency reserve and
+  pay yourself first are previews before Grow. Each says what unlocks it, with "Show anyway".
+- Logging, wallets, debts, tontines and transfers are never gated.
+
+---
+
+### VS-65: Suggestions to Cut Variable Spending ⏳ Backlog
+
+**Blocked by:** VS-63
+
+- On the Optimize step: the biggest variable categories against the starting point, with
+  what a modest cut frees each month; each opens the category detail. Suggestions only.
+
+---
+
 ## UX REDESIGN (pre-release, plan in docs/ux-redesign/)
 
 ### VS-66: One Name per Figure (UX-01) 🔄 In Progress

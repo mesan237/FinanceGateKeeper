@@ -36,6 +36,7 @@ import {
   Palette,
   Pencil,
   Plus,
+  Route,
   Settings,
   Smartphone,
   SlidersHorizontal,
@@ -108,6 +109,7 @@ export const ICONS = {
   event: CalendarHeart,
   profile: UserRound,
   lock: Lock,
+  path: Route,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;
