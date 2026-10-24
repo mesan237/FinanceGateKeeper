@@ -4,12 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
-import { Icon } from '@/components/Icon';
 import { Pill, type PillTone } from '@/components/Pill';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { ICON_SIZE } from '@/constants/icons';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -17,7 +15,7 @@ import { monthLabel } from '@/utils/monthMath';
 
 import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
 
-import type { BudgetSummary, Cashflow, PaceLevel } from './dashboard.types';
+import type { BudgetSummary, Cashflow, DayLogging, PaceLevel } from './dashboard.types';
 
 /** Chip tone per pace level; the wording comes from `dashboard.pace`. */
 const PACE_TONE: Record<PaceLevel, PillTone> = {
@@ -33,30 +31,31 @@ export interface MonthOverviewCardProps {
   daysRemaining: number;
   summary: BudgetSummary;
   cashflow: Cashflow;
+  /** Days logged so far this month; shown while the month has no plan (UX-04). */
+  logging: DayLogging;
   /** The month's imprévus; the line under the cashflow shows only when there are some. */
   unplanned?: UnplannedTotals;
-  /** Invoked by the no-budget prompt. The screen owns the navigation. */
+  /** Invoked by the "Plan a budget" link. The screen owns the navigation. */
   onSetBudget: () => void;
 }
 
 /**
- * The dashboard's headline card: everything about the month in one place —
- * which month it is and how much of it is left, what remains to spend against
- * the budget, and the in/out/net of what has actually been logged.
+ * The dashboard's headline card: which month it is and how much of it is left,
+ * then one figure that answers "where do I stand?".
  *
- * Two deliberate choices:
- *
- *  - Without a budget the figure is an em-dash, not `0 FCFA`. A zero remainder
- *    under a full green "On Track" chip is a confident statement about a budget
- *    that does not exist; the prompt to set one is the honest thing to show.
- *  - The cashflow row survives that empty state. Income and expenses are logged
- *    facts, so they stay readable whether or not a budget frames them.
+ *  - With a plan: what is left in it, paced on a bar with a status word, then
+ *    the money in and out.
+ *  - Without one, the figure is what was spent so far, with how many days are
+ *    logged (UX-04). Income received alone is not a plan, whatever it sizes
+ *    behind the scenes, and the path starts by observing, so no limit is shown
+ *    and no pace is judged. Planning stays one quiet link away.
  */
 export function MonthOverviewCard({
   monthISO,
   daysRemaining,
   summary,
   cashflow,
+  logging,
   unplanned,
   onSetBudget,
 }: MonthOverviewCardProps) {
@@ -64,10 +63,10 @@ export function MonthOverviewCard({
   const c = useTheme();
   const { t } = useTranslation('dashboard');
 
-  const hasBudget = summary.expenseBudget > 0;
-  const isOver = summary.expensesRemaining < 0;
+  const planned = summary.isPlanned;
+  const isOver = planned && summary.expensesRemaining < 0;
   const pace = { label: t(`pace.${summary.pace}`), tone: PACE_TONE[summary.pace] };
-  const netColor = cashflow.net >= 0 ? c.SUCCESS_TEXT : c.DANGER;
+  const label = !planned ? t('month.spentThisMonth') : isOver ? t('month.overBy') : t('month.leftInPlan');
 
   // The dashboard only ever shows the current month, so the year in
   // `monthLabel` ("September 2026") is noise in a header this small.
@@ -85,22 +84,16 @@ export function MonthOverviewCard({
       </View>
 
       <Typography variant="label" style={styles.remainingLabel}>
-        {isOver ? t('month.overBy') : t('month.leftInPlan')}
+        {label}
       </Typography>
 
-      {hasBudget ? (
-        <AnimatedCounter
-          value={Math.abs(summary.expensesRemaining)}
-          style={[styles.amount, isOver && styles.amountOver]}
-          testID="month-overview-amount"
-        />
-      ) : (
-        <Typography style={styles.amount} testID="month-overview-amount">
-          — FCFA
-        </Typography>
-      )}
+      <AnimatedCounter
+        value={planned ? Math.abs(summary.expensesRemaining) : cashflow.expenses}
+        style={[styles.amount, isOver && styles.amountOver]}
+        testID="month-overview-amount"
+      />
 
-      {hasBudget ? (
+      {planned ? (
         <>
           <ProgressBar
             testID="budget-progress"
@@ -124,28 +117,31 @@ export function MonthOverviewCard({
             testID="budget-pace-chip"
             style={styles.paceChip}
           />
+          <View style={styles.cashflowRow}>
+            <CashflowStat label={t('month.in')} value={cashflow.income} />
+            <View style={styles.divider} />
+            <CashflowStat label={t('month.out')} value={cashflow.expenses} />
+          </View>
         </>
       ) : (
-        <Pressable
-          testID="month-overview-set-budget"
-          accessibilityRole="button"
-          accessibilityLabel={t('month.setBudget')}
-          onPress={onSetBudget}
-          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-        >
-          <Icon name="add" size={ICON_SIZE.md} color={c.PRIMARY_TEXT} />
-          <Typography style={styles.ctaText}>{t('month.setBudget')}</Typography>
-          <Icon name="forward" size={ICON_SIZE.md} color={c.PRIMARY_TEXT} />
-        </Pressable>
+        <>
+          <Typography variant="muted" testID="month-overview-logging">
+            {t('month.daysLogged', { logged: logging.loggedDays, count: logging.daysSoFar })}
+          </Typography>
+          <Typography variant="muted" testID="month-overview-income" style={styles.incomeLine}>
+            {t('month.incomeLine', { amount: formatCurrency(cashflow.income) })}
+          </Typography>
+          <Pressable
+            testID="month-overview-set-budget"
+            accessibilityRole="button"
+            onPress={onSetBudget}
+            hitSlop={8}
+            style={({ pressed }) => [styles.planLink, pressed && styles.planLinkPressed]}
+          >
+            <Typography style={styles.planLinkText}>{t('month.planLink')}</Typography>
+          </Pressable>
+        </>
       )}
-
-      <View style={styles.cashflowRow}>
-        <CashflowStat label={t('month.in')} value={cashflow.income} />
-        <View style={styles.divider} />
-        <CashflowStat label={t('month.out')} value={cashflow.expenses} />
-        <View style={styles.divider} />
-        <CashflowStat label={t('month.net')} value={cashflow.net} color={netColor} testID="cashflow-net" />
-      </View>
 
       {unplanned && unplanned.count > 0 ? (
         <View style={styles.unplannedRow}>
@@ -170,26 +166,12 @@ function paceBarColor(pace: PaceLevel, c: ThemeColors): string {
 }
 
 /** One figure in the in/out/net row, with its caption above. */
-function CashflowStat({
-  label,
-  value,
-  color,
-  testID,
-}: {
-  label: string;
-  value: number;
-  color?: string;
-  testID?: string;
-}) {
+function CashflowStat({ label, value }: { label: string; value: number }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.cashflowCol}>
       <Typography variant="muted">{label}</Typography>
-      <AnimatedCounter
-        value={value}
-        style={[styles.cashflowAmount, color ? { color } : null]}
-        testID={testID}
-      />
+      <AnimatedCounter value={value} style={styles.cashflowAmount} />
     </View>
   );
 }
@@ -231,20 +213,17 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: SPACING.md,
   },
-  cta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    backgroundColor: c.PRIMARY_LIGHT,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+  incomeLine: {
+    marginTop: SPACING.xs,
   },
-  ctaPressed: {
-    opacity: 0.7,
+  planLink: {
+    alignSelf: 'flex-start',
+    marginTop: SPACING.md,
   },
-  ctaText: {
-    flex: 1,
+  planLinkPressed: {
+    opacity: 0.6,
+  },
+  planLinkText: {
     color: c.PRIMARY_TEXT,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },

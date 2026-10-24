@@ -1,5 +1,6 @@
 import { getBudgetOverview } from '@/features/finance/budget/budget.plan';
 import type { BudgetHealth } from '@/features/finance/budget/budget.types';
+import { getLoggedDates } from '@/features/finance/expenses/expenses.coverage';
 import * as expensesService from '@/features/finance/expenses/expenses.service';
 import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplanned';
 import { toISODate } from '@/utils/formatDate';
@@ -9,6 +10,7 @@ import type {
   BudgetSummary,
   Cashflow,
   DashboardState,
+  DayLogging,
   PaceLevel,
 } from './dashboard.types';
 
@@ -84,11 +86,23 @@ export function dailyBudgetPace(expenseBudget: number, monthISO: string): number
 }
 
 /**
+ * Days of `monthISO` up to and including `todayISO`: the day of the month while
+ * it runs, every day once it is over, none before it starts. Pure.
+ */
+export function daysSoFarInMonth(monthISO: string, todayISO: string): number {
+  if (todayISO < `${monthISO}-01`) return 0;
+  if (!todayISO.startsWith(monthISO)) return daysInMonth(monthISO);
+  return Number(todayISO.slice(8, 10));
+}
+
+/**
  * Aggregates the dashboard state for `monthISO` — today's spending, zero-day
- * status, the budget and cashflow figures, and the month's imprévus.
+ * status, the budget and cashflow figures, the days logged so far, and the
+ * month's imprévus.
  *
  * Budget data used to be conditional on control mode; with learning mode gone
- * (VS-34) it always loads.
+ * (VS-34) it always loads. Whether the month has a plan follows the Budget
+ * tab's rule (UX-04).
  *
  * @param todayISO Defaults to today (UTC). Explicit for testability.
  */
@@ -97,10 +111,13 @@ export async function getDashboardSnapshot(
   todayISO: string = toISODate(new Date()),
 ): Promise<DashboardState> {
   // One range query covers both the 7-day trend and today's total (its last bucket).
-  const [recentExpenses, zeroDay, unplanned] = await Promise.all([
+  const monthStart = `${monthISO}-01`;
+  const [recentExpenses, zeroDay, unplanned, loggedDates] = await Promise.all([
     expensesService.getExpensesByDateRange(isoDaysBefore(todayISO, TREND_DAYS - 1), todayISO),
     expensesService.getDayActivityStatus(todayISO),
-    getUnplannedTotals(`${monthISO}-01`, lastDayOfMonth(monthISO)),
+    getUnplannedTotals(monthStart, lastDayOfMonth(monthISO)),
+    // Same "logged day" as complete months and the journey use (VS-41).
+    getLoggedDates(monthStart, todayISO),
   ]);
 
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
@@ -122,15 +139,22 @@ export async function getDashboardSnapshot(
     expensesRemaining: overview.remaining,
     spentPct: spentPct(overview.spent, expenseBudget),
     pace: paceFromHealth(overview.health),
+    // The Budget tab's own rule, so Home and Budget agree on whether a plan exists.
+    isPlanned: !overview.isUnplanned,
   };
 
   const cashflow: Cashflow = {
     income: incomeTotal,
     expenses: overview.spent,
-    net: incomeTotal - overview.spent,
   };
 
-  const dailyPace = dailyBudgetPace(expenseBudget, monthISO);
+  const logging: DayLogging = {
+    loggedDays: loggedDates.size,
+    daysSoFar: daysSoFarInMonth(monthISO, todayISO),
+  };
+
+  // Without a plan there is no pace to keep: income alone is not a budget (UX-04).
+  const dailyPace = budget.isPlanned ? dailyBudgetPace(expenseBudget, monthISO) : null;
 
   return {
     monthISO,
@@ -140,6 +164,7 @@ export async function getDashboardSnapshot(
     zeroDay,
     budget,
     cashflow,
+    logging,
     unplanned,
     dailyPace,
   };

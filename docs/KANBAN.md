@@ -2182,6 +2182,29 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every white label on a green fill reaches WCAG AA.
 
 ---
+### VS-70: Home Leads with the Plan, or with What Was Spent (UX-04) 🔄 In Progress
+
+**Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decision D2a)
+**Blocked by:** —
+
+**Scope:**
+
+- Whether a month has a plan follows the Budget tab's rule (`isUnplanned`): an explicit total,
+  an expected-income estimate or envelopes. Income received alone is not a plan — before this,
+  Home showed *Left in your plan* = income − spending while the Budget tab said "No plan yet".
+- No plan: the hero is *Spent this month*, with "18 of 23 days logged" (the same logged-day rule
+  as complete months), money in on its own line and a quiet *Plan a budget →* link. No bar, no
+  pace chip, and no daily pace on the Today card.
+- With a plan: unchanged, except the In / Out row loses *Net* (it stays in Reports).
+
+**TDD Anchor:**
+
+- Test: `isPlanned` for income only, explicit total, expected income; logged days and days so far.
+- Test: card in both states, en and fr; no *Net*; the plan link opens the planner.
+
+**Done when:** Home and the Budget tab always agree on whether there is a plan.
+
+---
 ## DEPENDENCY GRAPH
 
 ```
