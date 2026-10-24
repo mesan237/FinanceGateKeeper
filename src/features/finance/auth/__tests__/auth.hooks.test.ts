@@ -17,7 +17,14 @@ jest.mock('@/services/database', () => {
   };
 });
 
+jest.mock('@/notifications/notifications.service', () => ({
+  requestPermissions: jest.fn(),
+}));
+
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
+import { requestPermissions } from '@/notifications/notifications.service';
+
+const mockedPermissions = requestPermissions as jest.MockedFunction<typeof requestPermissions>;
 
 let sqlite: Database.Database;
 
@@ -46,5 +53,33 @@ describe('useAppSettings — completeOnboarding', () => {
     });
 
     expect(result.current.settings?.onboardingComplete).toBe(true);
+  });
+});
+
+describe('useAppSettings — enableReminder (UX-08)', () => {
+  it('saves the time and turns reminders on once permission is granted', async () => {
+    mockedPermissions.mockResolvedValue(true);
+    const { result } = renderHook(() => useAppSettings());
+    await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+    await act(async () => {
+      expect(await result.current.enableReminder('20:30')).toBe(true);
+    });
+
+    expect(result.current.settings?.reminderTime).toBe('20:30');
+    expect(result.current.settings?.notificationsEnabled).toBe(true);
+  });
+
+  it('keeps the time but leaves reminders off when permission is refused', async () => {
+    mockedPermissions.mockResolvedValue(false);
+    const { result } = renderHook(() => useAppSettings());
+    await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+    await act(async () => {
+      expect(await result.current.enableReminder('20:30')).toBe(false);
+    });
+
+    expect(result.current.settings?.reminderTime).toBe('20:30');
+    expect(result.current.settings?.notificationsEnabled).toBe(false);
   });
 });

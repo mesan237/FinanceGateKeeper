@@ -12,7 +12,14 @@ jest.mock('expo-router', () => {
   };
 });
 
-jest.mock('@/features/finance/budget/BaselineCard', () => ({ BaselineCard: () => null }));
+jest.mock('@/features/finance/budget/BaselineCard', () => {
+  const { Text } = jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    BaselineCard: ({ only }: { only?: ReadonlyArray<string> }) => (
+      <Text testID="baseline-only">{only ? only.join(',') : 'all'}</Text>
+    ),
+  };
+});
 
 jest.mock('@/features/finance/journey/journey.logging', () => ({
   markNoSpendDay: jest.fn().mockResolvedValue(undefined),
@@ -142,6 +149,21 @@ describe('JourneyScreen (VS-63)', () => {
     expect(await screen.findByTestId('journey-month-status')).toHaveTextContent(
       'October 2026 can no longer reach 80%. Keep logging: it still shows your habits, and November 2026 counts.',
     );
+  });
+
+  it('asks only for what each step needs from the set-up checklist (UX-09)', async () => {
+    render(<JourneyScreen />);
+    expect(await screen.findByTestId('baseline-only')).toHaveTextContent('balances');
+
+    screen.unmount();
+    mocked.getJourney.mockResolvedValue(journeyAt('see'));
+    render(<JourneyScreen />);
+    expect(await screen.findByTestId('baseline-only')).toHaveTextContent('balances,costTypes');
+
+    screen.unmount();
+    mocked.getJourney.mockResolvedValue(journeyAt('plan'));
+    render(<JourneyScreen />);
+    expect(await screen.findByTestId('baseline-only')).toHaveTextContent('all');
   });
 
   it('shows what a locked step unlocks, as a preview', async () => {

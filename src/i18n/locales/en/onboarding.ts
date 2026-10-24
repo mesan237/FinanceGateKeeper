@@ -1,31 +1,30 @@
-/** Copy for the first-run onboarding carousel. Deliberately jargon-light. */
+/** Copy for first-run set-up (UX-08). Deliberately jargon-light. */
 export const onboarding = {
-  skip: 'Skip',
-  skipLabel: 'Skip onboarding',
-  next: 'Next',
-  getStarted: 'Get started',
-  chips: {
-    expenses: 'Expenses',
-    income: 'Income',
-    budgets: 'Budgets',
-    debts: 'Debts',
+  skip: 'Skip set-up',
+  skipLabel: 'Skip set-up and open the app',
+  stepOf: 'Step {{number}} of {{total}}',
+  intro: {
+    title: 'Know where every franc goes',
+    body: 'Log what you spend every day for a few months, small things too. The app then shows what a month really costs you, and helps you plan the next one.',
+    start: 'Set up — about a minute',
+    steps: {
+      observe: { title: 'Observe', body: 'Log everything for 3 full months, without changing your habits.' },
+      see: { title: 'See', body: 'Read what a month really costs you.' },
+      plan: { title: 'Plan', body: 'Budget a month from your own average.' },
+      optimize: { title: 'Optimize', body: 'Cut back where it pays the most.' },
+      grow: { title: 'Grow', body: 'Put what you free up to work: goals and a reserve.' },
+    },
   },
-  panels: {
-    track: {
-      title: 'Track every franc',
-      body: 'Log each income and expense as it happens. That daily habit is the whole game — everything else builds on it.',
-    },
-    budget: {
-      title: 'Budget by category',
-      body: 'Give each category a monthly envelope. Finance Gatekeeper paces it against the day of the month, so you know whether you are ahead or behind before the month ends.',
-    },
-    reports: {
-      title: 'See where it went',
-      body: 'Reports break the month down by category and compare it with the one before, so the pattern shows up on its own.',
-    },
-    done: {
-      title: "You're all set",
-      body: 'Set a daily reminder any time in Settings so a day never slips by unlogged. Let’s get started.',
-    },
+  wallets: {
+    title: 'What do your wallets hold today?',
+    body: 'Cash, Mobile Money, bank: enter what each holds right now, so your balances are right from day one.',
+    later: 'Not now',
+  },
+  reminder: {
+    title: 'When can you log each day?',
+    body: 'Pick a quiet moment. You get a reminder only on days with nothing logged.',
+    time: 'Daily reminder time',
+    enable: 'Remind me',
+    later: 'No reminders',
   },
 };

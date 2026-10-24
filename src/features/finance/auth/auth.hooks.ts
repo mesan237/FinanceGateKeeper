@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { applyLanguagePreference } from '@/i18n';
+import { requestPermissions } from '@/notifications/notifications.service';
 
 import * as authService from './auth.service';
 import { getProfile, setProfile } from './auth.profile';
@@ -41,6 +42,22 @@ export function useAppSettings() {
     [refresh],
   );
 
+  /**
+   * The set-up's reminder step (UX-08): saves `time`, asks for notification
+   * permission, and turns reminders on only when it is granted. Resolves to
+   * whether reminders are on.
+   */
+  const enableReminder = useCallback(
+    async (time: string): Promise<boolean> => {
+      await authService.setReminderTime(time);
+      const granted = await requestPermissions();
+      await authService.setNotificationsEnabled(granted);
+      await refresh();
+      return granted;
+    },
+    [refresh],
+  );
+
   const completeOnboarding = useCallback(async () => {
     await authService.setOnboardingComplete(true);
     await refresh();
@@ -62,6 +79,7 @@ export function useAppSettings() {
     refresh,
     setReminderTime,
     setNotificationsEnabled,
+    enableReminder,
     completeOnboarding,
     setLanguage,
   };

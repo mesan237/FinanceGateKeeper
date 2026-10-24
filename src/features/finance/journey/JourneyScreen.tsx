@@ -17,7 +17,7 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { JourneyStepDetail } from './JourneyStepDetail';
 import { useJourney } from './journey.hooks';
-import { JOURNEY_STEPS } from './journey.steps';
+import { BASELINE_BY_STEP, JOURNEY_STEPS } from './journey.steps';
 import type { JourneyStep, JourneyStepKey, JourneyStepStatus } from './journey.types';
 
 const TONE: Record<JourneyStepStatus, PillTone> = {
@@ -31,7 +31,8 @@ const TONE: Record<JourneyStepStatus, PillTone> = {
  * "My path" (VS-63): the five steps to control, each with where it stands.
  * The current step (and any skipped one) shows its progress and next action;
  * a locked step is a preview of what it unlocks, and the next one can be
- * skipped to after a warning. The setup checklist sits on top until it is done.
+ * skipped to after a warning. The setup checklist sits on top, asking only for
+ * what the current step needs (UX-09), until it is done.
  */
 export function JourneyScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -112,7 +113,7 @@ export function JourneyScreen() {
             {error}
           </Typography>
         ) : null}
-        <BaselineCard />
+        <BaselineCard only={BASELINE_BY_STEP[journey.current]} />
         {journey.steps.map(renderStep)}
       </ScrollView>
 

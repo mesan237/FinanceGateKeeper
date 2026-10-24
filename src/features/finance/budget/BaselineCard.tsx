@@ -28,18 +28,28 @@ const STEP_ANSWER: Partial<Record<BaselineStep['key'], BaselineKind>> = {
   costTypes: 'cost_types_reviewed',
 };
 
+export interface BaselineCardProps {
+  /**
+   * The steps to show, in checklist order; all of them when omitted. My path
+   * passes only what its current step needs (UX-09), so a new user is not
+   * asked about bills and estimates while still observing.
+   */
+  only?: ReadonlyArray<BaselineStep['key']>;
+}
+
 /**
- * "Set up your baseline" (VS-46): a short, skippable checklist on the
- * dashboard. Each step opens the screen that already does the job — confirm
- * balances, add recurring bills, record debts, review fixed categories, enter
- * estimates. It disappears once every step is done, or when hidden.
+ * "Set up your baseline" (VS-46): a short, skippable checklist. Each step
+ * opens the screen that already does the job — confirm balances, add
+ * recurring bills, record debts, review fixed categories, enter estimates. It
+ * disappears once every step it shows is done, or when hidden.
  */
-export function BaselineCard() {
+export function BaselineCard({ only }: BaselineCardProps = {}) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
   const { t } = useTranslation('budget');
-  const { steps, hidden, loading, refresh, answer } = useBaselineChecklist();
+  const { steps: allSteps, hidden, loading, refresh, answer } = useBaselineChecklist();
+  const steps = only ? allSteps.filter((s) => only.includes(s.key)) : allSteps;
 
   useFocusEffect(
     useCallback(() => {

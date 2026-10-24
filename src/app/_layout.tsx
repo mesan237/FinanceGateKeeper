@@ -34,6 +34,7 @@ import { MonthCloser } from '@/features/finance/networth/MonthCloser';
 import { RecurringAutoLogger } from '@/features/finance/expenses/RecurringAutoLogger';
 import { ZeroDayGate } from '@/features/finance/expenses/ZeroDayGate';
 import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
+import { OpeningBalancesStep } from '@/features/finance/accounts/OpeningBalancesStep';
 
 // Keep the splash screen up until the custom fonts have loaded, so text never
 // flashes in a fallback system face first.
@@ -44,8 +45,9 @@ export default function RootLayout() {
   // expenses component: it injects the reminder prefs into ZeroDayGate so the
   // expenses feature never imports the auth feature (see ISSUE-008 decision #2).
   // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
-  // feature stays presentational (see ISSUE-023).
-  const { settings, loading: settingsLoading, completeOnboarding } = useAppSettings();
+  // feature stays presentational (see ISSUE-023), along with the set-up's two
+  // working steps: the reminder (auth) and the wallets (accounts) (UX-08).
+  const { settings, loading: settingsLoading, completeOnboarding, enableReminder } = useAppSettings();
 
   // i18n starts in the device language; once the saved Settings override has
   // loaded, apply it. Later changes are applied by the Settings screen itself.
@@ -91,6 +93,8 @@ export default function RootLayout() {
               ready={!settingsLoading && !!settings}
               complete={settings?.onboardingComplete ?? false}
               onDone={() => void completeOnboarding()}
+              onReminder={enableReminder}
+              renderWallets={(next) => <OpeningBalancesStep onDone={next} />}
             >
               <AttentionProvider>
                 <RecurringAutoLogger>

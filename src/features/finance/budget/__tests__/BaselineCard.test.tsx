@@ -53,6 +53,22 @@ describe('BaselineCard (VS-46)', () => {
     expect(screen.getByTestId('baseline-step-balances')).toHaveTextContent(/Confirm your wallet balances/);
   });
 
+  it('shows only the steps it is given, counting progress among them (UX-09)', async () => {
+    render(<BaselineCard only={['balances', 'costTypes']} />);
+
+    expect(await screen.findByText('1 of 2 done')).toBeTruthy();
+    expect(screen.getByTestId('baseline-step-costTypes')).toBeTruthy();
+    expect(screen.queryByTestId('baseline-step-estimates')).toBeNull();
+    expect(screen.queryByTestId('baseline-step-bills')).toBeNull();
+  });
+
+  it('disappears once every step it shows is done, even with others left', async () => {
+    render(<BaselineCard only={['balances']} />);
+
+    await waitFor(() => expect(mocked.getBaselineChecklist).toHaveBeenCalled());
+    expect(screen.queryByTestId('baseline-card')).toBeNull();
+  });
+
   it('opens the screen that completes a step', async () => {
     render(<BaselineCard />);
 

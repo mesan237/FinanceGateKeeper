@@ -6,10 +6,17 @@ import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
 
 const Child = () => <Text>app-tree</Text>;
 
+/** What the routing layer injects: completion, the reminder step and the wallets step. */
+const STEPS = {
+  onDone: jest.fn(),
+  onReminder: jest.fn().mockResolvedValue(true),
+  renderWallets: () => null,
+};
+
 describe('OnboardingGate', () => {
   it('renders nothing until ready', () => {
     render(
-      <OnboardingGate ready={false} complete={false} onDone={jest.fn()}>
+      <OnboardingGate ready={false} complete={false} {...STEPS}>
         <Child />
       </OnboardingGate>,
     );
@@ -17,9 +24,9 @@ describe('OnboardingGate', () => {
     expect(screen.queryByTestId('onboarding-screen')).toBeNull();
   });
 
-  it('shows the carousel when onboarding is incomplete', () => {
+  it('shows the set-up when onboarding is incomplete', () => {
     render(
-      <OnboardingGate ready complete={false} onDone={jest.fn()}>
+      <OnboardingGate ready complete={false} {...STEPS}>
         <Child />
       </OnboardingGate>,
     );
@@ -29,7 +36,7 @@ describe('OnboardingGate', () => {
 
   it('renders children once onboarding is complete', () => {
     render(
-      <OnboardingGate ready complete onDone={jest.fn()}>
+      <OnboardingGate ready complete {...STEPS}>
         <Child />
       </OnboardingGate>,
     );

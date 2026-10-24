@@ -69,6 +69,12 @@ export const accounts = {
     placeholder: 'Select wallet',
     defaultBadge: '✓ Default',
   },
+  opening: {
+    a11y: 'What {{name}} holds today, in FCFA',
+    placeholder: 'Blank if unsure',
+    hint: 'A rough figure is fine. You can add, rename or correct wallets later in Wallets.',
+    save: 'Save and continue',
+  },
   transfer: {
     title: 'Log transfer',
     from: 'From',
