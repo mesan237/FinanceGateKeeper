@@ -4,26 +4,29 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { ErrorState } from '@/components/ErrorState';
 import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { SPACING, RADIUS } from '@/constants/layout';
 import { ICON_SIZE } from '@/constants/icons';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { JourneyCardSkeleton } from './JourneySkeleton';
 import { useJourney } from './journey.hooks';
 import { JOURNEY_STEPS } from './journey.steps';
 
 /**
  * The journey on the dashboard (VS-63): which step the user is on, its goal,
  * and five segments for the whole path. Tapping opens the "My path" tab.
- * Renders nothing while loading or when the journey cannot be read.
+ * Holds its place with a placeholder while loading, and shows the shared
+ * error card with "Try again" when the journey cannot be read (UX-16).
  */
 export function JourneyCard() {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
   const { t } = useTranslation('journey');
-  const { journey, refresh } = useJourney();
+  const { journey, loading, error, refresh } = useJourney();
 
   useFocusEffect(
     useCallback(() => {
@@ -31,7 +34,18 @@ export function JourneyCard() {
     }, [refresh]),
   );
 
-  if (journey === null) return null;
+  if (journey === null) {
+    if (loading) return <JourneyCardSkeleton />;
+    return (
+      <ErrorState
+        compact
+        testID="journey-card-error"
+        title={t('errors.loadTitle')}
+        message={error}
+        onRetry={() => void refresh()}
+      />
+    );
+  }
   const number = JOURNEY_STEPS.indexOf(journey.current) + 1;
 
   return (

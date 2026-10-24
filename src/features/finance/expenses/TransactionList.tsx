@@ -1,9 +1,12 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, SectionList, StyleSheet, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, View } from 'react-native';
 
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 import { Icon } from '@/components/Icon';
+import { SkeletonRows } from '@/components/Skeleton';
 import { Typography } from '@/components/Typography';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
@@ -60,6 +63,8 @@ export interface TransactionListProps {
    * logged from the in-page `AddTransactionSheet`, which never leaves the tab.
    */
   reloadToken?: number;
+  /** Opens the add-transaction sheet; the empty month offers it as its action (UX-16). */
+  onAdd?: () => void;
 }
 
 /**
@@ -67,7 +72,7 @@ export interface TransactionListProps {
  * The chip row filters by category (income rows always stay) or down to the
  * imprévus alone.
  */
-export function TransactionList({ reloadToken }: TransactionListProps = {}) {
+export function TransactionList({ reloadToken, onAdd }: TransactionListProps = {}) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
@@ -146,15 +151,16 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
         onSelect={setFilter}
       />
 
+      {/* The shared error (UX-16): a card above rows still on screen, the full
+          block when there is nothing to show. */}
       {error ? (
-        <View style={styles.errorRow}>
-          <Typography variant="muted" style={styles.errorText}>
-            {error}
-          </Typography>
-          <Pressable testID="feed-retry" accessibilityRole="button" onPress={() => void refresh()}>
-            <Typography style={styles.retryText}>{t('list.retry')}</Typography>
-          </Pressable>
-        </View>
+        <ErrorState
+          compact={sections.length > 0}
+          testID="feed-error"
+          title={t('list.loadTitle')}
+          message={error}
+          onRetry={() => void refresh()}
+        />
       ) : null}
 
       {/* The list stays mounted while a refetch is in flight (it just dims), so
@@ -189,11 +195,18 @@ export function TransactionList({ reloadToken }: TransactionListProps = {}) {
           )}
         />
       ) : loading ? (
-        <ActivityIndicator testID="feed-loading" color={c.PRIMARY_GREEN} style={styles.firstLoad} />
+        <View testID="feed-loading" style={styles.firstLoad}>
+          <SkeletonRows count={6} />
+        </View>
       ) : !error ? (
-        <Typography variant="muted" style={styles.empty}>
-          {t('list.empty', { month: monthTitle })}
-        </Typography>
+        <EmptyState
+          testID="feed-empty"
+          icon="transactions"
+          title={t('list.empty', { month: monthTitle })}
+          subtitle={t('list.emptyHint')}
+          actionLabel={onAdd ? t('list.emptyAction') : undefined}
+          onAction={onAdd}
+        />
       ) : null}
     </View>
   );
@@ -232,28 +245,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   sectionNet: {
     fontSize: 12,
   },
-  empty: {
-    marginTop: 24,
-    textAlign: 'center',
-  },
   firstLoad: {
-    marginTop: 32,
+    marginTop: 16,
   },
   refreshing: {
     opacity: 0.6,
-  },
-  errorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 8,
-  },
-  errorText: {
-    flex: 1,
-  },
-  retryText: {
-    color: c.PRIMARY_TEXT,
-    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

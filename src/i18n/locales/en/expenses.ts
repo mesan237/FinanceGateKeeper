@@ -31,8 +31,10 @@ export const expenses = {
   },
   list: {
     all: 'All',
-    retry: 'Retry',
+    loadTitle: "Couldn't load your transactions",
     empty: 'No transactions in {{month}}.',
+    emptyHint: 'Log what you spend each day: every figure in the app starts here.',
+    emptyAction: 'Add a transaction',
     addTransaction: 'Add transaction',
     unplannedFilter: 'Unexpected',
     unplannedBadge: 'Unexpected',

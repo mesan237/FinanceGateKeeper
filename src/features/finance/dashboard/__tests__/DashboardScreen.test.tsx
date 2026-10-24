@@ -74,12 +74,13 @@ const BARE_STATE: DashboardState = {
   safeDailySpend: null,
 };
 
-function setupHooks(state: DashboardState | null, loading = false) {
+function setupHooks(state: DashboardState | null, loading = false, error: string | null = null) {
+  const refresh = jest.fn();
   mockedUseDashboard.mockReturnValue({
     state,
     loading,
-    error: null,
-    refresh: jest.fn(),
+    error,
+    refresh,
   });
   mockedUseZeroDay.mockReturnValue({
     status: state?.zeroDay ?? { hasExpenses: false, zeroDayConfirmed: false },
@@ -87,6 +88,7 @@ function setupHooks(state: DashboardState | null, loading = false) {
     refresh: jest.fn(),
     confirm: jest.fn(),
   });
+  return refresh;
 }
 
 beforeEach(() => {
@@ -138,11 +140,40 @@ describe('DashboardScreen', () => {
     });
   });
 
-  it('shows loading indicator while loading', () => {
-    setupHooks(null, true);
-    render(<DashboardScreen />);
+  describe('loading and error states (UX-16)', () => {
+    it('shows a skeleton shaped like Home on a first load', () => {
+      setupHooks(null, true);
+      render(<DashboardScreen />);
 
-    expect(screen.getByText('Loading…')).toBeTruthy();
+      expect(screen.getByTestId('dashboard-skeleton')).toBeTruthy();
+      expect(screen.queryByTestId('today-spending')).toBeNull();
+    });
+
+    it('keeps the figures on screen while a refresh is in flight', () => {
+      setupHooks(FULL_STATE, true);
+      render(<DashboardScreen />);
+
+      expect(screen.getByTestId('month-overview-card')).toBeTruthy();
+      expect(screen.queryByTestId('dashboard-skeleton')).toBeNull();
+    });
+
+    it('shows the shared error with "Try again", which reloads', () => {
+      const refresh = setupHooks(null, false, 'SQLITE_BUSY');
+      render(<DashboardScreen />);
+
+      expect(screen.getByTestId('dashboard-error')).toBeTruthy();
+      expect(screen.getByText('Nothing you logged is lost.')).toBeTruthy();
+      fireEvent.press(screen.getByTestId('dashboard-error-retry'));
+      expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows no zero figure for today when the month could not load, but keeps quick log', () => {
+      setupHooks(null, false, 'SQLITE_BUSY');
+      render(<DashboardScreen />);
+
+      expect(screen.queryByTestId('today-spending')).toBeNull();
+      expect(screen.getByTestId('quick-log-expense')).toBeTruthy();
+    });
   });
 
   it('renders without crash when state is null (empty DB)', () => {

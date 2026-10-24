@@ -1,10 +1,12 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 
 import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 import { LoadingState } from '@/components/LoadingState';
 import { MonthStepper } from '@/components/MonthStepper';
 import { Skeleton, SkeletonRows } from '@/components/Skeleton';
+import i18n from '@/i18n';
 
 describe('EmptyState', () => {
   it('renders the title and subtitle', () => {
@@ -42,6 +44,48 @@ describe('EmptyState', () => {
     );
     fireEvent.press(screen.getByText('Later'));
     expect(onSecondary).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ErrorState', () => {
+  it('says plainly that the data could not load and that nothing is lost (UX-16)', () => {
+    render(<ErrorState onRetry={jest.fn()} testID="err" />);
+    expect(screen.getByText("Couldn't load this")).toBeTruthy();
+    expect(screen.getByText('Nothing you logged is lost.')).toBeTruthy();
+  });
+
+  it('retries when "Try again" is pressed', () => {
+    const onRetry = jest.fn();
+    render(<ErrorState onRetry={onRetry} testID="err" />);
+    fireEvent.press(screen.getByTestId('err-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Try again')).toBeTruthy();
+  });
+
+  it('takes a title naming what failed, and shows the technical message as a detail', () => {
+    render(
+      <ErrorState title="Couldn't load your budget" message="SQLITE_BUSY" onRetry={jest.fn()} testID="err" />,
+    );
+    expect(screen.getByText("Couldn't load your budget")).toBeTruthy();
+    expect(screen.getByTestId('err-detail')).toHaveTextContent('SQLITE_BUSY');
+  });
+
+  it('has a compact form for a card inside a screen, with the same retry', () => {
+    const onRetry = jest.fn();
+    render(<ErrorState compact onRetry={onRetry} testID="err" />);
+    expect(screen.getByText("Couldn't load this")).toBeTruthy();
+    fireEvent.press(screen.getByTestId('err-retry'));
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads in French', async () => {
+    await act(async () => {
+      await i18n.changeLanguage('fr');
+    });
+    render(<ErrorState onRetry={jest.fn()} testID="err" />);
+    expect(screen.getByText('Impossible de charger')).toBeTruthy();
+    expect(screen.getByText('Rien de ce que vous avez noté n’est perdu.')).toBeTruthy();
+    expect(screen.getByText('Réessayer')).toBeTruthy();
   });
 });
 

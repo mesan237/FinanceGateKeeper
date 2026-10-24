@@ -4,7 +4,6 @@ import type { Translation } from '@/i18n/translation.types';
 /** French copy for the journey slice (VS-63). */
 export const journey: Translation<typeof en> = {
   title: 'Mon parcours',
-  loading: 'Chargement de votre parcours…',
   intro: 'La maîtrise vient étape par étape : observer, comprendre, planifier, puis réduire.',
   stepOf: 'Étape {{number}} sur {{total}}',
   status: {
@@ -80,6 +79,7 @@ export const journey: Translation<typeof en> = {
     confirm: 'Passer en avance',
   },
   errors: {
+    loadTitle: 'Impossible de charger votre parcours',
     load: 'Impossible de charger votre parcours.',
     outsideWindow: 'Seuls les {{days}} derniers jours peuvent être marqués sans dépense.',
   },

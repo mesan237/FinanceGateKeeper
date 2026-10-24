@@ -3,8 +3,6 @@ import type { Translation } from '@/i18n/translation.types';
 
 /** French copy for the dashboard. */
 export const dashboard: Translation<typeof en> = {
-  loading: 'Chargement…',
-  retry: 'Réessayer',
   pace: {
     green: 'Dans les clous',
     yellow: 'Attention',
@@ -56,6 +54,7 @@ export const dashboard: Translation<typeof en> = {
     emptyCta: 'Créer vos portefeuilles →',
   },
   errors: {
+    loadTitle: 'Impossible de charger votre mois',
     loadFailed: 'Impossible de charger le tableau de bord.',
   },
 };

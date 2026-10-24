@@ -178,11 +178,21 @@ describe('TransactionList', () => {
     expect(await screen.findByText(/No transactions in/)).toBeTruthy();
   });
 
-  it('shows a spinner on first load and keeps rows visible while a refetch is in flight', async () => {
+  it('offers to add the first transaction from an empty month (UX-16)', async () => {
+    const onAdd = jest.fn();
+    render(<TransactionList onAdd={onAdd} />);
+
+    expect(await screen.findByTestId('feed-empty')).toBeTruthy();
+    expect(screen.getByText('Log what you spend each day: every figure in the app starts here.')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('feed-empty-action'));
+    expect(onAdd).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows row skeletons on first load and keeps rows visible while a refetch is in flight', async () => {
     mockGetFeed.mockResolvedValueOnce([EXPENSE_TODAY]);
     render(<TransactionList />);
 
-    // Cold load: spinner, never a premature "No transactions" flash.
+    // Cold load: row skeletons, never a premature "No transactions" flash.
     expect(screen.getByTestId('feed-loading')).toBeTruthy();
     expect(screen.queryByText(/No transactions in/)).toBeNull();
 
@@ -207,15 +217,17 @@ describe('TransactionList', () => {
     expect(await screen.findByText(/No transactions in/)).toBeTruthy();
   });
 
-  it('shows the load error with a Retry action that re-fetches', async () => {
-    mockGetFeed.mockRejectedValueOnce(new Error('Feed failed'));
-    mockGetFeed.mockResolvedValueOnce([EXPENSE_TODAY]);
+  it('shows the shared load error with "Try again", which re-fetches (UX-16)', async () => {
+    mockGetFeed.mockRejectedValue(new Error('Feed failed'));
     render(<TransactionList />);
 
-    expect(await screen.findByText('Feed failed')).toBeTruthy();
+    expect(await screen.findByTestId('feed-error')).toBeTruthy();
+    expect(screen.getByText("Couldn't load your transactions")).toBeTruthy();
+    expect(screen.getByText('Feed failed')).toBeTruthy();
     expect(screen.queryByText(/No transactions in/)).toBeNull();
 
-    fireEvent.press(screen.getByTestId('feed-retry'));
+    mockGetFeed.mockResolvedValue([EXPENSE_TODAY]);
+    fireEvent.press(screen.getByTestId('feed-error-retry'));
 
     expect(await screen.findByTestId('tx-row-expense-1')).toBeTruthy();
     expect(screen.queryByText('Feed failed')).toBeNull();

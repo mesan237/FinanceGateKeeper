@@ -25,6 +25,10 @@ export const common: Translation<typeof en> = {
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
   },
+  states: {
+    errorTitle: 'Impossible de charger',
+    errorBody: 'Rien de ce que vous avez noté n’est perdu.',
+  },
   change: {
     new: 'Nouveau',
   },

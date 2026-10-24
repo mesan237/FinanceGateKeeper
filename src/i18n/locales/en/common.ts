@@ -22,6 +22,10 @@ export const common = {
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
   },
+  states: {
+    errorTitle: "Couldn't load this",
+    errorBody: 'Nothing you logged is lost.',
+  },
   change: {
     new: 'New',
   },

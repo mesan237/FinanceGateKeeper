@@ -1,7 +1,6 @@
 /** Copy for the journey slice: the "My path" tab and its dashboard card (VS-63). */
 export const journey = {
   title: 'My path',
-  loading: 'Loading your path…',
   intro: 'Control comes step by step: watch, understand, plan, then cut back.',
   stepOf: 'Step {{number}} of {{total}}',
   status: {
@@ -77,6 +76,7 @@ export const journey = {
     confirm: 'Skip ahead',
   },
   errors: {
+    loadTitle: "Couldn't load your path",
     load: 'Could not load your path.',
     outsideWindow: 'Only the last {{days}} days can be marked as no-spend.',
   },

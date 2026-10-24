@@ -190,6 +190,7 @@ export const budget: Translation<typeof en> = {
     subSpent: '{{amount}} dépensés',
   },
   errors: {
+    loadTitle: 'Impossible de charger votre budget',
     estimateAmount: 'Saisissez des montants entiers et positifs en FCFA.',
     payDay: 'Le jour de paie doit être entre 1 et 31.',
     loadBudget: 'Impossible de charger le budget.',

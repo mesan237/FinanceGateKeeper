@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
 import { WhyBreakdown } from '@/components/WhyBreakdown';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
@@ -20,12 +22,23 @@ import { NetWorthCard } from '@/features/finance/networth/NetWorthCard';
 import { colorForIndex } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
 import { NavArrows } from './NavArrows';
+import { ReportSkeleton } from './ReportSkeleton';
 import { SpendingDonutChart } from './SpendingDonutChart';
 import { EstimateVsActualCard } from './EstimateVsActualCard';
 import { TypicalMonthCard } from './TypicalMonthCard';
 import { UnplannedCard } from './UnplannedCard';
 import { expenseSpentPct } from './reports.service';
 import { useEstimatesForReport, useMonthlyReport, useSpendingProfile } from './reports.hooks';
+import type { MonthlyReport as MonthlyReportData } from './reports.types';
+
+/** A month with nothing logged: no income, no spending, no category. */
+function isEmptyMonth(report: MonthlyReportData): boolean {
+  return (
+    report.incomeTotal === 0 &&
+    report.expensePerformance.actual === 0 &&
+    report.categoryBreakdown.length === 0
+  );
+}
 
 /**
  * The monthly report — the Reports tab root. Shows income vs expenses,
@@ -39,8 +52,16 @@ export function MonthlyReport() {
   const c = useTheme();
   const router = useRouter();
   const { t } = useTranslation('reports');
-  const { report, monthISO, loading, error, goToPrevMonth, goToNextMonth, isCurrentMonth } =
-    useMonthlyReport();
+  const {
+    report,
+    monthISO,
+    loading,
+    error,
+    refresh: refreshReport,
+    goToPrevMonth,
+    goToNextMonth,
+    isCurrentMonth,
+  } = useMonthlyReport();
   // The typical month is not tied to the month being browsed; it is reloaded on
   // focus so a category re-tagged as fixed or variable shows on return (VS-41).
   const { profile, startingPoint, refresh: refreshProfile } = useSpendingProfile();
@@ -52,9 +73,10 @@ export function MonthlyReport() {
 
   useFocusEffect(
     useCallback(() => {
+      refreshReport();
       void refreshProfile();
       void refreshEstimates();
-    }, [refreshProfile, refreshEstimates]),
+    }, [refreshReport, refreshProfile, refreshEstimates]),
   );
 
   return (
@@ -78,10 +100,30 @@ export function MonthlyReport() {
         testIDPrefix="month-nav"
       />
 
-      {error ? <Typography variant="muted">{error}</Typography> : null}
-      {loading && !report ? <Typography variant="muted">{t('loading')}</Typography> : null}
+      {/* The shared states (UX-16): error with "Try again", skeleton on a
+          first load, and an empty month that leads to where entries are added. */}
+      {error ? (
+        <ErrorState
+          compact={report !== null}
+          testID="report-error"
+          title={t('errors.loadTitle')}
+          message={error}
+          onRetry={refreshReport}
+        />
+      ) : null}
+      {loading && !report && !error ? <ReportSkeleton /> : null}
+      {report && isEmptyMonth(report) ? (
+        <EmptyState
+          testID="report-empty"
+          icon="reports"
+          title={t('monthly.emptyTitle', { month: monthLabel(monthISO) })}
+          subtitle={t('monthly.emptyHint')}
+          actionLabel={t('monthly.emptyAction')}
+          onAction={() => router.push('/transactions')}
+        />
+      ) : null}
 
-      {report ? (
+      {report && !isEmptyMonth(report) ? (
         <>
           <Card>
             <View style={styles.summaryRow}>

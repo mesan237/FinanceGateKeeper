@@ -1,24 +1,17 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { Card } from '@/components/Card';
+import { ErrorState } from '@/components/ErrorState';
 import { Typography } from '@/components/Typography';
-import { FONT_FAMILY } from '@/constants/fonts';
-import { RADIUS } from '@/constants/layout';
-import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { useThemedStyles, type ThemeColors } from '@/theme';
 import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
 import { useZeroDay } from '@/features/finance/expenses/expenses.hooks';
 import { JourneyCard } from '@/features/finance/journey/JourneyCard';
 import { formatDateLong } from '@/utils/formatDate';
 
+import { DashboardSkeleton } from './DashboardSkeleton';
 import { MonthOverviewCard } from './MonthOverviewCard';
 import { PlannedDueCard } from './PlannedDueCard';
 import { QuickActionBar } from './QuickActionBar';
@@ -36,7 +29,6 @@ export function DashboardScreen() {
   const router = useRouter();
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
   const styles = useThemedStyles(makeStyles);
-  const c = useTheme();
   const { t } = useTranslation('dashboard');
 
   // The dashboard opens the same add-transaction sheet the Transactions FAB
@@ -53,13 +45,12 @@ export function DashboardScreen() {
     }, [refresh, refreshZeroDay]),
   );
 
-  if (loading) {
+  // Only a cold load shows the skeleton: a focus refresh keeps the figures on
+  // screen instead of blanking Home every time the tab comes back (UX-16).
+  if (loading && !state && !error) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={c.PRIMARY_GREEN} />
-        <Typography variant="muted" style={styles.loadingText}>
-          {t('loading')}
-        </Typography>
+      <View style={styles.root}>
+        <DashboardSkeleton />
       </View>
     );
   }
@@ -80,14 +71,15 @@ export function DashboardScreen() {
           <Typography variant="muted">{today}</Typography>
         </View>
 
-        {/* Error card */}
+        {/* The shared error card (UX-16); quick log below still works. */}
         {error ? (
-          <Card style={styles.errorCard}>
-            <Typography style={styles.errorText}>{error}</Typography>
-            <Pressable onPress={() => void refresh()} style={styles.retryButton}>
-              <Typography style={styles.retryText}>{t('retry')}</Typography>
-            </Pressable>
-          </Card>
+          <ErrorState
+            compact
+            testID="dashboard-error"
+            title={t('errors.loadTitle')}
+            message={error}
+            onRetry={() => void refresh()}
+          />
         ) : null}
 
         {/* The month at a glance: days left, what is left to spend against the
@@ -125,16 +117,17 @@ export function DashboardScreen() {
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />
 
-
-
         {/* Today's spending — a compact supporting row beneath the budget hero,
-            carrying the 7-day trend. */}
-        <TodaySpendingCard
-          todaySpending={state?.todaySpending ?? 0}
-          safeDailySpend={state?.safeDailySpend ?? null}
-          spendingTrend={state?.spendingTrend ?? []}
-          today={today}
-        />
+            carrying the 7-day trend. Hidden rather than showing a false 0 when
+            the month could not load. */}
+        {state ? (
+          <TodaySpendingCard
+            todaySpending={state.todaySpending}
+            safeDailySpend={state.safeDailySpend}
+            spendingTrend={state.spendingTrend}
+            today={today}
+          />
+        ) : null}
       </ScrollView>
 
       {/* Unified add-transaction sheet — shared with the Transactions FAB (VS-26).
@@ -163,41 +156,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingBottom: 24,
     gap: 12,
   },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: c.BACKGROUND,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    marginTop: 4,
-  },
   header: {
     paddingTop: 4,
     paddingBottom: 4,
-  },
-  errorCard: {
-    backgroundColor: c.DANGER_LIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  errorText: {
-    color: c.DANGER,
-    flex: 1,
-    fontSize: 14,
-  },
-  retryButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.sm,
-    backgroundColor: c.DANGER,
-    marginLeft: 12,
-  },
-  retryText: {
-    color: c.SURFACE,
-    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
-    fontSize: 13,
   },
 });

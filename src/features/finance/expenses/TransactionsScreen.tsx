@@ -29,7 +29,7 @@ export function TransactionsScreen() {
 
   return (
     <View style={styles.container}>
-      <TransactionList reloadToken={reloadToken} />
+      <TransactionList reloadToken={reloadToken} onAdd={() => setSheetOpen(true)} />
 
       <Pressable
         testID="add-transaction-fab"

@@ -185,6 +185,7 @@ export const budget = {
     subSpent: '{{amount}} spent',
   },
   errors: {
+    loadTitle: "Couldn't load your budget",
     estimateAmount: 'Enter whole, non-negative FCFA amounts.',
     payDay: 'Pay day must be between 1 and 31.',
     loadBudget: 'Failed to load budget.',

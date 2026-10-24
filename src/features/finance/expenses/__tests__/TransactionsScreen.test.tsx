@@ -3,8 +3,12 @@ import React from 'react';
 
 // Stub the feed so the screen test focuses on the FAB ↔ sheet wiring.
 jest.mock('@/features/finance/expenses/TransactionList', () => {
-  const { View } = require('react-native');
-  return { TransactionList: () => <View testID="transaction-list-stub" /> };
+  const { Pressable } = require('react-native');
+  return {
+    TransactionList: (props: { onAdd?: () => void }) => (
+      <Pressable testID="transaction-list-stub" onPress={props.onAdd} />
+    ),
+  };
 });
 
 // Stub the sheet: renders only when `visible`, and a press routes to `onClose`
@@ -30,6 +34,12 @@ describe('TransactionsScreen', () => {
   it('opens the Add-Transaction sheet when the FAB is pressed', () => {
     render(<TransactionsScreen />);
     fireEvent.press(screen.getByTestId('add-transaction-fab'));
+    expect(screen.getByTestId('sheet-open')).toBeTruthy();
+  });
+
+  it("opens the same sheet from the empty month's action (UX-16)", () => {
+    render(<TransactionsScreen />);
+    fireEvent.press(screen.getByTestId('transaction-list-stub'));
     expect(screen.getByTestId('sheet-open')).toBeTruthy();
   });
 

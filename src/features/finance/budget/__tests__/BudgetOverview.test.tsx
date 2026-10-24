@@ -172,6 +172,21 @@ describe('BudgetOverview — loading and empty states', () => {
     await waitFor(() => expect(screen.queryByTestId('budget-skeleton')).toBeNull());
   });
 
+  it('shows the shared error with "Try again" when the month cannot load (UX-16)', async () => {
+    mockedGetOverview.mockRejectedValue(new Error('disk'));
+    await renderTab();
+
+    expect(await screen.findByTestId('budget-error')).toBeTruthy();
+    expect(screen.getByText("Couldn't load your budget")).toBeTruthy();
+    expect(screen.queryByTestId('budget-empty')).toBeNull();
+
+    mockedGetOverview.mockResolvedValue(overviewData());
+    fireEvent.press(screen.getByTestId('budget-error-retry'));
+
+    expect(await screen.findByText('Left in your plan')).toBeTruthy();
+    expect(screen.queryByTestId('budget-error')).toBeNull();
+  });
+
   it('offers a call to action when the month has no plan yet', async () => {
     mockedGetOverview.mockResolvedValue(overviewData({ isUnplanned: true, categories: [] }));
     await renderTab();
