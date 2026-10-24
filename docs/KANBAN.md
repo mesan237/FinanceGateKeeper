@@ -2162,6 +2162,26 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every drawer row opens a screen, and one word names a wallet everywhere.
 
 ---
+### VS-69: Green Fills That Carry White Labels (UX-02b) 🔄 In Progress
+
+**Priority:** P0 — release cut; approved 2026-10-24
+**Blocked by:** VS-67 (PRIMARY_TEXT)
+
+**Scope:**
+
+- New token `PRIMARY_FILL` (`#047857`, both themes) for solid green behind white content: the
+  primary button, the filled icon button, the add FAB, active segments, category chips, recurring
+  and income-source pills, a ticked planned-item checkbox. White on it is ~5.5:1 (was ~2.5:1).
+- Fills with nothing on them keep `PRIMARY_GREEN`: bars, charts, PIN and onboarding dots, journey
+  segments, the toggle track, the active tab.
+
+**TDD Anchor:**
+
+- Test: white on `PRIMARY_FILL` ≥ 4.5:1 in light and dark; the primary button uses it.
+
+**Done when:** every white label on a green fill reaches WCAG AA.
+
+---
 ## DEPENDENCY GRAPH
 
 ```
