@@ -8,7 +8,15 @@ Reports are read-only aggregations across all other features. No dedicated datab
 
 ## Key Business Rules
 - Weekly report: total spent this week, top categories, highest spending day, on-track indicator vs monthly budget.
-- Monthly report sections: income vs expenses, allocation performance (planned vs actual per bucket), category breakdown (donut chart), fund progress, project progress, debt summary, month-over-month comparison.
+- **Monthly report, three groups (UX-14).** The month stepper comes first and scopes
+  *This month* (`ThisMonthSection`): in and out with a one-sentence conclusion
+  (`reports.summary.topCategoriesShare`), the month against its plan, why the money went,
+  categories as ranked bars, and the three biggest changes vs last month (*Show all*).
+  *Over time* holds the typical month and the estimates; *Wealth* holds the Net worth
+  card and the debt totals, labelled as of today because they are not month-specific.
+  Both fold (`ReportGroup`): open by default from See / at Grow (`useIsBeforeStep`),
+  open while the step is unknown, and the user's choice is remembered on the phone
+  (`hooks/useRememberedToggle`, local `ui_preferences` table).
 - Month-over-month: per-category bar chart comparing current vs previous month. Highlight increases > 10%.
 - **No suggestions card (removed VS-56).** It only restated the comparison rows
   ("increased 18% — review it"). Advice now lives where it can be acted on: each
@@ -27,10 +35,15 @@ Reports are read-only aggregations across all other features. No dedicated datab
   `ProfileCategory.subcategories`); a category in both the fixed and variable lists
   is added up, not overwritten.
 - **Why the month went (VS-62).** `report.why` (`reports.reasons.summariseReasons`) feeds
-  the shared `components/WhyBreakdown` under the imprévus card: routine · events ·
-  unexpected · everyday across every category, with the month's events listed and
-  opening `/events/[id]` by path. Same rule as the Budget category detail.
-- Charts: bar charts for comparison, a donut chart for breakdown. Use consistent colors per category — the shared `categoryColors` palette indexes by a category's position in the (amount-desc) breakdown so a donut slice and its breakdown-row dot always match.
+  the shared `components/WhyBreakdown`: routine · events · unexpected · everyday across
+  every category, with the month's events listed and opening `/events/[id]` by path.
+  Same rule as the Budget category detail. The month's imprévus (count, cost, share,
+  last month) sit at its foot as `UnplannedSummary` (UX-14; it was a card of its own).
+  That count covers every expense marked unexpected, including one tagged with an event
+  that the bar counts under Events.
+- Charts: bar charts for comparison; the category breakdown is a ranked bar per row (the
+  donut went in UX-14: length reads better than angle). Colours come from the shared
+  `categoryColors` palette, indexed by a category's position in the (amount-desc) breakdown.
 
 ## Cross-Feature Reads
 This feature imports services from: `expenses`, `income`, `budget`, `funds`, `projects`, `debt`. All read-only — never writes to other features.

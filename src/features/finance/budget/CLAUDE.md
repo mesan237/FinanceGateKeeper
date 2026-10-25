@@ -201,7 +201,7 @@ callers import `budget.envelopes` / `budget.plan` directly.
 - `BaselineCard.tsx` — the setup checklist (VS-46), shown on the "My path" tab (VS-63)
 
 ## Visualizations: what is deliberately absent
-Reports owns the spending donut and the month-over-month comparison, and the Dashboard
+Reports owns the category breakdown and the month-over-month comparison, and the Dashboard
 owns the daily sparkline. Repeating them here would add pixels without adding a
 decision, so the Budget tab carries only paced meters, the burn-down and weekly bars;
 a category's own change lives in its detail.
