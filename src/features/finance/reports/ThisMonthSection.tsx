@@ -13,7 +13,7 @@ import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 
-import { colorForIndex } from './categoryColors';
+import { colorForCategory } from './categoryColors';
 import { MonthComparison } from './MonthComparison';
 import { ReportRow } from './ReportRow';
 import { UnplannedSummary } from './UnplannedSummary';
@@ -78,8 +78,7 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
         <ProgressBar
           testID="expense-performance-bar"
           value={expenseSpentPct(report.expensePerformance.actual, report.expensePerformance.planned)}
-          color={c.TEXT_PRIMARY}
-          trackColor={c.SUCCESS}
+          color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
         />
         <ReportRow label={t('monthly.actual')} value={report.expensePerformance.actual} />
         <ReportRow
@@ -99,7 +98,7 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
 
       <View style={styles.section}>
         <Typography variant="subheading">{t('monthly.byCategory')}</Typography>
-        {report.categoryBreakdown.map((cat, i) => {
+        {report.categoryBreakdown.map((cat) => {
           const emoji = getTransactionIcon('expense', cat.categoryLabel);
           const avatar = getCategoryAvatar(cat.categoryLabel);
           return (
@@ -126,7 +125,7 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
                 <View style={styles.track}>
                   <View
                     testID={`report-category-bar-${cat.categoryId}`}
-                    style={[styles.fill, { width: `${Math.min(100, cat.pct)}%`, backgroundColor: colorForIndex(i) }]}
+                    style={[styles.fill, { width: `${Math.min(100, cat.pct)}%`, backgroundColor: colorForCategory(cat.categoryId) }]}
                   />
                 </View>
                 <Typography variant="muted">{t('monthly.pctOfTotal', { percent: Math.round(cat.pct) })}</Typography>

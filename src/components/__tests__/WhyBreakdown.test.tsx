@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
-import { Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
 import { WhyBreakdown } from '@/components/WhyBreakdown';
+import { LIGHT_COLORS } from '@/theme/palettes';
 
 const TOTALS = { routine: 20_000, event: 15_000, unexpected: 3_000, everyday: 7_000 };
 
@@ -14,6 +15,17 @@ describe('WhyBreakdown (VS-62)', () => {
     expect(screen.getByTestId('why-event')).toHaveTextContent(/Events.*15.000 FCFA.*33%/);
     expect(screen.getByTestId('why-unexpected')).toHaveTextContent(/Unexpected/);
     expect(screen.getByTestId('why-everyday')).toHaveTextContent(/Everyday.*7.000 FCFA.*16%/);
+  });
+
+  it('colours each reason by kind, never with a status colour (UX-15)', () => {
+    render(<WhyBreakdown totals={TOTALS} />);
+
+    const dot = (r: string) => StyleSheet.flatten(screen.getByTestId(`why-${r}-dot`).props.style).backgroundColor;
+    expect(dot('routine')).toBe(LIGHT_COLORS.KIND_ROUTINE);
+    expect(dot('event')).toBe(LIGHT_COLORS.KIND_EVENT);
+    expect(dot('unexpected')).toBe(LIGHT_COLORS.KIND_UNEXPECTED);
+    expect(dot('everyday')).toBe(LIGHT_COLORS.KIND_EVERYDAY);
+    expect(dot('everyday')).not.toBe(LIGHT_COLORS.SUCCESS);
   });
 
   it('leaves out a reason with nothing in it', () => {

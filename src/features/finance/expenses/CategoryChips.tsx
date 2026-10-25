@@ -119,14 +119,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   chipTextActive: {
     color: c.TEXT_INVERSE,
   },
+  // The imprévus chip wears the unexpected kind, not the warning status (UX-15).
   chipWarning: {
-    borderColor: c.WARNING,
+    borderColor: c.KIND_UNEXPECTED,
   },
   chipWarningActive: {
-    backgroundColor: c.WARNING,
-    borderColor: c.WARNING,
+    backgroundColor: c.KIND_UNEXPECTED,
+    borderColor: c.KIND_UNEXPECTED,
   },
   chipTextWarning: {
-    color: c.WARNING_TEXT,
+    color: c.KIND_UNEXPECTED_TEXT,
   },
 });

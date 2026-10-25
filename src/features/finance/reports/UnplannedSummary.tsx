@@ -65,5 +65,5 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     body: { gap: 4 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    total: { color: c.WARNING_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
+    total: { color: c.KIND_UNEXPECTED_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   });

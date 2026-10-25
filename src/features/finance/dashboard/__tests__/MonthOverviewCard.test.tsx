@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import { DANGER, DANGER_LIGHT, SUCCESS_LIGHT, WARNING_LIGHT } from '@/constants/colors';
+import { DANGER, DANGER_LIGHT, SUCCESS_LIGHT, TEXT_PRIMARY, WARNING_LIGHT } from '@/constants/colors';
 import { MonthOverviewCard } from '@/features/finance/dashboard/MonthOverviewCard';
 import i18n from '@/i18n';
 import type { BudgetSummary, Cashflow, DayLogging } from '@/features/finance/dashboard/dashboard.types';
@@ -99,10 +99,11 @@ describe('MonthOverviewCard', () => {
       expect(screen.getByText('5 000 FCFA')).toBeTruthy();
     });
 
-    it('tints the figure with DANGER when over budget', () => {
+    it('keeps the figure in plain text when over budget: the label and chip say so (UX-15)', () => {
       renderCard({ summary: OVERSPENT });
       const amount = screen.getByTestId('month-overview-amount');
-      expect(StyleSheet.flatten(amount.props.style).color).toBe(DANGER);
+      expect(StyleSheet.flatten(amount.props.style).color).not.toBe(DANGER);
+      expect(StyleSheet.flatten(amount.props.style).color).toBe(TEXT_PRIMARY);
     });
 
     it('shows the spent-of-budget caption and percentage', () => {

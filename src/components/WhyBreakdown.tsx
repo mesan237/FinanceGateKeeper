@@ -34,11 +34,12 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBr
   const total = SPEND_REASONS.reduce((sum, r) => sum + totals[r], 0);
   if (total <= 0 && !footer) return null;
 
+  // Kind colours, never status ones (UX-15).
   const colorOf: Record<SpendReason, string> = {
-    routine: c.TEXT_SECONDARY,
-    event: c.TEXT_PRIMARY,
-    unexpected: c.WARNING,
-    everyday: c.SUCCESS,
+    routine: c.KIND_ROUTINE,
+    event: c.KIND_EVENT,
+    unexpected: c.KIND_UNEXPECTED,
+    everyday: c.KIND_EVERYDAY,
   };
   const shown = SPEND_REASONS.filter((r) => totals[r] > 0);
 
@@ -55,7 +56,7 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBr
       {shown.map((r) => (
         <View key={r}>
           <View style={styles.row} testID={`why-${r}`}>
-            <View style={[styles.dot, { backgroundColor: colorOf[r] }]} />
+            <View testID={`why-${r}-dot`} style={[styles.dot, { backgroundColor: colorOf[r] }]} />
             <View style={styles.grow}>
               <Typography>{t(`why.${r}`)}</Typography>
               <Typography variant="muted" style={styles.hint}>{t(`why.${r}Hint`)}</Typography>
