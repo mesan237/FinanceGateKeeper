@@ -2375,6 +2375,38 @@ money-view layout change approved)
 **Done when:** six figures or fewer stand before the category list, and each sum is one tap away.
 
 ---
+### VS-77: Reports in Three Groups, Stepper First (UX-14) 🔄 In Progress
+
+**Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-05, F-06, F-07)
+**Blocked by:** —
+
+**Scope:**
+
+- The month stepper comes first and scopes *This month*: in and out, a one-sentence conclusion
+  ("Food and Transport were 58% of your spending.", `reports.summary.topCategoriesShare`), the
+  month against its plan, *Why you spent*, the categories and the biggest changes since last month.
+- The Unexpected card is merged into *Why you spent* as its footer (`WhyBreakdown footer`,
+  `UnplannedSummary`). Its count covers every expense marked unexpected, including one tagged with
+  an event that the bar counts under Events.
+- The donut is replaced by a ranked bar on each category row (length, not angle); each row still
+  opens the category detail by path.
+- The comparison lists the three biggest changes in FCFA, either way, with *Show all (N)*.
+- *Over time* (typical month, estimates) and *Wealth* (net worth, debts as of today) fold. Default:
+  *Over time* open from See, *Wealth* open at Grow, both open while the step is unknown. The user's
+  choice is remembered on the phone: `hooks/useRememberedToggle` over `services/uiPreferences`,
+  backed by migration **050** `ui_preferences` (key/value, local only, never synced, no Supabase patch).
+
+**TDD Anchor:**
+
+- Test: migration and preference service on in-memory SQLite; the toggle hook (default follows the
+  step until chosen, choice remembered, a failed save keeps the choice).
+- Test: `topCategoriesShare`; comparison top 3 and *Show all*; the Why footer.
+- Test: Reports order, summary sentence, bars, group defaults by step, toggling, debts in Wealth, fr.
+
+**Done when:** every figure above the first group heading changes with the month, and each group
+answers one question.
+
+---
 
 ## DEPENDENCY GRAPH
 

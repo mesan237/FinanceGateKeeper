@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
+import { Text } from 'react-native';
 
 import { WhyBreakdown } from '@/components/WhyBreakdown';
 
@@ -34,6 +35,23 @@ describe('WhyBreakdown (VS-62)', () => {
     expect(screen.getByTestId('why-event-4')).toHaveTextContent(/Marie’s wedding.*15.000 FCFA/);
     fireEvent.press(screen.getByTestId('why-event-4'));
     expect(onOpenEvent).toHaveBeenCalledWith(4);
+  });
+
+  it('closes its card with a footer when given one (UX-14)', () => {
+    render(<WhyBreakdown totals={TOTALS} footer={<Text testID="why-footer">3 marked unexpected</Text>} />);
+
+    expect(screen.getByTestId('why')).toHaveTextContent(/3 marked unexpected/);
+  });
+
+  it('keeps the footer even in a month whose spending has no reason yet', () => {
+    render(
+      <WhyBreakdown
+        totals={{ routine: 0, event: 0, unexpected: 0, everyday: 0 }}
+        footer={<Text testID="why-footer">No unexpected expenses</Text>}
+      />,
+    );
+
+    expect(screen.getByTestId('why-footer')).toBeTruthy();
   });
 
   it('renders nothing without any spending', () => {

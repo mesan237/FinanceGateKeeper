@@ -15,6 +15,8 @@ export interface WhyBreakdownProps {
   /** The events behind the "Events" share, listed under it; tappable with `onOpenEvent`. */
   events?: ReadonlyArray<ReasonEvent>;
   onOpenEvent?: (eventId: number) => void;
+  /** Closes the card, under a rule — Reports puts the month's imprévus here (UX-14). */
+  footer?: React.ReactNode;
 }
 
 /**
@@ -22,14 +24,15 @@ export interface WhyBreakdownProps {
  * everyday spending, then a row per reason with its amount and share — and the
  * events behind the "Events" row. Shared by the Budget category detail and
  * Reports so both answer "why" the same way. Draws its own card, and renders
- * nothing at all without spending, so an empty month leaves no empty box.
+ * nothing at all without spending and without a footer, so an empty month
+ * leaves no empty box.
  */
-export function WhyBreakdown({ totals, events = [], onOpenEvent }: WhyBreakdownProps) {
+export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBreakdownProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation();
   const total = SPEND_REASONS.reduce((sum, r) => sum + totals[r], 0);
-  if (total <= 0) return null;
+  if (total <= 0 && !footer) return null;
 
   const colorOf: Record<SpendReason, string> = {
     routine: c.TEXT_SECONDARY,
@@ -42,11 +45,13 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent }: WhyBreakdownP
   return (
     <Card testID="why" style={styles.body}>
       <Typography variant="label">{t('why.title')}</Typography>
-      <View style={styles.bar}>
-        {shown.map((r) => (
-          <View key={r} style={{ flex: totals[r], backgroundColor: colorOf[r] }} />
-        ))}
-      </View>
+      {total > 0 ? (
+        <View style={styles.bar}>
+          {shown.map((r) => (
+            <View key={r} style={{ flex: totals[r], backgroundColor: colorOf[r] }} />
+          ))}
+        </View>
+      ) : null}
       {shown.map((r) => (
         <View key={r}>
           <View style={styles.row} testID={`why-${r}`}>
@@ -75,6 +80,7 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent }: WhyBreakdownP
             : null}
         </View>
       ))}
+      {footer ? <View style={styles.footer}>{footer}</View> : null}
     </Card>
   );
 }
@@ -96,4 +102,11 @@ const makeStyles = (c: ThemeColors) =>
     hint: { fontSize: 11 },
     amount: { fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD },
     share: { width: 40, textAlign: 'right', fontSize: 12 },
+    footer: {
+      gap: SPACING.xs,
+      marginTop: SPACING.xs,
+      paddingTop: SPACING.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.BORDER,
+    },
   });

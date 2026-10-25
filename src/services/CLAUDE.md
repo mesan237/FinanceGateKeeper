@@ -22,6 +22,8 @@ services/
 - Dates stored as ISO 8601 strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss).
 - Migrations run in numeric order on app startup. Track completed migrations in a `_migrations` table.
 - Feature services call `database.ts` helper functions — never raw SQL from outside this folder.
+- `uiPreferences.ts` (UX-14): small key/value choices about how screens look on this phone
+  (`ui_preferences`, migration 050). Local only: not in `SYNCED_TABLES`, no Supabase patch.
 
 ## Database Helpers to Expose
 - `db.execute(sql, params)` — Run a write query.
