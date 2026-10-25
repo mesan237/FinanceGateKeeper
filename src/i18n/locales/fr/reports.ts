@@ -9,6 +9,18 @@ export const reports: Translation<typeof en> = {
   nextPeriod: 'Période suivante',
   noData: 'Aucune donnée pour cette période.',
   totalCaps: 'TOTAL',
+  groups: {
+    thisMonth: 'Ce mois-ci',
+    overTime: 'Dans la durée',
+    overTimeHint: 'Ce que coûtent vos mois complets',
+    wealth: 'Patrimoine',
+    wealthHint: 'Ce que vous possédez et devez, aujourd’hui',
+    toggleA11y: 'Afficher ou masquer {{group}}',
+  },
+  summary: {
+    one: '{{first}} représente {{percent}} % de vos dépenses.',
+    two: '{{first}} et {{second}} représentent {{percent}} % de vos dépenses.',
+  },
   monthly: {
     emptyTitle: 'Rien de noté en {{month}}',
     emptyHint: 'Ce rapport se remplit à mesure que vous notez ce qui entre et ce qui sort.',
@@ -21,7 +33,7 @@ export const reports: Translation<typeof en> = {
     remaining: 'Reste au budget',
     byCategory: 'Dépenses par catégorie',
     pctOfTotal: '{{percent}} % du total',
-    debt: 'Dettes',
+    debt: 'Dettes à ce jour',
     lentOut: 'Prêté',
     owed: 'Emprunté',
     viewWeekly: 'Voir le rapport hebdomadaire →',
@@ -82,6 +94,8 @@ export const reports: Translation<typeof en> = {
     title: 'Dépenses par rapport au mois précédent',
     empty: 'Aucune donnée de comparaison pour le mois dernier.',
     new: 'Nouveau',
+    showAll: 'Tout afficher ({{count}})',
+    showFewer: 'Afficher moins',
   },
   weekly: {
     title: 'Rapport hebdomadaire',

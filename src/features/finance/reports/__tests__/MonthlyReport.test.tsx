@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import type {
   MonthComparison as MonthComparisonData,
@@ -19,6 +19,12 @@ jest.mock('expo-router', () => {
 // The estimate comparison has its own tests (VS-46).
 // The net worth card has its own suite (networth/__tests__/NetWorthCard.test.tsx).
 jest.mock('@/features/finance/networth/NetWorthCard', () => ({ NetWorthCard: () => null }));
+
+// Group open/closed choices live on the phone (UX-14); none is stored here.
+jest.mock('@/services/uiPreferences', () => ({
+  getPreference: jest.fn().mockResolvedValue(null),
+  setPreference: jest.fn().mockResolvedValue(undefined),
+}));
 
 jest.mock('@/features/finance/budget/budget.baseline', () => ({
   getBaseline: jest.fn().mockResolvedValue(null),
@@ -43,7 +49,10 @@ jest.mock('@/features/finance/reports/reports.service', () => ({
   ).expenseSpentPct,
 }));
 
+import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';
 import { MonthlyReport } from '@/features/finance/reports/MonthlyReport';
+import * as prefs from '@/services/uiPreferences';
+import type { JourneyStepKey } from '@/types/journey';
 import i18n from '@/i18n';
 import * as reportsService from '@/features/finance/reports/reports.service';
 
@@ -111,6 +120,104 @@ beforeAll(() => {
 
 afterAll(() => {
   jest.useRealTimers();
+});
+
+/** Publishes `stage` the way the journey slice does once it has read the path. */
+function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.ReactNode }) {
+  const publish = useSetJourneyStage();
+  useEffect(() => publish(stage), [publish, stage]);
+  return <>{children}</>;
+}
+
+function renderAt(stage: JourneyStepKey) {
+  render(
+    <JourneyStageProvider>
+      <AtStep stage={stage}>
+        <MonthlyReport />
+      </AtStep>
+    </JourneyStageProvider>,
+  );
+}
+
+const PROFILE = {
+  months: [{ month: '2026-05', coverage: 0.9, isComplete: true }],
+  average: { total: 150_000, fixed: 100_000, variable: 50_000, unexpected: 0 },
+  incomeAverage: null,
+  variableCategories: [],
+  fixedCategories: [],
+};
+
+describe('MonthlyReport — grouped by question (UX-14)', () => {
+  it('puts the month stepper first, above everything it scopes', async () => {
+    mockGetProfile.mockResolvedValue(PROFILE);
+    render(<MonthlyReport />);
+    await screen.findByTestId('typical-month-card');
+
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('month-nav-prev')).toBeLessThan(tree.indexOf('report-group-this-month'));
+    expect(tree.indexOf('report-group-this-month')).toBeLessThan(tree.indexOf('report-group-over-time'));
+    expect(tree.indexOf('report-group-over-time')).toBeLessThan(tree.indexOf('report-group-wealth'));
+  });
+
+  it('sums the month up in one sentence: the biggest categories and their share', async () => {
+    render(<MonthlyReport />);
+
+    expect(await screen.findByTestId('report-summary')).toHaveTextContent(
+      'Food and Transport were 100% of your spending.',
+    );
+  });
+
+  it('ranks categories as bars instead of a donut', async () => {
+    render(<MonthlyReport />);
+    await screen.findByText('June 2026');
+
+    expect(screen.queryByTestId('spending-donut-chart')).toBeNull();
+    expect(screen.getByTestId('report-category-bar-1')).toBeTruthy();
+  });
+
+  it('closes "Over time" while observing, and opens it on request', async () => {
+    mockGetProfile.mockResolvedValue(PROFILE);
+    renderAt('observe');
+    await screen.findByTestId('report-group-over-time');
+
+    expect(screen.queryByTestId('typical-month-card')).toBeNull();
+    fireEvent.press(screen.getByTestId('report-group-over-time-toggle'));
+
+    expect(await screen.findByTestId('typical-month-card')).toBeTruthy();
+    expect(prefs.setPreference).toHaveBeenCalledWith('reports.group.overTime', 'open');
+  });
+
+  it('opens "Over time" from the See step on', async () => {
+    mockGetProfile.mockResolvedValue(PROFILE);
+    renderAt('see');
+
+    expect(await screen.findByTestId('typical-month-card')).toBeTruthy();
+  });
+
+  it('keeps "Wealth" closed until Grow', async () => {
+    renderAt('plan');
+    await screen.findByTestId('report-group-wealth');
+
+    expect(screen.queryByTestId('report-debt')).toBeNull();
+  });
+
+  it('holds the debt totals in "Wealth", as of today', async () => {
+    renderAt('grow');
+
+    const debt = await screen.findByTestId('report-debt');
+    expect(debt).toHaveTextContent(/Debts as of today/);
+    expect(debt).toHaveTextContent(/30 000 FCFA/);
+  });
+
+  it('names the groups in French', async () => {
+    mockGetProfile.mockResolvedValue(PROFILE);
+    await i18n.changeLanguage('fr');
+    render(<MonthlyReport />);
+
+    expect(await screen.findByText('Ce mois-ci')).toBeTruthy();
+    expect(screen.getByText('Dans la durée')).toBeTruthy();
+    expect(screen.getByText('Patrimoine')).toBeTruthy();
+  });
 });
 
 describe('MonthlyReport', () => {
@@ -200,10 +307,9 @@ describe('MonthlyReport', () => {
     expect(screen.getByTestId('expense-performance-bar')).toBeTruthy();
   });
 
-  it('renders the spending donut and rich category rows', async () => {
+  it('renders rich category rows', async () => {
     render(<MonthlyReport />);
     await screen.findByText('June 2026');
-    expect(screen.getByTestId('spending-donut-chart')).toBeTruthy();
     // 62.3% rounds to 62; the row shows the "% of total" sub-label.
     expect(screen.getByText('62% of total')).toBeTruthy();
     expect(screen.getByTestId('report-category-icon-1')).toBeTruthy();

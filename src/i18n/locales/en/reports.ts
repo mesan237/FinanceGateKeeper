@@ -6,6 +6,18 @@ export const reports = {
   nextPeriod: 'Next period',
   noData: 'No data for this period.',
   totalCaps: 'TOTAL',
+  groups: {
+    thisMonth: 'This month',
+    overTime: 'Over time',
+    overTimeHint: 'What your complete months cost',
+    wealth: 'Wealth',
+    wealthHint: 'What you own and owe, today',
+    toggleA11y: 'Show or hide {{group}}',
+  },
+  summary: {
+    one: '{{first}} was {{percent}}% of your spending.',
+    two: '{{first}} and {{second}} were {{percent}}% of your spending.',
+  },
   monthly: {
     emptyTitle: 'Nothing logged in {{month}}',
     emptyHint: 'This report fills in as you log what comes in and what goes out.',
@@ -18,7 +30,7 @@ export const reports = {
     remaining: 'Left in your plan',
     byCategory: 'Spending by category',
     pctOfTotal: '{{percent}}% of total',
-    debt: 'Debt',
+    debt: 'Debts as of today',
     lentOut: 'Lent out',
     owed: 'Owed',
     viewWeekly: 'View weekly report →',
@@ -78,6 +90,8 @@ export const reports = {
     title: 'Spending vs previous month',
     empty: 'No comparison data for last month.',
     new: 'New',
+    showAll: 'Show all ({{count}})',
+    showFewer: 'Show fewer',
   },
   weekly: {
     title: 'Weekly report',
