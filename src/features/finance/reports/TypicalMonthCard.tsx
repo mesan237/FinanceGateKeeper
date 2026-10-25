@@ -70,9 +70,10 @@ export function TypicalMonthCard({ profile, startingPoint }: TypicalMonthCardPro
 
   const complete = profile.months.filter((m) => m.isComplete);
   const kinds: { kind: SpendKind; color: string }[] = [
-    { kind: 'fixed', color: c.TEXT_SECONDARY },
-    { kind: 'variable', color: c.SUCCESS },
-    { kind: 'unexpected', color: c.WARNING },
+    // Kind colours (UX-15): fixed is routine, variable is everyday.
+    { kind: 'fixed', color: c.KIND_ROUTINE },
+    { kind: 'variable', color: c.KIND_EVERYDAY },
+    { kind: 'unexpected', color: c.KIND_UNEXPECTED },
   ];
   const potential = habitSavingsPotential(profile);
 

@@ -43,3 +43,15 @@ export const SUCCESS_LIGHT = '#E8F5E9';
 export const DANGER_TEXT = '#C62828';
 export const WARNING_TEXT = '#B45309';
 export const SUCCESS_TEXT = '#2E7D32';
+
+// Kinds of spending (UX-15): why money went — routine bills, events, imprévus,
+// everyday habits — and the fixed/variable split behind them. Never a status
+// colour, so "everyday" (the habits you can change) cannot read as "good" and
+// an imprévu cannot read as a warning. Fills reach 3:1 on SURFACE; the
+// unexpected text companion reaches 4.5:1 on its tint and on SURFACE.
+export const KIND_ROUTINE = '#64748B';
+export const KIND_EVENT = '#7C3AED';
+export const KIND_UNEXPECTED = '#A0522D';
+export const KIND_UNEXPECTED_LIGHT = '#F6EBE1';
+export const KIND_UNEXPECTED_TEXT = '#8B4513';
+export const KIND_EVERYDAY = '#2563EB';

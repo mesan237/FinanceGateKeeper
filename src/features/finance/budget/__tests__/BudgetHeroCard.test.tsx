@@ -1,9 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import React from 'react';
+import { StyleSheet } from 'react-native';
 
 import { BudgetHeroCard } from '@/features/finance/budget/BudgetHeroCard';
 import type { BudgetOverview, MonthlyPlan } from '@/features/finance/budget/budget.types';
 import i18n from '@/i18n';
+import { LIGHT_COLORS } from '@/theme/palettes';
 
 const PLAN: MonthlyPlan = {
   month: '2026-08',
@@ -53,6 +55,14 @@ describe('BudgetHeroCard (UX-13)', () => {
     expect(screen.getByText('100 000 FCFA of 300 000 FCFA spent')).toBeTruthy();
     // The same words and rounding as Home's Today card (UX-11).
     expect(screen.getByTestId('budget-per-day')).toHaveTextContent('A day to stay on plan: 9 523 FCFA');
+  });
+
+  it('keeps the figure in plain text when over plan: the label and chip carry it (UX-15)', () => {
+    render(<BudgetHeroCard overview={overview({ remaining: -15_000, spent: 315_000, health: 'over' })} />);
+
+    const style = StyleSheet.flatten(screen.getByTestId('budget-remaining').props.style);
+    expect(style.color).toBe(LIGHT_COLORS.TEXT_PRIMARY);
+    expect(screen.getByText('Over your plan by')).toBeTruthy();
   });
 
   it('drops the stat row and the percentage', () => {

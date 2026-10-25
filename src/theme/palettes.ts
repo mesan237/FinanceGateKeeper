@@ -30,6 +30,12 @@ export const LIGHT_COLORS: ThemeColors = {
   SUCCESS: colors.SUCCESS,
   SUCCESS_LIGHT: colors.SUCCESS_LIGHT,
   SUCCESS_TEXT: colors.SUCCESS_TEXT,
+  KIND_ROUTINE: colors.KIND_ROUTINE,
+  KIND_EVENT: colors.KIND_EVENT,
+  KIND_UNEXPECTED: colors.KIND_UNEXPECTED,
+  KIND_UNEXPECTED_LIGHT: colors.KIND_UNEXPECTED_LIGHT,
+  KIND_UNEXPECTED_TEXT: colors.KIND_UNEXPECTED_TEXT,
+  KIND_EVERYDAY: colors.KIND_EVERYDAY,
 };
 
 /**
@@ -61,6 +67,12 @@ export const DARK_COLORS: ThemeColors = {
   SUCCESS: '#10b981',
   SUCCESS_LIGHT: 'rgba(16,185,129,0.15)',
   SUCCESS_TEXT: '#34d399',
+  KIND_ROUTINE: '#94a3b8',
+  KIND_EVENT: '#a78bfa',
+  KIND_UNEXPECTED: '#d4a373',
+  KIND_UNEXPECTED_LIGHT: 'rgba(212,163,115,0.15)',
+  KIND_UNEXPECTED_TEXT: '#e0b48a',
+  KIND_EVERYDAY: '#60a5fa',
 };
 
 /** Resolves a colour scheme to its palette. */

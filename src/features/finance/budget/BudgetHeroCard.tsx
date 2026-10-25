@@ -86,7 +86,7 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
 
       <AnimatedCounter
         value={Math.abs(overview.remaining)}
-        style={[styles.amount, isOver && styles.amountOver]}
+        style={styles.amount}
         testID="budget-remaining"
       />
 
@@ -161,9 +161,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     letterSpacing: -0.5,
     marginTop: SPACING.xs,
     marginBottom: SPACING.md,
-  },
-  amountOver: {
-    color: c.DANGER,
   },
   meter: {
     marginBottom: SPACING.sm,

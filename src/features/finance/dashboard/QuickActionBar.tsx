@@ -94,8 +94,8 @@ export function QuickActionBar({
           subtitle={t('quickLog.expenseSubtitle')}
           accessibilityLabel={t('quickLog.expenseA11y')}
           onPress={onLogExpense}
-          tint={c.DANGER_LIGHT}
-          accent={c.DANGER_TEXT}
+          tint={c.SURFACE}
+          accent={c.PRIMARY_TEXT}
         />
         <LogTile
           testID="quick-log-income"
@@ -104,7 +104,7 @@ export function QuickActionBar({
           subtitle={t('quickLog.incomeSubtitle')}
           accessibilityLabel={t('quickLog.incomeA11y')}
           onPress={onLogIncome}
-          tint={c.PRIMARY_LIGHT}
+          tint={c.SURFACE}
           accent={c.PRIMARY_TEXT}
         />
       </View>
@@ -138,6 +138,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: SPACING.xs,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
+    // Neutral for both directions: logging is the habit, never bad news (UX-15).
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.BORDER_STRONG,
   },
   pressed: {
     opacity: 0.75,

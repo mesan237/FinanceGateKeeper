@@ -32,6 +32,31 @@ describe('palettes', () => {
     expect(contrastRatio(DARK_COLORS.TEXT_INVERSE, DARK_COLORS.PRIMARY_FILL)).toBeGreaterThanOrEqual(4.5);
   });
 
+  const KINDS = ['KIND_ROUTINE', 'KIND_EVENT', 'KIND_UNEXPECTED', 'KIND_EVERYDAY'] as const;
+  const STATUS = ['SUCCESS', 'WARNING', 'DANGER', 'PRIMARY_GREEN'] as const;
+
+  it('gives spending kinds their own colours, never a status colour (UX-15)', () => {
+    for (const palette of [LIGHT_COLORS, DARK_COLORS]) {
+      const kinds = KINDS.map((k) => palette[k].toLowerCase());
+      expect(new Set(kinds).size).toBe(KINDS.length);
+      for (const s of STATUS) expect(kinds).not.toContain(palette[s].toLowerCase());
+    }
+  });
+
+  it('keeps kind fills visible as graphics (3:1) on the surface in both themes (UX-15)', () => {
+    for (const palette of [LIGHT_COLORS, DARK_COLORS]) {
+      for (const k of KINDS) expect(contrastRatio(palette[k], palette.SURFACE)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('keeps unexpected-kind text at WCAG AA (4.5:1) on its tint and the surface (UX-15)', () => {
+    for (const ground of [LIGHT_COLORS.SURFACE, LIGHT_COLORS.KIND_UNEXPECTED_LIGHT]) {
+      expect(contrastRatio(LIGHT_COLORS.KIND_UNEXPECTED_TEXT, ground)).toBeGreaterThanOrEqual(4.5);
+    }
+    // The dark tint is a translucent wash over SURFACE, so SURFACE stands in for it.
+    expect(contrastRatio(DARK_COLORS.KIND_UNEXPECTED_TEXT, DARK_COLORS.SURFACE)).toBeGreaterThanOrEqual(4.5);
+  });
+
   it('uses the requested dark ground and emerald accent', () => {
     expect(DARK_COLORS.BACKGROUND).toBe('#0f172a');
     expect(DARK_COLORS.PRIMARY_GREEN).toBe('#10b981');

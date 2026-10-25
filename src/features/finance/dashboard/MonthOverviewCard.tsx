@@ -89,7 +89,7 @@ export function MonthOverviewCard({
 
       <AnimatedCounter
         value={planned ? Math.abs(summary.expensesRemaining) : cashflow.expenses}
-        style={[styles.amount, isOver && styles.amountOver]}
+        style={styles.amount}
         testID="month-overview-amount"
       />
 
@@ -197,9 +197,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: SPACING.xs,
     marginBottom: SPACING.md,
   },
-  amountOver: {
-    color: c.DANGER,
-  },
   bar: {
     marginBottom: SPACING.sm,
   },
@@ -255,7 +252,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: RADIUS.full,
-    backgroundColor: c.WARNING,
+    backgroundColor: c.KIND_UNEXPECTED,
   },
   cashflowAmount: {
     color: c.TEXT_PRIMARY,

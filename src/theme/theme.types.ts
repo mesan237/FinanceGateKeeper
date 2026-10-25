@@ -29,6 +29,14 @@ export interface ThemeColors {
   SUCCESS: string;
   SUCCESS_LIGHT: string;
   SUCCESS_TEXT: string;
+  /** Kinds of spending (UX-15) — never a status colour. */
+  KIND_ROUTINE: string;
+  KIND_EVENT: string;
+  KIND_UNEXPECTED: string;
+  KIND_UNEXPECTED_LIGHT: string;
+  /** Imprévu text and badges; meets 4.5:1 on KIND_UNEXPECTED_LIGHT and SURFACE. */
+  KIND_UNEXPECTED_TEXT: string;
+  KIND_EVERYDAY: string;
 }
 
 /** Every token name — used to validate palettes cover the full set. */
@@ -56,6 +64,12 @@ export const COLOR_TOKENS: ReadonlyArray<keyof ThemeColors> = [
   'SUCCESS',
   'SUCCESS_LIGHT',
   'SUCCESS_TEXT',
+  'KIND_ROUTINE',
+  'KIND_EVENT',
+  'KIND_UNEXPECTED',
+  'KIND_UNEXPECTED_LIGHT',
+  'KIND_UNEXPECTED_TEXT',
+  'KIND_EVERYDAY',
 ];
 
 /** The user's appearance preference. `system` defers to the OS setting. */

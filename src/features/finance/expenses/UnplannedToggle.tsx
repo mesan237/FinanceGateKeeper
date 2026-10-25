@@ -53,8 +53,8 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 10,
     },
     rowOn: {
-      borderColor: c.WARNING,
-      backgroundColor: c.WARNING_LIGHT,
+      borderColor: c.KIND_UNEXPECTED,
+      backgroundColor: c.KIND_UNEXPECTED_LIGHT,
     },
     text: { flex: 1 },
     hint: { fontSize: 12, marginTop: 2 },

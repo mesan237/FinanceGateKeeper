@@ -208,13 +208,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     flexShrink: 1,
   },
   badge: {
-    backgroundColor: c.WARNING_LIGHT,
+    backgroundColor: c.KIND_UNEXPECTED_LIGHT,
     borderRadius: RADIUS.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
   badgeText: {
-    color: c.WARNING_TEXT,
+    color: c.KIND_UNEXPECTED_TEXT,
     fontSize: 11,
     fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
