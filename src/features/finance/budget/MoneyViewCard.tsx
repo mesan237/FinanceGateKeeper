@@ -10,6 +10,7 @@ import { ICON_SIZE } from '@/constants/icons';
 import { SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDateShort } from '@/utils/formatDate';
 
 import { BudgetBreakdownSheet, type BreakdownLine } from './BudgetBreakdownSheet';
 import type { MoneyView } from './budget.types';
@@ -19,6 +20,8 @@ const COMMITTED_PARTS = ['recurring', 'planned', 'debts', 'tontines'] as const;
 
 export interface MoneyViewCardProps {
   money: MoneyView;
+  /** Opens the wallets to confirm balances; offered when they are not fresh (UX-21). */
+  onCheckBalances: () => void;
 }
 
 /**
@@ -30,13 +33,30 @@ export interface MoneyViewCardProps {
  * One line on the tab (UX-13); tapping it opens the subtraction — cash, goal
  * wallets, what is due and its parts — so the arithmetic can be checked. A
  * shortfall is stated on the line itself, in words.
+ *
+ * Under it, how fresh the wallet balances are (UX-21): free cash is only as
+ * true as the wallet confirmed longest ago, and blind to spending outside every
+ * wallet. When either makes the figure doubtful, "Check balances" opens the
+ * wallets.
  */
-export function MoneyViewCard({ money }: MoneyViewCardProps) {
+export function MoneyViewCard({ money, onCheckBalances }: MoneyViewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation('budget');
   const [open, setOpen] = useState(false);
   const { committed } = money;
+  const { freshness, unassigned } = money;
+  const doubtful = freshness.stale || unassigned.count > 0;
+  const freshnessLine =
+    freshness.checkedOn === null
+      ? freshness.unchecked > 0
+        ? t('money.neverChecked')
+        : null
+      : freshness.stale
+        ? t('money.notSince', { date: formatDateShort(freshness.checkedOn) })
+        : freshness.daysSince === 0
+          ? t('money.checkedToday')
+          : t('money.checkedAgo', { count: freshness.daysSince ?? 0 });
   const shortfall =
     money.safeToSpend < 0 ? t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) }) : null;
 
@@ -79,6 +99,28 @@ export function MoneyViewCard({ money }: MoneyViewCardProps) {
               {shortfall}
             </Typography>
           ) : null}
+          {freshnessLine ? (
+            <Typography variant="muted" style={freshness.stale && styles.doubt} testID="money-freshness">
+              {freshnessLine}
+            </Typography>
+          ) : null}
+          {unassigned.count > 0 ? (
+            <Typography variant="muted" style={styles.doubt} testID="money-unassigned">
+              {t('money.unassigned', { count: unassigned.count })}
+            </Typography>
+          ) : null}
+          {doubtful ? (
+            <Pressable
+              testID="money-check-balances"
+              accessibilityRole="button"
+              onPress={onCheckBalances}
+              hitSlop={8}
+              style={styles.link}
+            >
+              <Typography style={styles.linkText}>{t('money.checkBalances')}</Typography>
+              <Icon name="forward" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} />
+            </Pressable>
+          ) : null}
         </Card>
       </Pressable>
 
@@ -102,4 +144,7 @@ const makeStyles = (c: ThemeColors) =>
     grow: { flex: 1 },
     amount: { fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD },
     shortfall: { color: c.DANGER_TEXT },
+    doubt: { color: c.WARNING_TEXT },
+    link: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, alignSelf: 'flex-start' },
+    linkText: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   });

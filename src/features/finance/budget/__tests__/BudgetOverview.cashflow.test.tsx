@@ -3,10 +3,11 @@ import React from 'react';
 
 import type { BudgetOverview as BudgetOverviewData, MonthlyPlan } from '@/features/finance/budget/budget.types';
 
+const mockPush = jest.fn();
 jest.mock('expo-router', () => {
   const ReactModule = jest.requireActual<typeof import('react')>('react');
   return {
-    useRouter: () => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn() }),
+    useRouter: () => ({ push: mockPush, replace: jest.fn(), back: jest.fn() }),
     useFocusEffect: (cb: () => void) => {
       ReactModule.useEffect(() => cb(), [cb]);
     },
@@ -37,9 +38,11 @@ jest.mock('@/features/finance/budget/budget.committed', () => ({
 }));
 jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getCashOnHand: jest.fn(),
+  getBalanceFreshness: jest.fn().mockResolvedValue({ checkedOn: '2026-10-15', daysSince: 2, unchecked: 0, stale: false }),
+  getUnassignedSpending: jest.fn().mockResolvedValue({ count: 0, total: 0 }),
 }));
 
-import { getCashOnHand } from '@/features/finance/accounts/accounts.service';
+import { getBalanceFreshness, getCashOnHand } from '@/features/finance/accounts/accounts.service';
 import { BudgetOverview } from '@/features/finance/budget/BudgetOverview';
 import * as cashflow from '@/features/finance/budget/budget.cashflow';
 import { getCommitted } from '@/features/finance/budget/budget.committed';
@@ -110,6 +113,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockedGetOverview.mockResolvedValue(overviewData());
   mockedCash.mockResolvedValue(90_000);
+  (getBalanceFreshness as jest.Mock).mockResolvedValue({ checkedOn: '2026-10-15', daysSince: 2, unchecked: 0, stale: false });
   mockedCommitted.mockResolvedValue({ recurring: 30_000, planned: 12_000, debts: 10_000, tontines: 0, total: 52_000 });
 });
 
@@ -192,6 +196,16 @@ describe('BudgetOverview — cash flow (VS-47)', () => {
     expect(screen.getByTestId('money-cash')).toHaveTextContent('90 000 FCFA');
     expect(screen.getByTestId('money-committed')).toHaveTextContent('−52 000 FCFA');
     expect(mockedCommitted).toHaveBeenCalledWith('2026-10');
+  });
+
+  it('opens Accounts to check balances that are not fresh (UX-21)', async () => {
+    // The tab reads the money view on mount and on focus, so every read is stale here.
+    (getBalanceFreshness as jest.Mock).mockResolvedValue({ checkedOn: null, daysSince: null, unchecked: 2, stale: true });
+    await renderTab();
+
+    fireEvent.press(await screen.findByTestId('money-check-balances'));
+
+    expect(mockPush).toHaveBeenCalledWith('/accounts');
   });
 
   it('leaves the cash view and the surplus prompt off a past month', async () => {

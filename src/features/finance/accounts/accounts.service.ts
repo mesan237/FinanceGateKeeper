@@ -13,7 +13,7 @@ export {
   getAccountHistory,
   getUnassignedSpending,
 } from './accounts.balance';
-export { confirmBalance, getBalanceChecks, removeBalanceCheck } from './accounts.checks';
+export { confirmBalance, getBalanceChecks, getBalanceFreshness, removeBalanceCheck } from './accounts.checks';
 export { getTransferById, removeTransfer, updateTransfer } from './accounts.transfers';
 
 interface AccountRow {

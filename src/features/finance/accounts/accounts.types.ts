@@ -100,3 +100,15 @@ export interface BalanceCheck {
   note: string | null;
   createdAt: string;
 }
+
+/** How recently every active wallet's balance was confirmed (UX-21). */
+export interface BalanceFreshness {
+  /** The oldest of the active wallets' latest checks; null when one was never checked. */
+  checkedOn: string | null;
+  /** Days from `checkedOn` to today; null with `checkedOn`. */
+  daysSince: number | null;
+  /** Active wallets never confirmed. */
+  unchecked: number;
+  /** True when a wallet was never confirmed or the oldest check is over 30 days old. */
+  stale: boolean;
+}

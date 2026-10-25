@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { getCashOnHand } from '@/features/finance/accounts/accounts.service';
+import {
+  getBalanceFreshness,
+  getCashOnHand,
+  getUnassignedSpending,
+} from '@/features/finance/accounts/accounts.service';
+import { toISODate } from '@/utils/formatDate';
 
 import { addSurplusToBudget, leaveSurplusUnbudgeted } from './budget.cashflow';
 import { getCommitted } from './budget.committed';
@@ -9,8 +14,9 @@ import type { MonthlyPlan, MoneyView } from './budget.types';
 
 /**
  * The Budget tab's cash-flow pieces (VS-47): the money view (cash in wallets,
- * goal cash, committed money and safe-to-spend, VS-49) and the two answers to
- * "give it a job".
+ * goal cash, committed money and safe-to-spend, VS-49 — with how fresh the
+ * wallet balances are and any spending outside every wallet, UX-21) and the
+ * two answers to "give it a job".
  *
  * Cash is today's figure, so the money view loads only while `enabled` — the
  * tab passes true for the current month alone. Showing today's wallets beside
@@ -27,13 +33,22 @@ export function useCashflow(monthISO: string, enabled: boolean) {
       return;
     }
     try {
-      const [cash, goalCash, committed] = await Promise.all([
+      const [cash, goalCash, committed, freshness, unassigned] = await Promise.all([
         getCashOnHand(),
         getGoalCash(),
         getCommitted(monthISO),
+        getBalanceFreshness(toISODate(new Date())),
+        getUnassignedSpending(),
       ]);
       // Goal money is promised to its goal, so it is not safe to spend (VS-49).
-      setMoney({ cash, goalCash, committed, safeToSpend: cash - goalCash - committed.total });
+      setMoney({
+        cash,
+        goalCash,
+        committed,
+        safeToSpend: cash - goalCash - committed.total,
+        freshness,
+        unassigned,
+      });
     } catch {
       // The money view is supplementary; the budget still renders without it.
       setMoney(null);

@@ -21,6 +21,7 @@ import { getAccountBalance, getAccountHistory, getUnassignedSpending } from '@/f
 import {
   confirmBalance,
   getBalanceChecks,
+  getBalanceFreshness,
   removeBalanceCheck,
 } from '@/features/finance/accounts/accounts.checks';
 
@@ -147,5 +148,76 @@ describe('getUnassignedSpending', () => {
     await spend(9_000, '2026-10-03', MOMO);
 
     expect(await getUnassignedSpending()).toEqual({ count: 2, total: 7_000 });
+  });
+});
+
+describe('getBalanceFreshness (UX-21)', () => {
+  const TODAY = '2026-10-25';
+  // Seeded active wallets: 1 Cash, 2 MTN MoMo, 3 Orange Money.
+
+  it('is stale while an active wallet has never been confirmed', async () => {
+    await confirmBalance(1, 10_000, '2026-10-20');
+    await confirmBalance(2, 20_000, '2026-10-20');
+
+    expect(await getBalanceFreshness(TODAY)).toEqual({
+      checkedOn: null,
+      daysSince: null,
+      unchecked: 1,
+      stale: true,
+    });
+  });
+
+  it('dates the freshness by the wallet confirmed longest ago', async () => {
+    await confirmBalance(1, 10_000, '2026-10-20');
+    await confirmBalance(2, 20_000, '2026-10-01');
+    await confirmBalance(3, 5_000, '2026-10-24');
+
+    expect(await getBalanceFreshness(TODAY)).toEqual({
+      checkedOn: '2026-10-01',
+      daysSince: 24,
+      unchecked: 0,
+      stale: false,
+    });
+  });
+
+  it('turns stale once that is more than 30 days ago', async () => {
+    await confirmBalance(1, 10_000, '2026-10-20');
+    await confirmBalance(2, 20_000, '2026-09-20');
+    await confirmBalance(3, 5_000, '2026-10-24');
+
+    const freshness = await getBalanceFreshness(TODAY);
+    expect(freshness.daysSince).toBe(35);
+    expect(freshness.stale).toBe(true);
+  });
+
+  it("uses each wallet's latest live check", async () => {
+    await confirmBalance(1, 10_000, '2026-08-01');
+    await confirmBalance(1, 12_000, '2026-10-22');
+    await confirmBalance(2, 20_000, '2026-10-22');
+    await confirmBalance(3, 5_000, '2026-10-22');
+    const [latest] = await getBalanceChecks(3);
+    await removeBalanceCheck(latest.id);
+    await confirmBalance(3, 5_000, '2026-10-10');
+
+    expect((await getBalanceFreshness(TODAY)).checkedOn).toBe('2026-10-10');
+  });
+
+  it('leaves hidden wallets out', async () => {
+    await execute('UPDATE accounts SET is_active = 0 WHERE id = 3');
+    await confirmBalance(1, 10_000, '2026-10-20');
+    await confirmBalance(2, 20_000, '2026-10-20');
+
+    expect((await getBalanceFreshness(TODAY)).stale).toBe(false);
+  });
+
+  it('has nothing to confirm without active wallets', async () => {
+    await execute('UPDATE accounts SET is_active = 0');
+
+    expect(await getBalanceFreshness(TODAY)).toEqual({
+      checkedOn: null,
+      daysSince: null,
+      unchecked: 0,
+      stale: false,
+    });
   });
 });

@@ -1,3 +1,5 @@
+import type { BalanceFreshness } from '@/features/finance/accounts/accounts.types';
+
 /**
  * The month's headline figures. `incomeTotal` doubles as the month's derived
  * budget — what the plan falls back to when no explicit total is set (VS-34).
@@ -213,6 +215,10 @@ export interface MoneyView {
   committed: CommittedMoney;
   /** `cash - goalCash - committed.total`: free to spend before month end. May be negative. */
   safeToSpend: number;
+  /** How recently every wallet was confirmed: `cash` is only as true as that (UX-21). */
+  freshness: BalanceFreshness;
+  /** Expenses no wallet accounts for; `cash` cannot see them (UX-21). */
+  unassigned: { count: number; total: number };
 }
 
 export type {
