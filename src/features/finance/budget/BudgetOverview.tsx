@@ -136,7 +136,9 @@ export function BudgetOverview({ monthISO = currentMonthISO() }: BudgetOverviewP
               />
             ) : null}
 
-            {cashflow.money ? <MoneyViewCard money={cashflow.money} /> : null}
+            {cashflow.money ? (
+              <MoneyViewCard money={cashflow.money} onCheckBalances={() => router.push('/accounts')} />
+            ) : null}
 
             {/* One action strip at a time (UX-13): the surplus prompt first, then
                 what is left to share out. */}

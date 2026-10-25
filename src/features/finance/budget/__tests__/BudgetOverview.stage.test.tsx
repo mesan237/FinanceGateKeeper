@@ -35,6 +35,8 @@ jest.mock('@/features/finance/budget/budget.committed', () => ({
 }));
 jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getCashOnHand: jest.fn().mockResolvedValue(0),
+  getBalanceFreshness: jest.fn().mockResolvedValue({ checkedOn: '2026-10-15', daysSince: 2, unchecked: 0, stale: false }),
+  getUnassignedSpending: jest.fn().mockResolvedValue({ count: 0, total: 0 }),
 }));
 
 import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';

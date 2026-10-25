@@ -1,10 +1,13 @@
 import i18n from 'i18next';
 
 import { execute, query } from '@/services/database';
-import { toISODate } from '@/utils/formatDate';
+import { daysBetween, toISODate } from '@/utils/formatDate';
 
 import { getAccountBalance } from './accounts.balance';
-import type { BalanceCheck } from './accounts.types';
+import type { BalanceCheck, BalanceFreshness } from './accounts.types';
+
+/** Days after which a confirmed balance counts as old (UX-21). */
+export const FRESH_DAYS = 30;
 
 /**
  * Balance checks (VS-42): the user tells the app what a wallet actually holds,
@@ -73,6 +76,30 @@ export async function getBalanceChecks(accountId: number): Promise<BalanceCheck[
     [accountId],
   );
   return rows.map(mapCheck);
+}
+
+/**
+ * How recently every active wallet's balance was confirmed (UX-21): the oldest
+ * of their latest live checks, so a figure built on all wallets is only as
+ * fresh as the wallet checked longest ago. Stale when a wallet was never
+ * confirmed or that check is more than {@link FRESH_DAYS} days old. Hidden
+ * wallets are left out; with none active there is nothing to confirm.
+ *
+ * @param todayISO `YYYY-MM-DD`, explicit for testability.
+ */
+export async function getBalanceFreshness(todayISO: string): Promise<BalanceFreshness> {
+  const rows = await query<{ last: string | null }>(
+    `SELECT (SELECT MAX(bc.date) FROM balance_checks bc
+             WHERE bc.account_id = a.id AND bc.deleted_at IS NULL) AS last
+     FROM accounts a WHERE a.is_active = 1`,
+  );
+  const unchecked = rows.filter((r) => r.last === null).length;
+  if (rows.length === 0) return { checkedOn: null, daysSince: null, unchecked: 0, stale: false };
+  if (unchecked > 0) return { checkedOn: null, daysSince: null, unchecked, stale: true };
+
+  const checkedOn = rows.map((r) => r.last as string).sort()[0];
+  const daysSince = daysBetween(checkedOn, todayISO);
+  return { checkedOn, daysSince, unchecked: 0, stale: daysSince > FRESH_DAYS };
 }
 
 /**
