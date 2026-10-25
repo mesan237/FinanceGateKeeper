@@ -2438,6 +2438,34 @@ answers one question.
 across months.
 
 ---
+### VS-79: Free Cash Says How Fresh the Balances Are (UX-21) 🔄 In Progress
+
+**Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, R10, finding F-11)
+**Blocked by:** —
+
+**Scope:**
+
+- `accounts.checks.getBalanceFreshness(today)`: the oldest of the active wallets' latest live
+  checks (free cash is only as fresh as the wallet confirmed longest ago), the days since, how many
+  wallets were never confirmed, and `stale` — a wallet never confirmed or a check over 30 days old
+  (`FRESH_DAYS`). Hidden wallets are left out.
+- The Budget money view reads it and `getUnassignedSpending` through the approved
+  `budget → accounts` edge (`MoneyView.freshness`, `.unassigned`).
+- Under *Free cash*: "Balances checked 3 days ago" / "today"; when stale, "Balances not confirmed
+  since 20 Sep" or "Some wallet balances were never confirmed"; when expenses sit in no wallet,
+  "2 expenses aren't in any wallet, so free cash may be off." Either case offers *Check balances*,
+  which opens Accounts by path.
+- No migration: the checks exist since VS-42. Home's Wallets card (the rest of F-11) is not changed.
+
+**TDD Anchor:**
+
+- Test: freshness on in-memory SQLite (never confirmed, oldest latest check, over 30 days, removed
+  checks, hidden wallets, no wallets).
+- Test: the free-cash line in each state, the link, fr; *Check balances* opens Accounts.
+
+**Done when:** with a wallet unchecked for over 30 days, free cash says so and offers the check.
+
+---
 
 ## DEPENDENCY GRAPH
 
