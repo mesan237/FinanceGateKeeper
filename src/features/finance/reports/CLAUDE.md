@@ -43,10 +43,10 @@ Reports are read-only aggregations across all other features. No dedicated datab
   that the bar counts under Events.
 - Charts: bar charts for comparison; the category breakdown is a ranked bar per row (the
   donut went in UX-14: length reads better than angle). Colours come from the shared
-  `categoryColors` palette, indexed by a category's position in the (amount-desc) breakdown.
+  `categoryColors` palette, picked by category id (`colorForCategory`, UX-15) so a category keeps its colour every month; the palette has no green, amber or red. Kinds of spending (routine, events, unexpected, everyday; fixed/variable) use the theme's `KIND_*` tokens, never a status colour.
 
 ## Cross-Feature Reads
 This feature imports services from: `expenses`, `income`, `budget`, `funds`, `projects`, `debt`. All read-only — never writes to other features.
 
 ## Files
-- `WeeklyReport.tsx`, `MonthlyReport.tsx`, `MonthComparison.tsx`, `SpendingBarChart.tsx`, `SpendingDonutChart.tsx`, `NavArrows.tsx`, `TypicalMonthCard.tsx`, `StartingPointCompare.tsx`, `categoryColors.ts`, `reports.profile.ts`, `reports.startingPoint.ts`, `reports.hooks.ts`, `reports.service.ts`, `reports.types.ts`
+- `WeeklyReport.tsx`, `MonthlyReport.tsx`, `MonthComparison.tsx`, `SpendingBarChart.tsx`, `NavArrows.tsx`, `TypicalMonthCard.tsx`, `StartingPointCompare.tsx`, `categoryColors.ts`, `reports.profile.ts`, `reports.startingPoint.ts`, `reports.hooks.ts`, `reports.service.ts`, `reports.types.ts`

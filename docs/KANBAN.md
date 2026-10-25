@@ -2407,6 +2407,37 @@ money-view layout change approved)
 answers one question.
 
 ---
+### VS-78: Colours Mean One Thing Each (UX-15) 🔄 In Progress
+
+**Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-08, F-10)
+**Blocked by:** —
+
+**Scope:**
+
+- Status colours (success / warning / danger) are kept for status: on track, watch out, over,
+  good or bad changes, errors.
+- New `KIND_*` tokens, in both palettes, for kinds of spending: routine/fixed slate, events violet,
+  unexpected brown (with `_LIGHT` and a 4.5:1 `_TEXT`), everyday/variable blue. Used by *Why you
+  spent*, the typical-month bar, the imprévus count, the *Unexpected* badge, chip and toggle, and
+  Home's imprévus dot. "Everyday — the habits you can change" no longer reads as good.
+- Category colours come from the category id (`colorForCategory`), so a category keeps its colour
+  every month; the palette has no green, amber or red.
+- The Expense and Income log tiles are both neutral (surface, hairline border, brand-tinted icon):
+  logging is the habit, never bad news.
+- The over-plan hero figures on Home and Budget stay in plain text; the label and the chip carry
+  the status.
+- Reports' plan bar fills the spent part in the status colour on a neutral track (it was black on green).
+
+**TDD Anchor:**
+
+- Test: kind tokens distinct from every status colour, 3:1 fills and 4.5:1 unexpected text, both themes.
+- Test: `colorForCategory` stable by id, palette free of status hues.
+- Test: Why dots use the kind tokens; neutral log tiles; hero figures not red.
+
+**Done when:** no status colour stands for a kind of spending, and a category keeps its colour
+across months.
+
+---
 
 ## DEPENDENCY GRAPH
 
