@@ -25,6 +25,8 @@ export const reports: Translation<typeof en> = {
     emptyTitle: 'Rien de noté en {{month}}',
     emptyHint: 'Ce rapport se remplit à mesure que vous notez ce qui entre et ce qui sort.',
     emptyAction: 'Voir les transactions',
+    daysLogged_one: 'Jours notés : {{logged}} sur {{count}}',
+    daysLogged_other: 'Jours notés : {{logged}} sur {{count}}',
     incomeCaps: 'REVENUS',
     expensesCaps: 'DÉPENSES',
     performance: 'Le mois face au budget',

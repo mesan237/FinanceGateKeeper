@@ -22,6 +22,8 @@ export const reports = {
     emptyTitle: 'Nothing logged in {{month}}',
     emptyHint: 'This report fills in as you log what comes in and what goes out.',
     emptyAction: 'See transactions',
+    daysLogged_one: '{{logged}} of {{count}} day logged',
+    daysLogged_other: '{{logged}} of {{count}} days logged',
     incomeCaps: 'INCOME',
     expensesCaps: 'EXPENSES',
     performance: 'The month against your plan',

@@ -62,6 +62,9 @@ scheduler's slice for this, so the graph above is unchanged.
 `budget` and `goals` read it (`useIsBeforeStep`) to show a preview with an "anyway" action
 before Plan / Grow (UX-10). The step key and order live in `types/journey` and
 `constants/journey`. The step sets emphasis, never access, and no new edge is needed.
+The provider also carries `JourneyFigures` (typical month, variable spending at the start and
+in the latest month, this month's logging), which Home's hero and Reports lead with by step
+(UX-24, `dashboard.heroLead`).
 
 The list covers **source** imports. Service tests that seed an in-memory database may
 import another slice's `create*` helper to build fixtures (`budget` and `dashboard`

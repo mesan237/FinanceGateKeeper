@@ -49,7 +49,7 @@ jest.mock('@/features/finance/reports/reports.service', () => ({
   ).expenseSpentPct,
 }));
 
-import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';
+import { JourneyStageProvider, useSetJourneyFigures, useSetJourneyStage } from '@/components/JourneyStageProvider';
 import { MonthlyReport } from '@/features/finance/reports/MonthlyReport';
 import * as prefs from '@/services/uiPreferences';
 import type { JourneyStepKey } from '@/types/journey';
@@ -122,10 +122,19 @@ afterAll(() => {
   jest.useRealTimers();
 });
 
-/** Publishes `stage` the way the journey slice does once it has read the path. */
+/** Publishes `stage` (and this month's logging) the way the journey slice does once it has read the path. */
 function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.ReactNode }) {
   const publish = useSetJourneyStage();
-  useEffect(() => publish(stage), [publish, stage]);
+  const publishFigures = useSetJourneyFigures();
+  useEffect(() => {
+    publish(stage);
+    publishFigures({
+      typicalMonth: null,
+      variableStart: null,
+      variableLatest: null,
+      logging: { month: '2026-06', loggedDays: 12, daysSoFar: 15 },
+    });
+  }, [publish, publishFigures, stage]);
   return <>{children}</>;
 }
 
@@ -207,6 +216,35 @@ describe('MonthlyReport — grouped by question (UX-14)', () => {
     const debt = await screen.findByTestId('report-debt');
     expect(debt).toHaveTextContent(/Debts as of today/);
     expect(debt).toHaveTextContent(/30 000 FCFA/);
+  });
+
+  it('adds the month\'s logging to This month while observing (UX-24)', async () => {
+    renderAt('observe');
+
+    expect(await screen.findByTestId('report-logging')).toHaveTextContent('12 of 15 days logged');
+  });
+
+  it('leaves the logging line out from See on', async () => {
+    renderAt('see');
+    await screen.findByText('June 2026');
+
+    expect(screen.queryByTestId('report-logging')).toBeNull();
+  });
+
+  it('puts the month against its plan first from the Plan step on (UX-24)', async () => {
+    renderAt('plan');
+    await screen.findByTestId('expense-performance-bar');
+
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('expense-performance-bar')).toBeLessThan(tree.indexOf('report-summary'));
+  });
+
+  it('keeps in and out first before the Plan step', async () => {
+    renderAt('see');
+    await screen.findByTestId('expense-performance-bar');
+
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('report-summary')).toBeLessThan(tree.indexOf('expense-performance-bar'));
   });
 
   it('names the groups in French', async () => {

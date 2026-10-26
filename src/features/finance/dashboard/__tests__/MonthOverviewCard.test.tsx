@@ -254,3 +254,46 @@ describe('MonthOverviewCard', () => {
     });
   });
 });
+
+describe('MonthOverviewCard — the lead by journey step (UX-24)', () => {
+  it('leads with what was spent while observing, keeping the plan as a line', () => {
+    renderCard({ lead: { spentView: true, note: null } });
+
+    expect(screen.getByText('Spent this month')).toBeTruthy();
+    expect(screen.getByTestId('month-overview-amount')).toHaveTextContent('20 000 FCFA');
+    expect(screen.getByTestId('month-overview-plan-left')).toHaveTextContent('Left in your plan: 45 000 FCFA');
+    expect(screen.queryByTestId('month-overview-set-budget')).toBeNull();
+    expect(screen.queryByTestId('budget-progress')).toBeNull();
+  });
+
+  it('says an existing plan is overspent in that line', () => {
+    renderCard({ summary: OVERSPENT, lead: { spentView: true, note: null } });
+
+    expect(screen.getByTestId('month-overview-plan-left')).toHaveTextContent('Over your plan by 5 000 FCFA');
+  });
+
+  it('adds the typical month on the See step', () => {
+    renderCard({ summary: UNPLANNED, lead: { spentView: true, note: { kind: 'typical', amount: 150_000 } } });
+
+    expect(screen.getByTestId('month-overview-note')).toHaveTextContent('Your typical month: ≈ 150 000 FCFA');
+  });
+
+  it('sets variable spending against the start while optimizing', () => {
+    renderCard({
+      lead: { spentView: false, note: { kind: 'variable', month: '2026-09', latest: 52_000, start: 60_000 } },
+    });
+
+    expect(screen.getByTestId('budget-progress')).toBeTruthy();
+    expect(screen.getByTestId('month-overview-note')).toHaveTextContent(
+      'Variable spending in September: 52 000 FCFA, against 60 000 FCFA at the start',
+    );
+  });
+
+  it('reads the lead lines in French', async () => {
+    await i18n.changeLanguage('fr');
+    renderCard({ lead: { spentView: true, note: { kind: 'typical', amount: 150_000 } } });
+
+    expect(screen.getByTestId('month-overview-plan-left')).toHaveTextContent('Reste au budget : 45 000 FCFA');
+    expect(screen.getByTestId('month-overview-note')).toHaveTextContent('Votre mois type : ≈ 150 000 FCFA');
+  });
+});

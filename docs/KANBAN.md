@@ -2466,6 +2466,36 @@ across months.
 **Done when:** with a wallet unchecked for over 30 days, free cash says so and offers the check.
 
 ---
+### VS-80: Each Screen Leads With What the Step Needs (UX-24) 🔄 In Progress
+
+**Priority:** P2 — after the release cut (docs/ux-redesign/04 §7.3, decision D2 option b)
+**Blocked by:** —
+
+**Scope:**
+
+- `JourneyStageProvider` also holds `JourneyFigures` (`types/journey`): the starting point's typical
+  month and variable spending, the latest complete month's variable spending, and this month's
+  logging. `useJourney` publishes them (`journey.figures.journeyFigures`); readers never import `journey`.
+- Home hero (`dashboard.heroLead`): Observe and See lead with *Spent this month* + days logged even
+  with a plan, which stays as a line (*Left in your plan: X* / *Over your plan by X*); See adds
+  *Your typical month: ≈ X*; Plan and Grow lead with the plan; Optimize adds variable spending in the
+  latest complete month against the start. No plan → spent, as before (UX-04).
+- Reports *This month*: the running month's logging while observing; from Plan on, the month against
+  its plan comes first. Over time (from See) and Wealth (at Grow) already opened by step (UX-14).
+- Budget hero at Grow: the "set aside for your goals" line shows again (it lives in the plan sheet
+  before then).
+- Step unknown → the screens behave as before. Not here: Home's *Next for you* slot (not built yet)
+  and the Optimize suggestions (UX-25 / VS-65).
+
+**TDD Anchor:**
+
+- Test: provider figures; `journeyFigures`; `useJourney` publishes them; `heroLead` at every step.
+- Test: Home card lead lines (plan line, over plan, typical, variable, fr); Home at Observe with a plan.
+- Test: Reports logging line at Observe, order before and from Plan; Budget set-aside line at Grow.
+
+**Done when:** users at each step see the lead table 04 §7.3 documents, and nothing hides.
+
+---
 
 ## DEPENDENCY GRAPH
 

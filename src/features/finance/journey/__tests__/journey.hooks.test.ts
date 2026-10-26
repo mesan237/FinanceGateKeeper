@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import React from 'react';
 
-import { JourneyStageProvider, useJourneyStage } from '@/components/JourneyStageProvider';
+import { JourneyStageProvider, useJourneyFigures, useJourneyStage } from '@/components/JourneyStageProvider';
 
 jest.mock('@/features/finance/journey/journey.service', () => ({
   getJourney: jest.fn(),
@@ -62,6 +62,15 @@ describe('useJourney (VS-63)', () => {
     const { result } = renderHook(() => ({ journey: useJourney(), stage: useJourneyStage() }), { wrapper });
 
     await waitFor(() => expect(result.current.stage).toBe('see'));
+  });
+
+  it('publishes the figures the other screens lead with (UX-24)', async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(JourneyStageProvider, null, children);
+
+    const { result } = renderHook(() => ({ journey: useJourney(), figures: useJourneyFigures() }), { wrapper });
+
+    await waitFor(() => expect(result.current.figures?.logging).toEqual({ month: '2026-10', loggedDays: 1, daysSoFar: 1 }));
   });
 
   it('reports a load failure as an error', async () => {

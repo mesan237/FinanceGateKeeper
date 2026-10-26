@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { ErrorState } from '@/components/ErrorState';
+import { useJourneyFigures, useJourneyStage } from '@/components/JourneyStageProvider';
 import { Typography } from '@/components/Typography';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { AddTransactionSheet } from '@/features/finance/expenses/AddTransactionSheet';
@@ -13,6 +14,7 @@ import { formatDateLong } from '@/utils/formatDate';
 
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { MonthOverviewCard } from './MonthOverviewCard';
+import { heroLead } from './dashboard.heroLead';
 import { PlannedDueCard } from './PlannedDueCard';
 import { QuickActionBar } from './QuickActionBar';
 import { TodaySpendingCard } from './TodaySpendingCard';
@@ -30,6 +32,9 @@ export function DashboardScreen() {
   const { status: zeroDayStatus, confirm: confirmZeroDay, refresh: refreshZeroDay } = useZeroDay();
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('dashboard');
+  // What the hero leads with follows the journey step (UX-24).
+  const stage = useJourneyStage();
+  const figures = useJourneyFigures();
 
   // The dashboard opens the same add-transaction sheet the Transactions FAB
   // uses (VS-26) rather than pushing standalone log routes.
@@ -92,6 +97,7 @@ export function DashboardScreen() {
             cashflow={state.cashflow}
             logging={state.logging}
             unplanned={state.unplanned}
+            lead={heroLead(stage, state.budget.isPlanned, figures)}
             onSetBudget={() =>
               router.push({ pathname: '/budget/plan', params: { month: state.monthISO } })
             }

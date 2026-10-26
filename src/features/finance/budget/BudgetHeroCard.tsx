@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
 import { Icon } from '@/components/Icon';
+import { useJourneyStage } from '@/components/JourneyStageProvider';
 import { Pill } from '@/components/Pill';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
@@ -45,6 +46,8 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
   const status = healthDisplay(overview.health, c);
   const isOver = overview.remaining < 0;
   const [buildOpen, setBuildOpen] = useState(false);
+  // On the Grow step, what the goals take first leads again (UX-24).
+  const growing = useJourneyStage() === 'grow';
   const { plan } = overview;
   const expected = plan.derivedSource === 'expected' && !plan.isExplicit;
   const headingOver = overview.projected > overview.available;
@@ -120,6 +123,12 @@ export function BudgetHeroCard({ overview }: BudgetHeroCardProps) {
       {expected && overview.plan.receivedIncome < (overview.plan.expectedIncome ?? 0) ? (
         <Typography variant="muted" style={styles.line} testID="budget-expected-income">
           {expectedLine}
+        </Typography>
+      ) : null}
+
+      {growing && overview.plan.setAside > 0 ? (
+        <Typography variant="muted" style={styles.line} testID="budget-set-aside">
+          {t('hero.setAsideLine', { amount: formatCurrency(overview.plan.setAside) })}
         </Typography>
       ) : null}
 
