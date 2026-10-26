@@ -86,6 +86,50 @@ describe('MoneyViewCard (UX-13)', () => {
     expect(screen.queryByTestId('money-shortfall')).toBeNull();
   });
 
+  describe('readiness: no confident figure on balances that cannot be trusted (device build)', () => {
+    const NEVER = { checkedOn: null, daysSince: null, unchecked: 2, stale: true };
+
+    it('holds back the figure and the shortfall until the balances are confirmed', () => {
+      renderCard(money({ safeToSpend: -186_775, freshness: NEVER }));
+
+      expect(screen.getByTestId('money-not-ready')).toHaveTextContent('Not reliable yet');
+      expect(screen.queryByTestId('money-safe')).toBeNull();
+      expect(screen.queryByTestId('money-shortfall')).toBeNull();
+      expect(screen.getByTestId('money-freshness')).toHaveTextContent('Some wallet balances were never confirmed');
+      expect(screen.getByTestId('money-check-balances')).toBeTruthy();
+    });
+
+    it('opens no subtraction while the figure is not shown', () => {
+      renderCard(money({ freshness: NEVER }));
+
+      fireEvent.press(screen.getByTestId('money-view'));
+
+      expect(screen.queryByTestId('money-sheet')).toBeNull();
+    });
+
+    it('treats spending outside every wallet as not ready too', () => {
+      renderCard(money({ unassigned: { count: 48, total: 120_000 } }));
+
+      expect(screen.getByTestId('money-not-ready')).toBeTruthy();
+      expect(screen.queryByTestId('money-safe')).toBeNull();
+    });
+
+    it('shows the figure, the subtraction and the shortfall once it can be trusted', () => {
+      renderCard(money({ goalCash: 50_000, safeToSpend: -12_000 }));
+
+      expect(screen.queryByTestId('money-not-ready')).toBeNull();
+      expect(screen.getByTestId('money-safe')).toHaveTextContent('-12 000 FCFA');
+      expect(screen.getByTestId('money-shortfall')).toBeTruthy();
+    });
+
+    it('reads in French', async () => {
+      await i18n.changeLanguage('fr');
+      renderCard(money({ freshness: NEVER }));
+
+      expect(screen.getByTestId('money-not-ready')).toHaveTextContent('Pas encore fiable');
+    });
+  });
+
   describe('how fresh the wallet balances are (UX-21)', () => {
     it('says when the balances were last checked', () => {
       renderCard(money());

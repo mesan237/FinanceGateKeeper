@@ -30,6 +30,7 @@ export const reports = {
     budget: 'Budget',
     actual: 'Spent',
     remaining: 'Left in your plan',
+    overBy: 'Over your plan by',
     byCategory: 'Spending by category',
     pctOfTotal: '{{percent}}% of total',
     debt: 'Debts as of today',

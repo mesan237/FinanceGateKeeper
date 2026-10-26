@@ -33,6 +33,13 @@ export const accounts: Translation<typeof en> = {
     invalidId: 'Identifiant de portefeuille invalide.',
     confirmBalance: 'Confirmer le solde',
   },
+  hide: {
+    action: 'Masquer ce portefeuille',
+    title: 'Masquer {{name}} ?',
+    body: 'Son historique est conservé. Il disparaît des listes de portefeuilles, des choix et de tous les totaux.',
+    confirm: 'Masquer',
+    defaultHint: 'C’est votre portefeuille par défaut. Pour le masquer, choisissez d’abord un autre portefeuille par défaut (Modifier).',
+  },
   check: {
     title: 'Que contient {{name}} aujourd’hui ?',
     hint: 'Saisissez le solde réel. Les opérations suivantes partent de ce montant ; celles plus anciennes ajoutées ensuite ne le changeront pas.',

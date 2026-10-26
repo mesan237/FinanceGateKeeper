@@ -91,8 +91,10 @@ export function useAccountDetail(id: number) {
     },
     [refresh],
   );
+  /** Hides the wallet (soft delete): its history stays, it leaves lists, pickers and totals. */
+  const hide = useCallback(() => service.hideAccount(id), [id]);
 
-  return { account, balance, history, loading, error, refresh, confirm, removeCheck };
+  return { account, balance, history, loading, error, refresh, confirm, removeCheck, hide };
 }
 
 /**

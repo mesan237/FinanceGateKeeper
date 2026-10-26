@@ -38,6 +38,12 @@ export interface MoneyViewCardProps {
  * true as the wallet confirmed longest ago, and blind to spending outside every
  * wallet. When either makes the figure doubtful, "Check balances" opens the
  * wallets.
+ *
+ * Readiness (04 §7.4, found on the first device build): while a wallet was
+ * never confirmed, a check is over 30 days old or spending sits outside every
+ * wallet, the card says "Not reliable yet" instead of showing a figure, a
+ * shortfall or the subtraction — an unconfirmed balance would otherwise read as
+ * a confident alarm.
  */
 export function MoneyViewCard({ money, onCheckBalances }: MoneyViewCardProps) {
   const styles = useThemedStyles(makeStyles);
@@ -57,8 +63,9 @@ export function MoneyViewCard({ money, onCheckBalances }: MoneyViewCardProps) {
         : freshness.daysSince === 0
           ? t('money.checkedToday')
           : t('money.checkedAgo', { count: freshness.daysSince ?? 0 });
+  const ready = !doubtful;
   const shortfall =
-    money.safeToSpend < 0 ? t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) }) : null;
+    ready && money.safeToSpend < 0 ? t('money.shortfall', { amount: formatCurrency(-money.safeToSpend) }) : null;
 
   const lines: BreakdownLine[] = [
     { label: t('money.cash'), hint: t('money.cashHint'), amount: money.cash, testID: 'money-cash' },
@@ -82,18 +89,31 @@ export function MoneyViewCard({ money, onCheckBalances }: MoneyViewCardProps) {
 
   return (
     <>
-      <Pressable testID="money-view" accessibilityRole="button" onPress={() => setOpen(true)}>
+      <Pressable
+        testID="money-view"
+        accessibilityRole="button"
+        disabled={!ready}
+        onPress={() => setOpen(true)}
+      >
         <Card style={styles.card}>
           <View style={styles.row}>
-            <View style={styles.grow}>
-              <Typography variant="label">{t('money.safe')}</Typography>
-              <Typography variant="muted">{t('money.safeHint')}</Typography>
-            </View>
-            <Typography style={styles.amount} testID="money-safe">
-              {formatCurrency(money.safeToSpend)}
+            <Typography variant="label" style={styles.grow}>
+              {t('money.safe')}
             </Typography>
-            <Icon name="forward" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
+            {ready ? (
+              <>
+                <Typography style={styles.amount} testID="money-safe">
+                  {formatCurrency(money.safeToSpend)}
+                </Typography>
+                <Icon name="forward" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
+              </>
+            ) : (
+              <Typography style={styles.notReady} testID="money-not-ready">
+                {t('money.notReady')}
+              </Typography>
+            )}
           </View>
+          <Typography variant="muted">{t('money.safeHint')}</Typography>
           {shortfall ? (
             <Typography style={styles.shortfall} testID="money-shortfall">
               {shortfall}
@@ -145,6 +165,7 @@ const makeStyles = (c: ThemeColors) =>
     amount: { fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD },
     shortfall: { color: c.DANGER_TEXT },
     doubt: { color: c.WARNING_TEXT },
+    notReady: { color: c.WARNING_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
     link: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs, alignSelf: 'flex-start' },
     linkText: { color: c.PRIMARY_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   });

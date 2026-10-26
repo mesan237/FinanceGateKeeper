@@ -43,6 +43,12 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
   const router = useRouter();
   const { t } = useTranslation('reports');
   const top = topCategoriesShare(report.categoryBreakdown);
+  // The imprévus footer only when it adds something: none yet (how to mark one),
+  // a total that differs from the Unexpected row (some tagged with an event), or
+  // last month to compare. Otherwise the count sits in the row (device build).
+  const { unplanned } = report;
+  const unplannedFooter =
+    unplanned.count === 0 || unplanned.total !== report.why.totals.unexpected || unplanned.previous.count > 0;
   const stage = useJourneyStage();
   const figures = useJourneyFigures();
   const beforePlan = useIsBeforeStep('plan');
@@ -61,9 +67,11 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
         color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
       />
       <ReportRow label={t('monthly.actual')} value={report.expensePerformance.actual} />
+      {/* Over plan reads as such, like Home and the Budget tab (device build). */}
       <ReportRow
-        label={t('monthly.remaining')}
-        value={report.expensePerformance.remaining}
+        testID="report-plan-left"
+        label={t(report.expensePerformance.remaining < 0 ? 'monthly.overBy' : 'monthly.remaining')}
+        value={Math.abs(report.expensePerformance.remaining)}
         color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
       />
     </View>
@@ -113,7 +121,8 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
         totals={report.why.totals}
         events={report.why.events}
         onOpenEvent={(id) => router.push(`/events/${id}`)}
-        footer={<UnplannedSummary summary={report.unplanned} />}
+        footer={unplannedFooter ? <UnplannedSummary summary={report.unplanned} /> : undefined}
+        counts={unplannedFooter ? undefined : { unexpected: report.unplanned.count }}
       />
 
       <View style={styles.section}>

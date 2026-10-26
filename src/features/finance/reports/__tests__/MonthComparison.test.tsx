@@ -53,6 +53,14 @@ describe('MonthComparison', () => {
     expect(screen.getByTestId('comparison-row-4')).toBeTruthy();
   });
 
+  it('puts both months and the change in each row, with no chart (device build)', () => {
+    render(<MonthComparison comparison={POPULATED} />);
+
+    expect(screen.queryByTestId('spending-bar-chart')).toBeNull();
+    expect(screen.getByTestId('comparison-row-1')).toHaveTextContent(/Food.*10 000 FCFA → 12 000 FCFA.*\+20%/);
+    expect(screen.getByTestId('comparison-row-3')).toHaveTextContent(/Shopping.*0 FCFA → 3 000 FCFA.*New/);
+  });
+
   it('offers no "Show all" when every change already shows', () => {
     render(<MonthComparison comparison={POPULATED} />);
     expect(screen.queryByTestId('comparison-show-all')).toBeNull();

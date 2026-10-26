@@ -2,6 +2,7 @@ import { execute, query, type SqlBindValue } from '@/services/database';
 import { SYNCED_TABLES, type SyncedTable } from '@/services/migrations/017_add_sync_metadata';
 import { applyCloudRow, sortForInsert, toCloudRow, type Row } from '@/services/sync.mapping';
 import { createSnapshot } from '@/services/snapshots.service';
+import { adoptCloudWallets } from '@/services/sync.wallets';
 import type { CloudRestoreError, CloudRestoreResult, SyncResult } from '@/services/sync.types';
 import { getCurrentUserId, supabase } from '@/services/supabase';
 
@@ -140,7 +141,8 @@ async function restoreIfFreshInstall(): Promise<number | null> {
 /**
  * Runs a full sync: push local changes, then pull cloud changes. On a freshly
  * installed or reset phone with a cloud backup, restores that backup instead
- * (see `restoreIfFreshInstall`). Returns
+ * (see `restoreIfFreshInstall`); on any other first sync, merges the starter
+ * wallets into the cloud ones before pushing (see `adoptCloudWallets`). Returns
  * `{ ok: false }` (never throws) when signed out or when the cloud is
  * unreachable, so callers can surface the state without try/catch.
  */
@@ -167,6 +169,7 @@ export async function syncNow(): Promise<SyncResult> {
         restoredFromCloud: true,
       };
     }
+    if ((await getLastSyncedAt()) === null) await adoptCloudWallets();
     const { pushed } = await pushChanges();
     const { pulled } = await pullChanges();
     return { ok: true, pushed, pulled, lastSyncedAt: await getLastSyncedAt() };

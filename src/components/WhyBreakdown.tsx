@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { ICON_SIZE } from '@/constants/icons';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors, useTheme } from '@/theme';
 import { SPEND_REASONS, type ReasonEvent, type ReasonTotals, type SpendReason } from '@/types/reasons';
@@ -17,6 +19,8 @@ export interface WhyBreakdownProps {
   onOpenEvent?: (eventId: number) => void;
   /** Closes the card, under a rule — Reports puts the month's imprévus here (UX-14). */
   footer?: React.ReactNode;
+  /** How many expenses a reason holds, shown in its row (Reports passes the imprévus count). */
+  counts?: Partial<Record<SpendReason, number>>;
 }
 
 /**
@@ -25,9 +29,10 @@ export interface WhyBreakdownProps {
  * events behind the "Events" row. Shared by the Budget category detail and
  * Reports so both answer "why" the same way. Draws its own card, and renders
  * nothing at all without spending and without a footer, so an empty month
- * leaves no empty box.
+ * leaves no empty box. Each event row says how many expenses it holds and,
+ * when it opens, shows a chevron: an event is a tag on transactions.
  */
-export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBreakdownProps) {
+export function WhyBreakdown({ totals, events = [], onOpenEvent, footer, counts }: WhyBreakdownProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation();
@@ -59,7 +64,9 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBr
             <View testID={`why-${r}-dot`} style={[styles.dot, { backgroundColor: colorOf[r] }]} />
             <View style={styles.grow}>
               <Typography>{t(`why.${r}`)}</Typography>
-              <Typography variant="muted" style={styles.hint}>{t(`why.${r}Hint`)}</Typography>
+              <Typography variant="muted" style={styles.hint}>
+                {counts?.[r] ? `${t('why.expenses', { count: counts[r] })} · ${t(`why.${r}Hint`)}` : t(`why.${r}Hint`)}
+              </Typography>
             </View>
             <Typography style={styles.amount}>{formatCurrency(totals[r])}</Typography>
             <Typography variant="muted" style={styles.share}>{`${Math.round((totals[r] / total) * 100)}%`}</Typography>
@@ -74,8 +81,18 @@ export function WhyBreakdown({ totals, events = [], onOpenEvent, footer }: WhyBr
                   onPress={() => onOpenEvent?.(e.eventId)}
                   style={[styles.row, styles.eventRow]}
                 >
-                  <Typography style={styles.grow} numberOfLines={1}>{e.name}</Typography>
+                  <View style={styles.grow}>
+                    <Typography numberOfLines={1}>{e.name}</Typography>
+                    <Typography variant="muted" style={styles.hint}>
+                      {t('why.expenses', { count: e.count })}
+                    </Typography>
+                  </View>
                   <Typography variant="muted">{formatCurrency(e.amount)}</Typography>
+                  {onOpenEvent ? (
+                    <View testID={`why-event-${e.eventId}-open`}>
+                      <Icon name="forward" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
+                    </View>
+                  ) : null}
                 </Pressable>
               ))
             : null}

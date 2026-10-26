@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import React from 'react';
 
 const mockPush = jest.fn();
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+const mockBack = jest.fn();
+jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, back: mockBack }) }));
 
 jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getAccountById: jest.fn(),
@@ -11,6 +12,7 @@ jest.mock('@/features/finance/accounts/accounts.service', () => ({
   getAccountStats: jest.fn(),
   confirmBalance: jest.fn().mockResolvedValue(undefined),
   removeBalanceCheck: jest.fn().mockResolvedValue(undefined),
+  hideAccount: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { AccountDetail } from '@/features/finance/accounts/AccountDetail';
@@ -122,5 +124,41 @@ describe('AccountDetail', () => {
     fireEvent.press(await screen.findByText('Transfer to MTN MoMo'));
 
     expect(mockPush).toHaveBeenCalledWith('/transfers/12');
+  });
+});
+
+describe('AccountDetail — hiding a wallet (device build, 2026-10-26)', () => {
+  const MTN: Account = { ...CASH, id: 2, name: 'MTN MoMo', type: 'mobile_money', purpose: 'general', isDefault: false };
+
+  it('hides a wallet after a confirmation that says its history stays', async () => {
+    mocked.getAccountById.mockResolvedValue(MTN);
+    render(<AccountDetail accountId={2} />);
+
+    fireEvent.press(await screen.findByTestId('hide-account-button'));
+    expect(screen.getByText(/Its history stays/)).toBeTruthy();
+    fireEvent.press(screen.getByTestId('hide-account-confirm'));
+
+    await waitFor(() => expect(mocked.hideAccount).toHaveBeenCalledWith(2));
+    expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('keeps the wallet when the confirmation is cancelled', async () => {
+    mocked.getAccountById.mockResolvedValue(MTN);
+    render(<AccountDetail accountId={2} />);
+
+    fireEvent.press(await screen.findByTestId('hide-account-button'));
+    fireEvent.press(screen.getByTestId('hide-account-cancel'));
+
+    expect(mocked.hideAccount).not.toHaveBeenCalled();
+  });
+
+  it('does not hide the default wallet, and says how to change the default', async () => {
+    render(<AccountDetail accountId={1} />);
+
+    await screen.findByText('3 000 FCFA');
+    expect(screen.queryByTestId('hide-account-button')).toBeNull();
+    expect(screen.getByTestId('hide-account-default-hint')).toHaveTextContent(
+      'This is your default wallet. To hide it, make another wallet the default first (Edit).',
+    );
   });
 });

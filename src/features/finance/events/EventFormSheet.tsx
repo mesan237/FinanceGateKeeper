@@ -61,6 +61,9 @@ export function EventFormSheet({ visible, initial, onClose, onSave }: EventFormS
           placeholder={t('form.namePlaceholder')}
           accessibilityLabel={t('form.name')}
         />
+        <Typography variant="muted" testID="event-form-hint">
+          {t('form.hint')}
+        </Typography>
         <Typography variant="label">{t('form.date')}</Typography>
         {date ? (
           <DateField testID="event-form-date" value={date} onChange={setDate} onClear={() => setDate(null)} />

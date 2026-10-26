@@ -22,6 +22,7 @@ services/
 - Dates stored as ISO 8601 strings (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss).
 - Migrations run in numeric order on app startup. Track completed migrations in a `_migrations` table.
 - Feature services call `database.ts` helper functions — never raw SQL from outside this folder.
+- `sync.wallets.ts` (VS-82): on a first sync that is not a fresh-install restore, a wallet never uploaded takes over the cloud wallet with the same name and type before the push, so install starter wallets never double the user's own.
 - `uiPreferences.ts` (UX-14): small key/value choices about how screens look on this phone
   (`ui_preferences`, migration 050). Local only: not in `SYNCED_TABLES`, no Supabase patch.
 

@@ -392,7 +392,7 @@ describe('CategoryDetailScreen — why (VS-62)', () => {
     mockedDetail.mockResolvedValue(
       detail({
         reasons: { routine: 10_000, event: 15_000, unexpected: 4_000, everyday: 16_000 },
-        reasonEvents: [{ eventId: 4, name: 'Marie’s wedding', amount: 15_000 }],
+        reasonEvents: [{ eventId: 4, name: 'Marie’s wedding', amount: 15_000, count: 2 }],
       }),
     );
     await renderScreen();

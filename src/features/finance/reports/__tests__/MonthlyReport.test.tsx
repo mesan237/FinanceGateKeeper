@@ -362,6 +362,16 @@ describe('MonthlyReport', () => {
     });
   });
 
+  it('says the month is over its plan instead of a negative "left in your plan" (device build)', async () => {
+    mockGetMonthly.mockResolvedValue(
+      buildReport({ expensePerformance: { planned: 50_000, actual: 66_850, remaining: -16_850 } }),
+    );
+    render(<MonthlyReport />);
+
+    expect(await screen.findByTestId('report-plan-left')).toHaveTextContent('Over your plan by16 850 FCFA');
+    expect(screen.queryByText('-16 850 FCFA')).toBeNull();
+  });
+
   it('renders the month comparison when comparison data is present', async () => {
     mockGetMonthly.mockResolvedValue(buildReport({ comparison: COMPARISON }));
     render(<MonthlyReport />);
@@ -447,6 +457,31 @@ describe('MonthlyReport', () => {
       expect(await screen.findByText("33% of this month's spending")).toBeTruthy();
     });
 
+    it('drops the footer when it would only repeat the Unexpected row, and counts in the row (device build)', async () => {
+      mockGetMonthly.mockResolvedValue(
+        buildReport({
+          unplanned: { count: 4, total: 21_600, sharePct: 32, previous: { count: 0, total: 0 } },
+          why: { totals: { routine: 9_250, event: 850, unexpected: 21_600, everyday: 35_150 }, events: [] },
+        }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByTestId('why-unexpected')).toHaveTextContent(/4 expenses/);
+      expect(screen.queryByTestId('why-unplanned')).toBeNull();
+    });
+
+    it('keeps the footer when last month gives a comparison', async () => {
+      mockGetMonthly.mockResolvedValue(
+        buildReport({
+          unplanned: { count: 4, total: 21_600, sharePct: 32, previous: { count: 2, total: 8_000 } },
+          why: { totals: { routine: 9_250, event: 850, unexpected: 21_600, everyday: 35_150 }, events: [] },
+        }),
+      );
+      render(<MonthlyReport />);
+
+      expect(await screen.findByText('Last month: 2 · 8 000 FCFA')).toBeTruthy();
+    });
+
     it('says so when the month had no imprévus, and how to record one', async () => {
       render(<MonthlyReport />);
 
@@ -501,7 +536,7 @@ describe('MonthlyReport', () => {
       buildReport({
         why: {
           totals: { routine: 20_000, event: 33_000, unexpected: 3_000, everyday: 12_000 },
-          events: [{ eventId: 4, name: 'Marie’s wedding', amount: 33_000 }],
+          events: [{ eventId: 4, name: 'Marie’s wedding', amount: 33_000, count: 3 }],
         },
       }),
     );

@@ -138,6 +138,7 @@ export const budget = {
     unassigned_one: "{{count}} expense isn't in any wallet, so free cash may be off.",
     unassigned_other: "{{count}} expenses aren't in any wallet, so free cash may be off.",
     checkBalances: 'Check balances',
+    notReady: 'Not reliable yet',
   },
   insights: {
     title: 'Insights',

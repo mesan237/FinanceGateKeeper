@@ -160,3 +160,66 @@ describe('syncNow on a phone that has never synced', () => {
     expect(result.restoredFromCloud).toBeFalsy();
   });
 });
+
+describe('syncNow on a new phone that already holds a record (device build, 2026-10-26)', () => {
+  /** The cloud's wallets, by name. */
+  const cloudWallets = () => cloud.__getTable('accounts').map((r) => r.name as string).sort();
+
+  it('merges the starter wallets into the cloud ones instead of doubling them', async () => {
+    run(`UPDATE accounts SET opening_balance = 20000 WHERE name = 'Cash'`);
+    await backUpThenWipe();
+    const cloudCash = cloud.__getTable('accounts').find((r) => r.name === 'Cash')!;
+    // Something recorded before the first sync, so the phone is not a fresh install.
+    const { id: cashId } = sqlite.prepare(`SELECT id FROM accounts WHERE name = 'Cash'`).get() as { id: number };
+    run(
+      `INSERT INTO income (amount, source, date, account_id, created_at)
+       VALUES (7000, 'salary', '2026-10-20', ?, '2026-10-20T08:00:00.000Z')`,
+      cashId,
+    );
+
+    const result = await syncNow();
+
+    expect(result.ok).toBe(true);
+    expect(count('SELECT COUNT(*) AS c FROM accounts')).toBe(3);
+    expect(cloudWallets()).toEqual(['Cash', 'MTN MoMo', 'Orange Money']);
+    const local = sqlite.prepare(`SELECT id, uuid, opening_balance FROM accounts WHERE name = 'Cash'`).get() as {
+      id: number;
+      uuid: string;
+      opening_balance: number;
+    };
+    // The local wallet is the cloud one now, with the cloud's figures and the new entry still on it.
+    expect(local.uuid).toBe(cloudCash.uuid);
+    expect(local.opening_balance).toBe(20000);
+    expect(local.id).toBe(cashId);
+    const cloudIncome = cloud.__getTable('income').find((r) => r.amount === 7000)!;
+    expect(cloudIncome.account_id).toBe(cloudCash.uuid);
+  });
+
+  it('keeps a starter wallet the cloud does not have, and sends it up', async () => {
+    await backUpThenWipe();
+    const kept = cloud.__getTable('accounts').filter((r) => r.name !== 'Orange Money');
+    cloud.__reset();
+    cloud.__setSession({ user: { id: 'u1' } });
+    cloud.__seed('accounts', kept);
+    insertIncome(5000);
+
+    await syncNow();
+
+    expect(count('SELECT COUNT(*) AS c FROM accounts')).toBe(3);
+    expect(cloudWallets()).toEqual(['Cash', 'MTN MoMo', 'Orange Money']);
+  });
+
+  it('never merges by name after the first sync: a second "Cash" stays a wallet of its own', async () => {
+    insertIncome(5000);
+    await syncNow();
+    run(
+      `INSERT INTO accounts (name, type, purpose, opening_balance, is_default, is_active, created_at)
+       VALUES ('Cash', 'cash', 'spending', 0, 0, 1, '2026-10-21T08:00:00.000Z')`,
+    );
+
+    await syncNow();
+
+    expect(count(`SELECT COUNT(*) AS c FROM accounts WHERE name = 'Cash'`)).toBe(2);
+    expect(cloudWallets().filter((n) => n === 'Cash')).toHaveLength(2);
+  });
+});

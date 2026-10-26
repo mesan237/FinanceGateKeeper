@@ -33,6 +33,7 @@ export const reports: Translation<typeof en> = {
     budget: 'Budget',
     actual: 'Dépensé',
     remaining: 'Reste au budget',
+    overBy: 'Budget dépassé de',
     byCategory: 'Dépenses par catégorie',
     pctOfTotal: '{{percent}} % du total',
     debt: 'Dettes à ce jour',

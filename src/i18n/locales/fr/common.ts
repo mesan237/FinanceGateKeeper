@@ -42,6 +42,8 @@ export const common: Translation<typeof en> = {
     unexpectedHint: 'Les dépenses qui vous ont pris de court',
     everyday: 'Quotidien',
     everydayHint: 'Les habitudes que vous pouvez changer',
+    expenses_one: '{{count}} dépense',
+    expenses_other: '{{count}} dépenses',
   },
   errors: {
     syncFailed: 'La synchronisation a échoué.',

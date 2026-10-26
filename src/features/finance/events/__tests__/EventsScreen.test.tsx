@@ -53,6 +53,15 @@ describe('EventsScreen (VS-61)', () => {
     expect(await screen.findByTestId('events-empty')).toBeTruthy();
   });
 
+  it('says an event is for a one-off occasion, not an ongoing theme (device build)', async () => {
+    render(<EventsScreen />);
+    fireEvent.press(await screen.findByTestId('events-add'));
+
+    expect(await screen.findByTestId('event-form-hint')).toHaveTextContent(
+      'For a one-off occasion: a wedding, a trip, a funeral. Ongoing spending belongs in a category.',
+    );
+  });
+
   it('creates an event and opens it', async () => {
     render(<EventsScreen />);
     fireEvent.press(await screen.findByTestId('events-add'));

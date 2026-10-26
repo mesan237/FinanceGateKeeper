@@ -2525,6 +2525,46 @@ across months.
 **Done when:** a user on Optimize sees where their own record shows room, and can open each category.
 
 ---
+### VS-82: Fixes From the First Device Build 🔄 In Progress
+
+**Priority:** P0 — pre-release (found on the user's device, 2026-10-26)
+**Blocked by:** —
+
+**Scope:**
+
+- **Doubled wallets.** A new install seeds Cash, MTN MoMo and Orange Money with random uuids; when the
+  phone held a record before its first sync (not a fresh-install restore), sync pushed them beside the
+  user's own. `services/sync.wallets.adoptCloudWallets` now runs on a first sync before the push: a
+  wallet never uploaded takes over the cloud wallet with the same name and type (case-insensitive) —
+  its uuid and fields — keeping its local id, so entries logged on it stay attached. Later syncs never
+  merge by name.
+- **Hide a wallet.** The wallet screen offers *Hide this wallet* (soft delete; history stays; it
+  leaves lists, pickers and totals) after a confirmation. The default wallet cannot be hidden; the
+  screen says to make another the default first (edit form). Used to clean up existing duplicates.
+- **Free cash readiness (04 §7.4).** While a wallet was never confirmed, a check is over 30 days old
+  or spending sits outside every wallet, the card says *Not reliable yet* with the reasons and *Check
+  balances* — no figure, no shortfall, no subtraction sheet. The hint moved under the label.
+- **Why you spent.** Event rows show how many expenses they hold and a chevron (`ReasonEvent.count`).
+  The imprévus footer shows only when it adds something (none yet, a total that differs from the
+  Unexpected row, or last month); otherwise the count sits in the row. The event form says an event is
+  for a one-off occasion; ongoing spending belongs in a category.
+- **Reports, over plan.** "Left in your plan" with a negative amount now reads *Over your plan by* X.
+- **Comparison.** The grouped bar chart is gone (months looked alike, labels cut, it repeated the
+  list); each row reads "10 000 → 12 000 FCFA · +20%".
+
+**TDD Anchor:**
+
+- Test: first sync merges starter wallets into the cloud ones (fields, uuid, attached entry), keeps a
+  starter the cloud lacks, never merges by name later.
+- Test: hide with confirmation, cancel, default not hideable.
+- Test: free cash not ready (never confirmed, unassigned), no sheet, ready again, fr.
+- Test: event counts and chevron, reason count in row, footer rule; event form hint; over-plan label;
+  comparison rows without the chart.
+
+**Done when:** the user's device shows single wallets, no confident figure on unconfirmed balances,
+and the Reports cards read clearly.
+
+---
 
 ## DEPENDENCY GRAPH
 
