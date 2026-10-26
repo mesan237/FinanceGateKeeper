@@ -17,7 +17,7 @@ Reports are read-only aggregations across all other features. No dedicated datab
   Both fold (`ReportGroup`): open by default from See / at Grow (`useIsBeforeStep`),
   open while the step is unknown, and the user's choice is remembered on the phone
   (`hooks/useRememberedToggle`, local `ui_preferences` table).
-- Month-over-month: per-category bar chart comparing current vs previous month. Highlight increases > 10%.
+- Month-over-month: one row per category, "last month → this month" and the change, the three biggest changes first with *Show all*. The grouped bar chart went after the first device build (VS-82): its two months looked alike and it repeated the rows.
 - **No suggestions card (removed VS-56).** It only restated the comparison rows
   ("increased 18% — review it"). Advice now lives where it can be acted on: each
   category row opens `/budget/category/[id]?month=` (by path, no import), which shows
