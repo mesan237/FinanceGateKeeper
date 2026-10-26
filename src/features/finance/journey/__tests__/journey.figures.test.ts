@@ -22,6 +22,7 @@ function journey(overrides: Partial<Journey> = {}): Journey {
     latest: { month: '2026-09', variable: 52_000 },
     plannedMonth: null,
     beatStartMonth: null,
+    suggestions: [],
     ...overrides,
   };
 }

@@ -39,6 +39,7 @@ const JOURNEY: Journey = {
   latest: null,
   plannedMonth: null,
   beatStartMonth: null,
+  suggestions: [],
 };
 
 beforeEach(() => {

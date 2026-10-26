@@ -6,6 +6,7 @@ import { toISODate } from '@/utils/formatDate';
 import { firstDayOfMonth, nextMonthISO, prevMonthISO } from '@/utils/monthMath';
 
 import { getObserveLogging } from './journey.logging';
+import { cutSuggestions } from './journey.suggestions';
 import { JOURNEY_STEPS } from './journey.steps';
 import type { Journey, JourneyEvidence, JourneyStep, JourneyStepKey } from './journey.types';
 
@@ -133,6 +134,7 @@ export async function getJourney(todayISO: string = toISODate(new Date())): Prom
     logging,
     start,
     latest,
+    suggestions: point.profile ? cutSuggestions(point.profile.variableCategories) : [],
     plannedMonth,
     beatStartMonth,
   };

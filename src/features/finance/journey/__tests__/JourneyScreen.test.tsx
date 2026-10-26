@@ -74,6 +74,7 @@ function journeyAt(current: JourneyStepKey, overrides: Partial<Journey> = {}): J
     latest: null,
     plannedMonth: null,
     beatStartMonth: null,
+    suggestions: [],
     ...overrides,
   };
 }
@@ -249,6 +250,53 @@ describe('JourneyScreen (VS-63)', () => {
     render(<JourneyScreen />);
 
     expect(await screen.findByText(/Variable spending: .* in September 2026, against/)).toBeTruthy();
+  });
+
+  describe('Optimize suggestions (UX-25)', () => {
+    const SUGGESTIONS = [
+      { categoryId: 5, categoryLabel: 'Transport', average: 30_000, lowest: 12_000, frees: 18_000 },
+      { categoryId: 1, categoryLabel: 'Food', average: 62_000, lowest: 48_000, frees: 14_000 },
+    ];
+
+    it('shows where variable spending has room, from the user\'s own months', async () => {
+      mocked.getJourney.mockResolvedValue(journeyAt('optimize', { suggestions: SUGGESTIONS }));
+      render(<JourneyScreen />);
+
+      const first = await screen.findByTestId('journey-suggestion-5');
+      expect(first).toHaveTextContent(/Transport: about 30 000 FCFA a month/);
+      expect(first).toHaveTextContent(/Your cheapest month was 12 000 FCFA/);
+      expect(first).toHaveTextContent(/Matching it frees ≈ 18 000 FCFA a month/);
+      expect(screen.getByText(/Suggestions only/)).toBeTruthy();
+    });
+
+    it('opens the category detail for this month from a suggestion', async () => {
+      mocked.getJourney.mockResolvedValue(journeyAt('optimize', { suggestions: SUGGESTIONS }));
+      render(<JourneyScreen />);
+
+      fireEvent.press(await screen.findByTestId('journey-suggestion-1'));
+
+      expect(mockPush).toHaveBeenCalledWith({
+        pathname: '/budget/category/[id]',
+        params: { id: '1', month: toISODate(new Date()).slice(0, 7) },
+      });
+    });
+
+    it('says so when the first months leave no clear cut', async () => {
+      mocked.getJourney.mockResolvedValue(journeyAt('optimize'));
+      render(<JourneyScreen />);
+
+      expect(await screen.findByTestId('journey-suggestions-none')).toBeTruthy();
+    });
+
+    it('reads in French', async () => {
+      await act(async () => {
+        await i18n.changeLanguage('fr');
+      });
+      mocked.getJourney.mockResolvedValue(journeyAt('optimize', { suggestions: SUGGESTIONS }));
+      render(<JourneyScreen />);
+
+      expect(await screen.findByTestId('journey-suggestion-5')).toHaveTextContent(/S’aligner dessus libère ≈ 18 000 FCFA par mois/);
+    });
   });
 
   it('opens goals from Grow', async () => {
