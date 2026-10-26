@@ -15,7 +15,7 @@ import { formatDateLong } from '@/utils/formatDate';
 import { DashboardSkeleton } from './DashboardSkeleton';
 import { MonthOverviewCard } from './MonthOverviewCard';
 import { heroLead } from './dashboard.heroLead';
-import { PlannedDueCard } from './PlannedDueCard';
+import { NextForYouCard } from './NextForYouCard';
 import { QuickActionBar } from './QuickActionBar';
 import { TodaySpendingCard } from './TodaySpendingCard';
 import { WalletsCard } from './WalletsCard';
@@ -113,12 +113,14 @@ export function DashboardScreen() {
           onLogIncome={() => setSheet({ open: true, segment: 'income' })}
         />
 
+        {/* What is due before month end, most urgent first; with nothing due,
+            the journey step leads. It replaced the planned-purchases card. */}
+        <NextForYouCard />
+
         {/* Where the user is on the path to control (VS-63); the setup
             checklist moved onto the path itself. */}
         <JourneyCard />
 
-        {/* Planned purchases coming due — hidden while nothing is (VS-39). */}
-        <PlannedDueCard />
 
         {/* Wallets — live balance per account (VS-18) */}
         <WalletsCard />

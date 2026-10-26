@@ -206,6 +206,19 @@ export interface CommittedMoney {
   total: number;
 }
 
+/** Where a due payment comes from. */
+export type DueKind = 'recurring' | 'planned' | 'debt' | 'tontine';
+
+/** One payment due by month end: a bill occurrence, a planned purchase, a debt instalment or a tontine contribution. */
+export interface DueItem {
+  kind: DueKind;
+  /** The bill, item, person or tontine it is for. */
+  label: string;
+  amount: number;
+  /** `YYYY-MM-DD`; before today when overdue. */
+  date: string;
+}
+
 /** The three figures the Budget tab keeps apart (VS-47). */
 export interface MoneyView {
   /** Cash on hand: the sum of every active wallet. */

@@ -19,6 +19,8 @@ jest.mock('expo-router', () => ({
 
 // The setup checklist has its own tests (VS-46).
 jest.mock('@/features/finance/journey/JourneyCard', () => ({ JourneyCard: () => null }));
+// "Next for you" has its own suite.
+jest.mock('@/features/finance/dashboard/NextForYouCard', () => ({ NextForYouCard: () => null }));
 
 jest.mock('@/features/finance/dashboard/dashboard.hooks', () => ({
   useDashboard: jest.fn(),

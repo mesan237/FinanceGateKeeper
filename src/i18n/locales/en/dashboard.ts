@@ -26,12 +26,21 @@ export const dashboard = {
     unplanned_one: '{{count}} unexpected expense · {{amount}}',
     unplanned_other: '{{count}} unexpected expenses · {{amount}}',
   },
-  planned: {
-    dueSoon_one: '{{count}} planned purchase due soon',
-    dueSoon_other: '{{count}} planned purchases due soon',
-    overdue_one: '{{count}} planned purchase overdue',
-    overdue_other: '{{count}} planned purchases overdue',
-    open: 'Open planned purchases',
+  next: {
+    title: 'Next for you',
+    overdue: 'Overdue since {{date}}',
+    today: 'Due today',
+    due: 'Due {{date}}',
+    more_one: '+ {{count}} more',
+    more_other: '+ {{count}} more',
+    sheetTitle: 'Due before month end',
+    prompt: {
+      observe: 'Keep logging every day: your first months are being recorded',
+      see: 'See what your first months really cost',
+      plan: 'Plan next month',
+      optimize: 'See where you have room to spend less',
+      grow: 'Put what you free up into a goal',
+    },
   },
   today: {
     title: "Today's spending",
