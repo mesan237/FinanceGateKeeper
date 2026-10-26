@@ -46,7 +46,15 @@ import i18n from '@/i18n';
 
 const mockedGetOverview = plan.getBudgetOverview as jest.MockedFunction<typeof plan.getBudgetOverview>;
 
-jest.setTimeout(20_000);
+// The Budget tab is the app's largest composed screen. Run alone this suite
+// settles in well under a second, but in a full parallel run the JS thread is
+// shared with every other suite and a mount can take several seconds; the old
+// 5 s wait inside a 20 s test made it fail on most full runs. The limits below
+// leave room for a saturated machine without hiding a real hang.
+jest.setTimeout(40_000);
+
+/** How long the tab may take to finish its first load under a full run. */
+const LOAD_TIMEOUT = 15_000;
 
 const PLAN: MonthlyPlan = {
   month: '2026-10',
@@ -103,7 +111,17 @@ async function renderAt(stage: JourneyStepKey) {
       </AtStep>
     </JourneyStageProvider>,
   );
-  await waitFor(() => expect(screen.queryByTestId('budget-skeleton')).toBeNull(), { timeout: 5_000 });
+  // Settled means content on screen, not just the skeleton gone: the preview,
+  // the empty month or the hero.
+  await waitFor(
+    () => {
+      expect(screen.queryByTestId('budget-skeleton')).toBeNull();
+      expect(
+        screen.queryByTestId('budget-preview') ?? screen.queryByTestId('budget-empty') ?? screen.queryByTestId('budget-hero'),
+      ).toBeTruthy();
+    },
+    { timeout: LOAD_TIMEOUT },
+  );
 }
 
 beforeAll(() => {
