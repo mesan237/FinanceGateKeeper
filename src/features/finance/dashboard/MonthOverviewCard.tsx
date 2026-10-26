@@ -15,6 +15,8 @@ import { monthLabel } from '@/utils/monthMath';
 
 import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
 
+import { HeroNoteLine, PlanLeftLine } from './MonthOverviewLead';
+import type { HeroLead } from './dashboard.heroLead';
 import type { BudgetSummary, Cashflow, DayLogging, PaceLevel } from './dashboard.types';
 
 /** Chip tone per pace level; the wording comes from `dashboard.pace`. */
@@ -37,6 +39,8 @@ export interface MonthOverviewCardProps {
   unplanned?: UnplannedTotals;
   /** Invoked by the "Plan a budget" link. The screen owns the navigation. */
   onSetBudget: () => void;
+  /** What the journey step leads with (UX-24); omitted, the plan alone decides. */
+  lead?: HeroLead;
 }
 
 /**
@@ -49,6 +53,9 @@ export interface MonthOverviewCardProps {
  *    logged (UX-04). Income received alone is not a plan, whatever it sizes
  *    behind the scenes, and the path starts by observing, so no limit is shown
  *    and no pace is judged. Planning stays one quiet link away.
+ *  - While observing (`lead.spentView`), the spent view leads even with a
+ *    plan, and the plan shows as one line under it (UX-24). The step may add a
+ *    note: the typical month on See, variable spending vs the start on Optimize.
  */
 export function MonthOverviewCard({
   monthISO,
@@ -58,12 +65,14 @@ export function MonthOverviewCard({
   logging,
   unplanned,
   onSetBudget,
+  lead,
 }: MonthOverviewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation('dashboard');
 
-  const planned = summary.isPlanned;
+  const hasPlan = summary.isPlanned;
+  const planned = hasPlan && !lead?.spentView;
   const isOver = planned && summary.expensesRemaining < 0;
   const pace = { label: t(`pace.${summary.pace}`), tone: PACE_TONE[summary.pace] };
   const label = !planned ? t('month.spentThisMonth') : isOver ? t('month.overBy') : t('month.leftInPlan');
@@ -131,17 +140,23 @@ export function MonthOverviewCard({
           <Typography variant="muted" testID="month-overview-income" style={styles.incomeLine}>
             {t('month.incomeLine', { amount: formatCurrency(cashflow.income) })}
           </Typography>
-          <Pressable
-            testID="month-overview-set-budget"
-            accessibilityRole="button"
-            onPress={onSetBudget}
-            hitSlop={8}
-            style={({ pressed }) => [styles.planLink, pressed && styles.planLinkPressed]}
-          >
-            <Typography style={styles.planLinkText}>{t('month.planLink')}</Typography>
-          </Pressable>
+          {hasPlan ? (
+            <PlanLeftLine summary={summary} />
+          ) : (
+            <Pressable
+              testID="month-overview-set-budget"
+              accessibilityRole="button"
+              onPress={onSetBudget}
+              hitSlop={8}
+              style={({ pressed }) => [styles.planLink, pressed && styles.planLinkPressed]}
+            >
+              <Typography style={styles.planLinkText}>{t('month.planLink')}</Typography>
+            </Pressable>
+          )}
         </>
       )}
+
+      {lead?.note ? <HeroNoteLine note={lead.note} /> : null}
 
       {unplanned && unplanned.count > 0 ? (
         <View style={styles.unplannedRow}>

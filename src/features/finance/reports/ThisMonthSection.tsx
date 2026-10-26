@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card } from '@/components/Card';
+import { useIsBeforeStep, useJourneyFigures, useJourneyStage } from '@/components/JourneyStageProvider';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { WhyBreakdown } from '@/components/WhyBreakdown';
@@ -31,6 +32,10 @@ export interface ThisMonthSectionProps {
  * and out, a one-sentence conclusion, the month against its plan, why the money
  * went (with the imprévus at its foot), the categories as ranked bars — each
  * opens its detail by path (VS-56) — and the biggest changes since last month.
+ *
+ * By journey step (UX-24): while observing, the running month's logging joins
+ * the in-and-out card; from the Plan step on, the month against its plan
+ * comes first. With the step unknown, in and out leads.
  */
 export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
   const styles = useThemedStyles(makeStyles);
@@ -38,11 +43,35 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
   const router = useRouter();
   const { t } = useTranslation('reports');
   const top = topCategoriesShare(report.categoryBreakdown);
+  const stage = useJourneyStage();
+  const figures = useJourneyFigures();
+  const beforePlan = useIsBeforeStep('plan');
+  const planFirst = stage !== null && !beforePlan;
+  const logging = stage === 'observe' && figures?.logging.month === monthISO ? figures.logging : null;
   const openCategory = (categoryId: number) =>
     router.push({ pathname: '/budget/category/[id]', params: { id: String(categoryId), month: monthISO } });
 
+  const performance = (
+    <View style={styles.section}>
+      <Typography variant="subheading">{t('monthly.performance')}</Typography>
+      <ReportRow label={t('monthly.budget')} value={report.expensePerformance.planned} />
+      <ProgressBar
+        testID="expense-performance-bar"
+        value={expenseSpentPct(report.expensePerformance.actual, report.expensePerformance.planned)}
+        color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
+      />
+      <ReportRow label={t('monthly.actual')} value={report.expensePerformance.actual} />
+      <ReportRow
+        label={t('monthly.remaining')}
+        value={report.expensePerformance.remaining}
+        color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
+      />
+    </View>
+  );
+
   return (
     <>
+      {planFirst ? performance : null}
       <Card>
         <View style={styles.summaryRow}>
           <View>
@@ -70,23 +99,14 @@ export function ThisMonthSection({ report, monthISO }: ThisMonthSectionProps) {
                 })}
           </Typography>
         ) : null}
+        {logging ? (
+          <Typography variant="muted" style={styles.sentence} testID="report-logging">
+            {t('monthly.daysLogged', { logged: logging.loggedDays, count: logging.daysSoFar })}
+          </Typography>
+        ) : null}
       </Card>
 
-      <View style={styles.section}>
-        <Typography variant="subheading">{t('monthly.performance')}</Typography>
-        <ReportRow label={t('monthly.budget')} value={report.expensePerformance.planned} />
-        <ProgressBar
-          testID="expense-performance-bar"
-          value={expenseSpentPct(report.expensePerformance.actual, report.expensePerformance.planned)}
-          color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
-        />
-        <ReportRow label={t('monthly.actual')} value={report.expensePerformance.actual} />
-        <ReportRow
-          label={t('monthly.remaining')}
-          value={report.expensePerformance.remaining}
-          color={report.expensePerformance.remaining < 0 ? c.DANGER : c.SUCCESS}
-        />
-      </View>
+      {planFirst ? null : performance}
 
       {/* Why the month went (VS-62); an event opens its page, by path. */}
       <WhyBreakdown

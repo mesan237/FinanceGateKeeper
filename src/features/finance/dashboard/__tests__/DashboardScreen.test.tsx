@@ -1,5 +1,15 @@
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
+
+import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';
+import type { JourneyStepKey } from '@/types/journey';
+
+/** Publishes `stage` the way the journey slice does once it has read the path. */
+function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.ReactNode }) {
+  const publish = useSetJourneyStage();
+  useEffect(() => publish(stage), [publish, stage]);
+  return <>{children}</>;
+}
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
@@ -138,6 +148,20 @@ describe('DashboardScreen', () => {
       expect(screen.getByTestId('today-spending')).toBeTruthy();
       expect(screen.getByTestId('quick-log-expense')).toBeTruthy();
     });
+  });
+
+  it('leads with what was spent while observing, even with a plan (UX-24)', () => {
+    setupHooks(FULL_STATE);
+    render(
+      <JourneyStageProvider>
+        <AtStep stage="observe">
+          <DashboardScreen />
+        </AtStep>
+      </JourneyStageProvider>,
+    );
+
+    expect(screen.getByText('Spent this month')).toBeTruthy();
+    expect(screen.getByTestId('month-overview-plan-left')).toBeTruthy();
   });
 
   describe('loading and error states (UX-16)', () => {

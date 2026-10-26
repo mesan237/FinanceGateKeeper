@@ -42,6 +42,7 @@ export const budget: Translation<typeof en> = {
     perDayLine: 'Par jour pour tenir le budget : {{amount}}',
     headingForLine: 'En route vers ≈ {{amount}} en fin de mois',
     howBuilt: 'Comment ce budget est construit',
+    setAsideLine: 'Après {{amount}} mis de côté pour vos objectifs.',
   },
   build: {
     title: 'Comment ce budget est construit',

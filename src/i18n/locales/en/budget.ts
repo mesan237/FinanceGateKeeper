@@ -38,6 +38,7 @@ export const budget = {
     perDayLine: 'A day to stay on plan: {{amount}}',
     headingForLine: 'Heading for ≈ {{amount}} by month end',
     howBuilt: 'How this plan is built',
+    setAsideLine: 'After {{amount}} set aside for your goals.',
   },
   build: {
     title: 'How this plan is built',

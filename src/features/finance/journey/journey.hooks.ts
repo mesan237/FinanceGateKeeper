@@ -1,8 +1,9 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
-import { useSetJourneyStage } from '@/components/JourneyStageProvider';
+import { useSetJourneyFigures, useSetJourneyStage } from '@/components/JourneyStageProvider';
 
+import { journeyFigures } from './journey.figures';
 import { markNoSpendDay } from './journey.logging';
 import { getJourney, markPictureReviewed, skipToStep } from './journey.service';
 import type { Journey, JourneyStepKey } from './journey.types';
@@ -13,26 +14,29 @@ import type { Journey, JourneyStepKey } from './journey.types';
  * `refresh` is caller-driven — the tab and the dashboard card re-read on focus,
  * because the evidence comes from logging done on other screens. Every read
  * publishes the current step to `JourneyStageProvider`, so other screens can
- * set their emphasis by it without importing this slice (UX-03).
+ * set their emphasis by it without importing this slice (UX-03), with the
+ * figures they lead with (UX-24).
  */
 export function useJourney() {
   const [journey, setJourney] = useState<Journey | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const publishStage = useSetJourneyStage();
+  const publishFigures = useSetJourneyFigures();
 
   const refresh = useCallback(async () => {
     try {
       const next = await getJourney();
       setJourney(next);
       publishStage(next.current);
+      publishFigures(journeyFigures(next));
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.load', { ns: 'journey' }));
     } finally {
       setLoading(false);
     }
-  }, [publishStage]);
+  }, [publishStage, publishFigures]);
 
   useEffect(() => {
     void refresh();

@@ -4,7 +4,9 @@ import { StyleSheet } from 'react-native';
 
 import { BudgetHeroCard } from '@/features/finance/budget/BudgetHeroCard';
 import type { BudgetOverview, MonthlyPlan } from '@/features/finance/budget/budget.types';
+import { JourneyStageProvider, useSetJourneyStage } from '@/components/JourneyStageProvider';
 import i18n from '@/i18n';
+import type { JourneyStepKey } from '@/types/journey';
 import { LIGHT_COLORS } from '@/theme/palettes';
 
 const PLAN: MonthlyPlan = {
@@ -46,6 +48,39 @@ function overview(overrides: Partial<BudgetOverview> = {}, plan: Partial<Monthly
     ...overrides,
   };
 }
+
+/** Publishes `stage` the way the journey slice does once it has read the path. */
+function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.ReactNode }) {
+  const publish = useSetJourneyStage();
+  React.useEffect(() => publish(stage), [publish, stage]);
+  return <>{children}</>;
+}
+
+describe('BudgetHeroCard — the Grow step (UX-24)', () => {
+  it('shows what the goals took first, on the Grow step', () => {
+    render(
+      <JourneyStageProvider>
+        <AtStep stage="grow">
+          <BudgetHeroCard overview={overview({}, { setAside: 30_000 })} />
+        </AtStep>
+      </JourneyStageProvider>,
+    );
+
+    expect(screen.getByTestId('budget-set-aside')).toHaveTextContent('After 30 000 FCFA set aside for your goals.');
+  });
+
+  it('keeps it in the sheet before Grow', () => {
+    render(
+      <JourneyStageProvider>
+        <AtStep stage="plan">
+          <BudgetHeroCard overview={overview({}, { setAside: 30_000 })} />
+        </AtStep>
+      </JourneyStageProvider>,
+    );
+
+    expect(screen.queryByTestId('budget-set-aside')).toBeNull();
+  });
+});
 
 describe('BudgetHeroCard (UX-13)', () => {
   it('keeps the first block to what is left, what is spent and a day to stay on plan', () => {
