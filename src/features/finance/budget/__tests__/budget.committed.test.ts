@@ -17,7 +17,7 @@ jest.mock('@/services/database', () => {
 });
 
 import { execute, query } from '@/services/database';
-import { getCommitted } from '@/features/finance/budget/budget.committed';
+import { getCommitted, getDueItems } from '@/features/finance/budget/budget.committed';
 import { createTontine, payContribution } from '@/features/finance/tontines/tontines.service';
 
 let sqlite: Database.Database;
@@ -189,5 +189,60 @@ describe('getCommitted', () => {
     await createTontine({ name: 'Office', contributionAmount: 5_000, frequency: 'monthly', startDate: '2026-10-30', members: 4 });
 
     expect((await getCommitted('2026-10')).total).toBe(57_000);
+  });
+});
+
+describe('getDueItems (Next for you)', () => {
+  it('lists everything due by month end, one line per payment, oldest first', async () => {
+    await bill(30_000, 'monthly', '2026-10-25');
+    await item(await list('2026-10-12'), 12_000);
+    await debt(10_000, 'owed', '2026-09-20'); // overdue
+    await createTontine({ name: 'Office', contributionAmount: 5_000, frequency: 'monthly', startDate: '2026-10-30', members: 4 });
+
+    expect(await getDueItems('2026-10')).toEqual([
+      { kind: 'debt', label: 'Awa', amount: 10_000, date: '2026-09-20' },
+      { kind: 'planned', label: 'Rice', amount: 12_000, date: '2026-10-12' },
+      { kind: 'recurring', label: 'Bill', amount: 30_000, date: '2026-10-25' },
+      { kind: 'tontine', label: 'Office', amount: 5_000, date: '2026-10-30' },
+    ]);
+  });
+
+  it('gives a recurring bill one line per occurrence left in the month', async () => {
+    await bill(5_000, 'weekly', '2026-10-15');
+
+    expect((await getDueItems('2026-10')).map((i) => i.date)).toEqual(['2026-10-15', '2026-10-22', '2026-10-29']);
+  });
+
+  it('lists the unpaid instalments of a scheduled debt, each on its own date', async () => {
+    const loan = await debt(100_000, 'owed', null);
+    await execute(
+      `UPDATE debts SET total_to_repay = 120000, instalment_count = 6, instalment_frequency = 'monthly',
+         first_instalment_date = '2026-09-15' WHERE id = ?`,
+      [loan],
+    );
+
+    expect(await getDueItems('2026-10')).toEqual([
+      { kind: 'debt', label: 'Awa', amount: 20_000, date: '2026-09-15' },
+      { kind: 'debt', label: 'Awa', amount: 20_000, date: '2026-10-15' },
+    ]);
+  });
+
+  it('leaves out a debt already repaid in full', async () => {
+    const paid = await debt(10_000, 'owed', '2026-10-30');
+    await execute(
+      "INSERT INTO debt_payments (debt_id, amount, date, created_at) VALUES (?, 10000, '2026-10-05', ?)",
+      [paid, NOW],
+    );
+
+    expect(await getDueItems('2026-10')).toEqual([]);
+  });
+
+  it('adds up to the committed total, so Home and the Budget tab agree', async () => {
+    await bill(30_000, 'monthly', '2026-10-25');
+    await item(await list('2026-10-28'), 12_000);
+    await debt(10_000, 'owed', '2026-10-30');
+
+    const items = await getDueItems('2026-10');
+    expect(items.reduce((sum, i) => sum + i.amount, 0)).toBe((await getCommitted('2026-10')).total);
   });
 });

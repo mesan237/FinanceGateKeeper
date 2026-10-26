@@ -29,12 +29,21 @@ export const dashboard: Translation<typeof en> = {
     unplanned_one: '{{count}} imprévu · {{amount}}',
     unplanned_other: '{{count}} imprévus · {{amount}}',
   },
-  planned: {
-    dueSoon_one: '{{count}} achat prévu à venir',
-    dueSoon_other: '{{count}} achats prévus à venir',
-    overdue_one: '{{count}} achat prévu en retard',
-    overdue_other: '{{count}} achats prévus en retard',
-    open: 'Ouvrir les achats prévus',
+  next: {
+    title: 'À faire',
+    overdue: 'En retard depuis le {{date}}',
+    today: 'À payer aujourd’hui',
+    due: 'À payer le {{date}}',
+    more_one: '+ {{count}} autre',
+    more_other: '+ {{count}} autres',
+    sheetTitle: 'À payer d’ici fin du mois',
+    prompt: {
+      observe: 'Notez chaque jour : vos premiers mois sont en cours d’enregistrement',
+      see: 'Voyez ce que vos premiers mois ont vraiment coûté',
+      plan: 'Préparez le budget du mois prochain',
+      optimize: 'Voyez où vous pouvez dépenser moins',
+      grow: 'Placez ce que vous libérez dans un objectif',
+    },
   },
   today: {
     title: "Dépenses d'aujourd'hui",
