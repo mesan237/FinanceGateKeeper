@@ -2565,6 +2565,29 @@ across months.
 and the Reports cards read clearly.
 
 ---
+### VS-83: Home's Wallets Card Says What Its Balances Are Worth (F-11) 🔄 In Progress
+
+**Priority:** P1 — pre-release (docs/ux-redesign/02 F-11; the rest of UX-21)
+**Blocked by:** —
+
+**Scope:**
+
+- A total line under the wallet rows.
+- How far the balances can be trusted, with the same rule as *Free cash* (UX-21): "Balances checked
+  3 days ago" / "today"; when stale, "Balances not confirmed since 20 Sep" or "Some balances were
+  never confirmed"; "48 expenses aren't in any wallet" when there are some; *Check balances ›* when
+  either makes them doubtful. The card already opens Accounts, where balances are confirmed.
+- `accounts.hooks.useWalletTrust` reads `getBalanceFreshness` and `getUnassignedSpending` (approved
+  `dashboard → accounts`); a read failure hides the lines, never the balances.
+- The card re-reads on focus; it used to read once at mount and could go stale while Home stayed open.
+
+**TDD Anchor:**
+
+- Test: total; fresh, stale, never confirmed; unassigned; the check line; re-read on focus; fr.
+
+**Done when:** Home's wallet figures say when they were last confirmed, and nudge when they are not.
+
+---
 
 ## DEPENDENCY GRAPH
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toISODate } from '@/utils/formatDate';
 
 import * as service from './accounts.service';
-import type { Account, AccountHistoryEntry, AccountStats } from './accounts.types';
+import type { Account, AccountHistoryEntry, AccountStats, BalanceFreshness } from './accounts.types';
 
 /**
  * Loads the active accounts plus a `{ [id]: balance }` map (balances are
@@ -39,6 +39,37 @@ export function useAccounts() {
   }, [refresh]);
 
   return { accounts, balances, loading, error, refresh };
+}
+
+/**
+ * How far the wallet balances can be trusted (UX-21, F-11): how recently every
+ * wallet was confirmed and how much spending sits outside every wallet. Null
+ * until read, or when it cannot be read — the figures it qualifies still show.
+ * `refresh` is caller-driven (Home re-reads on focus).
+ */
+export function useWalletTrust() {
+  const [freshness, setFreshness] = useState<BalanceFreshness | null>(null);
+  const [unassigned, setUnassigned] = useState<{ count: number; total: number } | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [f, u] = await Promise.all([
+        service.getBalanceFreshness(toISODate(new Date())),
+        service.getUnassignedSpending(),
+      ]);
+      setFreshness(f);
+      setUnassigned(u);
+    } catch {
+      setFreshness(null);
+      setUnassigned(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { freshness, unassigned, refresh };
 }
 
 /**
