@@ -2082,7 +2082,7 @@ what comes next; the dashboard shows the same in one card.
 
 ---
 
-### VS-65: Suggestions to Cut Variable Spending ⏳ Backlog
+### VS-65: Suggestions to Cut Variable Spending ➡️ Folded into VS-81 (UX-25)
 
 **Blocked by:** VS-63
 
@@ -2494,6 +2494,34 @@ across months.
 - Test: Reports logging line at Observe, order before and from Plan; Budget set-aside line at Grow.
 
 **Done when:** users at each step see the lead table 04 §7.3 documents, and nothing hides.
+
+---
+### VS-81: Where Variable Spending Has Room (UX-25, VS-65) 🔄 In Progress
+
+**Priority:** P1 (docs/ux-redesign/06 UX-25; journey decision 3: suggestions only, on variable costs)
+**Blocked by:** —
+
+**Scope:**
+
+- `journey.suggestions.cutSuggestions`: for each variable category of the starting point, what
+  matching its own cheapest month would free each month (average − lowest, rounded down to 500
+  FCFA so it never over-promises). The three biggest; a category that never varied is left out.
+- `Journey.suggestions`, from the starting point profile `getJourney` already reads (approved
+  `journey → reports`); empty before the starting point is recorded.
+- The Optimize step on My path lists them under *Where you have room*: "Food: about 62 000 a month.
+  Your cheapest month was 48 000." · "Matching it frees ≈ 14 000 a month". Each opens the category
+  detail for this month by path. A note says they come from the first three months and are
+  suggestions only; with none, the step says variable spending was steady.
+- No target is set and nothing is stored. Not here: Home's *Next for you* "biggest saving lever"
+  and the Budget tab's Optimize suggestions (04 §7.3).
+
+**TDD Anchor:**
+
+- Test: `cutSuggestions` (order, top 3, rounding, steady categories).
+- Test: `getJourney` suggestions from a recorded starting point, none before.
+- Test: Optimize step rows, opening the category detail, the none line, fr.
+
+**Done when:** a user on Optimize sees where their own record shows room, and can open each category.
 
 ---
 
