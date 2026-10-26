@@ -53,8 +53,9 @@ All other cross-feature imports are forbidden.
 **Attention counts (VS-39).** A feature that needs to surface "something here needs you"
 outside itself publishes counts to the shared `components/AttentionProvider` under a key
 from `constants/attention`. `planned` does this from its root `PlannedReminderScheduler`, and `tontines` from its
-root `TontineReminderScheduler` (VS-52); the drawer dots, the menu button and the
-dashboard's `PlannedDueCard` read the keys from `components/`. Nobody imports either
+root `TontineReminderScheduler` (VS-52); the drawer dots and the menu button read the keys
+from `components/`. Home's *Next for you* (VS-84) lists due items from `budget.getDueItems`
+instead (approved `dashboard → budget`). Nobody imports either
 scheduler's slice for this, so the graph above is unchanged.
 
 **Journey stage (UX-03).** The current journey step is shared the same way, through

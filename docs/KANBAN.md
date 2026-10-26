@@ -2588,6 +2588,35 @@ and the Reports cards read clearly.
 **Done when:** Home's wallet figures say when they were last confirmed, and nudge when they are not.
 
 ---
+### VS-84: Next for You on Home (04 §7.3, 05 §10.3) 🔄 In Progress
+
+**Priority:** P1 — pre-release (the last open item of the UX redesign plan)
+**Blocked by:** —
+
+**Scope:**
+
+- `budget.committed.getDueItems(month)`: every payment due by month end, one line each — a recurring
+  bill occurrence, an open planned purchase, a debt (each unpaid instalment) or a tontine
+  contribution — with its label, amount and date, oldest first so overdue leads. `getCommitted` now
+  sums these items, so Home's list and the Budget tab's *Due before month end* always agree.
+- `dashboard/NextForYouCard` after quick log: the most urgent payment ("Bureau · 10 000 FCFA ·
+  Overdue since 12 Oct"), and "+ N more" opening every payment due before month end by date.
+  Read through the approved `dashboard → budget` edge; re-reads on focus.
+- With nothing due, the journey step leads (04 §8.4): keep logging (Observe), see your first months
+  (See), plan next month (Plan), see where you have room (Optimize), fund a goal (Grow). Unknown step
+  → nothing.
+- It replaces `PlannedDueCard` (planned purchases are in the list); the drawer dots are unchanged.
+
+**TDD Anchor:**
+
+- Test: `getDueItems` (order, one line per occurrence and instalment, repaid debts out, sums to the
+  committed total); the existing committed-money tests guard the totals.
+- Test: card (overdue/today/later wording, the sheet, no "more" with one item, prompts by step,
+  nothing when unknown, fr).
+
+**Done when:** Home always shows the next thing to pay, or the next step to take.
+
+---
 
 ## DEPENDENCY GRAPH
 
