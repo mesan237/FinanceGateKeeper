@@ -140,6 +140,24 @@ describe('getJourney (VS-63)', () => {
     expect(journey.start).toMatchObject({ total: 50_000, variable: 50_000 });
   });
 
+  it('suggests where variable spending has room, from the starting point (UX-25)', async () => {
+    await completeMonth('2026-05', 50_000);
+    await completeMonth('2026-06', 30_000);
+    await completeMonth('2026-07', 40_000);
+
+    const journey = await getJourney(TODAY);
+
+    expect(journey.suggestions).toEqual([
+      { categoryId: FOOD, categoryLabel: 'Food', average: 40_000, lowest: 30_000, frees: 10_000 },
+    ]);
+  });
+
+  it('has no suggestions before the starting point is recorded', async () => {
+    await completeMonth('2026-05', 50_000);
+
+    expect((await getJourney(TODAY)).suggestions).toEqual([]);
+  });
+
   it('moves to Plan once the user has seen their first months', async () => {
     await recordStartingPoint();
     await markPictureReviewed();

@@ -11,6 +11,7 @@ import { toISODate } from '@/utils/formatDate';
 import { monthLabel, nextMonthISO } from '@/utils/monthMath';
 
 import { ObserveProgress } from './ObserveProgress';
+import { OptimizeSuggestions } from './OptimizeSuggestions';
 import type { Journey, JourneyStepKey } from './journey.types';
 
 interface JourneyStepDetailProps {
@@ -87,6 +88,7 @@ export function JourneyStepDetail({ step, journey, onReviewed, onNoSpend }: Jour
             ? t('optimize.done', { month: monthLabel(journey.beatStartMonth) })
             : t('optimize.waiting')}
         </Typography>
+        <OptimizeSuggestions suggestions={journey.suggestions} />
       </View>
     );
   }

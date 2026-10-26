@@ -59,4 +59,18 @@ export interface Journey {
   latest: { month: string; variable: number } | null;
   plannedMonth: string | null;
   beatStartMonth: string | null;
+  /** Where variable spending has room, from the starting point; empty before it (UX-25). */
+  suggestions: CutSuggestion[];
+}
+
+/** One Optimize suggestion (UX-25): a variable category and what matching its cheapest month frees. */
+export interface CutSuggestion {
+  categoryId: number;
+  categoryLabel: string;
+  /** Its average month in the starting point, whole FCFA. */
+  average: number;
+  /** Its cheapest month in the starting point. */
+  lowest: number;
+  /** `average - lowest`, rounded down to 500 FCFA: what matching that month frees each month. */
+  frees: number;
 }

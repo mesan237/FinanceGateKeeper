@@ -64,6 +64,11 @@ export const journey = {
     compare: 'Variable spending: {{latest}} in {{month}}, against {{start}} at the start.',
     waiting: 'Passes when a planned month spends less on variable costs than at the start.',
     done: 'You spent less than at the start in {{month}}.',
+    suggestionsTitle: 'Where you have room',
+    suggestion: '{{category}}: about {{average}} a month. Your cheapest month was {{lowest}}.',
+    frees: 'Matching it frees ≈ {{amount}} a month',
+    suggestionsHint: 'From your first three months. Suggestions only: you choose what to change.',
+    none: 'Your variable spending was steady in your first months, so there is no clear cut to suggest.',
   },
   grow: {
     goals: 'Open goals',

@@ -47,6 +47,7 @@ beforeEach(() => {
     latest: null,
     plannedMonth: null,
     beatStartMonth: null,
+    suggestions: [],
   });
 });
 

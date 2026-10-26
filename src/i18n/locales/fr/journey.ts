@@ -64,6 +64,11 @@ export const journey: Translation<typeof en> = {
     action: 'Planifier le mois prochain',
   },
   optimize: {
+    suggestionsTitle: 'Là où vous avez de la marge',
+    suggestion: '{{category}} : environ {{average}} par mois. Votre mois le moins cher : {{lowest}}.',
+    frees: 'S’aligner dessus libère ≈ {{amount}} par mois',
+    suggestionsHint: 'D’après vos trois premiers mois. De simples suggestions : c’est vous qui choisissez.',
+    none: 'Vos dépenses variables ont peu changé pendant vos premiers mois : pas de réduction évidente à suggérer.',
     compare: 'Dépenses variables : {{latest}} en {{month}}, contre {{start}} au départ.',
     waiting: 'Validée quand un mois planifié coûte moins en charges variables qu’au départ.',
     done: 'Vous avez dépensé moins qu’au départ en {{month}}.',
