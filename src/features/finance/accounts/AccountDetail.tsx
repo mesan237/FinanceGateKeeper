@@ -60,16 +60,22 @@ function signedAmount(entry: AccountHistoryEntry): { credit: boolean; text: stri
  * One wallet's detail: a balance hero, this month's income/expense share, and a
  * scrollable, account-filtered history (credits, debits, transfers, fund/project
  * contributions). The Edit button opens the form in edit mode.
+ *
+ * "Hide this wallet" soft-deletes it after a confirmation (its history stays;
+ * it leaves lists, pickers and totals). The default wallet cannot be hidden —
+ * new entries would land in a wallet nobody sees — so it says to make another
+ * wallet the default first, which the edit form does.
  */
 export function AccountDetail({ accountId }: AccountDetailProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
   const { t } = useTranslation(['accounts', 'common']);
-  const { account, balance, history, loading, confirm, removeCheck } = useAccountDetail(accountId);
+  const { account, balance, history, loading, confirm, removeCheck, hide } = useAccountDetail(accountId);
   const { stats } = useAccountStats(accountId, currentMonthISO());
   const [confirming, setConfirming] = useState(false);
   const [checkToRemove, setCheckToRemove] = useState<number | null>(null);
+  const [hiding, setHiding] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -141,6 +147,41 @@ export function AccountDetail({ accountId }: AccountDetailProps) {
         })}
       </ScrollView>
 
+      {account ? (
+        <View style={styles.footer}>
+          {account.isDefault ? (
+            <Typography variant="muted" testID="hide-account-default-hint">
+              {t('hide.defaultHint')}
+            </Typography>
+          ) : (
+            <Button
+              testID="hide-account-button"
+              label={t('hide.action')}
+              variant="ghost"
+              onPress={() => setHiding(true)}
+            />
+          )}
+        </View>
+      ) : null}
+
+      <Modal visible={hiding} onRequestClose={() => setHiding(false)}>
+        <View style={styles.modal}>
+          <Typography variant="subheading">{t('hide.title', { name: account?.name ?? '' })}</Typography>
+          <Typography variant="muted">{t('hide.body')}</Typography>
+          <Button
+            testID="hide-account-confirm"
+            label={t('hide.confirm')}
+            variant="danger"
+            onPress={async () => {
+              setHiding(false);
+              await hide();
+              router.back();
+            }}
+          />
+          <Button testID="hide-account-cancel" label={t('common:actions.cancel')} onPress={() => setHiding(false)} />
+        </View>
+      </Modal>
+
       <ConfirmBalanceSheet
         visible={confirming}
         name={account?.name ?? ''}
@@ -182,4 +223,5 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   amountCredit: { color: c.SUCCESS_TEXT, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   amountDebit: { color: c.DANGER, fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD },
   modal: { gap: 12 },
+  footer: { paddingHorizontal: 16, paddingBottom: 16, alignItems: 'center' },
 });

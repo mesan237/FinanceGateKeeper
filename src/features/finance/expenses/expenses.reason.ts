@@ -40,7 +40,8 @@ export function sumByReason(
 
 /**
  * The events behind the "Events" reason: each event's net spend across these
- * expenses, largest first; an event netted to zero or less is left out. Pure.
+ * expenses and how many expenses carry it (refunds not counted), largest
+ * first; an event netted to zero or less is left out. Pure.
  *
  * @param names Event names by id (`services/transactions.getEventNames`).
  */
@@ -48,12 +49,14 @@ export function groupByEvent(
   expenses: ReadonlyArray<{ eventId: number | null; amount: number }>,
   names: ReadonlyMap<number, string>,
 ): ReasonEvent[] {
-  const byEvent = new Map<number, number>();
+  const byEvent = new Map<number, { amount: number; count: number }>();
   for (const e of expenses) {
-    if (e.eventId !== null) byEvent.set(e.eventId, (byEvent.get(e.eventId) ?? 0) + e.amount);
+    if (e.eventId === null) continue;
+    const sum = byEvent.get(e.eventId) ?? { amount: 0, count: 0 };
+    byEvent.set(e.eventId, { amount: sum.amount + e.amount, count: sum.count + (e.amount > 0 ? 1 : 0) });
   }
   return [...byEvent.entries()]
-    .filter(([, amount]) => amount > 0)
-    .map(([eventId, amount]) => ({ eventId, name: names.get(eventId) ?? '', amount }))
+    .filter(([, sum]) => sum.amount > 0)
+    .map(([eventId, sum]) => ({ eventId, name: names.get(eventId) ?? '', amount: sum.amount, count: sum.count }))
     .sort((a, b) => b.amount - a.amount);
 }

@@ -289,8 +289,8 @@ describe('getCategoryDetail — why the money went (VS-62)', () => {
 
     expect(detail.reasons).toEqual({ routine: 2_000, event: 15_000, unexpected: 3_000, everyday: 2_500 });
     expect(detail.reasonEvents).toEqual([
-      { eventId: funeral, name: 'Funeral', amount: 9_000 },
-      { eventId: wedding, name: 'Marie’s wedding', amount: 6_000 },
+      { eventId: funeral, name: 'Funeral', amount: 9_000, count: 1 },
+      { eventId: wedding, name: 'Marie’s wedding', amount: 6_000, count: 1 },
     ]);
   });
 

@@ -21,6 +21,7 @@ export const events: Translation<typeof en> = {
     editTitle: 'Modifier l’événement',
     name: 'Nom',
     namePlaceholder: 'ex. Mariage de Marie',
+    hint: 'Pour une occasion ponctuelle : un mariage, un voyage, un deuil. Une dépense régulière a sa place dans une catégorie.',
     date: 'Date (facultative)',
     clearDate: 'Sans date',
     save: 'Enregistrer',

@@ -30,6 +30,13 @@ export const accounts = {
     invalidId: 'Invalid wallet id.',
     confirmBalance: 'Confirm balance',
   },
+  hide: {
+    action: 'Hide this wallet',
+    title: 'Hide {{name}}?',
+    body: 'Its history stays. It leaves your wallet lists, the pickers and every total.',
+    confirm: 'Hide wallet',
+    defaultHint: 'This is your default wallet. To hide it, make another wallet the default first (Edit).',
+  },
   check: {
     title: 'What does {{name}} hold today?',
     hint: 'Enter the real balance. Later entries count from this figure; older ones you add afterwards will not change it.',

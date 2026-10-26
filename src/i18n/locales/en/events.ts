@@ -18,6 +18,7 @@ export const events = {
     editTitle: 'Edit event',
     name: 'Name',
     namePlaceholder: 'e.g. Marie’s wedding',
+    hint: 'For a one-off occasion: a wedding, a trip, a funeral. Ongoing spending belongs in a category.',
     date: 'Date (optional)',
     clearDate: 'No date',
     save: 'Save',

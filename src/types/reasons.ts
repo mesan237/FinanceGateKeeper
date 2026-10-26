@@ -21,4 +21,6 @@ export interface ReasonEvent {
   eventId: number;
   name: string;
   amount: number;
+  /** How many expenses are tagged with it (refunds not counted), so the row reads as transactions. */
+  count: number;
 }

@@ -39,6 +39,8 @@ export const common = {
     unexpectedHint: 'Spending that caught you off guard',
     everyday: 'Everyday',
     everydayHint: 'The habits you can change',
+    expenses_one: '{{count}} expense',
+    expenses_other: '{{count}} expenses',
   },
   errors: {
     syncFailed: 'Sync failed.',

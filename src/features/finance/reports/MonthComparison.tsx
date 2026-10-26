@@ -6,8 +6,8 @@ import { Button } from '@/components/Button';
 import { Typography } from '@/components/Typography';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
+import { formatCurrency } from '@/utils/formatCurrency';
 
-import { SpendingBarChart } from './SpendingBarChart';
 import type { CategoryDelta, MonthComparison as MonthComparisonData } from './reports.types';
 
 /** Changes listed before "Show all" (UX-14). */
@@ -35,10 +35,11 @@ function changeColor(delta: CategoryDelta, colors: ThemeColors): string {
 }
 
 /**
- * Month-over-month comparison: a grouped bar chart (current vs previous per
- * category) plus the per-category deltas with a color-coded change badge. The
- * list leads with the three biggest changes in FCFA, either way, and "Show
- * all" opens the rest (UX-14).
+ * Month-over-month comparison: one row per category with last month's and this
+ * month's amounts and a color-coded change. The list leads with the three
+ * biggest changes in FCFA, either way, and "Show all" opens the rest (UX-14).
+ * The grouped bar chart went after the first device build: its two months
+ * looked alike, labels were cut and it repeated these rows.
  */
 export function MonthComparison({ comparison }: MonthComparisonProps) {
   const styles = useThemedStyles(makeStyles);
@@ -51,10 +52,6 @@ export function MonthComparison({ comparison }: MonthComparisonProps) {
   );
   const listed = showAll ? ranked : ranked.slice(0, FIRST_SHOWN);
 
-  // Two interleaved bars per category: current then previous.
-  const labels = categories.flatMap((c) => [displayCategoryName(c.categoryLabel).slice(0, 4), '']);
-  const values = categories.flatMap((c) => [c.current, c.previous]);
-
   return (
     <View style={styles.container}>
       <Typography variant="subheading">{t('comparison.title')}</Typography>
@@ -62,10 +59,14 @@ export function MonthComparison({ comparison }: MonthComparisonProps) {
         <Typography variant="muted">{t('comparison.empty')}</Typography>
       ) : (
         <>
-          <SpendingBarChart labels={labels} values={values} />
           {listed.map((c) => (
             <View key={c.categoryId} style={styles.row} testID={`comparison-row-${c.categoryId}`}>
-              <Typography variant="body">{displayCategoryName(c.categoryLabel)}</Typography>
+              <View style={styles.grow}>
+                <Typography variant="body">{displayCategoryName(c.categoryLabel)}</Typography>
+                <Typography variant="muted">
+                  {`${formatCurrency(c.previous)} → ${formatCurrency(c.current)}`}
+                </Typography>
+              </View>
               <Typography variant="label" style={{ color: changeColor(c, colors) }}>
                 {formatChange(c, t('comparison.new'))}
               </Typography>
@@ -89,6 +90,9 @@ export function MonthComparison({ comparison }: MonthComparisonProps) {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     gap: 8,
+  },
+  grow: {
+    flex: 1,
   },
   row: {
     flexDirection: 'row',

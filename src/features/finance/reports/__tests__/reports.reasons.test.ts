@@ -65,7 +65,8 @@ describe('summariseReasons — why the month went (VS-62)', () => {
     );
 
     expect(why.totals).toEqual({ routine: 20_000, event: 33_000, unexpected: 3_000, everyday: 12_000 });
-    expect(why.events).toEqual([{ eventId: wedding, name: 'Marie’s wedding', amount: 33_000 }]);
+    // Two expenses tagged with the wedding, across Transport and Food.
+    expect(why.events).toEqual([{ eventId: wedding, name: 'Marie’s wedding', amount: 33_000, count: 2 }]);
   });
 
   it('has nothing to say about a month without spending', async () => {

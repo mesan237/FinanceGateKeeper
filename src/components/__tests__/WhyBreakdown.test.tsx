@@ -39,7 +39,7 @@ describe('WhyBreakdown (VS-62)', () => {
     render(
       <WhyBreakdown
         totals={TOTALS}
-        events={[{ eventId: 4, name: 'Marie’s wedding', amount: 15_000 }]}
+        events={[{ eventId: 4, name: 'Marie’s wedding', amount: 15_000, count: 2 }]}
         onOpenEvent={onOpenEvent}
       />,
     );
@@ -64,6 +64,25 @@ describe('WhyBreakdown (VS-62)', () => {
     );
 
     expect(screen.getByTestId('why-footer')).toBeTruthy();
+  });
+
+  it('shows how many expenses each event holds, and that it opens (device build)', () => {
+    render(
+      <WhyBreakdown
+        totals={TOTALS}
+        events={[{ eventId: 4, name: 'Marie’s wedding', amount: 15_000, count: 2 }]}
+        onOpenEvent={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('why-event-4')).toHaveTextContent(/2 expenses/);
+    expect(screen.getByTestId('why-event-4-open')).toBeTruthy();
+  });
+
+  it('puts a reason\'s count in its row when given one', () => {
+    render(<WhyBreakdown totals={TOTALS} counts={{ unexpected: 4 }} />);
+
+    expect(screen.getByTestId('why-unexpected')).toHaveTextContent(/4 expenses/);
   });
 
   it('renders nothing without any spending', () => {

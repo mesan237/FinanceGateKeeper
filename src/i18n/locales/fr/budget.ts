@@ -143,6 +143,7 @@ export const budget: Translation<typeof en> = {
     unassigned_one: '{{count}} dépense n’est dans aucun portefeuille : l’argent libre peut être faussé.',
     unassigned_other: '{{count}} dépenses ne sont dans aucun portefeuille : l’argent libre peut être faussé.',
     checkBalances: 'Vérifier les soldes',
+    notReady: 'Pas encore fiable',
   },
   insights: {
     title: 'Analyses',
