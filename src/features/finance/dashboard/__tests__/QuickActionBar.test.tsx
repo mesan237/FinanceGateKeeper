@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
-import { DANGER_LIGHT, DANGER_TEXT, SURFACE } from '@/constants/colors';
+import { DANGER_TEXT, PRIMARY_TEXT, SURFACE } from '@/constants/colors';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
@@ -49,14 +49,20 @@ describe('QuickActionBar', () => {
     expect(screen.getByText('Money in')).toBeTruthy();
   });
 
-  it('paints logging as neutral: both tiles share one surface, never danger red (UX-15)', () => {
+  it('keeps both tiles on one neutral surface (UX-15)', () => {
     renderBar();
 
     const tile = (id: string) => StyleSheet.flatten(screen.getByTestId(id).props.style);
     expect(tile('quick-log-expense').backgroundColor).toBe(SURFACE);
     expect(tile('quick-log-income').backgroundColor).toBe(SURFACE);
-    expect(tile('quick-log-expense').backgroundColor).not.toBe(DANGER_LIGHT);
-    expect(StyleSheet.flatten(screen.getByText('Expense').props.style).color).not.toBe(DANGER_TEXT);
+  });
+
+  it('marks money out in red and money in in green', () => {
+    renderBar();
+
+    const colour = (label: string) => StyleSheet.flatten(screen.getByText(label).props.style).color;
+    expect(colour('Expense')).toBe(DANGER_TEXT);
+    expect(colour('Income')).toBe(PRIMARY_TEXT);
   });
 
   it('fires onLogExpense (no route push) when Log Expense is pressed', () => {

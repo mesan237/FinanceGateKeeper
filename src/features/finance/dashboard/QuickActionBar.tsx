@@ -95,7 +95,8 @@ export function QuickActionBar({
           accessibilityLabel={t('quickLog.expenseA11y')}
           onPress={onLogExpense}
           tint={c.SURFACE}
-          accent={c.PRIMARY_TEXT}
+          // Money out reads red, money in green, on the same neutral tile.
+          accent={c.DANGER_TEXT}
         />
         <LogTile
           testID="quick-log-income"
@@ -138,7 +139,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     gap: SPACING.xs,
     padding: SPACING.md,
     borderRadius: RADIUS.md,
-    // Neutral for both directions: logging is the habit, never bad news (UX-15).
+    // One neutral surface for both directions (UX-15); the accent says which way.
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.BORDER_STRONG,
   },
