@@ -2422,8 +2422,9 @@ answers one question.
   Home's imprévus dot. "Everyday — the habits you can change" no longer reads as good.
 - Category colours come from the category id (`colorForCategory`), so a category keeps its colour
   every month; the palette has no green, amber or red.
-- The Expense and Income log tiles are both neutral (surface, hairline border, brand-tinted icon):
-  logging is the habit, never bad news.
+- The Expense and Income log tiles share one neutral surface with a hairline border. *Revised after
+  the first device test (2026-10-26):* the Expense icon and text are red (`DANGER_TEXT`), Income
+  stays green, so the direction reads at a glance.
 - The over-plan hero figures on Home and Budget stay in plain text; the label and the chip carry
   the status.
 - Reports' plan bar fills the spent part in the status colour on a neutral track (it was black on green).
