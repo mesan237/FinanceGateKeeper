@@ -30,7 +30,7 @@ function parseAmount(text: string): number | null {
  * The wallets step of first-run set-up (UX-08): one field per active wallet
  * for what it holds today. Each amount filled in becomes a dated balance check
  * (VS-42), so balances are right from the first day; a blank wallet is left
- * alone. Rendered by onboarding through the routing layer, so onboarding never
+ * alone. "Not now" sits beside "Save" and moves on without writing (VS-87). Rendered by onboarding through the routing layer, so onboarding never
  * imports this slice.
  */
 export function OpeningBalancesStep({ onDone }: OpeningBalancesStepProps) {
@@ -90,12 +90,15 @@ export function OpeningBalancesStep({ onDone }: OpeningBalancesStepProps) {
         </Typography>
       ) : null}
       <Typography variant="muted">{t('opening.hint')}</Typography>
-      <Button
-        testID="opening-balances-save"
-        label={t('opening.save')}
-        onPress={() => void save()}
-        loading={saving}
-      />
+      <View style={styles.actions}>
+        <Button
+          testID="opening-balances-save"
+          label={t('opening.save')}
+          onPress={() => void save()}
+          loading={saving}
+        />
+        <Button testID="opening-balances-later" label={t('opening.later')} variant="ghost" onPress={onDone} />
+      </View>
     </View>
   );
 }
@@ -105,4 +108,5 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
   name: { flex: 1 },
   input: { width: 140, textAlign: 'right' },
+  actions: { gap: SPACING.sm },
 });

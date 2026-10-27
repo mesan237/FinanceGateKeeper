@@ -19,6 +19,7 @@ jest.mock('@/services/database', () => {
 });
 
 import { listSnapshots } from '@/services/snapshots.service';
+import { supabase } from '@/services/supabase';
 import {
   getLastSyncedAt,
   pullChanges,
@@ -336,6 +337,17 @@ describe('syncNow', () => {
       `SELECT COUNT(*) AS c FROM income WHERE sync_status = 'pending'`,
     );
     expect(pending.c).toBe(1);
+  });
+
+  it('sends nothing to the cloud without a session (the set-up\'s privacy line, VS-87)', async () => {
+    cloud.__setSession(null);
+    insertIncome(5000);
+    const from = jest.spyOn(supabase, 'from');
+
+    await syncNow();
+
+    expect(from).not.toHaveBeenCalled();
+    from.mockRestore();
   });
 
   it('returns ok:false (not a throw) on a network error and leaves rows pending', async () => {
