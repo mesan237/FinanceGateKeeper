@@ -4,8 +4,8 @@ import type { Translation } from '@/i18n/translation.types';
 /** French copy for the auth slice. */
 export const auth: Translation<typeof en> = {
   settings: {
-    title: 'Paramètres',
-    loading: 'Chargement des paramètres…',
+    title: 'Préférences',
+    loading: 'Chargement des préférences…',
     profileTitle: 'Profil',
     profileSubtitle: 'Votre nom, votre avatar et votre compte.',
     appearanceTitle: 'Apparence',
@@ -14,8 +14,7 @@ export const auth: Translation<typeof en> = {
     themeLight: 'Clair',
     themeDark: 'Sombre',
     languageTitle: 'Langue',
-    languageSubtitle: "Suivez l'appareil, ou choisissez la langue de l'application.",
-    languageSystem: 'Système',
+    languageSubtitle: "La langue dans laquelle l'application s'affiche.",
     reminderTitle: 'Rappel quotidien',
     reminderSubtitle: 'Nous vous rappellerons de noter les dépenses du jour, seulement les jours où rien n’est encore noté.',
     reminderTimeLabel: 'Heure du rappel',

@@ -16,7 +16,7 @@ import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { applyLanguagePreference } from '@/i18n';
+import { applyLanguagePreference, resolveLanguage } from '@/i18n';
 import { AttentionProvider } from '@/components/AttentionProvider';
 import { JourneyStageProvider } from '@/components/JourneyStageProvider';
 import { ToastProvider } from '@/components/Toast';
@@ -49,7 +49,8 @@ export default function RootLayout() {
   // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
   // feature stays presentational (see ISSUE-023), along with the set-up's two
   // working steps: the reminder (auth) and the wallets (accounts) (UX-08).
-  const { settings, loading: settingsLoading, completeOnboarding, enableReminder } = useAppSettings();
+  const { settings, loading: settingsLoading, completeOnboarding, enableReminder, setLanguage } =
+    useAppSettings();
 
   // i18n starts in the device language; once the saved Settings override has
   // loaded, apply it. Later changes are applied by the Settings screen itself.
@@ -72,11 +73,13 @@ export default function RootLayout() {
     WorkSans_600SemiBold,
   });
 
+  // The splash also waits for the settings, so the first screen is already in
+  // the saved language rather than flashing the French default (VS-86).
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && !settingsLoading) {
       void SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, settingsLoading]);
 
   if (!fontsLoaded) {
     return null;
@@ -97,6 +100,8 @@ export default function RootLayout() {
               onDone={() => void completeOnboarding()}
               onReminder={enableReminder}
               renderWallets={(next) => <OpeningBalancesStep onDone={next} />}
+              language={resolveLanguage(settings?.language ?? null)}
+              onLanguage={setLanguage}
             >
               <JourneyStageProvider>
                 <AttentionProvider>

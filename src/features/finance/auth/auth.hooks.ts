@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { applyLanguagePreference } from '@/i18n';
+import { applyLanguagePreference, deviceLanguageTag } from '@/i18n';
 import { requestPermissions } from '@/notifications/notifications.service';
 
 import * as authService from './auth.service';
@@ -22,8 +22,24 @@ export function useAppSettings() {
     setLoading(false);
   }, []);
 
+  // An existing install keeps the language it showed before French became the
+  // default (VS-86); this runs before the first read, so it never sees `null`.
+  // A failure must not keep the settings from loading, and a failed first read
+  // still ends `loading`, since the root layout holds the splash on it.
   useEffect(() => {
-    void refresh();
+    void (async () => {
+      try {
+        await authService.keepLanguageOfExistingInstall(deviceLanguageTag());
+      } catch (e) {
+        console.error('Keeping the install language failed:', e);
+      }
+      try {
+        await refresh();
+      } catch (e) {
+        console.error('Loading settings failed:', e);
+        setLoading(false);
+      }
+    })();
   }, [refresh]);
 
   const setReminderTime = useCallback(

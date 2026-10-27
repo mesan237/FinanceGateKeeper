@@ -1,4 +1,4 @@
-import { isAppLanguage } from '@/i18n/resolveLanguage';
+import { deviceLanguage, isAppLanguage } from '@/i18n/resolveLanguage';
 import { execute, query } from '@/services/database';
 import { generateSalt, hashPin } from '@/utils/pinHash';
 
@@ -88,12 +88,26 @@ export async function setOnboardingComplete(value: boolean): Promise<void> {
 }
 
 /**
- * Saves the Settings language override (VS-35). `null` clears it, so the app
- * follows the device language again. Device-local: `users` is never synced.
+ * Saves the language choice (VS-35). `null` clears it, which reads as French
+ * (VS-86). Device-local: `users` is never synced.
  */
 export async function setLanguage(language: LanguagePreference): Promise<void> {
   const row = await getOrCreateUserRow();
   await execute('UPDATE users SET language = ? WHERE id = ?', [language, row.id]);
+}
+
+/**
+ * Keeps an existing install in the language it already showed (VS-86). Before
+ * French became the default, an unsaved choice followed the device; an install
+ * past its set-up with no saved choice gets that language saved once, so the
+ * update never switches it. A fresh install is left unsaved and opens in French.
+ *
+ * @param deviceTag The device's BCP-47 language tag (e.g. `en-US`), if known.
+ */
+export async function keepLanguageOfExistingInstall(deviceTag: string | null): Promise<void> {
+  const row = await getOrCreateUserRow();
+  if (row.onboarding_complete !== 1 || row.language !== null) return;
+  await setLanguage(deviceLanguage(deviceTag));
 }
 
 /** Whether a local PIN has been configured (the unlock gate is active). */

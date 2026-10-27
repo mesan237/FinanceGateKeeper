@@ -1,8 +1,8 @@
 /** Copy for the auth slice: settings, PIN lock, profile and cloud account. */
 export const auth = {
   settings: {
-    title: 'Settings',
-    loading: 'Loading settings…',
+    title: 'Preferences',
+    loading: 'Loading preferences…',
     profileTitle: 'Profile',
     profileSubtitle: 'Your name, avatar, and account.',
     appearanceTitle: 'Appearance',
@@ -11,8 +11,7 @@ export const auth = {
     themeLight: 'Light',
     themeDark: 'Dark',
     languageTitle: 'Language',
-    languageSubtitle: 'Follow your device, or pick a language for the app.',
-    languageSystem: 'System',
+    languageSubtitle: 'The language the app is shown in.',
     reminderTitle: 'Daily reminder',
     reminderSubtitle: "We'll nudge you to log the day's spending — only on days with nothing logged yet.",
     reminderTimeLabel: 'Reminder time',

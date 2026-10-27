@@ -83,3 +83,22 @@ describe('useAppSettings — enableReminder (UX-08)', () => {
     expect(result.current.settings?.notificationsEnabled).toBe(false);
   });
 });
+
+describe('useAppSettings — language of an existing install (VS-86)', () => {
+  it('reads an existing install in the language it showed before, never unsaved', async () => {
+    sqlite
+      .prepare('INSERT INTO users (created_at, onboarding_complete) VALUES (?, 1)')
+      .run('2026-01-01T00:00:00.000Z');
+    const { result } = renderHook(() => useAppSettings());
+
+    // The Jest device reports en-US, which is what this install showed.
+    await waitFor(() => expect(result.current.settings).not.toBeNull());
+    expect(result.current.settings?.language).toBe('en');
+  });
+
+  it('leaves a fresh install unsaved, so it opens in French', async () => {
+    const { result } = renderHook(() => useAppSettings());
+    await waitFor(() => expect(result.current.settings).not.toBeNull());
+    expect(result.current.settings?.language).toBeNull();
+  });
+});
