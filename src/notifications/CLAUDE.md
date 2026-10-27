@@ -24,9 +24,12 @@ notifications/
 - Features call triggers, then pass the result to `notifications.service.scheduleNotification()`.
 - Over-budget alert is in-app only (modal), not a push notification. The trigger file just formats the message.
 - Daily reminder defaults to 21:00 local time. Configurable in settings. Since VS-57 it is
-  one dated notification per day for the next 14 days, not a repeating alarm, and a day
-  that already has an entry (expense, income, transfer or no-spend confirmation, read by
-  the feature via `services/transactions.getLoggedDays`) gets none. `DailyReminderScheduler`
+  one dated notification per day for the next 14 days, not a repeating alarm, and a
+  logged day (an expense or a no-spend confirmation — the glossary's *Logged day*, as
+  Observe counts it since VS-88; read via `services/transactions.getLoggedDays`) gets
+  none. Its copy says no spending is logged yet, never a deadline. Permission refused
+  is said out loud, in the set-up and in Preferences (`hasPermission` checks without
+  prompting). `DailyReminderScheduler`
   re-plans on open, on going to the background (so today's entry cancels today's
   reminder) and on return.
 - Debt reminders fire 3 days before due date, then daily after due date until settled.

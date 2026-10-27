@@ -2708,6 +2708,37 @@ and the wallet step says where the data stays before asking for it.
 
 ---
 
+### VS-88: Reminders That Help, and Say When They Can't 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice C)
+**Blocked by:** VS-86
+
+**Scope:**
+
+- The reminder skips **logged days** only: an expense or a no-spend day, as Observe counts them
+  (`services/transactions.getLoggedDays`). This narrows VS-57's "any entry": a day with only income
+  or a transfer now gets the reminder, since it says nothing about spending.
+- Copy without a deadline: the set-up asks *Want a gentle reminder?*, says it comes only when no
+  spending is logged, tips "I spent nothing today", and points to Preferences. The notification
+  reads *No spending logged today — Spent something, or nothing at all?*
+- Refused permission is said: the set-up shows *Notifications are blocked…* and waits for
+  *Continue*; in Preferences the switch stays off with the same line, which also shows when
+  reminders are on but the phone blocks them (`notifications.hasPermission`, no prompt; re-checked
+  on return to the app).
+- Docs: GLOSSARY *Logged day*; 04 §8.2 (`ZeroDayGate` only prompts with reminders on).
+
+**TDD Anchor:**
+
+- Test: `getLoggedDays` counts expenses and no-spend days, not income or transfers.
+- Test: `hasPermission` never prompts; reminder copy in both languages, no deadline wording.
+- Test: set-up refusal shows the line and waits; Preferences keeps the switch off on refusal and
+  warns when blocked.
+
+**Done when:** nobody believes a reminder is coming when the phone will not deliver it, and the
+reminder never sounds like a deadline.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

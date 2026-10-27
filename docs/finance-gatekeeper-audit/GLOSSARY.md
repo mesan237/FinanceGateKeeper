@@ -20,7 +20,7 @@ are implemented.
 | **Month spend** | Expenses dated in the month. Transfers are never spend | Today | `budget.service.getExpensesMonthlyTotal` |
 | **Fixed spend** (budget pace) | The recurring (auto-logged) part of month spend. Projected once, never extrapolated | Today (VS-40) | `budget.envelopes.getFixedSpendByCategory` |
 | **Fixed / variable cost** | A category's tag: a commitment (rent, school fees) or spending a habit can change (food, taxi). Untagged parent = variable; untagged subcategory inherits | Today (VS-41) | `expenses.costType` |
-| **Logged day** | A day with at least one expense or a confirmed zero-spend day | Today (VS-41) | `expenses.coverage.getLoggedDates` |
+| **Logged day** | A day with at least one expense or a confirmed zero-spend day. Income or a transfer alone does not make a day logged. The daily reminder skips logged days (VS-88) | Today (VS-41) | `expenses.coverage.getLoggedDates`, `services/transactions.getLoggedDays` |
 | **Missed day** | A day in the last 7 before today, on or after the first day ever logged, with neither an expense nor a no-spend day. It can be marked as a no-spend day; a day with spending never can | Today (UX-06) | `expenses.coverage.missedDays`, `journey.logging.getObserveLogging` |
 | **Complete month** | A month with ≥ 80% logged days. Only complete months feed averages | Today (VS-41) | `expenses.coverage.monthCoverage` |
 | **Typical month** | The average of the complete months among the last three before this one, split fixed / variable / unexpected. An imprévu is unexpected; a recurring bill is fixed; otherwise the category tag decides | Today (VS-41) | `reports.profile.getSpendingProfile` |
