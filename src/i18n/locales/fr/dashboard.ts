@@ -38,7 +38,8 @@ export const dashboard: Translation<typeof en> = {
     more_other: '+ {{count}} autres',
     sheetTitle: 'À payer d’ici fin du mois',
     prompt: {
-      observe: 'Notez chaque jour : vos premiers mois sont en cours d’enregistrement',
+      observeToday: 'Aujourd’hui : notez une dépense, ou indiquez que vous n’avez rien dépensé.',
+      observeDone: 'C’est noté pour aujourd’hui. Vos premiers mois se construisent à votre rythme.',
       see: 'Voyez ce que vos premiers mois ont vraiment coûté',
       plan: 'Préparez le budget du mois prochain',
       optimize: 'Voyez où vous pouvez dépenser moins',
