@@ -26,6 +26,7 @@ import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useDailySnapshot } from '@/hooks/useDailySnapshot';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
 import { AuthScreen } from '@/features/finance/auth/AuthScreen';
+import { pinGateView } from '@/features/finance/auth/auth.gate';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
 import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
@@ -88,7 +89,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <AuthGate>
+          <AuthGate setUpComplete={settingsLoading || !settings ? undefined : settings.onboardingComplete}>
             <DailySnapshot />
             <OnboardingGate
               ready={!settingsLoading && !!settings}
@@ -133,16 +134,24 @@ export default function RootLayout() {
 
 /**
  * Hard PIN gate. Renders nothing until the lock state has resolved (so the tabs
- * never flash before the lock decision), shows the themed `AuthScreen` while the
- * app is unset (first-run setup) or locked, and only mounts the real app — and
- * its schedulers — once unlocked. Lives inside `AuthProvider` so it can read the
- * lock state and inside `ThemeProvider` so the lock screen is themed.
+ * never flash before the lock decision) and shows the themed `AuthScreen` while
+ * locked. A first run goes through the set-up before the PIN is created, so the
+ * user knows what the app is before being asked to lock it (VS-85); the app and
+ * its schedulers mount only once unlocked. Lives inside `AuthProvider` so it
+ * can read the lock state and inside `ThemeProvider` so the lock screen is themed.
  */
-function AuthGate({ children }: { children: React.ReactNode }) {
+function AuthGate({
+  setUpComplete,
+  children,
+}: {
+  setUpComplete: boolean | undefined;
+  children: React.ReactNode;
+}) {
   const { ready, pinState } = useAuthLock();
+  const view = pinGateView({ ready, pinState, setUpComplete });
 
-  if (!ready) return null;
-  if (pinState !== 'unlocked') {
+  if (view === 'wait') return null;
+  if (view === 'lock') {
     return (
       <ThemedShell>
         <AuthScreen />

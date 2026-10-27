@@ -40,9 +40,12 @@ beforeEach(() => {
 });
 
 describe('AuthScreen — setup', () => {
-  it('renders the keypad and create-PIN prompt', () => {
+  it('renders the keypad and a create-PIN prompt that says why', () => {
     render(<AuthScreen />);
-    expect(screen.getByText('Create a PIN')).toBeTruthy();
+    expect(screen.getByText('Keep your money private')).toBeTruthy();
+    expect(
+      screen.getByText('Your balances and spending stay on this phone. Pick a 4-digit PIN so only you can open the app.'),
+    ).toBeTruthy();
     expect(screen.getByTestId('pin-key-1')).toBeTruthy();
   });
 
