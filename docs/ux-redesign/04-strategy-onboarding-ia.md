@@ -91,7 +91,10 @@ flowchart LR
 - Every step skippable; every answer editable later in the place it lives.
 - Missing data is visible as *not confirmed* / *your estimate*, never silently treated as zero.
 
-### 8.2 First-run set-up (target: under 2 minutes, 3 screens after the PIN)
+### 8.2 First-run set-up (target: under 2 minutes, 3 screens, then the PIN)
+
+VS-85 moved the PIN after these steps: a fresh install learns what the app does before it is asked
+to lock it. An existing PIN still locks first.
 
 | Step | User's goal | Question asked | Why it is needed | Mandatory? | Effect on first experience | If skipped | Change later |
 |---|---|---|---|---|---|---|---|

@@ -12,7 +12,9 @@ device-only lock; the cloud identity (email/password) is separate, in
   avatar_color, avatar_emoji, created_at. Excluded from cloud sync (device-local).
 
 ## Key Business Rules
-- First launch: no PIN exists → forced setup flow (enter + confirm) via `AuthGate`.
+- First launch: the set-up (onboarding) comes first, then the forced PIN creation (enter +
+  confirm) via `AuthGate` — the user learns what the app is before locking it (VS-85).
+  An existing PIN always locks first. The decision is `auth.gate.pinGateView`.
 - Subsequent launches: require PIN to unlock. 3 wrong attempts → 30-second cooldown
   (held in memory in `AuthProvider`; resets on relaunch).
 - PIN is salted + SHA-256 hashed (`utils/pinHash`, expo-crypto) before storage —
