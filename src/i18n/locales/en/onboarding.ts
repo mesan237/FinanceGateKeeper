@@ -28,11 +28,16 @@ export const onboarding = {
     privacy:
       'Your data stays on this phone. Nothing is sent online unless you turn on online backup later. A PIN will lock the app at the end of set-up.',
   },
+  /** Optional help, never a deadline (VS-88): it comes only when no spending is logged. */
   reminder: {
-    title: 'When can you log each day?',
-    body: 'Pick a quiet moment. You get a reminder only on days with nothing logged.',
-    time: 'Daily reminder time',
-    enable: 'Remind me',
-    later: 'No reminders',
+    title: 'Want a gentle reminder?',
+    body: "Log your spending whenever suits you during the day. If no spending is logged by the time you pick, the app sends a reminder. On days it's done, it stays quiet.",
+    noSpendTip: 'Spent nothing? Tap "I spent nothing today": the day still counts.',
+    time: 'Reminder time',
+    enable: 'Turn on reminder',
+    later: 'No reminder',
+    hint: 'You can change the time or turn it on later in Preferences.',
+    blocked: "Notifications are blocked for the app, so no reminder will be sent. You can allow them in your phone's settings.",
+    continue: 'Continue',
   },
 };

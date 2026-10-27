@@ -10,6 +10,10 @@ jest.mock('@/features/finance/auth/auth.service', () => ({
   setLanguage: jest.fn().mockResolvedValue(undefined),
   keepLanguageOfExistingInstall: jest.fn().mockResolvedValue(undefined),
 }));
+jest.mock('@/notifications/notifications.service', () => ({
+  requestPermissions: jest.fn().mockResolvedValue(true),
+  hasPermission: jest.fn().mockResolvedValue(true),
+}));
 jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),
 }));
@@ -27,14 +31,19 @@ import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
   getAppSettings,
   setLanguage,
+  setNotificationsEnabled,
   setReminderTime,
 } from '@/features/finance/auth/auth.service';
 import { applyReminderSchedule } from '@/features/finance/auth/reminder';
+import { hasPermission, requestPermissions } from '@/notifications/notifications.service';
 
 const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
 const mockedSetTime = setReminderTime as jest.MockedFunction<typeof setReminderTime>;
 const mockedSetLanguage = setLanguage as jest.MockedFunction<typeof setLanguage>;
 const mockedApply = applyReminderSchedule as jest.MockedFunction<typeof applyReminderSchedule>;
+const mockedRequest = requestPermissions as jest.MockedFunction<typeof requestPermissions>;
+const mockedHas = hasPermission as jest.MockedFunction<typeof hasPermission>;
+const mockedSetEnabled = setNotificationsEnabled as jest.MockedFunction<typeof setNotificationsEnabled>;
 
 function renderSettings() {
   return render(<SettingsScreen />);
@@ -94,6 +103,41 @@ describe('SettingsScreen', () => {
     await waitFor(() =>
       expect(SecureStore.setItemAsync).toHaveBeenCalledWith('theme-mode', 'dark'),
     );
+  });
+});
+
+describe('SettingsScreen — reminders that are really on (VS-88)', () => {
+  it('turns reminders on once the phone allows notifications', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, notificationsEnabled: false });
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-notifications-switch'));
+
+    await waitFor(() => expect(mockedSetEnabled).toHaveBeenCalledWith(true));
+    expect(screen.queryByTestId('settings-notifications-refused')).toBeNull();
+  });
+
+  it('keeps the switch off and says why when notifications are refused', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, notificationsEnabled: false });
+    mockedRequest.mockResolvedValueOnce(false);
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-notifications-switch'));
+
+    expect(await screen.findByTestId('settings-notifications-refused')).toBeTruthy();
+    expect(screen.getByText(/Notifications are blocked for the app/)).toBeTruthy();
+    expect(mockedSetEnabled).not.toHaveBeenCalledWith(true);
+  });
+
+  it('warns when reminders are on but the phone blocks notifications', async () => {
+    mockedHas.mockResolvedValueOnce(false);
+    renderSettings();
+    expect(await screen.findByTestId('settings-notifications-refused')).toBeTruthy();
+  });
+
+  it('shows no warning when notifications are allowed', async () => {
+    renderSettings();
+    await screen.findByTestId('settings-notifications-switch');
+    await waitFor(() => expect(mockedHas).toHaveBeenCalled());
+    expect(screen.queryByTestId('settings-notifications-refused')).toBeNull();
   });
 });
 

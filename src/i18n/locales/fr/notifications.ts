@@ -5,11 +5,11 @@ import type { Translation } from '@/i18n/translation.types';
 export const notifications: Translation<typeof en> = {
   channel: {
     name: 'Rappels quotidiens',
-    description: 'Rappels de fin de journée pour noter vos dépenses.',
+    description: 'Un rappel les jours où aucune dépense n’est encore notée.',
   },
   dailyReminder: {
-    title: 'Notez vos dépenses',
-    body: "Prenez quelques secondes pour noter les dépenses d'aujourd'hui avant la fin de la journée.",
+    title: 'Aucune dépense notée aujourd’hui',
+    body: 'Une dépense, ou rien dépensé ? Notez-le en quelques secondes.',
   },
   zeroDayCheck: {
     title: "Vous n'avez rien dépensé aujourd'hui ?",

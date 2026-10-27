@@ -2,11 +2,11 @@
 export const notifications = {
   channel: {
     name: 'Daily reminders',
-    description: 'End-of-day reminders to log your spending.',
+    description: 'A reminder on days with no spending logged yet.',
   },
   dailyReminder: {
-    title: 'Log your spending',
-    body: "Take a few seconds to record today's expenses before the day ends.",
+    title: 'No spending logged today',
+    body: 'Spent something, or nothing at all? Log it in a few seconds.',
   },
   zeroDayCheck: {
     title: 'Did you spend nothing today?',

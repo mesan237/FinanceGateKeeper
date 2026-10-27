@@ -141,18 +141,17 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
 }
 
 /**
- * The days in `[from, to]` (`YYYY-MM-DD`, inclusive) on which the user logged
- * something: an expense, income, a live transfer, or a confirmed no-spend day.
- * The daily reminder skips these days (VS-57) — a reminder to log is noise once
- * the day has an entry.
+ * The logged days in `[from, to]` (`YYYY-MM-DD`, inclusive): days with an
+ * expense or a confirmed no-spend day — the glossary's *Logged day*, the same
+ * one Observe counts toward a complete month (`expenses.coverage`). The daily
+ * reminder skips these days (VS-57). Income and transfers don't make a day
+ * logged (VS-88): a day with only income still says nothing about spending.
  */
 export async function getLoggedDays(from: string, to: string): Promise<Set<string>> {
   const rows = await query<{ date: string }>(
     `SELECT date FROM expenses WHERE date BETWEEN ? AND ?
-     UNION SELECT date FROM income WHERE date BETWEEN ? AND ?
-     UNION SELECT date FROM transfers WHERE date BETWEEN ? AND ? AND deleted_at IS NULL
      UNION SELECT date FROM zero_days WHERE date BETWEEN ? AND ?`,
-    [from, to, from, to, from, to, from, to],
+    [from, to, from, to],
   );
   return new Set(rows.map((r) => r.date));
 }
