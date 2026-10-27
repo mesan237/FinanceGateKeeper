@@ -96,6 +96,11 @@ flowchart LR
 VS-85 moved the PIN after these steps: a fresh install learns what the app does before it is asked
 to lock it. An existing PIN still locks first.
 
+VS-87 reworded S0 after the onboarding review: *a budget built on what you really spend*, shown as
+three stages (now Observe · after 3 complete months Plan · then Optimize) rather than the five path
+steps, with the complete-month rule and the early-budget option. S1 now says where the data stays
+before asking for any amount.
+
 | Step | User's goal | Question asked | Why it is needed | Mandatory? | Effect on first experience | If skipped | Change later |
 |---|---|---|---|---|---|---|---|
 | **S0 · What this app does** | Know what I'm signing up for | none — one screen: "Log every franc for a few months. The app shows what a month really costs you, then helps you plan it." + the five path steps as a strip | Sets the Observe expectation, replaces panels 1–4 | Viewed once (one tap) | My path makes sense when first seen | — | — |
