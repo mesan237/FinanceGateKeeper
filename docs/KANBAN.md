@@ -2644,6 +2644,38 @@ and the Reports cards read clearly.
 
 ---
 
+### VS-86: French by Default, FR | EN During Set-Up 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice A)
+**Blocked by:** VS-85
+
+**Scope:**
+
+- With no saved choice the app is in French, whatever the device says (`resolveLanguage(null)`).
+  The old device rule is kept as `deviceLanguage`, used once by
+  `auth.keepLanguageOfExistingInstall`: an install past its set-up with no saved choice gets the
+  language it showed saved, so the update never switches it. Fresh installs stay unsaved.
+- `components/LanguageToggle`: a compact FR | EN in the set-up header, beside *Skip*; "Step n of 3"
+  moves above the title. Switching keeps the step, typed balances and the reminder time.
+- Preferences offers Français / English (*System* removed); the screen is titled *Preferences* /
+  *Préférences*, as in the drawer.
+- The splash waits for the settings too, so the first screen is already in the saved language.
+- Jest switches to English in `jest.setup.ts`; it no longer follows the mocked device.
+
+**TDD Anchor:**
+
+- Test: `resolveLanguage` / `deviceLanguage`; `keepLanguageOfExistingInstall` (existing install
+  keeps en or fr, fresh stays null, a saved choice is never overwritten); `useAppSettings` reads an
+  existing install in its old language.
+- Test: `LanguageToggle` (active state, a11y names, no-op on the active one, group label).
+- Test: set-up offers FR | EN on every step; switching keeps step, balances and time; Preferences
+  defaults to French.
+
+**Done when:** a fresh install on an English phone opens in French, and FR | EN works on every
+set-up step without losing anything.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
