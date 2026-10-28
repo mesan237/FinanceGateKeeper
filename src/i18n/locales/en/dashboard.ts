@@ -35,7 +35,9 @@ export const dashboard = {
     more_other: '+ {{count}} more',
     sheetTitle: 'Due before month end',
     prompt: {
-      observe: 'Keep logging every day: your first months are being recorded',
+      /** Observe asks for today's one entry, or reassures once it is in (VS-89) — never "every day". */
+      observeToday: 'Today: log an expense, or say you spent nothing.',
+      observeDone: "Today's logged. Your first months are building at your own pace.",
       see: 'See what your first months really cost',
       plan: 'Plan next month',
       optimize: 'See where you have room to spend less',

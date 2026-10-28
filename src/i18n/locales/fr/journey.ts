@@ -52,6 +52,8 @@ export const journey: Translation<typeof en> = {
     missedHint: 'Rien dépensé ? Marquez le jour. Une dépense ? Ajoutez-la depuis Transactions, à sa date.',
     noSpend: 'Aucune dépense',
     noSpendA11y: 'Marquer le {{date}} comme journée sans dépense',
+    cardMissed_one: '{{count}} jour sans rien de noté — à rattraper dans Mon parcours',
+    cardMissed_other: '{{count}} jours sans rien de noté — à rattraper dans Mon parcours',
   },
   see: {
     summary: 'Vos premiers mois ont coûté {{total}} par mois : {{fixed}} de fixe, {{variable}} de variable.',

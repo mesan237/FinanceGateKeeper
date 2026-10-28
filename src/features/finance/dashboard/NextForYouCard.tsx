@@ -36,6 +36,10 @@ function promptRoute(stage: JourneyStepKey, monthISO: string) {
 export interface NextForYouCardProps {
   /** `YYYY-MM-DD`; today by default. Explicit for tests. */
   todayISO?: string;
+  /** Whether today already has an expense or a no-spend day; unknown while loading. */
+  todayLogged?: boolean;
+  /** Opens the entry sheet, where the Observe prompt leads while today is not logged. */
+  onLog?: () => void;
 }
 
 /**
@@ -47,8 +51,12 @@ export interface NextForYouCardProps {
  * Facts and obligations show at every step; with nothing due, the journey step
  * leads instead (keep logging, read your first months, plan next month, cut,
  * fund a goal). Re-reads on focus. It replaced the planned-purchases-only card.
+ *
+ * At Observe the prompt follows today (VS-89): with nothing logged it asks for
+ * one entry and opens the entry sheet; once today is logged it reassures. It
+ * never asks for "every day" — a month counts at 8 days in 10.
  */
-export function NextForYouCard({ todayISO = toISODate(new Date()) }: NextForYouCardProps) {
+export function NextForYouCard({ todayISO = toISODate(new Date()), todayLogged, onLog }: NextForYouCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const router = useRouter();
@@ -99,12 +107,21 @@ export function NextForYouCard({ todayISO = toISODate(new Date()) }: NextForYouC
 
   if (items.length === 0) {
     if (stage === null) return null;
+    const askToLog = stage === 'observe' && todayLogged !== true && onLog !== undefined;
+    const prompt =
+      stage === 'observe'
+        ? t(todayLogged === true ? 'next.prompt.observeDone' : 'next.prompt.observeToday')
+        : t(`next.prompt.${stage}`);
     return (
-      <Pressable testID="next-for-you" accessibilityRole="button" onPress={() => router.push(promptRoute(stage, monthISO))}>
+      <Pressable
+        testID="next-for-you"
+        accessibilityRole="button"
+        onPress={() => (askToLog ? onLog() : router.push(promptRoute(stage, monthISO)))}
+      >
         <Card style={styles.card}>
           <Typography variant="label">{t('next.title')}</Typography>
           <View style={styles.row} testID="next-prompt">
-            <Typography style={[styles.grow, styles.prompt]}>{t(`next.prompt.${stage}`)}</Typography>
+            <Typography style={[styles.grow, styles.prompt]}>{prompt}</Typography>
             <Icon name="forward" size={ICON_SIZE.sm} color={c.PRIMARY_TEXT} />
           </View>
         </Card>

@@ -17,6 +17,8 @@ jest.mock('@/features/finance/journey/journey.service', () => ({
 }));
 
 import { JourneyCard } from '@/features/finance/journey/JourneyCard';
+import i18n from '@/i18n';
+import { act } from '@testing-library/react-native';
 import * as service from '@/features/finance/journey/journey.service';
 
 const mocked = service as jest.Mocked<typeof service>;
@@ -90,5 +92,52 @@ describe('JourneyCard (VS-63)', () => {
 
     expect(await screen.findByTestId('journey-card')).toBeTruthy();
     await waitFor(() => expect(screen.queryByTestId('journey-card-error')).toBeNull());
+  });
+});
+
+describe('JourneyCard — missed days (VS-89)', () => {
+  const withMissed = async (missedDays: string[], current: 'observe' | 'see' = 'observe') => {
+    const base = await mocked.getJourney();
+    mocked.getJourney.mockResolvedValue({ ...base, current, logging: { ...base.logging, missedDays } });
+  };
+
+  it('says how many recent days have nothing logged, and where to catch up', async () => {
+    await withMissed(['2026-10-14', '2026-10-13', '2026-10-11']);
+    render(<JourneyCard />);
+    expect(await screen.findByTestId('journey-card-missed')).toHaveTextContent(
+      '3 days with nothing logged — catch up on My path',
+    );
+  });
+
+  it('uses the singular for one day', async () => {
+    await withMissed(['2026-10-14']);
+    render(<JourneyCard />);
+    expect(await screen.findByTestId('journey-card-missed')).toHaveTextContent(
+      '1 day with nothing logged — catch up on My path',
+    );
+  });
+
+  it('says nothing when no day is missed', async () => {
+    render(<JourneyCard />);
+    await screen.findByTestId('journey-card');
+    expect(screen.queryByTestId('journey-card-missed')).toBeNull();
+  });
+
+  it('says nothing after Observe', async () => {
+    await withMissed(['2026-10-14'], 'see');
+    render(<JourneyCard />);
+    await screen.findByTestId('journey-card');
+    expect(screen.queryByTestId('journey-card-missed')).toBeNull();
+  });
+
+  it('reads in French', async () => {
+    await withMissed(['2026-10-14', '2026-10-13']);
+    await act(async () => {
+      await i18n.changeLanguage('fr');
+    });
+    render(<JourneyCard />);
+    expect(await screen.findByTestId('journey-card-missed')).toHaveTextContent(
+      '2 jours sans rien de noté — à rattraper dans Mon parcours',
+    );
   });
 });

@@ -49,6 +49,8 @@ export const journey = {
     missedHint: 'Spent nothing? Mark the day. Spent something? Add it from Transactions with its date.',
     noSpend: 'No spending',
     noSpendA11y: 'Mark {{date}} as a no-spend day',
+    cardMissed_one: '{{count}} day with nothing logged — catch up on My path',
+    cardMissed_other: '{{count}} days with nothing logged — catch up on My path',
   },
   see: {
     summary: 'Your first months cost {{total}} a month: {{fixed}} fixed, {{variable}} variable.',

@@ -2739,6 +2739,30 @@ reminder never sounds like a deadline.
 
 ---
 
+### VS-89: The First Day on Home Says What to Do 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice D)
+**Blocked by:** —
+
+**Scope:**
+
+- *Next for you* at Observe, with nothing due, follows today: nothing logged → *Today: log an
+  expense, or say you spent nothing.* (opens the entry sheet); today logged → *Today's logged.
+  Your first months are building at your own pace.* (opens My path). "Keep logging every day" is
+  gone: a month counts at 8 days in 10. Due payments still come first; later steps unchanged.
+  `DashboardScreen` passes today's status and the sheet opener.
+- The path card at Observe says how many recent days have nothing logged (the 7-day missed-day
+  window) and that My path catches them up.
+
+**TDD Anchor:**
+
+- Test: Observe prompt by today's status, the sheet vs My path, French, a due payment first.
+- Test: path card missed-days line (singular/plural, none, not after Observe, French).
+
+**Done when:** a new user sees one clear action on Home, with no pressure to log perfectly.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

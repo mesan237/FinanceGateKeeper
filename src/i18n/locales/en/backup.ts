@@ -18,6 +18,9 @@ export const backup = {
     backUpNow: 'Back up now',
     backingUp: 'Backing up…',
     restore: 'Restore from cloud',
+    deleteAccount: 'Delete my account',
+    deleteAccountNote:
+      'Opens the steps to delete your cloud account and its backup. Data on this phone stays.',
   },
   local: {
     title: 'On this phone',

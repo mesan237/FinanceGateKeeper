@@ -36,17 +36,10 @@ function AtStep({ stage, children }: { stage: JourneyStepKey; children: React.Re
   return <>{children}</>;
 }
 
-function renderCard(stage?: JourneyStepKey) {
+function renderCard(stage?: JourneyStepKey, today: { logged?: boolean; onLog?: () => void } = {}) {
+  const card = <NextForYouCard todayISO="2026-10-26" todayLogged={today.logged} onLog={today.onLog} />;
   render(
-    <JourneyStageProvider>
-      {stage ? (
-        <AtStep stage={stage}>
-          <NextForYouCard todayISO="2026-10-26" />
-        </AtStep>
-      ) : (
-        <NextForYouCard todayISO="2026-10-26" />
-      )}
-    </JourneyStageProvider>,
+    <JourneyStageProvider>{stage ? <AtStep stage={stage}>{card}</AtStep> : card}</JourneyStageProvider>,
   );
 }
 
@@ -97,7 +90,6 @@ describe('NextForYouCard', () => {
     beforeEach(() => mocked.getDueItems.mockResolvedValue([]));
 
     it.each([
-      ['observe', 'Keep logging every day: your first months are being recorded', '/path'],
       ['see', 'See what your first months really cost', '/path'],
       ['optimize', 'See where you have room to spend less', '/path'],
       ['grow', 'Put what you free up into a goal', '/goals'],
@@ -108,6 +100,46 @@ describe('NextForYouCard', () => {
       expect(prompt).toHaveTextContent(text);
       fireEvent.press(prompt);
       expect(mockPush).toHaveBeenCalledWith(route);
+    });
+
+    it('on observe with nothing logged today, asks for one entry and opens the entry sheet (VS-89)', async () => {
+      const onLog = jest.fn();
+      renderCard('observe', { logged: false, onLog });
+
+      const prompt = await screen.findByTestId('next-prompt');
+      expect(prompt).toHaveTextContent('Today: log an expense, or say you spent nothing.');
+      expect(prompt).not.toHaveTextContent(/every day/);
+      fireEvent.press(prompt);
+      expect(onLog).toHaveBeenCalledTimes(1);
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('on observe once today is logged, reassures and opens the path', async () => {
+      renderCard('observe', { logged: true, onLog: jest.fn() });
+
+      const prompt = await screen.findByTestId('next-prompt');
+      expect(prompt).toHaveTextContent("Today's logged. Your first months are building at your own pace.");
+      fireEvent.press(prompt);
+      expect(mockPush).toHaveBeenCalledWith('/path');
+    });
+
+    it('on observe in French', async () => {
+      await act(async () => {
+        await i18n.changeLanguage('fr');
+      });
+      renderCard('observe', { logged: false, onLog: jest.fn() });
+
+      expect(await screen.findByTestId('next-prompt')).toHaveTextContent(
+        'Aujourd’hui : notez une dépense, ou indiquez que vous n’avez rien dépensé.',
+      );
+    });
+
+    it('a payment due still comes first on observe', async () => {
+      mocked.getDueItems.mockResolvedValue(ITEMS);
+      renderCard('observe', { logged: false, onLog: jest.fn() });
+
+      expect(await screen.findByTestId('next-first')).toHaveTextContent(/Bureau/);
+      expect(screen.queryByTestId('next-prompt')).toBeNull();
     });
 
     it('on plan, opens next month\'s planner', async () => {

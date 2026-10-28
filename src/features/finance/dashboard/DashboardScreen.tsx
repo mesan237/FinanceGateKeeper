@@ -115,7 +115,10 @@ export function DashboardScreen() {
 
         {/* What is due before month end, most urgent first; with nothing due,
             the journey step leads. It replaced the planned-purchases card. */}
-        <NextForYouCard />
+        <NextForYouCard
+          todayLogged={zeroDayStatus ? zeroDayStatus.hasExpenses || zeroDayStatus.zeroDayConfirmed : undefined}
+          onLog={() => setSheet({ open: true, segment: 'expense' })}
+        />
 
         {/* Where the user is on the path to control (VS-63); the setup
             checklist moved onto the path itself. */}

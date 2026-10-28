@@ -12,11 +12,12 @@ import { Icon } from '@/components/Icon';
 import { Typography } from '@/components/Typography';
 import { ATTENTION_PLANNED, ATTENTION_TONTINES } from '@/constants/attention';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
+import { PRIVACY_POLICY_URL } from '@/constants/legal';
 import type { navigation } from '@/i18n/locales/en/navigation';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** Where "Feedback" opens a pre-addressed email for this single-user app. */
-const FEEDBACK_EMAIL = 'abdielkouam@gmail.com';
+const FEEDBACK_EMAIL = 'negokamgaing@gmail.com';
 
 type DrawerKey = keyof (typeof navigation)['drawer'];
 
@@ -62,6 +63,11 @@ const SECTIONS: DrawerSection[] = [
         icon: 'feedback',
         onPress: () => void Linking.openURL(`mailto:${FEEDBACK_EMAIL}`),
       },
+      {
+        labelKey: 'privacy',
+        icon: 'lock',
+        onPress: () => void Linking.openURL(PRIVACY_POLICY_URL),
+      },
     ],
   },
 ];
@@ -69,7 +75,7 @@ const SECTIONS: DrawerSection[] = [
 /**
  * Custom content for the app's left navigation drawer: a branded header, then
  * the user's money (wallets, goals, debts, tontines, planned purchases, events)
- * and the app (categories, preferences, backup, export, feedback). Pressing a
+ * and the app (categories, preferences, backup, export, feedback, privacy policy). Pressing a
  * row closes the drawer and pushes its stack route (or runs its handler).
  */
 export function AppDrawerContent(props: DrawerContentComponentProps) {

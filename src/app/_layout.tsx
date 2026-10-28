@@ -1,9 +1,9 @@
-import { SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
-import {
-  WorkSans_400Regular,
-  WorkSans_500Medium,
-  WorkSans_600SemiBold,
-} from '@expo-google-fonts/work-sans';
+// Per-weight subpaths: the package root requires every weight, bundling ~3 MB of unused fonts.
+import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
+import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk/700Bold';
+import { WorkSans_400Regular } from '@expo-google-fonts/work-sans/400Regular';
+import { WorkSans_500Medium } from '@expo-google-fonts/work-sans/500Medium';
+import { WorkSans_600SemiBold } from '@expo-google-fonts/work-sans/600SemiBold';
 import {
   DarkTheme,
   DefaultTheme,

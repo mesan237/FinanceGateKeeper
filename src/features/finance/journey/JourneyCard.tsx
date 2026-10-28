@@ -68,6 +68,12 @@ export function JourneyCard() {
             })}
           </Typography>
         ) : null}
+        {/* Recent days with nothing logged, which My path lets the user catch up (VS-89). */}
+        {journey.current === 'observe' && journey.logging.missedDays.length > 0 ? (
+          <Typography testID="journey-card-missed" style={styles.missed}>
+            {t('observe.cardMissed', { count: journey.logging.missedDays.length })}
+          </Typography>
+        ) : null}
         <View style={styles.segments}>
           {journey.steps.map((step) => (
             <View
@@ -92,6 +98,7 @@ const makeStyles = (c: ThemeColors) =>
     header: { flexDirection: 'row', alignItems: 'center' },
     grow: { flex: 1 },
     segments: { flexDirection: 'row', gap: SPACING.xs, marginTop: SPACING.sm },
+    missed: { color: c.WARNING_TEXT },
     segment: { flex: 1, height: 6, borderRadius: RADIUS.full, backgroundColor: c.BORDER },
     passed: { backgroundColor: c.PRIMARY_GREEN },
     skipped: { backgroundColor: c.BORDER_STRONG },
