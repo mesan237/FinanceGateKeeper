@@ -12,6 +12,8 @@ import { SPACING } from '@/constants/layout';
 import type { AppLanguage } from '@/i18n/resolveLanguage';
 import { useThemeMode, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { OnboardingIntro } from './OnboardingIntro';
+
 export interface OnboardingScreenProps {
   /** Called when the set-up is finished or skipped. */
   onDone: () => void;
@@ -37,9 +39,6 @@ export interface OnboardingScreenProps {
 type Step = 'intro' | 'wallets' | 'reminder';
 const STEPS: ReadonlyArray<Step> = ['intro', 'wallets', 'reminder'];
 
-/** The path's five steps, previewed on the first screen (VS-63). */
-const PATH = ['observe', 'see', 'plan', 'optimize', 'grow'] as const;
-
 /** When the daily reminder is set if the user keeps the suggestion. */
 const DEFAULT_REMINDER = '21:00';
 
@@ -48,8 +47,10 @@ const DEFAULT_REMINDER = '21:00';
  * decks add no success and make tasks feel harder). Three short steps, each
  * doing something rather than explaining it:
  *
- * 1. What the app does: log for a few months, then plan — the path's five steps.
- * 2. What the wallets hold today, so balances are right from day one.
+ * 1. What the app does: a budget built on real spending, in three stages —
+ *    observe now, plan after three complete months, then optimize (VS-87).
+ * 2. What the wallets hold today, so balances are right from day one. Where the
+ *    data stays is said before any amount is asked for.
  * 3. When to remind the user to log.
  *
  * Steps 2 and 3 can wait ("Not now" / "No reminders"), and "Skip set-up" leaves
@@ -123,21 +124,16 @@ export function OnboardingScreen({
         <Typography variant="display">{t(`${step}.title`)}</Typography>
         <Typography style={styles.text}>{t(`${step}.body`)}</Typography>
 
-        {step === 'intro' ? (
-          <View style={styles.path}>
-            {PATH.map((key, i) => (
-              <View key={key} style={styles.pathRow}>
-                <Typography style={styles.pathNumber}>{i + 1}</Typography>
-                <View style={styles.grow}>
-                  <Typography variant="subheading">{t(`intro.steps.${key}.title`)}</Typography>
-                  <Typography variant="muted">{t(`intro.steps.${key}.body`)}</Typography>
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        {step === 'intro' ? <OnboardingIntro /> : null}
 
-        {step === 'wallets' ? renderWallets(next) : null}
+        {step === 'wallets' ? (
+          <>
+            <Typography variant="muted" style={styles.privacy}>
+              {t('wallets.privacy')}
+            </Typography>
+            {renderWallets(next)}
+          </>
+        ) : null}
 
         {step === 'reminder' ? (
           <TimeField
@@ -161,13 +157,8 @@ export function OnboardingScreen({
             loading={saving}
           />
         ) : null}
-        {step !== 'intro' ? (
-          <Button
-            testID="onboarding-later"
-            label={t(`${step}.later`)}
-            variant="ghost"
-            onPress={step === 'reminder' ? onDone : next}
-          />
+        {step === 'reminder' ? (
+          <Button testID="onboarding-later" label={t('reminder.later')} variant="ghost" onPress={onDone} />
         ) : null}
       </View>
     </SafeAreaView>
@@ -202,19 +193,9 @@ const makeStyles = (c: ThemeColors) =>
       color: c.TEXT_SECONDARY,
       lineHeight: 22,
     },
-    path: {
-      gap: SPACING.md,
-    },
-    pathRow: {
-      flexDirection: 'row',
-      gap: SPACING.md,
-    },
-    pathNumber: {
-      width: 20,
-      color: c.PRIMARY_TEXT,
-    },
-    grow: {
-      flex: 1,
+    privacy: {
+      fontSize: 13,
+      lineHeight: 19,
     },
     footer: {
       gap: SPACING.sm,

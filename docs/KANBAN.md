@@ -2676,6 +2676,38 @@ set-up step without losing anything.
 
 ---
 
+### VS-87: The First Screen Sells a Budget Built on Real Spending 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice B)
+**Blocked by:** VS-86
+
+**Scope:**
+
+- Screen 1 (`onboarding/OnboardingIntro`): *A budget built on what you really spend*, then three
+  stages instead of the path's five — Now · Observe, After 3 complete months · Plan, Then ·
+  Optimize. Only "now" is emphasised; the complete-month rule sits under it ("8 days in 10",
+  `COMPLETE_MONTH_COVERAGE`); a single muted line says a budget can be made now from estimates.
+  See and Grow stay on My path.
+- Wallets: the body says why balances are asked for; a privacy line comes before any amount —
+  data stays on the phone, nothing is sent unless online backup is turned on, a PIN follows. No
+  claim of encryption (the local database is not encrypted). "Not now" sits beside "Save" inside
+  `OpeningBalancesStep`; the placeholder reads *Blank if you don't know*.
+- Verified: supabase-js makes no request without a session; `syncNow` makes no cloud call
+  signed out (test).
+
+**TDD Anchor:**
+
+- Test: three stages, See/Grow absent, only "now" current, rule and early-budget lines, French.
+- Test: privacy line before the wallet fields; no footer "Not now" on the wallet step;
+  `OpeningBalancesStep` "Not now" writes nothing; placeholder.
+- Test: copy never claims encryption or security; the rule reads 8 in 10 in both languages.
+- Test: `syncNow` signed out never calls `supabase.from`.
+
+**Done when:** screen 1 answers what the app does, why observe, what to do and what comes next,
+and the wallet step says where the data stays before asking for it.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
