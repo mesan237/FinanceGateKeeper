@@ -17,7 +17,7 @@ describe('notification copy', () => {
 
   it('writes the daily reminder in French when the app is in French', async () => {
     await i18n.changeLanguage('fr');
-    expect(buildDailyReminders('21:00', new Date(2026, 7, 15, 9), new Set())[0].title).toBe('Notez vos dépenses');
+    expect(buildDailyReminders('21:00', new Date(2026, 7, 15, 9), new Set())[0].title).toBe('Aucune dépense notée aujourd’hui');
   });
 
   it('writes the over-budget alert in French, naming the envelope', async () => {

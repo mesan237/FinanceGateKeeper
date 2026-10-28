@@ -151,7 +151,7 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
 
     fireEvent.press(screen.getByTestId('fake-wallets-save'));
 
-    expect(screen.getByText('When can you log each day?')).toBeTruthy();
+    expect(screen.getByText('Want a gentle reminder?')).toBeTruthy();
   });
 
   it('says where the data stays before any amount is asked for', () => {
@@ -198,6 +198,41 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
 
     fireEvent.press(screen.getByTestId('onboarding-skip'));
 
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('presents the reminder as optional help, sent only when nothing is logged (VS-88)', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+
+    expect(screen.getByText(/If no spending is logged by the time you pick/)).toBeTruthy();
+    expect(screen.getByText(/Tap "I spent nothing today"/)).toBeTruthy();
+    expect(screen.getByText(/turn it on later in Preferences/)).toBeTruthy();
+  });
+
+  it('says so and waits when notifications are refused, instead of finishing as if reminders were on', async () => {
+    const onDone = jest.fn();
+    render(
+      <OnboardingScreen
+        onDone={onDone}
+        onReminder={jest.fn().mockResolvedValue(false)}
+        renderWallets={(next) => <FakeWallets next={next} />}
+        language="en"
+        onLanguage={jest.fn()}
+      />,
+    );
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+
+    fireEvent.press(screen.getByTestId('onboarding-remind'));
+
+    expect(await screen.findByTestId('onboarding-reminder-blocked')).toBeTruthy();
+    expect(screen.getByText(/Notifications are blocked for the app/)).toBeTruthy();
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('onboarding-remind')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('onboarding-continue'));
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 

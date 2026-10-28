@@ -39,10 +39,14 @@ export const onboarding: Translation<typeof en> = {
       'Vos données restent sur ce téléphone. Rien n’est envoyé en ligne, sauf si vous activez plus tard la sauvegarde en ligne. Un code PIN protégera l’accès à la fin de la configuration.',
   },
   reminder: {
-    title: 'Quand pouvez-vous noter vos dépenses ?',
-    body: 'Choisissez un moment calme. Le rappel ne vient que les jours où rien n’est noté.',
-    time: 'Heure du rappel quotidien',
-    enable: 'Me le rappeler',
+    title: 'Besoin d’un petit rappel ?',
+    body: 'Notez vos dépenses quand vous voulez, au fil de la journée. Si aucune dépense n’est notée à l’heure choisie, l’application vous envoie un rappel. Les jours où c’est déjà fait, elle ne dit rien.',
+    noSpendTip: "Rien dépensé ? Touchez « Je n'ai rien dépensé aujourd'hui » : la journée compte aussi.",
+    time: 'Heure du rappel',
+    enable: 'Activer le rappel',
     later: 'Pas de rappel',
+    hint: 'Vous pourrez changer l’heure ou l’activer plus tard dans Préférences.',
+    blocked: 'Les notifications sont bloquées pour l’application : aucun rappel ne sera envoyé. Vous pouvez les autoriser dans les réglages du téléphone.',
+    continue: 'Continuer',
   },
 };

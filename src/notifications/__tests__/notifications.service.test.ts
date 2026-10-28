@@ -13,6 +13,7 @@ import * as Notifications from 'expo-notifications';
 
 import {
   cancelNotification,
+  hasPermission,
   requestPermissions,
   scheduleNotification,
 } from '@/notifications/notifications.service';
@@ -70,5 +71,15 @@ describe('requestPermissions', () => {
     requestPermissionsAsync.mockResolvedValue({ granted: true });
     expect(await requestPermissions()).toBe(true);
     expect(requestPermissionsAsync).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('hasPermission (VS-88)', () => {
+  it('reports whether notifications are allowed, never prompting', async () => {
+    getPermissionsAsync.mockResolvedValue({ granted: false });
+    expect(await hasPermission()).toBe(false);
+    getPermissionsAsync.mockResolvedValue({ granted: true });
+    expect(await hasPermission()).toBe(true);
+    expect(requestPermissionsAsync).not.toHaveBeenCalled();
   });
 });
