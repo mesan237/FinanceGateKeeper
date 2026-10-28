@@ -4,6 +4,7 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^lucide-react-native/icons/[a-z0-9-]+$': '<rootDir>/__mocks__/lucide-icon.js',
     'react-native-chart-kit': '<rootDir>/__mocks__/react-native-chart-kit.js',
   },
   testPathIgnorePatterns: ['/node_modules/', '/\\.expo/', '/dist/'],
