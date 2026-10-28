@@ -6,6 +6,9 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn() }),
 }));
 
+const mockOpenURL = jest.fn();
+jest.mock('expo-linking', () => ({ openURL: (url: string) => mockOpenURL(url) }));
+
 const mockShow = jest.fn();
 jest.mock('@/components/Toast', () => {
   const actual = jest.requireActual('@/components/Toast');
@@ -201,6 +204,24 @@ describe('BackupScreen — cloud backup', () => {
     fireEvent.press(screen.getByTestId('backup-cloud-sign-out'));
 
     await waitFor(() => expect(mockCloud.signOut).toHaveBeenCalledTimes(1));
+  });
+
+  it('opens the account deletion page from a signed-in account', () => {
+    signIn();
+    render(<BackupScreen />);
+
+    fireEvent.press(screen.getByTestId('backup-cloud-delete-account'));
+
+    expect(mockOpenURL).toHaveBeenCalledWith(
+      'https://mesan237.github.io/finance-gatekeeper-legal/delete-account/',
+    );
+    expect(mockCloud.signOut).not.toHaveBeenCalled();
+  });
+
+  it('offers account deletion only when signed in', () => {
+    render(<BackupScreen />);
+
+    expect(screen.queryByTestId('backup-cloud-delete-account')).toBeNull();
   });
 
   it('shows the account and backs up on demand when signed in', () => {

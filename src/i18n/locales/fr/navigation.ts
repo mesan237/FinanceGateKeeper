@@ -30,5 +30,6 @@ export const navigation: Translation<typeof en> = {
     backupRestore: 'Sauvegarde et restauration',
     app: 'Application',
     feedback: 'Avis',
+    privacy: 'Politique de confidentialité',
   },
 };

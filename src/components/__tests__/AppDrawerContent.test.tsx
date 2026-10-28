@@ -2,6 +2,9 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
+const mockOpenURL = jest.fn();
+jest.mock('expo-linking', () => ({ openURL: (url: string) => mockOpenURL(url) }));
+
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
@@ -55,6 +58,7 @@ describe('AppDrawerContent', () => {
       'Backup & restore',
       'Export & import',
       'Feedback',
+      'Privacy policy',
     ]);
     expect(screen.getByText('My money')).toBeTruthy();
     expect(screen.getByText('App')).toBeTruthy();
@@ -123,6 +127,13 @@ describe('AppDrawerContent', () => {
     expect(row.props.accessibilityState?.disabled).not.toBe(true);
     fireEvent.press(row);
     expect(mockPush).toHaveBeenCalledWith('/backup');
+    expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the published privacy policy and closes the drawer', () => {
+    const { navigation } = renderDrawer();
+    fireEvent.press(screen.getByRole('button', { name: 'Privacy policy' }));
+    expect(mockOpenURL).toHaveBeenCalledWith('https://mesan237.github.io/finance-gatekeeper-legal/');
     expect(navigation.closeDrawer).toHaveBeenCalledTimes(1);
   });
 

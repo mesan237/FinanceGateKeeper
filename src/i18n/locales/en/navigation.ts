@@ -26,5 +26,6 @@ export const navigation = {
     backupRestore: 'Backup & restore',
     app: 'App',
     feedback: 'Feedback',
+    privacy: 'Privacy policy',
   },
 };

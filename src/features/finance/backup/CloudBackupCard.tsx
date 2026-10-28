@@ -1,3 +1,4 @@
+import * as Linking from 'expo-linking';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native';
@@ -6,6 +7,7 @@ import { Button } from '@/components/Button';
 import { SectionCard } from '@/components/SectionCard';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import { ACCOUNT_DELETION_URL } from '@/constants/legal';
 import type { CloudSync } from '@/hooks/useCloudSync';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatDateLong } from '@/utils/formatDate';
@@ -23,7 +25,8 @@ export interface CloudBackupCardProps {
 /**
  * The cloud half of Backup & Restore and the only place the cloud account is
  * managed. Signed in: account, last backup time, "Back up now" (a full sync),
- * "Restore from cloud" and Sign out. Signed out: an email/password form to sign
+ * "Restore from cloud", Sign out, and "Delete my account" (opens the published
+ * deletion steps, as Google Play requires). Signed out: an email/password form to sign
  * in or create an account.
  */
 export function CloudBackupCard({
@@ -111,6 +114,14 @@ export function CloudBackupCard({
         onPress={() => void cloud.signOut()}
         disabled={syncing || restoring}
       />
+      <Button
+        testID="backup-cloud-delete-account"
+        label={t('cloud.deleteAccount')}
+        variant="ghost"
+        compact
+        onPress={() => void Linking.openURL(ACCOUNT_DELETION_URL)}
+      />
+      <Typography variant="muted">{t('cloud.deleteAccountNote')}</Typography>
     </SectionCard>
   );
 }

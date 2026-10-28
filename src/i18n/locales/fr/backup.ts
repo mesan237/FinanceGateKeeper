@@ -22,6 +22,9 @@ export const backup: Translation<typeof en> = {
     backUpNow: 'Sauvegarder maintenant',
     backingUp: 'Sauvegarde…',
     restore: 'Restaurer depuis le cloud',
+    deleteAccount: 'Supprimer mon compte',
+    deleteAccountNote:
+      'Ouvre les étapes pour supprimer votre compte cloud et sa sauvegarde. Les données de ce téléphone restent.',
   },
   local: {
     title: 'Sur ce téléphone',
