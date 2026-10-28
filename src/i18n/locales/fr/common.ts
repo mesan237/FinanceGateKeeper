@@ -52,6 +52,9 @@ export const common: Translation<typeof en> = {
   languages: {
     en: 'English',
     fr: 'Français',
+    label: 'Langue',
+    shortEn: 'EN',
+    shortFr: 'FR',
   },
   incomeSources: {
     salary: 'Salaire',

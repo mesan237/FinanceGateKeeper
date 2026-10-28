@@ -1,9 +1,9 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import React from 'react';
-import { Pressable, Text } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, Text, TextInput } from 'react-native';
 
 import { OnboardingScreen } from '@/features/finance/onboarding/OnboardingScreen';
-import i18n from '@/i18n';
+import i18n, { type AppLanguage } from '@/i18n';
 
 /** Stands in for the accounts slice's wallet step, which the routing layer injects. */
 function FakeWallets({ next }: { next: () => void }) {
@@ -22,10 +22,79 @@ function renderScreen() {
       onDone={onDone}
       onReminder={onReminder}
       renderWallets={(next) => <FakeWallets next={next} />}
+      language="en"
+      onLanguage={jest.fn()}
     />,
   );
   return { onDone, onReminder };
 }
+
+/** A wallet step that keeps what was typed, like the real one, to prove a language switch keeps it. */
+function TypedWallets() {
+  const [text, setText] = useState('');
+  return <TextInput testID="fake-wallet-input" value={text} onChangeText={setText} />;
+}
+
+/** Plays the routing layer: saves the language and re-renders the set-up in it. */
+function LanguageHarness() {
+  const [language, setLanguage] = useState<AppLanguage>('en');
+  return (
+    <OnboardingScreen
+      onDone={jest.fn()}
+      onReminder={jest.fn().mockResolvedValue(true)}
+      renderWallets={() => <TypedWallets />}
+      language={language}
+      onLanguage={async (next) => {
+        await i18n.changeLanguage(next);
+        setLanguage(next);
+      }}
+    />
+  );
+}
+
+describe('OnboardingScreen — language (VS-86)', () => {
+  it('offers FR | EN on every step', () => {
+    renderScreen();
+    expect(screen.getByTestId('onboarding-language-fr')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    expect(screen.getByTestId('onboarding-language-en')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('onboarding-later'));
+    expect(screen.getByTestId('onboarding-language-fr')).toBeTruthy();
+  });
+
+  it('switches the screen to French and keeps the step and the balances typed', async () => {
+    render(<LanguageHarness />);
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    fireEvent.changeText(screen.getByTestId('fake-wallet-input'), '15000');
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('onboarding-language-fr'));
+    });
+
+    expect(screen.getByText('Que contiennent vos portefeuilles aujourd’hui ?')).toBeTruthy();
+    expect(screen.getByText('Étape 2 sur 3')).toBeTruthy();
+    expect(screen.getByTestId('fake-wallet-input').props.value).toBe('15000');
+    expect(screen.getByTestId('onboarding-language-fr').props.accessibilityState).toEqual(
+      expect.objectContaining({ selected: true }),
+    );
+  });
+
+  it('keeps the reminder time chosen when the language changes', async () => {
+    render(<LanguageHarness />);
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+    fireEvent.press(screen.getByTestId('onboarding-later'));
+    fireEvent(screen.getByTestId('onboarding-reminder-time'), 'press');
+    fireEvent(screen.getByTestId('time-picker'), 'onChange', { type: 'set' }, new Date(2026, 0, 1, 7, 15));
+    expect(screen.getByText('07:15')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('onboarding-language-fr'));
+    });
+
+    expect(screen.getByText('Étape 3 sur 3')).toBeTruthy();
+    expect(screen.getByText('07:15')).toBeTruthy();
+  });
+});
 
 describe('OnboardingScreen — first-run set-up (UX-08)', () => {
   it('opens on what the app does and the five steps of the path', () => {
@@ -103,6 +172,8 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
         onDone={onDone}
         onReminder={jest.fn().mockRejectedValue(new Error('denied'))}
         renderWallets={(next) => <FakeWallets next={next} />}
+        language="en"
+        onLanguage={jest.fn()}
       />,
     );
     fireEvent.press(screen.getByTestId('onboarding-next'));

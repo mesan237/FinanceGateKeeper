@@ -48,6 +48,10 @@ export const common = {
   languages: {
     en: 'English',
     fr: 'Français',
+    /** The FR | EN toggle (VS-86): the group's name, and each language's short code. */
+    label: 'Language',
+    shortEn: 'EN',
+    shortFr: 'FR',
   },
   incomeSources: {
     salary: 'Salary',

@@ -22,6 +22,7 @@ import {
   getActionBarStyle,
   getAppSettings,
   hasPin,
+  keepLanguageOfExistingInstall,
   setActionBarStyle,
   setLanguage,
   setNotificationsEnabled,
@@ -188,5 +189,31 @@ describe('language', () => {
     await setLanguage('en');
     await setLanguage(null);
     expect((await getAppSettings()).language).toBeNull();
+  });
+});
+
+describe('keepLanguageOfExistingInstall (VS-86)', () => {
+  it('saves the language an existing install showed before French became the default', async () => {
+    await setOnboardingComplete(true);
+    await keepLanguageOfExistingInstall('en-US');
+    expect((await getAppSettings()).language).toBe('en');
+  });
+
+  it('keeps an existing install on a French device in French', async () => {
+    await setOnboardingComplete(true);
+    await keepLanguageOfExistingInstall('fr-CM');
+    expect((await getAppSettings()).language).toBe('fr');
+  });
+
+  it('leaves a fresh install unsaved, so it opens in French', async () => {
+    await keepLanguageOfExistingInstall('en-US');
+    expect((await getAppSettings()).language).toBeNull();
+  });
+
+  it('never overwrites a saved choice', async () => {
+    await setOnboardingComplete(true);
+    await setLanguage('fr');
+    await keepLanguageOfExistingInstall('en-US');
+    expect((await getAppSettings()).language).toBe('fr');
   });
 });

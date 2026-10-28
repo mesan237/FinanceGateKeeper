@@ -5,9 +5,11 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { LanguageToggle } from '@/components/LanguageToggle';
 import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
 import { SPACING } from '@/constants/layout';
+import type { AppLanguage } from '@/i18n/resolveLanguage';
 import { useThemeMode, useThemedStyles, type ThemeColors } from '@/theme';
 
 export interface OnboardingScreenProps {
@@ -23,6 +25,13 @@ export interface OnboardingScreenProps {
    * saved. Injected by the routing layer from the accounts feature.
    */
   renderWallets: (next: () => void) => React.ReactNode;
+  /** The language the set-up is shown in. */
+  language: AppLanguage;
+  /**
+   * Saves and applies a language picked in the header (VS-86). The step and
+   * whatever was entered stay as they are. Injected by the routing layer.
+   */
+  onLanguage: (language: AppLanguage) => Promise<unknown>;
 }
 
 type Step = 'intro' | 'wallets' | 'reminder';
@@ -45,9 +54,16 @@ const DEFAULT_REMINDER = '21:00';
  *
  * Steps 2 and 3 can wait ("Not now" / "No reminders"), and "Skip set-up" leaves
  * from anywhere. The wallets step and the reminder come from other features
- * through the routing layer, so this slice imports none of them.
+ * through the routing layer, so this slice imports none of them. The header's
+ * FR | EN switch changes the language in place (VS-86).
  */
-export function OnboardingScreen({ onDone, onReminder, renderWallets }: OnboardingScreenProps) {
+export function OnboardingScreen({
+  onDone,
+  onReminder,
+  renderWallets,
+  language,
+  onLanguage,
+}: OnboardingScreenProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('onboarding');
   const { scheme } = useThemeMode();
@@ -72,12 +88,25 @@ export function OnboardingScreen({ onDone, onReminder, renderWallets }: Onboardi
     }
   };
 
+  const changeLanguage = async (next: AppLanguage) => {
+    try {
+      await onLanguage(next);
+    } catch (e) {
+      // The set-up stays usable in the current language.
+      console.error('Language switch failed:', e);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']} testID="onboarding-screen">
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
 
       <View style={styles.header}>
-        <Typography variant="muted">{t('stepOf', { number: index + 1, total: STEPS.length })}</Typography>
+        <LanguageToggle
+          testID="onboarding-language"
+          value={language}
+          onChange={(next) => void changeLanguage(next)}
+        />
         <Pressable
           testID="onboarding-skip"
           accessibilityRole="button"
@@ -90,6 +119,7 @@ export function OnboardingScreen({ onDone, onReminder, renderWallets }: Onboardi
       </View>
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        <Typography variant="muted">{t('stepOf', { number: index + 1, total: STEPS.length })}</Typography>
         <Typography variant="display">{t(`${step}.title`)}</Typography>
         <Typography style={styles.text}>{t(`${step}.body`)}</Typography>
 

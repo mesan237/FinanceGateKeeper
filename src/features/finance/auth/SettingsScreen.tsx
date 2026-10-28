@@ -14,7 +14,7 @@ import { Toggle } from '@/components/Toggle';
 import { Typography } from '@/components/Typography';
 import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { isAppLanguage } from '@/i18n/resolveLanguage';
+import { isAppLanguage, resolveLanguage } from '@/i18n/resolveLanguage';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
 import { useAppSettings } from './auth.hooks';
@@ -51,7 +51,8 @@ export function SettingsScreen() {
   }
 
   const changeLanguage = async (key: string) => {
-    await setLanguage(isAppLanguage(key) ? key : null);
+    if (!isAppLanguage(key)) return;
+    await setLanguage(key);
     await applyReminderSchedule({
       reminderTime: settings.reminderTime,
       notificationsEnabled: settings.notificationsEnabled,
@@ -124,9 +125,8 @@ export function SettingsScreen() {
         >
           <SegmentedControl
             testID="settings-language-control"
-            value={settings.language ?? 'system'}
+            value={resolveLanguage(settings.language)}
             segments={[
-              { key: 'system', label: t('settings.languageSystem') },
               { key: 'fr', label: t('common:languages.fr') },
               { key: 'en', label: t('common:languages.en') },
             ]}

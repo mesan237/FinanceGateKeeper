@@ -193,7 +193,8 @@ jest.mock('expo-document-picker', () => ({
 process.env.EXPO_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??= 'test-anon-key';
 
-// Pin the device to English so every suite renders the English catalogue —
+// The device reports English. The app itself starts in French whatever the
+// device says (VS-86), so every suite is switched to English explicitly —
 // existing screen tests assert English copy. French is exercised per test via
 // `i18n.changeLanguage('fr')`, and the language is reset after each test so a
 // French test can never leak into the next one.
@@ -203,6 +204,8 @@ jest.mock('expo-localization', () => ({
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const i18n = require('@/i18n').default as typeof import('@/i18n').default;
+// Resources are bundled, so this switch completes synchronously.
+void i18n.changeLanguage('en');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { act } = require('@testing-library/react-native') as typeof import('@testing-library/react-native');
 

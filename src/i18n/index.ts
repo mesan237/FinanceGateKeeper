@@ -22,7 +22,7 @@ export function deviceLanguageTag(): string | null {
 // already has the right language.
 void i18n.use(initReactI18next).init({
   resources,
-  lng: resolveLanguage(null, deviceLanguageTag()),
+  lng: resolveLanguage(null),
   fallbackLng: 'en',
   ns: Object.keys(resources.en),
   defaultNS: DEFAULT_NAMESPACE,
@@ -31,18 +31,20 @@ void i18n.use(initReactI18next).init({
 });
 
 /**
- * Switches the UI to the language implied by a saved preference (`null`
- * follows the device). A no-op when that language is already active.
+ * Switches the UI to the language implied by a saved preference (`null` means
+ * none yet: French). A no-op when that language is already active.
  */
 export async function applyLanguagePreference(preference: LanguagePreference): Promise<void> {
-  const next = resolveLanguage(preference, deviceLanguageTag());
+  const next = resolveLanguage(preference);
   if (i18n.language === next) return;
   await i18n.changeLanguage(next);
 }
 
 export { activeLanguage, dateNames } from './dateNames';
 export {
+  DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
+  deviceLanguage,
   resolveLanguage,
   type AppLanguage,
   type LanguagePreference,
