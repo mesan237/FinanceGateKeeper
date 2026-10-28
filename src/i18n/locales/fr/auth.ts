@@ -25,8 +25,9 @@ export const auth: Translation<typeof en> = {
     notificationsSubtitle: 'Rappels quotidiens et alertes de budget.',
   },
   pin: {
-    createTitle: 'Créez un code PIN',
-    createSubtitle: "Choisissez un code à 4 chiffres pour verrouiller l'application sur cet appareil.",
+    createTitle: 'Gardez votre argent privé',
+    createSubtitle:
+      "Vos soldes et vos dépenses restent sur ce téléphone. Choisissez un code à 4 chiffres pour que personne d'autre n'ouvre l'application.",
     confirmTitle: 'Confirmez votre code',
     confirmSubtitle: 'Saisissez-le à nouveau pour confirmer.',
     unlockTitle: 'Saisissez votre code',

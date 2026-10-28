@@ -22,8 +22,8 @@ export const auth = {
     notificationsSubtitle: 'Daily reminders and budget alerts.',
   },
   pin: {
-    createTitle: 'Create a PIN',
-    createSubtitle: 'Pick a 4-digit PIN to lock the app on this device.',
+    createTitle: 'Keep your money private',
+    createSubtitle: 'Your balances and spending stay on this phone. Pick a 4-digit PIN so only you can open the app.',
     confirmTitle: 'Confirm your PIN',
     confirmSubtitle: 'Enter it again to confirm.',
     unlockTitle: 'Enter your PIN',

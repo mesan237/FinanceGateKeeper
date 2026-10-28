@@ -2618,6 +2618,32 @@ and the Reports cards read clearly.
 
 ---
 
+### VS-85: PIN After the Set-Up 🔄 In Progress
+
+**Priority:** P1 — pre-release (first-run order)
+**Blocked by:** —
+
+**Scope:**
+
+- A fresh install opens on the set-up (what the app does · wallets · reminder), not the PIN screen.
+  The PIN is created once the set-up is finished or skipped: the user knows what the app is, and
+  has entered balances worth protecting, before being asked to lock it.
+- The PIN stays required. An existing PIN always locks first, before the set-up or the app.
+- `auth.gate.pinGateView` decides wait / lock / app from the lock state and the set-up flag; the
+  routing layer's `AuthGate` injects the flag (no new edge).
+- The create-PIN prompt says why: *Keep your money private* — balances and spending stay on the
+  phone (fr: *Gardez votre argent privé*).
+
+**TDD Anchor:**
+
+- Test: `pinGateView` (first run → set-up, set-up done → create PIN, existing PIN locks first,
+  waits while either flag loads).
+- Test: AuthScreen create prompt copy.
+
+**Done when:** a fresh install sees what the app does before it is asked for a PIN.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
