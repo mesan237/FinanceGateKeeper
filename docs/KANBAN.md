@@ -2618,6 +2618,127 @@ and the Reports cards read clearly.
 
 ---
 
+### VS-85: PIN After the Set-Up 🔄 In Progress
+
+**Priority:** P1 — pre-release (first-run order)
+**Blocked by:** —
+
+**Scope:**
+
+- A fresh install opens on the set-up (what the app does · wallets · reminder), not the PIN screen.
+  The PIN is created once the set-up is finished or skipped: the user knows what the app is, and
+  has entered balances worth protecting, before being asked to lock it.
+- The PIN stays required. An existing PIN always locks first, before the set-up or the app.
+- `auth.gate.pinGateView` decides wait / lock / app from the lock state and the set-up flag; the
+  routing layer's `AuthGate` injects the flag (no new edge).
+- The create-PIN prompt says why: *Keep your money private* — balances and spending stay on the
+  phone (fr: *Gardez votre argent privé*).
+
+**TDD Anchor:**
+
+- Test: `pinGateView` (first run → set-up, set-up done → create PIN, existing PIN locks first,
+  waits while either flag loads).
+- Test: AuthScreen create prompt copy.
+
+**Done when:** a fresh install sees what the app does before it is asked for a PIN.
+
+---
+
+### VS-86: French by Default, FR | EN During Set-Up 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice A)
+**Blocked by:** VS-85
+
+**Scope:**
+
+- With no saved choice the app is in French, whatever the device says (`resolveLanguage(null)`).
+  The old device rule is kept as `deviceLanguage`, used once by
+  `auth.keepLanguageOfExistingInstall`: an install past its set-up with no saved choice gets the
+  language it showed saved, so the update never switches it. Fresh installs stay unsaved.
+- `components/LanguageToggle`: a compact FR | EN in the set-up header, beside *Skip*; "Step n of 3"
+  moves above the title. Switching keeps the step, typed balances and the reminder time.
+- Preferences offers Français / English (*System* removed); the screen is titled *Preferences* /
+  *Préférences*, as in the drawer.
+- The splash waits for the settings too, so the first screen is already in the saved language.
+- Jest switches to English in `jest.setup.ts`; it no longer follows the mocked device.
+
+**TDD Anchor:**
+
+- Test: `resolveLanguage` / `deviceLanguage`; `keepLanguageOfExistingInstall` (existing install
+  keeps en or fr, fresh stays null, a saved choice is never overwritten); `useAppSettings` reads an
+  existing install in its old language.
+- Test: `LanguageToggle` (active state, a11y names, no-op on the active one, group label).
+- Test: set-up offers FR | EN on every step; switching keeps step, balances and time; Preferences
+  defaults to French.
+
+**Done when:** a fresh install on an English phone opens in French, and FR | EN works on every
+set-up step without losing anything.
+
+---
+
+### VS-87: The First Screen Sells a Budget Built on Real Spending 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice B)
+**Blocked by:** VS-86
+
+**Scope:**
+
+- Screen 1 (`onboarding/OnboardingIntro`): *A budget built on what you really spend*, then three
+  stages instead of the path's five — Now · Observe, After 3 complete months · Plan, Then ·
+  Optimize. Only "now" is emphasised; the complete-month rule sits under it ("8 days in 10",
+  `COMPLETE_MONTH_COVERAGE`); a single muted line says a budget can be made now from estimates.
+  See and Grow stay on My path.
+- Wallets: the body says why balances are asked for; a privacy line comes before any amount —
+  data stays on the phone, nothing is sent unless online backup is turned on, a PIN follows. No
+  claim of encryption (the local database is not encrypted). "Not now" sits beside "Save" inside
+  `OpeningBalancesStep`; the placeholder reads *Blank if you don't know*.
+- Verified: supabase-js makes no request without a session; `syncNow` makes no cloud call
+  signed out (test).
+
+**TDD Anchor:**
+
+- Test: three stages, See/Grow absent, only "now" current, rule and early-budget lines, French.
+- Test: privacy line before the wallet fields; no footer "Not now" on the wallet step;
+  `OpeningBalancesStep` "Not now" writes nothing; placeholder.
+- Test: copy never claims encryption or security; the rule reads 8 in 10 in both languages.
+- Test: `syncNow` signed out never calls `supabase.from`.
+
+**Done when:** screen 1 answers what the app does, why observe, what to do and what comes next,
+and the wallet step says where the data stays before asking for it.
+
+---
+
+### VS-88: Reminders That Help, and Say When They Can't 🔄 In Progress
+
+**Priority:** P1 — pre-release (onboarding review, slice C)
+**Blocked by:** VS-86
+
+**Scope:**
+
+- The reminder skips **logged days** only: an expense or a no-spend day, as Observe counts them
+  (`services/transactions.getLoggedDays`). This narrows VS-57's "any entry": a day with only income
+  or a transfer now gets the reminder, since it says nothing about spending.
+- Copy without a deadline: the set-up asks *Want a gentle reminder?*, says it comes only when no
+  spending is logged, tips "I spent nothing today", and points to Preferences. The notification
+  reads *No spending logged today — Spent something, or nothing at all?*
+- Refused permission is said: the set-up shows *Notifications are blocked…* and waits for
+  *Continue*; in Preferences the switch stays off with the same line, which also shows when
+  reminders are on but the phone blocks them (`notifications.hasPermission`, no prompt; re-checked
+  on return to the app).
+- Docs: GLOSSARY *Logged day*; 04 §8.2 (`ZeroDayGate` only prompts with reminders on).
+
+**TDD Anchor:**
+
+- Test: `getLoggedDays` counts expenses and no-spend days, not income or transfers.
+- Test: `hasPermission` never prompts; reminder copy in both languages, no deadline wording.
+- Test: set-up refusal shows the line and waits; Preferences keeps the switch off on refusal and
+  warns when blocked.
+
+**Done when:** nobody believes a reminder is coming when the phone will not deliver it, and the
+reminder never sounds like a deadline.
+
+---
+
 ### VS-89: The First Day on Home Says What to Do 🔄 In Progress
 
 **Priority:** P1 — pre-release (onboarding review, slice D)

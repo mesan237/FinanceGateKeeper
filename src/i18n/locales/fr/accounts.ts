@@ -81,9 +81,10 @@ export const accounts: Translation<typeof en> = {
   },
   opening: {
     a11y: 'Ce que contient {{name}} aujourd’hui, en FCFA',
-    placeholder: 'Vide si incertain',
-    hint: 'Un chiffre approximatif suffit. Vous pourrez ajouter, renommer ou corriger vos portefeuilles plus tard dans Portefeuilles.',
+    placeholder: 'Vide si vous ne savez pas',
+    hint: 'Vous pourrez ajouter, renommer ou corriger vos portefeuilles plus tard dans Portefeuilles.',
     save: 'Enregistrer et continuer',
+    later: 'Plus tard',
   },
   transfer: {
     title: 'Nouveau virement',

@@ -4,8 +4,8 @@ import type { Translation } from '@/i18n/translation.types';
 /** French copy for the auth slice. */
 export const auth: Translation<typeof en> = {
   settings: {
-    title: 'Paramètres',
-    loading: 'Chargement des paramètres…',
+    title: 'Préférences',
+    loading: 'Chargement des préférences…',
     profileTitle: 'Profil',
     profileSubtitle: 'Votre nom, votre avatar et votre compte.',
     appearanceTitle: 'Apparence',
@@ -14,19 +14,20 @@ export const auth: Translation<typeof en> = {
     themeLight: 'Clair',
     themeDark: 'Sombre',
     languageTitle: 'Langue',
-    languageSubtitle: "Suivez l'appareil, ou choisissez la langue de l'application.",
-    languageSystem: 'Système',
+    languageSubtitle: "La langue dans laquelle l'application s'affiche.",
     reminderTitle: 'Rappel quotidien',
-    reminderSubtitle: 'Nous vous rappellerons de noter les dépenses du jour, seulement les jours où rien n’est encore noté.',
+    reminderSubtitle: 'Un petit rappel pour noter, seulement les jours où aucune dépense n’est encore notée. Notez quand vous voulez.',
     reminderTimeLabel: 'Heure du rappel',
     reminderSave: 'Enregistrer le rappel',
     reminderSaveError: "Impossible d'enregistrer le rappel.",
     notificationsTitle: 'Notifications',
     notificationsSubtitle: 'Rappels quotidiens et alertes de budget.',
+    notificationsBlocked: 'Les notifications sont bloquées pour l’application : aucun rappel ne sera envoyé. Vous pouvez les autoriser dans les réglages du téléphone.',
   },
   pin: {
-    createTitle: 'Créez un code PIN',
-    createSubtitle: "Choisissez un code à 4 chiffres pour verrouiller l'application sur cet appareil.",
+    createTitle: 'Gardez votre argent privé',
+    createSubtitle:
+      "Vos soldes et vos dépenses restent sur ce téléphone. Choisissez un code à 4 chiffres pour que personne d'autre n'ouvre l'application.",
     confirmTitle: 'Confirmez votre code',
     confirmSubtitle: 'Saisissez-le à nouveau pour confirmer.',
     unlockTitle: 'Saisissez votre code',

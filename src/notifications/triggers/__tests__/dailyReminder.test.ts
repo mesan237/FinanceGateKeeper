@@ -1,5 +1,7 @@
 import { buildDailyReminders, REMINDER_DAYS_AHEAD } from '@/notifications/triggers/dailyReminder';
+import i18n from '@/i18n';
 import { toISODate } from '@/utils/formatDate';
+import { act } from '@testing-library/react-native';
 
 /** Local wall-clock time, so the test reads the same in any timezone. */
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 7, day, hour, minute);
@@ -38,5 +40,19 @@ describe('buildDailyReminders (VS-57)', () => {
     expect(() => buildDailyReminders('9pm', at(15, 9), new Set())).toThrow();
     expect(() => buildDailyReminders('24:00', at(15, 9), new Set())).toThrow();
     expect(() => buildDailyReminders('12:60', at(15, 9), new Set())).toThrow();
+  });
+
+  it('says nothing is logged yet, without a deadline (VS-88)', () => {
+    const [reminder] = buildDailyReminders('21:00', at(15, 9), new Set());
+    expect(reminder.title).toBe('No spending logged today');
+    expect(reminder.body).toBe('Spent something, or nothing at all? Log it in a few seconds.');
+    expect(reminder.body).not.toMatch(/before the day ends/);
+  });
+
+  it('reads in French', async () => {
+    await act(() => i18n.changeLanguage('fr'));
+    const [reminder] = buildDailyReminders('21:00', at(15, 9), new Set());
+    expect(reminder.title).toBe('Aucune dépense notée aujourd’hui');
+    expect(reminder.body).toBe('Une dépense, ou rien dépensé ? Notez-le en quelques secondes.');
   });
 });

@@ -8,6 +8,11 @@ jest.mock('@/features/finance/auth/auth.service', () => ({
   getActionBarStyle: jest.fn().mockResolvedValue('explicit'),
   setActionBarStyle: jest.fn().mockResolvedValue(undefined),
   setLanguage: jest.fn().mockResolvedValue(undefined),
+  keepLanguageOfExistingInstall: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/notifications/notifications.service', () => ({
+  requestPermissions: jest.fn().mockResolvedValue(true),
+  hasPermission: jest.fn().mockResolvedValue(true),
 }));
 jest.mock('@/features/finance/auth/reminder', () => ({
   applyReminderSchedule: jest.fn().mockResolvedValue(undefined),
@@ -26,28 +31,35 @@ import { SettingsScreen } from '@/features/finance/auth/SettingsScreen';
 import {
   getAppSettings,
   setLanguage,
+  setNotificationsEnabled,
   setReminderTime,
 } from '@/features/finance/auth/auth.service';
 import { applyReminderSchedule } from '@/features/finance/auth/reminder';
+import { hasPermission, requestPermissions } from '@/notifications/notifications.service';
 
 const mockedGet = getAppSettings as jest.MockedFunction<typeof getAppSettings>;
 const mockedSetTime = setReminderTime as jest.MockedFunction<typeof setReminderTime>;
 const mockedSetLanguage = setLanguage as jest.MockedFunction<typeof setLanguage>;
 const mockedApply = applyReminderSchedule as jest.MockedFunction<typeof applyReminderSchedule>;
+const mockedRequest = requestPermissions as jest.MockedFunction<typeof requestPermissions>;
+const mockedHas = hasPermission as jest.MockedFunction<typeof hasPermission>;
+const mockedSetEnabled = setNotificationsEnabled as jest.MockedFunction<typeof setNotificationsEnabled>;
 
 function renderSettings() {
   return render(<SettingsScreen />);
 }
 
+const BASE = {
+  reminderTime: '21:00',
+  notificationsEnabled: true,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  onboardingComplete: true,
+  language: null,
+};
+
 beforeEach(() => {
   jest.clearAllMocks();
-  mockedGet.mockResolvedValue({
-    reminderTime: '21:00',
-    notificationsEnabled: true,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    onboardingComplete: true,
-    language: null,
-  });
+  mockedGet.mockResolvedValue(BASE);
 });
 
 describe('SettingsScreen', () => {
@@ -94,38 +106,68 @@ describe('SettingsScreen', () => {
   });
 });
 
-describe('SettingsScreen — Language', () => {
-  it('follows the device language by default', async () => {
+describe('SettingsScreen — reminders that are really on (VS-88)', () => {
+  it('turns reminders on once the phone allows notifications', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, notificationsEnabled: false });
     renderSettings();
-    const system = await screen.findByTestId('settings-language-control-system');
-    expect(system.props.accessibilityState.selected).toBe(true);
+    fireEvent.press(await screen.findByTestId('settings-notifications-switch'));
+
+    await waitFor(() => expect(mockedSetEnabled).toHaveBeenCalledWith(true));
+    expect(screen.queryByTestId('settings-notifications-refused')).toBeNull();
+  });
+
+  it('keeps the switch off and says why when notifications are refused', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, notificationsEnabled: false });
+    mockedRequest.mockResolvedValueOnce(false);
+    renderSettings();
+    fireEvent.press(await screen.findByTestId('settings-notifications-switch'));
+
+    expect(await screen.findByTestId('settings-notifications-refused')).toBeTruthy();
+    expect(screen.getByText(/Notifications are blocked for the app/)).toBeTruthy();
+    expect(mockedSetEnabled).not.toHaveBeenCalledWith(true);
+  });
+
+  it('warns when reminders are on but the phone blocks notifications', async () => {
+    mockedHas.mockResolvedValueOnce(false);
+    renderSettings();
+    expect(await screen.findByTestId('settings-notifications-refused')).toBeTruthy();
+  });
+
+  it('shows no warning when notifications are allowed', async () => {
+    renderSettings();
+    await screen.findByTestId('settings-notifications-switch');
+    await waitFor(() => expect(mockedHas).toHaveBeenCalled());
+    expect(screen.queryByTestId('settings-notifications-refused')).toBeNull();
+  });
+});
+
+describe('SettingsScreen — Language', () => {
+  it('shows French as the language when none is saved (VS-86)', async () => {
+    renderSettings();
+    const fr = await screen.findByTestId('settings-language-control-fr');
+    expect(fr.props.accessibilityState.selected).toBe(true);
+    expect(screen.queryByTestId('settings-language-control-system')).toBeNull();
   });
 
   it('switches the app to French, saves the choice and re-words the reminder', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, language: 'en' });
     renderSettings();
     fireEvent.press(await screen.findByTestId('settings-language-control-fr'));
 
     await waitFor(() => expect(mockedSetLanguage).toHaveBeenCalledWith('fr'));
-    expect(await screen.findByText('Paramètres')).toBeTruthy();
+    expect(await screen.findByText('Préférences')).toBeTruthy();
     expect(mockedApply).toHaveBeenCalledWith(
       expect.objectContaining({ reminderTime: '21:00', notificationsEnabled: true }),
     );
   });
 
-  it('goes back to following the device when System is chosen', async () => {
-    mockedGet.mockResolvedValue({
-      reminderTime: '21:00',
-      notificationsEnabled: true,
-      createdAt: '2026-01-01T00:00:00.000Z',
-      onboardingComplete: true,
-      language: 'fr',
-    });
+  it('switches the app to English', async () => {
+    mockedGet.mockResolvedValue({ ...BASE, language: 'fr' });
     renderSettings();
-    fireEvent.press(await screen.findByTestId('settings-language-control-system'));
+    fireEvent.press(await screen.findByTestId('settings-language-control-en'));
 
-    await waitFor(() => expect(mockedSetLanguage).toHaveBeenCalledWith(null));
-    // The Jest device is English, so following it lands on English.
-    expect(await screen.findByText('Settings')).toBeTruthy();
+    await waitFor(() => expect(mockedSetLanguage).toHaveBeenCalledWith('en'));
+    expect(await screen.findByText('Preferences')).toBeTruthy();
   });
 });
 

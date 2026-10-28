@@ -1,33 +1,52 @@
 import type { onboarding as en } from '@/i18n/locales/en/onboarding';
 import type { Translation } from '@/i18n/translation.types';
 
-/** French copy for first-run set-up (UX-08). */
+/** French copy for first-run set-up (UX-08, VS-87). */
 export const onboarding: Translation<typeof en> = {
   skip: 'Passer la configuration',
   skipLabel: 'Passer la configuration et ouvrir l’application',
   stepOf: 'Étape {{number}} sur {{total}}',
   intro: {
-    title: 'Sachez où va chaque franc',
-    body: 'Notez ce que vous dépensez chaque jour pendant quelques mois, même les petites choses. L’application vous montre ensuite ce que coûte vraiment un mois, et vous aide à planifier le suivant.',
-    start: 'Configurer — environ une minute',
-    steps: {
-      observe: { title: 'Observer', body: 'Tout noter pendant 3 mois complets, sans changer vos habitudes.' },
-      see: { title: 'Comprendre', body: 'Voir ce que coûte vraiment un mois.' },
-      plan: { title: 'Planifier', body: 'Faire le budget d’un mois à partir de votre propre moyenne.' },
-      optimize: { title: 'Optimiser', body: 'Réduire là où cela rapporte le plus.' },
-      grow: { title: 'Faire fructifier', body: 'Mettre ce que vous libérez au service d’objectifs et d’une réserve.' },
+    title: 'Un budget fondé sur vos vraies dépenses',
+    body: 'Pendant quelques mois, vous notez ce que vous dépensez, espèces et Mobile Money compris. Vous voyez alors ce que coûte vraiment un mois, et vous planifiez à partir de là.',
+    start: 'Commencer — environ une minute',
+    stages: {
+      now: {
+        when: 'Maintenant',
+        title: 'Observer',
+        body: 'Notez vos dépenses au fil des jours. Rien dépensé ? Marquez la journée.',
+      },
+      after: {
+        when: 'Après 3 mois complets',
+        title: 'Planifier',
+        body: 'Faites votre budget à partir de ce que vos mois ont vraiment coûté.',
+      },
+      then: {
+        when: 'Ensuite',
+        title: 'Optimiser',
+        body: 'Voyez où vous avez de la marge, et ce que vous pouvez mettre de côté.',
+      },
     },
+    observeNote:
+      'Un mois compte dès que 8 jours sur 10 sont notés : quelques oublis ne remettent rien en cause. Trois mois donnent une moyenne plus fiable qu’un seul, souvent faussé par une grosse dépense.',
+    early:
+      'Besoin d’un budget tout de suite ? Vous pouvez en faire un dès maintenant avec vos estimations. Vos mois continuent d’être comptés, et vous l’ajusterez avec vos vrais chiffres.',
   },
   wallets: {
     title: 'Que contiennent vos portefeuilles aujourd’hui ?',
-    body: 'Espèces, Mobile Money, banque : indiquez ce que chacun contient maintenant, pour que vos soldes soient justes dès le premier jour.',
-    later: 'Plus tard',
+    body: 'C’est votre point de départ : vos soldes seront justes dès le premier jour. Un montant approximatif suffit.',
+    privacy:
+      'Vos données restent sur ce téléphone. Rien n’est envoyé en ligne, sauf si vous activez plus tard la sauvegarde en ligne. Un code PIN protégera l’accès à la fin de la configuration.',
   },
   reminder: {
-    title: 'Quand pouvez-vous noter vos dépenses ?',
-    body: 'Choisissez un moment calme. Le rappel ne vient que les jours où rien n’est noté.',
-    time: 'Heure du rappel quotidien',
-    enable: 'Me le rappeler',
+    title: 'Besoin d’un petit rappel ?',
+    body: 'Notez vos dépenses quand vous voulez, au fil de la journée. Si aucune dépense n’est notée à l’heure choisie, l’application vous envoie un rappel. Les jours où c’est déjà fait, elle ne dit rien.',
+    noSpendTip: "Rien dépensé ? Touchez « Je n'ai rien dépensé aujourd'hui » : la journée compte aussi.",
+    time: 'Heure du rappel',
+    enable: 'Activer le rappel',
     later: 'Pas de rappel',
+    hint: 'Vous pourrez changer l’heure ou l’activer plus tard dans Préférences.',
+    blocked: 'Les notifications sont bloquées pour l’application : aucun rappel ne sera envoyé. Vous pouvez les autoriser dans les réglages du téléphone.',
+    continue: 'Continuer',
   },
 };

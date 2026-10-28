@@ -16,7 +16,7 @@ import React, { useEffect, useMemo } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { applyLanguagePreference } from '@/i18n';
+import { applyLanguagePreference, resolveLanguage } from '@/i18n';
 import { AttentionProvider } from '@/components/AttentionProvider';
 import { JourneyStageProvider } from '@/components/JourneyStageProvider';
 import { ToastProvider } from '@/components/Toast';
@@ -26,6 +26,7 @@ import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useDailySnapshot } from '@/hooks/useDailySnapshot';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
 import { AuthScreen } from '@/features/finance/auth/AuthScreen';
+import { pinGateView } from '@/features/finance/auth/auth.gate';
 import { DailyReminderScheduler } from '@/features/finance/auth/DailyReminderScheduler';
 import { useAppSettings } from '@/features/finance/auth/auth.hooks';
 import { DebtReminderScheduler } from '@/features/finance/debt/DebtReminderScheduler';
@@ -48,7 +49,8 @@ export default function RootLayout() {
   // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
   // feature stays presentational (see ISSUE-023), along with the set-up's two
   // working steps: the reminder (auth) and the wallets (accounts) (UX-08).
-  const { settings, loading: settingsLoading, completeOnboarding, enableReminder } = useAppSettings();
+  const { settings, loading: settingsLoading, completeOnboarding, enableReminder, setLanguage } =
+    useAppSettings();
 
   // i18n starts in the device language; once the saved Settings override has
   // loaded, apply it. Later changes are applied by the Settings screen itself.
@@ -71,11 +73,13 @@ export default function RootLayout() {
     WorkSans_600SemiBold,
   });
 
+  // The splash also waits for the settings, so the first screen is already in
+  // the saved language rather than flashing the French default (VS-86).
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded && !settingsLoading) {
       void SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, settingsLoading]);
 
   if (!fontsLoaded) {
     return null;
@@ -88,7 +92,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <AuthGate>
+          <AuthGate setUpComplete={settingsLoading || !settings ? undefined : settings.onboardingComplete}>
             <DailySnapshot />
             <OnboardingGate
               ready={!settingsLoading && !!settings}
@@ -96,6 +100,8 @@ export default function RootLayout() {
               onDone={() => void completeOnboarding()}
               onReminder={enableReminder}
               renderWallets={(next) => <OpeningBalancesStep onDone={next} />}
+              language={resolveLanguage(settings?.language ?? null)}
+              onLanguage={setLanguage}
             >
               <JourneyStageProvider>
                 <AttentionProvider>
@@ -133,16 +139,24 @@ export default function RootLayout() {
 
 /**
  * Hard PIN gate. Renders nothing until the lock state has resolved (so the tabs
- * never flash before the lock decision), shows the themed `AuthScreen` while the
- * app is unset (first-run setup) or locked, and only mounts the real app — and
- * its schedulers — once unlocked. Lives inside `AuthProvider` so it can read the
- * lock state and inside `ThemeProvider` so the lock screen is themed.
+ * never flash before the lock decision) and shows the themed `AuthScreen` while
+ * locked. A first run goes through the set-up before the PIN is created, so the
+ * user knows what the app is before being asked to lock it (VS-85); the app and
+ * its schedulers mount only once unlocked. Lives inside `AuthProvider` so it
+ * can read the lock state and inside `ThemeProvider` so the lock screen is themed.
  */
-function AuthGate({ children }: { children: React.ReactNode }) {
+function AuthGate({
+  setUpComplete,
+  children,
+}: {
+  setUpComplete: boolean | undefined;
+  children: React.ReactNode;
+}) {
   const { ready, pinState } = useAuthLock();
+  const view = pinGateView({ ready, pinState, setUpComplete });
 
-  if (!ready) return null;
-  if (pinState !== 'unlocked') {
+  if (view === 'wait') return null;
+  if (view === 'lock') {
     return (
       <ThemedShell>
         <AuthScreen />

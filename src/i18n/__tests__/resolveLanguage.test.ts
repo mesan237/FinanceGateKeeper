@@ -1,25 +1,25 @@
-import { resolveLanguage } from '@/i18n/resolveLanguage';
+import { deviceLanguage, resolveLanguage } from '@/i18n/resolveLanguage';
 
 describe('resolveLanguage', () => {
-  it('uses the saved override over the device language', () => {
-    expect(resolveLanguage('en', 'fr-CM')).toBe('en');
-    expect(resolveLanguage('fr', 'en-US')).toBe('fr');
+  it('uses the saved choice', () => {
+    expect(resolveLanguage('en')).toBe('en');
+    expect(resolveLanguage('fr')).toBe('fr');
   });
 
-  it('follows a French device when no override is saved', () => {
-    expect(resolveLanguage(null, 'fr-CM')).toBe('fr');
-    expect(resolveLanguage(null, 'fr')).toBe('fr');
+  it('is French when nothing is saved, whatever the device (VS-86)', () => {
+    expect(resolveLanguage(null)).toBe('fr');
+  });
+});
+
+describe('deviceLanguage', () => {
+  it('follows a French or English device', () => {
+    expect(deviceLanguage('fr-CM')).toBe('fr');
+    expect(deviceLanguage('fr')).toBe('fr');
+    expect(deviceLanguage('en-GB')).toBe('en');
   });
 
-  it('follows an English device when no override is saved', () => {
-    expect(resolveLanguage(null, 'en-GB')).toBe('en');
-  });
-
-  it('falls back to English for an unsupported device language', () => {
-    expect(resolveLanguage(null, 'de-DE')).toBe('en');
-  });
-
-  it('falls back to English when the device language is unknown', () => {
-    expect(resolveLanguage(null, null)).toBe('en');
+  it('falls back to English for an unsupported or unknown device language', () => {
+    expect(deviceLanguage('de-DE')).toBe('en');
+    expect(deviceLanguage(null)).toBe('en');
   });
 });

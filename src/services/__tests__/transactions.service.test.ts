@@ -171,22 +171,25 @@ describe('getTransactionFeed', () => {
   });
 });
 
-describe('getLoggedDays (VS-57)', () => {
-  it('counts a day with any expense, income, transfer or no-spend confirmation', async () => {
+describe('getLoggedDays (VS-57, VS-88)', () => {
+  it('counts a day with an expense or a no-spend confirmation, as Observe does', async () => {
     insertExpense(1_000, 1, '2026-08-01');
-    insertIncome(50_000, 'salary', '2026-08-02');
-    insertTransfer(1, 2, 5_000, '2026-08-03');
     sqlite.prepare('INSERT INTO zero_days (date, confirmed_at) VALUES (?, ?)').run('2026-08-04', new Date().toISOString());
 
     const days = await getLoggedDays('2026-08-01', '2026-08-05');
 
-    expect([...days].sort()).toEqual(['2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04']);
+    expect([...days].sort()).toEqual(['2026-08-01', '2026-08-04']);
   });
 
-  it('ignores days outside the range and removed transfers', async () => {
+  it('does not count a day with only income or a transfer: it is not a logged day for Observe', async () => {
+    insertIncome(50_000, 'salary', '2026-08-02');
+    insertTransfer(1, 2, 5_000, '2026-08-03');
+
+    expect((await getLoggedDays('2026-08-01', '2026-08-05')).size).toBe(0);
+  });
+
+  it('ignores days outside the range', async () => {
     insertExpense(1_000, 1, '2026-07-31');
-    const transfer = insertTransfer(1, 2, 5_000, '2026-08-02');
-    sqlite.prepare('UPDATE transfers SET deleted_at = ? WHERE id = ?').run(new Date().toISOString(), transfer);
 
     expect((await getLoggedDays('2026-08-01', '2026-08-05')).size).toBe(0);
   });

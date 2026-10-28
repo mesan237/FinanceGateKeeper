@@ -11,6 +11,8 @@ const STEPS = {
   onDone: jest.fn(),
   onReminder: jest.fn().mockResolvedValue(true),
   renderWallets: () => null,
+  language: 'en' as const,
+  onLanguage: jest.fn(),
 };
 
 describe('OnboardingGate', () => {

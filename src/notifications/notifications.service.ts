@@ -11,6 +11,15 @@ import type { NotificationPayload } from '@/notifications/notifications.types';
  */
 
 /**
+ * Whether notifications are allowed right now, without ever prompting (VS-88).
+ * Used to say so when reminders are on but the phone blocks them.
+ */
+export async function hasPermission(): Promise<boolean> {
+  const current = await Notifications.getPermissionsAsync();
+  return current.granted;
+}
+
+/**
  * Requests notification permission, returning whether it is granted. Checks the
  * current status first and only prompts when not already granted.
  */

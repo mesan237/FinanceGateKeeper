@@ -12,7 +12,9 @@ device-only lock; the cloud identity (email/password) is separate, in
   avatar_color, avatar_emoji, created_at. Excluded from cloud sync (device-local).
 
 ## Key Business Rules
-- First launch: no PIN exists → forced setup flow (enter + confirm) via `AuthGate`.
+- First launch: the set-up (onboarding) comes first, then the forced PIN creation (enter +
+  confirm) via `AuthGate` — the user learns what the app is before locking it (VS-85).
+  An existing PIN always locks first. The decision is `auth.gate.pinGateView`.
 - Subsequent launches: require PIN to unlock. 3 wrong attempts → 30-second cooldown
   (held in memory in `AuthProvider`; resets on relaunch).
 - PIN is salted + SHA-256 hashed (`utils/pinHash`, expo-crypto) before storage —
@@ -20,6 +22,10 @@ device-only lock; the cloud identity (email/password) is separate, in
 - `app_mode` defaults to `learning`. User switches to `control` or is prompted after 30 days.
 - Lock state lives in `AuthProvider` (context wrapping the app); `AuthGate` in
   `app/_layout.tsx` renders `AuthScreen` until unlocked.
+- Language (VS-86): `users.language`, `null` until chosen, which reads as French.
+  `keepLanguageOfExistingInstall` saves the device language once for an install past its
+  set-up, so the change to a French default never switched an existing user. The routing
+  layer passes `setLanguage` to the set-up's FR | EN toggle.
 - Profile avatar is rendered on-device (emoji or name-initials on a color) — no image upload.
 - Forgot-PIN recovery: re-authenticate with the cloud account password to reset the PIN
   (no data loss); users with no cloud backup get a confirm-guarded full local wipe

@@ -91,13 +91,21 @@ flowchart LR
 - Every step skippable; every answer editable later in the place it lives.
 - Missing data is visible as *not confirmed* / *your estimate*, never silently treated as zero.
 
-### 8.2 First-run set-up (target: under 2 minutes, 3 screens after the PIN)
+### 8.2 First-run set-up (target: under 2 minutes, 3 screens, then the PIN)
+
+VS-85 moved the PIN after these steps: a fresh install learns what the app does before it is asked
+to lock it. An existing PIN still locks first.
+
+VS-87 reworded S0 after the onboarding review: *a budget built on what you really spend*, shown as
+three stages (now Observe · after 3 complete months Plan · then Optimize) rather than the five path
+steps, with the complete-month rule and the early-budget option. S1 now says where the data stays
+before asking for any amount.
 
 | Step | User's goal | Question asked | Why it is needed | Mandatory? | Effect on first experience | If skipped | Change later |
 |---|---|---|---|---|---|---|---|
 | **S0 · What this app does** | Know what I'm signing up for | none — one screen: "Log every franc for a few months. The app shows what a month really costs you, then helps you plan it." + the five path steps as a strip | Sets the Observe expectation, replaces panels 1–4 | Viewed once (one tap) | My path makes sense when first seen | — | — |
 | **S1 · Your wallets** | Start with true balances | "Which do you use, and roughly what is in each today?" (Cash, MTN MoMo, Orange Money pre-listed; add another) | Without it every wallet balance — and later *Free cash* and net worth — is wrong from day one (F-11) | Optional | Wallet totals on Home are real; the *checked today* badge shows | Wallets start at 0, marked *not confirmed*; Home shows *Check balances* in the next-for-you slot | Accounts → *Confirm balance* (exists, VS-42) |
-| **S2 · Your logging moment** | Never forget a day | "When do you usually have a quiet minute in the evening?" (time picker, default 21:00) → then the OS notification permission | Coverage drives the whole Observe step (F-03) | Optional | Reminder scheduled; quiet on days with an entry (VS-57) | No reminder; ZeroDayGate still prompts on open | Settings → reminder |
+| **S2 · Your logging moment** | Never forget a day | "When do you usually have a quiet minute in the evening?" (time picker, default 21:00) → then the OS notification permission | Coverage drives the whole Observe step (F-03) | Optional | Reminder scheduled; quiet on days with an entry (VS-57) | No reminder, and no in-app no-spend prompt either: `ZeroDayGate` only prompts with reminders on (corrected in VS-88) | Settings → reminder |
 
 **Recording the balance:** use a dated **balance check** (`accounts.checks`), not the undated
 `opening_balance`, so later back-dated entries behave as the glossary describes.

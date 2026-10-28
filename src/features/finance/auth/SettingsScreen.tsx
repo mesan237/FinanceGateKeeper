@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { Icon } from '@/components/Icon';
@@ -14,7 +14,8 @@ import { Toggle } from '@/components/Toggle';
 import { Typography } from '@/components/Typography';
 import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { isAppLanguage } from '@/i18n/resolveLanguage';
+import { isAppLanguage, resolveLanguage } from '@/i18n/resolveLanguage';
+import { hasPermission } from '@/notifications/notifications.service';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
 
 import { useAppSettings } from './auth.hooks';
@@ -27,7 +28,7 @@ import { applyReminderSchedule } from './reminder';
  * infra) — a language change re-schedules it so its text follows the UI.
  */
 export function SettingsScreen() {
-  const { settings, setReminderTime, setNotificationsEnabled, setLanguage } = useAppSettings();
+  const { settings, setReminderTime, setNotificationsEnabled, setLanguage, enableReminder } = useAppSettings();
   const { mode: themeMode, setMode: setThemeMode } = useThemeMode();
   const { t } = useTranslation(['auth', 'common']);
   const router = useRouter();
@@ -36,6 +37,26 @@ export function SettingsScreen() {
 
   const [reminderInput, setReminderInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Reminders the phone will not deliver (VS-88): refused when turned on, or
+  // turned on earlier and blocked in the phone's settings since.
+  const [blocked, setBlocked] = useState(false);
+
+  // While reminders are on, check the phone still allows them — on load and on
+  // each return to the app, since they are allowed in the phone's settings.
+  const remindersOn = settings?.notificationsEnabled ?? false;
+  useEffect(() => {
+    if (!remindersOn) return;
+    const check = () => {
+      hasPermission()
+        .then((ok) => setBlocked(!ok))
+        .catch((e: unknown) => console.error('Notification permission check failed:', e));
+    };
+    check();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') check();
+    });
+    return () => subscription.remove();
+  }, [remindersOn]);
 
   // Seed the editable reminder field once settings load.
   useEffect(() => {
@@ -51,7 +72,8 @@ export function SettingsScreen() {
   }
 
   const changeLanguage = async (key: string) => {
-    await setLanguage(isAppLanguage(key) ? key : null);
+    if (!isAppLanguage(key)) return;
+    await setLanguage(key);
     await applyReminderSchedule({
       reminderTime: settings.reminderTime,
       notificationsEnabled: settings.notificationsEnabled,
@@ -73,9 +95,18 @@ export function SettingsScreen() {
     }
   };
 
+  // Turning reminders on asks for permission and stays off when refused, so
+  // the switch never shows reminders the phone will not deliver (VS-88).
   const toggleNotifications = async (enabled: boolean) => {
-    await setNotificationsEnabled(enabled);
-    await applyReminderSchedule({ reminderTime: settings.reminderTime, notificationsEnabled: enabled });
+    if (!enabled) {
+      await setNotificationsEnabled(false);
+      setBlocked(false);
+      await applyReminderSchedule({ reminderTime: settings.reminderTime, notificationsEnabled: false });
+      return;
+    }
+    const granted = await enableReminder(settings.reminderTime);
+    setBlocked(!granted);
+    await applyReminderSchedule({ reminderTime: settings.reminderTime, notificationsEnabled: granted });
   };
 
   return (
@@ -124,9 +155,8 @@ export function SettingsScreen() {
         >
           <SegmentedControl
             testID="settings-language-control"
-            value={settings.language ?? 'system'}
+            value={resolveLanguage(settings.language)}
             segments={[
-              { key: 'system', label: t('settings.languageSystem') },
               { key: 'fr', label: t('common:languages.fr') },
               { key: 'en', label: t('common:languages.en') },
             ]}
@@ -167,6 +197,11 @@ export function SettingsScreen() {
             />
           }
         />
+        {blocked ? (
+          <Typography testID="settings-notifications-refused" style={styles.blocked}>
+            {t('settings.notificationsBlocked')}
+          </Typography>
+        ) : null}
       </ScrollView>
     </KeyboardAvoider>
   );
@@ -191,5 +226,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   error: {
     color: c.DANGER,
+  },
+  blocked: {
+    color: c.WARNING_TEXT,
+    paddingHorizontal: 4,
   },
 });

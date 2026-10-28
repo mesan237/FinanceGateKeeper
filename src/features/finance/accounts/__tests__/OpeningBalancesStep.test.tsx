@@ -68,6 +68,22 @@ describe('OpeningBalancesStep (UX-08)', () => {
     expect(mockedChecks.confirmBalance).not.toHaveBeenCalled();
   });
 
+  it('lets the wallets wait: "Not now" moves on without saving what was typed (VS-87)', async () => {
+    const onDone = jest.fn();
+    render(<OpeningBalancesStep onDone={onDone} />);
+
+    fireEvent.changeText(await screen.findByTestId('opening-balance-1'), '12 500');
+    fireEvent.press(screen.getByTestId('opening-balances-later'));
+
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(mockedChecks.confirmBalance).not.toHaveBeenCalled();
+  });
+
+  it('says a blank field is fine when the amount is unknown', async () => {
+    render(<OpeningBalancesStep onDone={jest.fn()} />);
+    expect((await screen.findByTestId('opening-balance-1')).props.placeholder).toBe("Blank if you don't know");
+  });
+
   it('refuses an amount that is not whole FCFA and stays on the step', async () => {
     const onDone = jest.fn();
     render(<OpeningBalancesStep onDone={onDone} />);

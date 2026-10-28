@@ -26,7 +26,8 @@ Three layers — never violate these:
 - Add each key to `en/` and `fr/` together. French is typed against English, so a missing key fails `tsc`.
 - Dates go through `formatDate`/`monthLabel` (French month names via `i18n/dateNames`). Show categories with `displayCategoryName`.
 - `i18n/` is the bottom layer: anything may import it, and it imports nothing from `src/`.
-- Jest pins English. A French test switches with `i18n.changeLanguage('fr')` inside `act` and switches back.
+- French is the default (VS-86): with no saved choice the app is in French, whatever the device says. An install set up before VS-86 had its device language saved once, so it did not switch. The choice is `users.language`; Preferences offers Français / English, and the set-up has an FR | EN toggle (`components/LanguageToggle`).
+- Jest switches to English in `jest.setup.ts` (the app no longer follows the mocked device). A French test switches with `i18n.changeLanguage('fr')` inside `act` and switches back.
 
 **Golden Rule:** Domain-specific → `features/`. Reusable → root folders. Route → `app/`.
 
