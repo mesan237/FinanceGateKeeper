@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
+import { track } from '@/services/analytics';
 import { currentMonthISO } from '@/utils/formatDate';
 
 import { moveBudget, removeCategoryBudget, setCategoryBudget } from './budget.envelopes';
@@ -50,6 +51,9 @@ export function useBudgetOverview(monthISO: string) {
   return { overview, loading, error, refresh };
 }
 
+/** The envelope writes, as named in `budget_adjustment_completed` (VS-90). */
+type EnvelopeAction = 'set_envelope' | 'remove_envelope' | 'cover_from';
+
 /**
  * Write actions for one envelope, backing the edit sheet: set its amount and
  * rollover flag, delete it, or cover an overspend by moving budget in from
@@ -62,31 +66,36 @@ export function useBudgetOverview(monthISO: string) {
 export function useEnvelopeActions(monthISO: string) {
   const [error, setError] = useState<string | null>(null);
 
-  const run = useCallback(async (action: () => Promise<void>): Promise<boolean> => {
-    try {
-      await action();
-      setError(null);
-      return true;
-    } catch (e) {
-      setError(e instanceof Error ? e.message : i18n.t('errors.updateBudget', { ns: 'budget' }));
-      return false;
-    }
-  }, []);
+  const run = useCallback(
+    async (actionType: EnvelopeAction, action: () => Promise<void>): Promise<boolean> => {
+      try {
+        await action();
+        track('budget_adjustment_completed', { entry_point: 'category_detail', action_type: actionType });
+        setError(null);
+        return true;
+      } catch (e) {
+        track('operation_failed', { feature_name: 'budget', action_type: 'adjust', failure_reason_code: 'save_error' });
+        setError(e instanceof Error ? e.message : i18n.t('errors.updateBudget', { ns: 'budget' }));
+        return false;
+      }
+    },
+    [],
+  );
 
   const setBudget = useCallback(
     (categoryId: number, amount: number, rolloverEnabled?: boolean) =>
-      run(() => setCategoryBudget(monthISO, categoryId, amount, rolloverEnabled)),
+      run('set_envelope', () => setCategoryBudget(monthISO, categoryId, amount, rolloverEnabled)),
     [monthISO, run],
   );
 
   const remove = useCallback(
-    (categoryId: number) => run(() => removeCategoryBudget(monthISO, categoryId)),
+    (categoryId: number) => run('remove_envelope', () => removeCategoryBudget(monthISO, categoryId)),
     [monthISO, run],
   );
 
   const coverFrom = useCallback(
     (fromCategoryId: number, toCategoryId: number, amount: number) =>
-      run(() => moveBudget(monthISO, fromCategoryId, toCategoryId, amount)),
+      run('cover_from', () => moveBudget(monthISO, fromCategoryId, toCategoryId, amount)),
     [monthISO, run],
   );
 

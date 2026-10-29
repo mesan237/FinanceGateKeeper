@@ -58,4 +58,10 @@ export const common = {
     freelance: 'Freelance',
     ecommerce: 'E-commerce',
   },
+  /** The optional-analytics switch (VS-90), in the set-up and in Preferences. */
+  analytics: {
+    title: 'Help improve the app',
+    body: 'Share anonymous usage: which screens you open and whether saves work. Never amounts, notes, names or categories. Off unless you turn it on.',
+    saveError: "Couldn't save this choice. Try again.",
+  },
 };

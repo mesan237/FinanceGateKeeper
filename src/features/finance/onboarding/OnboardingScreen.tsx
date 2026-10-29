@@ -10,8 +10,10 @@ import { TimeField } from '@/components/TimeField';
 import { Typography } from '@/components/Typography';
 import { SPACING } from '@/constants/layout';
 import type { AppLanguage } from '@/i18n/resolveLanguage';
+import { track } from '@/services/analytics';
 import { useThemeMode, useThemedStyles, type ThemeColors } from '@/theme';
 
+import { OnboardingConsent } from './OnboardingConsent';
 import { OnboardingIntro } from './OnboardingIntro';
 
 export interface OnboardingScreenProps {
@@ -77,7 +79,20 @@ export function OnboardingScreen({
   const [blocked, setBlocked] = useState(false);
 
   const step = STEPS[index];
-  const next = () => setIndex((i) => Math.min(i + 1, STEPS.length - 1));
+  // Step events reach analytics only if the user opted in on the first step (VS-90).
+  const next = () => {
+    track('onboarding_step_completed', { workflow_step: step });
+    setIndex((i) => Math.min(i + 1, STEPS.length - 1));
+  };
+  const finish = (reminder: 'on' | 'blocked' | 'later') => {
+    track('onboarding_step_completed', { workflow_step: 'reminder' });
+    track('onboarding_completed', { reminder });
+    onDone();
+  };
+  const skip = () => {
+    track('onboarding_skipped', { workflow_step: step });
+    onDone();
+  };
 
   const remind = async () => {
     setSaving(true);
@@ -97,7 +112,7 @@ export function OnboardingScreen({
       setBlocked(true);
       return;
     }
-    onDone();
+    finish('on');
   };
 
   const changeLanguage = async (next: AppLanguage) => {
@@ -123,7 +138,7 @@ export function OnboardingScreen({
           testID="onboarding-skip"
           accessibilityRole="button"
           accessibilityLabel={t('skipLabel')}
-          onPress={onDone}
+          onPress={skip}
           hitSlop={12}
         >
           <Typography style={styles.skip}>{t('skip')}</Typography>
@@ -135,7 +150,12 @@ export function OnboardingScreen({
         <Typography variant="display">{t(`${step}.title`)}</Typography>
         <Typography style={styles.text}>{t(`${step}.body`)}</Typography>
 
-        {step === 'intro' ? <OnboardingIntro /> : null}
+        {step === 'intro' ? (
+          <>
+            <OnboardingIntro />
+            <OnboardingConsent />
+          </>
+        ) : null}
 
         {step === 'wallets' ? (
           <>
@@ -177,7 +197,7 @@ export function OnboardingScreen({
           <Button testID="onboarding-next" label={t('intro.start')} onPress={next} />
         ) : null}
         {step === 'reminder' && blocked ? (
-          <Button testID="onboarding-continue" label={t('reminder.continue')} onPress={onDone} />
+          <Button testID="onboarding-continue" label={t('reminder.continue')} onPress={() => finish('blocked')} />
         ) : null}
         {step === 'reminder' && !blocked ? (
           <>
@@ -187,7 +207,12 @@ export function OnboardingScreen({
               onPress={() => void remind()}
               loading={saving}
             />
-            <Button testID="onboarding-later" label={t('reminder.later')} variant="ghost" onPress={onDone} />
+            <Button
+              testID="onboarding-later"
+              label={t('reminder.later')}
+              variant="ghost"
+              onPress={() => finish('later')}
+            />
           </>
         ) : null}
       </View>

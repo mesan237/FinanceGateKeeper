@@ -14,6 +14,7 @@ import { Toggle } from '@/components/Toggle';
 import { Typography } from '@/components/Typography';
 import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { FONT_FAMILY } from '@/constants/fonts';
+import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 import { isAppLanguage, resolveLanguage } from '@/i18n/resolveLanguage';
 import { hasPermission } from '@/notifications/notifications.service';
 import { useTheme, useThemeMode, useThemedStyles, type ThemeColors, type ThemeMode } from '@/theme';
@@ -40,6 +41,9 @@ export function SettingsScreen() {
   // Reminders the phone will not deliver (VS-88): refused when turned on, or
   // turned on earlier and blocked in the phone's settings since.
   const [blocked, setBlocked] = useState(false);
+  // Optional product analytics (VS-90): off until the user turns it on.
+  const analytics = useAnalyticsConsent('settings');
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
 
   // While reminders are on, check the phone still allows them — on load and on
   // each return to the app, since they are allowed in the phone's settings.
@@ -107,6 +111,16 @@ export function SettingsScreen() {
     const granted = await enableReminder(settings.reminderTime);
     setBlocked(!granted);
     await applyReminderSchedule({ reminderTime: settings.reminderTime, notificationsEnabled: granted });
+  };
+
+  const toggleAnalytics = async (enabled: boolean) => {
+    try {
+      await analytics.setEnabled(enabled);
+      setAnalyticsError(null);
+    } catch (e) {
+      console.error('Saving the analytics choice failed:', e);
+      setAnalyticsError(t('common:analytics.saveError'));
+    }
   };
 
   return (
@@ -200,6 +214,25 @@ export function SettingsScreen() {
         {blocked ? (
           <Typography testID="settings-notifications-refused" style={styles.blocked}>
             {t('settings.notificationsBlocked')}
+          </Typography>
+        ) : null}
+
+        <SectionCard
+          icon="reports"
+          title={t('common:analytics.title')}
+          subtitle={t('common:analytics.body')}
+          right={
+            <Toggle
+              testID="settings-analytics-switch"
+              value={analytics.enabled}
+              onValueChange={(enabled) => void toggleAnalytics(enabled)}
+              accessibilityLabel={t('common:analytics.title')}
+            />
+          }
+        />
+        {analyticsError ? (
+          <Typography testID="settings-analytics-error" style={styles.error}>
+            {analyticsError}
           </Typography>
         ) : null}
       </ScrollView>

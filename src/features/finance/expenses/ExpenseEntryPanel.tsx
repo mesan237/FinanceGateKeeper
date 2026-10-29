@@ -37,6 +37,8 @@ export interface ExpenseEntryPanelProps {
   note?: ControlledField;
   /** Focus the amount field on mount. Default `true`. */
   autoFocus?: boolean;
+  /** Where the panel is shown, for analytics (VS-90). Default the log screen. */
+  entryPoint?: 'log_screen' | 'add_sheet';
 }
 
 /**
@@ -51,11 +53,12 @@ export function ExpenseEntryPanel({
   amount,
   note,
   autoFocus = true,
+  entryPoint,
 }: ExpenseEntryPanelProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation(['expenses', 'common']);
-  const log = useExpenseLog({ amount, note });
+  const log = useExpenseLog({ amount, note, entryPoint });
   const { check } = useOverBudgetCheck();
   const { check: checkCategory } = useCategoryOverBudgetCheck();
   const { show } = useToast();

@@ -7,6 +7,7 @@ import {
   scheduleNotification,
 } from '@/notifications/notifications.service';
 import { buildDebtDueAlert } from '@/notifications/triggers/debtDueDate';
+import { track } from '@/services/analytics';
 
 import { getDebtPayments, payInstalment, recordDebtPayment, removeDebtPayment } from './debt.payments';
 import * as debtService from './debt.service';
@@ -56,10 +57,14 @@ export function useDebts(direction: DebtDirection) {
 
   const settle = useCallback(
     async (id: number): Promise<void> => {
+      let saved = false;
       try {
         await debtService.settleDebt(id);
+        saved = true;
+        track('debt_repayment_recorded', { action_type: 'settle' });
         await refresh();
       } catch (e) {
+        if (!saved) track('operation_failed', { feature_name: 'debt', action_type: 'repay', failure_reason_code: 'save_error' });
         setError(e instanceof Error ? e.message : i18n.t('errors.settleFailed', { ns: 'debt' }));
       }
     },
@@ -68,10 +73,14 @@ export function useDebts(direction: DebtDirection) {
 
   const remove = useCallback(
     async (id: number): Promise<void> => {
+      let saved = false;
       try {
         await debtService.deleteDebt(id);
+        saved = true;
+        track('debt_deleted', { entry_point: 'list' });
         await refresh();
       } catch (e) {
+        if (!saved) track('operation_failed', { feature_name: 'debt', action_type: 'delete', failure_reason_code: 'save_error' });
         setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'debt' }));
       }
     },
@@ -112,11 +121,15 @@ export function useDebtDetail(id: number) {
 
   const recordPayment = useCallback(
     async (payment: NewDebtPayment): Promise<boolean> => {
+      let saved = false;
       try {
         await recordDebtPayment(id, payment);
+        saved = true;
+        track('debt_repayment_recorded', { action_type: 'payment' });
         await refresh();
         return true;
       } catch (e) {
+        if (!saved) track('operation_failed', { feature_name: 'debt', action_type: 'repay', failure_reason_code: 'save_error' });
         setError(e instanceof Error ? e.message : i18n.t('errors.paymentFailed', { ns: 'debt' }));
         return false;
       }
@@ -127,11 +140,15 @@ export function useDebtDetail(id: number) {
   /** Pays instalment `n` through the sheet's wallet and day (VS-54); resolves true when it landed. */
   const payInstalmentAction = useCallback(
     async (n: number, payment: NewDebtPayment): Promise<boolean> => {
+      let saved = false;
       try {
         await payInstalment(id, n, payment.accountId, payment.date);
+        saved = true;
+        track('debt_repayment_recorded', { action_type: 'instalment' });
         await refresh();
         return true;
       } catch (e) {
+        if (!saved) track('operation_failed', { feature_name: 'debt', action_type: 'repay', failure_reason_code: 'save_error' });
         setError(e instanceof Error ? e.message : i18n.t('errors.paymentFailed', { ns: 'debt' }));
         return false;
       }
@@ -153,10 +170,14 @@ export function useDebtDetail(id: number) {
 
   const update = useCallback(
     async (patch: DebtPatch): Promise<void> => {
+      let saved = false;
       try {
         await debtService.updateDebt(id, patch);
+        saved = true;
+        track('debt_updated');
         await refresh();
       } catch (e) {
+        if (!saved) track('operation_failed', { feature_name: 'debt', action_type: 'edit', failure_reason_code: 'save_error' });
         setError(e instanceof Error ? e.message : i18n.t('errors.updateFailed', { ns: 'debt' }));
       }
     },
@@ -166,7 +187,9 @@ export function useDebtDetail(id: number) {
   const remove = useCallback(async (): Promise<void> => {
     try {
       await debtService.deleteDebt(id);
+      track('debt_deleted', { entry_point: 'detail' });
     } catch (e) {
+      track('operation_failed', { feature_name: 'debt', action_type: 'delete', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'debt' }));
     }
   }, [id]);

@@ -3,6 +3,7 @@ import { countCompleteMonths } from './budget.baseline';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { Category } from '@/features/finance/expenses/expenses.types';
+import { track } from '@/services/analytics';
 import { prevMonthISO } from '@/utils/monthMath';
 
 import {
@@ -212,9 +213,11 @@ export function useBudgetPlanner(monthISO: string): BudgetPlannerState {
         const amount = toAmount(amounts[category.id]);
         await setCategoryBudget(monthISO, category.id, amount, rollovers[category.id] ?? false);
       }
+      track('budget_adjustment_completed', { entry_point: 'planner', action_type: 'save_plan' });
       setError(null);
       return true;
     } catch (e) {
+      track('operation_failed', { feature_name: 'budget', action_type: 'adjust', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.saveBudget', { ns: 'budget' }));
       return false;
     } finally {

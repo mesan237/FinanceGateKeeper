@@ -14,6 +14,7 @@ import { ATTENTION_PLANNED, ATTENTION_TONTINES } from '@/constants/attention';
 import { ICON_SIZE, type IconName } from '@/constants/icons';
 import { PRIVACY_POLICY_URL } from '@/constants/legal';
 import type { navigation } from '@/i18n/locales/en/navigation';
+import { track, type DrawerFeature } from '@/services/analytics';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 /** Where "Feedback" opens a pre-addressed email for this single-user app. */
@@ -86,6 +87,9 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
 
   const handlePress = (row: DrawerRow) => {
     props.navigation.closeDrawer();
+    // Rows are the catalogue's drawer features; an unknown key is dropped by the allowlist.
+    track('feature_entry_point_selected', { feature_name: row.labelKey as DrawerFeature, entry_point: 'drawer' });
+    if (row.labelKey === 'feedback') track('feedback_started', { entry_point: 'drawer' });
     if (row.route) {
       router.push(row.route as never);
     } else if (row.onPress) {

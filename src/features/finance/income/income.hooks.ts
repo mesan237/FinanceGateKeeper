@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { IncomeSource } from '@/constants/incomeSources';
+import { elapsedSince, track } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
 import * as incomeService from './income.service';
@@ -25,6 +26,8 @@ export interface UseIncomeLogOptions {
   amount?: ControlledField;
   /** Lift `note` to a parent, same rationale as `amount`. */
   note?: ControlledField;
+  /** Where the form is shown, for analytics (VS-90). Default the log screen. */
+  entryPoint?: 'log_screen' | 'add_sheet';
 }
 
 /**
@@ -46,6 +49,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
+  const entryPoint = options?.entryPoint ?? 'log_screen';
 
   const numericAmount = Number(amount);
   const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
@@ -73,8 +77,11 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
   const submit = useCallback(async (): Promise<number | null> => {
     if (!canSubmit || source === null) {
       setAttempted(true);
+      const invalidField = !amountValid && source === null ? 'amount_and_source' : !amountValid ? 'amount' : 'source';
+      track('income_validation_failed', { entry_point: entryPoint, invalid_field: invalidField });
       return null;
     }
+    const startedAt = Date.now();
     try {
       const id = await incomeService.createIncome({
         amount: Math.trunc(numericAmount),
@@ -83,14 +90,16 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
         date,
         accountId,
       });
+      track('income_created', { entry_point: entryPoint, operation_duration_ms: elapsedSince(startedAt) });
       setError(null);
       reset();
       return id;
     } catch (e) {
+      track('income_creation_failed', { entry_point: entryPoint, failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'income' }));
       return null;
     }
-  }, [canSubmit, source, numericAmount, note, date, accountId, reset]);
+  }, [canSubmit, source, numericAmount, amountValid, note, date, accountId, reset, entryPoint]);
 
   return {
     amount,
@@ -174,9 +183,11 @@ export function useIncomeEdit(id: number) {
         date,
         accountId,
       });
+      track('income_edited');
       setError(null);
       return true;
     } catch (e) {
+      track('operation_failed', { feature_name: 'income', action_type: 'edit', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.updateFailed', { ns: 'income' }));
       return false;
     }
@@ -186,8 +197,10 @@ export function useIncomeEdit(id: number) {
   const remove = useCallback(async (): Promise<boolean> => {
     try {
       await incomeService.deleteIncome(id);
+      track('income_deleted');
       return true;
     } catch (e) {
+      track('operation_failed', { feature_name: 'income', action_type: 'delete', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.deleteFailed', { ns: 'income' }));
       return false;
     }

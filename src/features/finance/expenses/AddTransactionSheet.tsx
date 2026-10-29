@@ -91,6 +91,7 @@ export function AddTransactionSheet({
             amount={{ value: amount, onChange: setAmount }}
             note={{ value: note, onChange: setNote }}
             autoFocus={autoFocusSegment === 'expense'}
+            entryPoint="add_sheet"
             onSaved={() => {
               onSaved();
               onClose();
@@ -101,6 +102,7 @@ export function AddTransactionSheet({
             amount={{ value: amount, onChange: setAmount }}
             note={{ value: note, onChange: setNote }}
             autoFocus={autoFocusSegment === 'income'}
+            entryPoint="add_sheet"
             onSaved={() => {
               onSaved();
               onClose();

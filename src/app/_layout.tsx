@@ -22,6 +22,7 @@ import { JourneyStageProvider } from '@/components/JourneyStageProvider';
 import { ToastProvider } from '@/components/Toast';
 import { PushedScreensStack } from '@/components/PushedScreensStack';
 import { ThemeProvider, useTheme, useThemeMode } from '@/theme';
+import { useAnalyticsLifecycle } from '@/hooks/useAnalyticsLifecycle';
 import { useBackgroundSync } from '@/hooks/useBackgroundSync';
 import { useDailySnapshot } from '@/hooks/useDailySnapshot';
 import { AuthProvider, useAuthLock } from '@/features/finance/auth/AuthProvider';
@@ -62,6 +63,10 @@ export default function RootLayout() {
   // Best-effort cloud backup: pull/push on app open and foreground when signed
   // in. No-op when signed out or offline; never blocks render.
   useBackgroundSync();
+
+  // Optional product analytics (VS-90): app opens and screen views, only after
+  // the user opted in. Never blocks render and never throws.
+  useAnalyticsLifecycle();
 
   // Space Grotesk powers headings/display; Work Sans powers body copy and numbers.
   // Each weight is loaded as its own family — see @/constants/fonts.
