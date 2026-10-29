@@ -2763,6 +2763,41 @@ reminder never sounds like a deadline.
 
 ---
 
+### VS-90: Optional, Anonymous Product Analytics 🔄 In Progress
+
+**Priority:** P2 — product insight (requested 2026-10-29)
+**Blocked by:** —
+
+**Scope:**
+
+- Shared `services/analytics`: typed catalogue (`analytics.schema`), allowlist (`analytics.sanitize`),
+  consent gate and fire-and-forget `track`/`trackScreen` (`analytics.service`), PostHog EU adapter
+  (`analytics.posthog`, the only SDK import). `posthog-react-native@4.81.0` + `expo-application`;
+  no `expo-device`. All automatic collection off; anonymous only, no `identify`.
+- Opt-in, off by default: *Help improve the app* on the set-up's first step (`OnboardingConsent`)
+  and in Preferences. The choice lives in `ui_preferences.analytics_consent` (no migration).
+  Turning it off discards the queue and the anonymous id.
+- Events where outcomes are known: set-up steps, expense/income/debt create (+ validation and
+  failure), edit, delete, repayments, budget writes, drawer rows, feedback, `app_opened`, route
+  templates (`useAnalyticsLifecycle` in the root layout). Background writers send nothing.
+- Docs: `docs/ANALYTICS.md` (catalogue, funnels, anomaly rules, setup, Data safety answers); privacy
+  policy draft *Optional usage analytics*.
+
+**TDD Anchor:**
+
+- Test: allowlist drops unknown keys, bad values, concrete ids in routes; no prohibited key in the
+  catalogue.
+- Test: nothing sent or created before opt-in; withdrawal stops sending and disables the provider.
+- Test: one `expense_created` per save; failure sends only the failure; provider throw still saves;
+  retry is failure + one success; re-renders send nothing.
+- Test: set-up sends steps only after the switch; Preferences switch on/off; one `app_opened` per
+  launch; screen views only on route change.
+
+**Done when:** opted-in usage shows in PostHog with no financial data, and nothing is sent without
+consent. Before release: PostHog project set up, EAS key set, policy published, Data safety updated.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

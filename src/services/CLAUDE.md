@@ -25,6 +25,10 @@ services/
 - `sync.wallets.ts` (VS-82): on a first sync that is not a fresh-install restore, a wallet never uploaded takes over the cloud wallet with the same name and type before the push, so install starter wallets never double the user's own.
 - `uiPreferences.ts` (UX-14): small key/value choices about how screens look on this phone
   (`ui_preferences`, migration 050). Local only: not in `SYNCED_TABLES`, no Supabase patch.
+- `analytics/` (VS-90): optional product analytics. `index.ts` is the only import path; the
+  catalogue in `analytics.schema.ts` is the allowlist; `analytics.posthog.ts` is the only file that
+  touches the SDK. The consent choice is the `analytics_consent` UI preference. See
+  [docs/ANALYTICS.md](../../docs/ANALYTICS.md).
 
 ## Database Helpers to Expose
 - `db.execute(sql, params)` — Run a write query.
