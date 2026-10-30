@@ -29,6 +29,11 @@ Three layers — never violate these:
 - French is the default (VS-86): with no saved choice the app is in French, whatever the device says. An install set up before VS-86 had its device language saved once, so it did not switch. The choice is `users.language`; Preferences offers Français / English, and the set-up has an FR | EN toggle (`components/LanguageToggle`).
 - Jest switches to English in `jest.setup.ts` (the app no longer follows the mocked device). A French test switches with `i18n.changeLanguage('fr')` inside `act` and switches back.
 
+## Analytics (VS-90)
+- Optional and off by default: nothing is sent until the user turns on *Help improve the app*. See `docs/ANALYTICS.md`.
+- Send events only through `track(...)` from `@/services/analytics`, after the outcome is known (`*_created` once the save resolved). Never import `posthog-react-native` outside `services/analytics/analytics.posthog.ts`.
+- A new event or property goes into `analytics.schema.ts` first. Never send amounts, balances, notes, names, category/wallet/record ids, email or route params.
+
 **Golden Rule:** Domain-specific → `features/`. Reusable → root folders. Route → `app/`.
 
 ## Import Rules

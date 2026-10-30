@@ -5,7 +5,7 @@ permalink: /
 
 # Privacy Policy for Finance Gatekeeper
 
-**Last updated: October 28, 2026**
+**Last updated: [publication date — set when published]**
 
 ## Who we are
 
@@ -29,17 +29,33 @@ You can use the app without creating a cloud account. If you choose to create an
 
 Cloud account authentication and synced backups are provided through Supabase. The app stores the sign-in session using your device's secure storage. The app does not send your local PIN to Supabase.
 
+### Optional usage analytics
+
+The app can send anonymous usage statistics to help us improve it. This is **off unless you turn it on**, either during set-up or in **Preferences → Help improve the app**. You can turn it off again at any time in Preferences.
+
+When it is on, the app sends:
+
+- which screens you open, recorded as the screen's name only (for example "budget" or "expense detail"), never what is on them;
+- which actions you complete or that fail, for example that an expense was saved, that a save failed, or that a required field was missing, with how long a save took;
+- whether certain options were used, for example that an expense was marked as unplanned, or that a debt has a repayment schedule;
+- the app version, the app language, the operating system and its version, and whether the device is an emulator;
+- a random identifier created by the app for these statistics only.
+
+It **never** sends amounts, balances, notes, names, categories, wallet or account details, debts or repayments, your email address, your PIN, your cloud account identifier, or anything you type. It does not record your screen, your taps or your keystrokes, and it does not use your location. The analytics identifier is not linked to your cloud account.
+
+The statistics are processed by PostHog, Inc. in its European Union region. We ask PostHog not to store your IP address. When you turn analytics off, the app stops sending, deletes statistics it has not sent yet, and forgets its random identifier.
+
 ### Information collected by the app automatically
 
-The app does not include advertising or third-party analytics in the release covered by this policy. The app may use your device to schedule local reminders if you enable them. It does not use precise location to share your location with other users.
+The app does not include advertising. Apart from the optional usage analytics described above, which are off unless you turn them on, it does not include third-party analytics. The app may use your device to schedule local reminders if you enable them. It does not use precise location to share your location with other users.
 
 ## How we use information
 
-We use information to provide the app's finance tracking features, maintain your local preferences, authenticate optional cloud accounts, and sync or restore your backup when you request or enable those features.
+We use information to provide the app's finance tracking features, maintain your local preferences, authenticate optional cloud accounts, and sync or restore your backup when you request or enable those features. If you turn on usage analytics, we use the statistics only to see, across all users who share them, which features are used and where the app fails or is hard to use. We never use them to assess any person's finances.
 
 ## When information is shared
 
-Your on-device financial records are not uploaded to cloud backup unless you choose to sign in and use the cloud sync feature. When you use cloud sync, relevant account and synced-record data is sent to Supabase to provide authentication, storage, backup, and restore.
+Your on-device financial records are not uploaded to cloud backup unless you choose to sign in and use the cloud sync feature. When you use cloud sync, relevant account and synced-record data is sent to Supabase to provide authentication, storage, backup, and restore. If you turn on usage analytics, the statistics described above are sent to PostHog.
 
 We do not sell your personal information. We do not use your financial records for advertising. Service providers may process information on our behalf to provide the features you choose to use and under their applicable terms and privacy practices.
 
@@ -56,6 +72,8 @@ You can stop using cloud sync by signing out. Signing out does not delete your c
 To request deletion of your cloud account and its associated synced records, open **Backup & restore** in the app and tap **Delete my account**, or email [negokamgaing@gmail.com](mailto:negokamgaing@gmail.com) from the email address used for the cloud account. Include **"Finance Gatekeeper account deletion"** in the subject. We will verify the request, then delete the cloud account and associated synced records. We will contact you if we need information to verify that you own the account.
 
 Cloud deletion does not remotely erase a copy already stored on a device. You can remove local app data by clearing the app's storage or uninstalling it. On-device snapshots are also not removed by a cloud deletion request.
+
+Usage statistics are kept for up to 12 months, then deleted. Because they are anonymous, we can only find statistics already sent from your device if you can tell us roughly when you used the app. Email us if you would like us to try.
 
 We delete the cloud account and its synced records within 30 days of verifying the request. Some limited information may remain temporarily in service-provider backups or records where required for security, legal compliance, or dispute resolution.
 

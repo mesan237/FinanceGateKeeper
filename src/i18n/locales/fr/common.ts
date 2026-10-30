@@ -61,4 +61,9 @@ export const common: Translation<typeof en> = {
     freelance: 'Freelance',
     ecommerce: 'E-commerce',
   },
+  analytics: {
+    title: 'Aider à améliorer l’application',
+    body: 'Partager des statistiques d’usage anonymes : les écrans ouverts et la réussite des enregistrements. Jamais de montants, de notes, de noms ni de catégories. Désactivé tant que vous ne l’activez pas.',
+    saveError: 'Impossible d’enregistrer ce choix. Réessayez.',
+  },
 };

@@ -16,6 +16,7 @@ import { useThemedStyles, type ThemeColors } from '@/theme';
 
 import { DEBT_DIRECTION_VALUES, type DebtDirection } from '@/constants/debt';
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
+import { elapsedSince, track } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
 import { DebtTermsFields, type DebtTermsDraft } from './DebtTermsFields';
@@ -69,6 +70,7 @@ export function DebtForm() {
   const handleSave = async () => {
     if (!canSubmit) return;
     setSaving(true);
+    const startedAt = Date.now();
     try {
       await createDebt({
         personName: person.trim(),
@@ -80,8 +82,15 @@ export function DebtForm() {
         totalToRepay,
         schedule,
       });
+      track('debt_created', {
+        has_total_to_repay: totalToRepay !== null,
+        has_instalments: schedule !== null,
+        has_due_date: due !== '',
+        operation_duration_ms: elapsedSince(startedAt),
+      });
       router.replace('/debt');
     } catch (e) {
+      track('debt_creation_failed', { failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.createFailed', { ns: 'debt' }));
       setSaving(false);
     }

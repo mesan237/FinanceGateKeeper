@@ -10,6 +10,7 @@ import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
 import { KeyboardAwareForm } from '@/components/KeyboardAwareForm';
+import { trackedWrite } from '@/services/analytics';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
 
@@ -77,10 +78,10 @@ export function AccountForm() {
     };
     try {
       if (editId !== null) {
-        await updateAccount(editId, fields);
+        await trackedWrite('wallet', 'edit', () => updateAccount(editId, fields));
         router.back();
       } else {
-        await createAccount(fields);
+        await trackedWrite('wallet', 'create', () => createAccount(fields));
         router.replace('/accounts');
       }
     } catch (e) {

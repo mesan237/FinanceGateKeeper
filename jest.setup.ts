@@ -193,6 +193,22 @@ jest.mock('expo-document-picker', () => ({
 process.env.EXPO_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??= 'test-anon-key';
 
+// No test may reach PostHog (VS-90). The SDK is replaced by an inert client;
+// analytics tests inject a recording provider through
+// `setAnalyticsProviderFactoryForTests` instead.
+jest.mock('posthog-react-native', () => ({
+  PostHog: jest.fn().mockImplementation(() => ({
+    capture: jest.fn(),
+    screen: jest.fn().mockResolvedValue(undefined),
+    optIn: jest.fn().mockResolvedValue(undefined),
+    optOut: jest.fn().mockResolvedValue(undefined),
+    reset: jest.fn(),
+    flush: jest.fn().mockResolvedValue(undefined),
+    setPersistedProperty: jest.fn(),
+  })),
+  PostHogPersistedProperty: { Queue: 'queue' },
+}));
+
 // The device reports English. The app itself starts in French whatever the
 // device says (VS-86), so every suite is switched to English explicitly —
 // existing screen tests assert English copy. French is exercised per test via

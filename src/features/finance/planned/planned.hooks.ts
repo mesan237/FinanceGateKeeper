@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 
 import { useSetAttention } from '@/components/AttentionProvider';
 import { ATTENTION_PLANNED } from '@/constants/attention';
+import { trackedWrite } from '@/services/analytics';
 
 import { effectiveDueDate, postponedDate, todayISO } from './planned.due';
 import { notifyPlannedChange, onPlannedChange } from './planned.events';
@@ -53,7 +54,7 @@ export function usePlannedLists() {
   const create = useCallback(
     async (name: string, dueDate: string): Promise<boolean> => {
       try {
-        await service.createList(name, dueDate);
+        await trackedWrite('planned_list', 'create', () => service.createList(name, dueDate));
         notifyPlannedChange();
         await refresh();
         return true;
@@ -117,22 +118,34 @@ export function usePlannedItems(listId: number) {
   );
 
   const add = useCallback(
-    (input: Omit<NewPlannedItem, 'listId'>) => mutate(() => service.createItem({ ...input, listId })),
+    (input: Omit<NewPlannedItem, 'listId'>) =>
+      mutate(() => trackedWrite('planned_item', 'create', () => service.createItem({ ...input, listId }))),
     [mutate, listId],
   );
   const update = useCallback(
-    (id: number, patch: PlannedItemPatch) => mutate(() => service.updateItem(id, patch)),
+    (id: number, patch: PlannedItemPatch) =>
+      mutate(() => trackedWrite('planned_item', 'edit', () => service.updateItem(id, patch))),
     [mutate],
   );
-  const remove = useCallback((id: number) => mutate(() => service.deleteItem(id)), [mutate]);
+  const remove = useCallback(
+    (id: number) => mutate(() => trackedWrite('planned_item', 'delete', () => service.deleteItem(id))),
+    [mutate],
+  );
+  // Ticking creates the expense inside `markBought`; it counts as a planned
+  // purchase, not as a logged expense (VS-90).
   const buy = useCallback(
-    (id: number, details: PurchaseDetails) => mutate(() => markBought(id, details)),
+    (id: number, details: PurchaseDetails) =>
+      mutate(() => trackedWrite('planned_item', 'buy', () => markBought(id, details))),
     [mutate],
   );
-  const unbuy = useCallback((id: number) => mutate(() => unmarkBought(id)), [mutate]);
+  const unbuy = useCallback(
+    (id: number) => mutate(() => trackedWrite('planned_item', 'unbuy', () => unmarkBought(id))),
+    [mutate],
+  );
   /** Moves the whole list to a new due date. */
   const setDueDate = useCallback(
-    (dueDate: string) => mutate(() => service.setListDueDate(listId, dueDate)),
+    (dueDate: string) =>
+      mutate(() => trackedWrite('planned_list', 'reschedule', () => service.setListDueDate(listId, dueDate))),
     [mutate, listId],
   );
   /**
@@ -145,7 +158,9 @@ export function usePlannedItems(listId: number) {
       const today = todayISO();
       const current = effectiveDueDate(item.plannedDate, listDueDate) ?? today;
       return mutate(() =>
-        service.updateItem(item.id, { plannedDate: postponedDate(current, today, days) }),
+        trackedWrite('planned_item', 'postpone', () =>
+          service.updateItem(item.id, { plannedDate: postponedDate(current, today, days) }),
+        ),
       );
     },
     [mutate, listDueDate],
@@ -156,7 +171,7 @@ export function usePlannedItems(listId: number) {
   /** Deletes the whole list; resolves `true` when it is gone. */
   const removeList = useCallback(async (): Promise<boolean> => {
     try {
-      await service.deleteList(listId);
+      await trackedWrite('planned_list', 'delete', () => service.deleteList(listId));
       notifyPlannedChange();
       return true;
     } catch (e) {

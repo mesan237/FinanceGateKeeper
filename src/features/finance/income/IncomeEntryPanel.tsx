@@ -31,6 +31,8 @@ export interface IncomeEntryPanelProps {
   note?: ControlledField;
   /** Focus the amount field on mount. Default `true`. */
   autoFocus?: boolean;
+  /** Where the panel is shown, for analytics (VS-90). Default the log screen. */
+  entryPoint?: 'log_screen' | 'add_sheet';
 }
 
 /**
@@ -43,11 +45,12 @@ export function IncomeEntryPanel({
   amount,
   note,
   autoFocus = true,
+  entryPoint,
 }: IncomeEntryPanelProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation(['income', 'common']);
-  const log = useIncomeLog({ amount, note });
+  const log = useIncomeLog({ amount, note, entryPoint });
   const defaultAccountId = useDefaultAccountId();
   const [saving, setSaving] = useState(false);
 

@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { displayCategoryName } from '@/i18n/categoryNames';
+import { elapsedSince, track } from '@/services/analytics';
 import { getTransactionFeed } from '@/services/transactions';
 import type { TransactionEntry } from '@/types/transactions';
 import { toISODate } from '@/utils/formatDate';
@@ -43,6 +44,8 @@ export interface UseExpenseLogOptions {
   amount?: ControlledField;
   /** Lift `note` to a parent, same rationale as `amount`. */
   note?: ControlledField;
+  /** Where the form is shown, for analytics (VS-90). Default the log screen. */
+  entryPoint?: 'log_screen' | 'add_sheet';
 }
 
 /**
@@ -71,6 +74,8 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [error, setError] = useState<string | null>(null);
   const [attempted, setAttempted] = useState(false);
 
+  const entryPoint = options?.entryPoint ?? 'log_screen';
+
   const numericAmount = Number(amount);
   const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
   const canSubmit = amountValid && categoryId !== null;
@@ -86,8 +91,12 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   /** Marks the form as attempted (revealing field errors) and returns whether it is valid. */
   const validate = useCallback((): boolean => {
     setAttempted(true);
+    if (!canSubmit) {
+      const invalidField = !amountValid && categoryId === null ? 'amount_and_category' : !amountValid ? 'amount' : 'category';
+      track('expense_validation_failed', { entry_point: entryPoint, invalid_field: invalidField });
+    }
     return canSubmit;
-  }, [canSubmit]);
+  }, [canSubmit, amountValid, categoryId, entryPoint]);
 
   /** Persists the expense. Returns the new id, or null if invalid / failed. */
   const submit = useCallback(async (): Promise<number | null> => {
@@ -95,6 +104,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setAttempted(true);
       return null;
     }
+    const startedAt = Date.now();
     try {
       const id = await expenseService.createExpense({
         amount: Math.trunc(numericAmount),
@@ -107,13 +117,21 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
         isUnplanned,
         eventId,
       });
+      track('expense_created', {
+        entry_point: entryPoint,
+        marked_unplanned: isUnplanned,
+        linked_event: eventId !== null,
+        has_subcategory: subcategoryId !== null,
+        operation_duration_ms: elapsedSince(startedAt),
+      });
       setError(null);
       return id;
     } catch (e) {
+      track('expense_creation_failed', { entry_point: entryPoint, failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
-  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned, eventId]);
+  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned, eventId, entryPoint]);
 
   return {
     amount,
@@ -358,11 +376,14 @@ export function useQuickAdd() {
   }, [refresh]);
 
   const log = useCallback(async (id: number, dateISO?: string): Promise<number | null> => {
+    const startedAt = Date.now();
     try {
       const expenseId = await expenseService.logFromQuickAddTemplate(id, dateISO);
+      track('expense_created', { entry_point: 'quick_add', operation_duration_ms: elapsedSince(startedAt) });
       setError(null);
       return expenseId;
     } catch (e) {
+      track('expense_creation_failed', { entry_point: 'quick_add', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.logTemplate', { ns: 'expenses' }));
       return null;
     }
@@ -557,6 +578,7 @@ export function useExpenseEdit(id: number): {
     Number.isFinite(numericAmount) && numericAmount > 0 && categoryId !== null;
 
   const update = useCallback(async (): Promise<boolean> => {
+    let saved = false;
     try {
       const fields: Partial<ExpenseEditableFields> = {};
       const newAmount = Math.trunc(numericAmount);
@@ -571,10 +593,14 @@ export function useExpenseEdit(id: number): {
       if (eventId !== originalEventId) fields.eventId = eventId;
 
       await expenseService.updateExpense(id, fields);
+      saved = true;
+      track('expense_edited');
       await load();
       setError(null);
       return true;
     } catch (e) {
+      // A failed reload after a good save is not a failed edit.
+      if (!saved) track('operation_failed', { feature_name: 'expense', action_type: 'edit', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.updateExpense', { ns: 'expenses' }));
       return false;
     }
@@ -583,8 +609,10 @@ export function useExpenseEdit(id: number): {
   const remove = useCallback(async (): Promise<boolean> => {
     try {
       await expenseService.deleteExpense(id);
+      track('expense_deleted');
       return true;
     } catch (e) {
+      track('operation_failed', { feature_name: 'expense', action_type: 'delete', failure_reason_code: 'save_error' });
       setError(e instanceof Error ? e.message : i18n.t('errors.deleteExpense', { ns: 'expenses' }));
       return false;
     }

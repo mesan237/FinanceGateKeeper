@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useAccounts } from '@/features/finance/accounts/accounts.hooks';
+import { trackedWrite } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
 import { goalProgress } from './goals.progress';
@@ -137,8 +138,8 @@ export function useGoalForm(goalId?: number) {
       monthlyAmount,
     };
     try {
-      if (goalId === undefined) await createGoal(input);
-      else await updateGoal(goalId, input);
+      if (goalId === undefined) await trackedWrite('goal', 'create', () => createGoal(input));
+      else await trackedWrite('goal', 'edit', () => updateGoal(goalId, input));
       return true;
     } catch (e) {
       setError(messageOf(e, 'saveFailed'));
@@ -151,7 +152,7 @@ export function useGoalForm(goalId?: number) {
   const remove = useCallback(async (): Promise<boolean> => {
     if (goalId === undefined) return false;
     try {
-      await deleteGoal(goalId);
+      await trackedWrite('goal', 'delete', () => deleteGoal(goalId));
       return true;
     } catch (e) {
       setError(messageOf(e, 'deleteFailed'));
