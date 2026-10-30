@@ -2780,6 +2780,9 @@ reminder never sounds like a deadline.
 - Events where outcomes are known: set-up steps, expense/income/debt create (+ validation and
   failure), edit, delete, repayments, budget writes, drawer rows, feedback, `app_opened`, route
   templates (`useAnalyticsLifecycle` in the root layout). Background writers send nothing.
+- Wallets, balance checks, transfers, goals, tontines, planned purchases and events: one generic
+  `feature_action_completed` per write through `trackedWrite` (failure → `operation_failed`,
+  rethrown). A ticked planned item is a planned purchase, not `expense_created`.
 - Docs: `docs/ANALYTICS.md` (catalogue, funnels, anomaly rules, setup, Data safety answers); privacy
   policy draft *Optional usage analytics*.
 

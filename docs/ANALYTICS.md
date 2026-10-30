@@ -173,7 +173,8 @@ the user tried something. *Outcome* means the app confirmed the result.
 | `debt_deleted` | Debt deleted | outcome | `entry_point`: `list`/`detail` | | debt list, detail |
 | `debt_repayment_recorded` | A repayment landed | outcome | `action_type`: `payment`/`instalment`/`settle` | Repayment flows in use | debt list, detail |
 | `budget_adjustment_completed` | Plan or envelope saved | outcome | `entry_point`: `planner`/`category_detail`; `action_type`: `save_plan`/`set_envelope`/`remove_envelope`/`cover_from` | The Plan step in practice | planner, category detail |
-| `operation_failed` | An edit, delete, repayment or budget write threw | outcome | `feature_name`: `expense`/`income`/`debt`/`budget`; `action_type`: `edit`/`delete`/`repay`/`adjust`; `failure_reason_code` | Reliability outside creation | as above |
+| `feature_action_completed` | A write in a secondary feature landed (via `trackedWrite`) | outcome | `feature_name`: `wallet`/`balance_check`/`transfer`/`goal`/`tontine`/`tontine_payment`/`planned_list`/`planned_item`/`event`; `action_type`: `create`/`edit`/`delete`/`hide`/`pay`/`payout`/`buy`/`unbuy`/`postpone`/`reschedule` | Adoption and use of wallets, transfers, goals, tontines, planned purchases, events. A ticked planned item is `planned_item`/`buy`, never `expense_created` | wallet form and detail, transfer form, goal form, tontine form and detail, planned lists, events |
+| `operation_failed` | An edit, delete, repayment, budget write or secondary-feature write threw | outcome | `feature_name`: `expense`/`income`/`debt`/`budget` or any `feature_action_completed` feature; `action_type`: `edit`/`delete`/`repay`/`adjust` or any `feature_action_completed` action; `failure_reason_code` | Reliability outside creation | as above |
 | `feature_entry_point_selected` | A drawer row was tapped | attempt | `feature_name`: drawer key (`accounts`, `goals`, `debts`, `tontines`, `planned`, `events`, `categories`, `preferences`, `backupRestore`, `exportImport`, `feedback`, `privacy`); `entry_point`: `drawer` | Discovery of drawer-only features | drawer |
 | `feedback_started` | *Feedback* opened the mail app | attempt | `entry_point`: `drawer` | Feedback intent (sending cannot be seen) | drawer |
 
@@ -266,9 +267,10 @@ Break each metric in §6 down by `$app_version`.
   in Preferences never send set-up events.
 - Events in the first moments of a cold start, before the saved choice loads, are dropped. The
   splash covers this, so no user action is lost.
-- Instrumented this slice: set-up, expenses, income, debts, budget writes, the drawer, every
-  screen view. Wallets, transfers, goals, tontines, planned purchases and events only send screen
-  views so far.
+- Wallets, transfers, goals, tontines, planned purchases and events send one generic
+  `feature_action_completed` per write, so they show adoption and failure rates but no
+  validation detail. The wallet balances entered during set-up count as the set-up's `wallets`
+  step, not as balance checks.
 - No crash reporting (Sentry deferred, §2).
 - **Not yet verified on a device or against a live PostHog project.** Everything is covered by
   Jest tests with the SDK mocked.
@@ -308,6 +310,10 @@ Break each metric in §6 down by `$app_version`.
    }
    ```
 
+   For a write in a secondary feature, wrap it instead of adding an event:
+   `await trackedWrite('goal', 'create', () => createGoal(input))`. It sends
+   `feature_action_completed` once the write resolves, or `operation_failed` and rethrows. A new
+   feature or action goes into `TRACKED_FEATURES` / `TRACKED_ACTIONS` first.
 3. Add a row to §5 and, if it is a key workflow, a metric or funnel step to §6.
 4. Test it with the recording provider: `setAnalyticsProviderFactoryForTests(() => fake)` from
    `services/analytics/__fixtures__/fakeAnalyticsProvider` (see
@@ -335,7 +341,8 @@ fails if any event allows one.
 npx jest src/services/analytics src/hooks/__tests__/useAnalyticsLifecycle.test.ts \
   src/features/finance/expenses/__tests__/expenses.analytics.test.ts \
   src/features/finance/onboarding/__tests__/OnboardingScreen.analytics.test.tsx \
-  src/features/finance/auth/__tests__/SettingsScreen.analytics.test.tsx
+  src/features/finance/auth/__tests__/SettingsScreen.analytics.test.tsx \
+  src/features/finance/planned/__tests__/planned.analytics.test.ts
 ```
 
 `jest.setup.ts` replaces `posthog-react-native` with an inert client, so no test can reach the
