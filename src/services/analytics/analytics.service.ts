@@ -2,7 +2,13 @@ import { activeLanguage } from '@/i18n';
 import { getPreference, setPreference } from '@/services/uiPreferences';
 
 import { createPostHogProvider } from './analytics.posthog';
-import { COMMON_PROPERTIES, type AnalyticsEventName, type AnalyticsEventProps } from './analytics.schema';
+import {
+  COMMON_PROPERTIES,
+  type AnalyticsEventName,
+  type AnalyticsEventProps,
+  type TrackedAction,
+  type TrackedFeature,
+} from './analytics.schema';
 import { sanitizeEvent, sanitizeProperties } from './analytics.sanitize';
 import type { AnalyticsConsent, AnalyticsProvider, ConsentEntryPoint } from './analytics.types';
 
@@ -109,6 +115,28 @@ export function track<E extends AnalyticsEventName>(event: E, properties: Analyt
   } catch (e) {
     reportFailure(`track(${event})`, e);
   }
+}
+
+/**
+ * Runs one write of a tracked feature and reports its outcome: after it
+ * resolves, `feature_action_completed`; if it throws, `operation_failed` (with
+ * a code, never the message) and the original error is rethrown, so the
+ * caller's own error handling is unchanged. The result passes through as is.
+ */
+export async function trackedWrite<T>(
+  feature: TrackedFeature,
+  action: TrackedAction,
+  write: () => Promise<T>,
+): Promise<T> {
+  let result: T;
+  try {
+    result = await write();
+  } catch (e) {
+    track('operation_failed', { feature_name: feature, action_type: action, failure_reason_code: 'save_error' });
+    throw e;
+  }
+  track('feature_action_completed', { feature_name: feature, action_type: action });
+  return result;
 }
 
 /**

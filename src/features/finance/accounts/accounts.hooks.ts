@@ -1,6 +1,7 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { trackedWrite } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
 import * as service from './accounts.service';
@@ -110,20 +111,20 @@ export function useAccountDetail(id: number) {
   // drop a check. Both re-read the balance and history.
   const confirm = useCallback(
     async (actual: number) => {
-      await service.confirmBalance(id, actual);
+      await trackedWrite('balance_check', 'create', () => service.confirmBalance(id, actual));
       await refresh();
     },
     [id, refresh],
   );
   const removeCheck = useCallback(
     async (checkId: number) => {
-      await service.removeBalanceCheck(checkId);
+      await trackedWrite('balance_check', 'delete', () => service.removeBalanceCheck(checkId));
       await refresh();
     },
     [refresh],
   );
   /** Hides the wallet (soft delete): its history stays, it leaves lists, pickers and totals. */
-  const hide = useCallback(() => service.hideAccount(id), [id]);
+  const hide = useCallback(() => trackedWrite('wallet', 'hide', () => service.hideAccount(id)), [id]);
 
   return { account, balance, history, loading, error, refresh, confirm, removeCheck, hide };
 }
@@ -272,15 +273,19 @@ export function useTransferLog(transferId?: number, initialToId?: number) {
     if (fromId === null || toId === null) return false;
     try {
       if (transferId !== undefined) {
-        await service.updateTransfer(transferId, {
-          fromAccountId: fromId,
-          toAccountId: toId,
-          amount: numericAmount,
-          date,
-          note: note.trim() || null,
-        });
+        await trackedWrite('transfer', 'edit', () =>
+          service.updateTransfer(transferId, {
+            fromAccountId: fromId,
+            toAccountId: toId,
+            amount: numericAmount,
+            date,
+            note: note.trim() || null,
+          }),
+        );
       } else {
-        await service.logTransfer(fromId, toId, numericAmount, date, note.trim() || undefined);
+        await trackedWrite('transfer', 'create', () =>
+          service.logTransfer(fromId, toId, numericAmount, date, note.trim() || undefined),
+        );
       }
       return true;
     } catch (e) {
@@ -292,7 +297,7 @@ export function useTransferLog(transferId?: number, initialToId?: number) {
   const remove = useCallback(async (): Promise<boolean> => {
     if (transferId === undefined) return false;
     try {
-      await service.removeTransfer(transferId);
+      await trackedWrite('transfer', 'delete', () => service.removeTransfer(transferId));
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : i18n.t('errors.logTransfer', { ns: 'accounts' }));

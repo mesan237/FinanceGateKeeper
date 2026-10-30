@@ -6,6 +6,7 @@ import { useSetAttention } from '@/components/AttentionProvider';
 import { ATTENTION_TONTINES } from '@/constants/attention';
 
 import { useDefaultAccountId } from '@/features/finance/accounts/accounts.hooks';
+import { trackedWrite } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
 import { onTontineChange } from './tontines.events';
@@ -95,19 +96,22 @@ export function useTontineDetail(tontineId: number) {
   /** Ticks `cycle` paid through `accountId` on `date`. */
   const pay = useCallback(
     (cycle: number, accountId: number | null, date: string) =>
-      run(() => payContribution(tontineId, cycle, accountId, date)),
+      run(() => trackedWrite('tontine_payment', 'pay', () => payContribution(tontineId, cycle, accountId, date))),
     [run, tontineId],
   );
 
   /** Records the payout of `amount` into `accountId` on `date`. */
   const payout = useCallback(
     (amount: number, accountId: number | null, date: string) =>
-      run(() => recordPayout(tontineId, amount, accountId, date)),
+      run(() => trackedWrite('tontine_payment', 'payout', () => recordPayout(tontineId, amount, accountId, date))),
     [run, tontineId],
   );
 
   /** Removes a contribution or the payout. */
-  const remove = useCallback((paymentId: number) => run(() => removePayment(paymentId)), [run]);
+  const remove = useCallback(
+    (paymentId: number) => run(() => trackedWrite('tontine_payment', 'delete', () => removePayment(paymentId))),
+    [run],
+  );
 
   return { tontine, loading, error, refresh, pay, payout, remove };
 }
@@ -176,8 +180,8 @@ export function useTontineForm(tontineId?: number) {
       accountId: accountId ?? null,
     };
     try {
-      if (tontineId === undefined) return await createTontine(input);
-      await updateTontine(tontineId, input);
+      if (tontineId === undefined) return await trackedWrite('tontine', 'create', () => createTontine(input));
+      await trackedWrite('tontine', 'edit', () => updateTontine(tontineId, input));
       return tontineId;
     } catch (e) {
       setError(messageOf(e, 'saveFailed'));
@@ -190,7 +194,7 @@ export function useTontineForm(tontineId?: number) {
   const remove = useCallback(async (): Promise<boolean> => {
     if (tontineId === undefined) return false;
     try {
-      await deleteTontine(tontineId);
+      await trackedWrite('tontine', 'delete', () => deleteTontine(tontineId));
       return true;
     } catch (e) {
       setError(messageOf(e, 'deleteFailed'));

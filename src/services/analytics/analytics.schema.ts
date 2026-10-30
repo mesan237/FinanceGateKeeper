@@ -41,6 +41,39 @@ export const DRAWER_FEATURES = [
   'privacy',
 ] as const;
 
+/** The slices measured by `feature_action_completed` (adoption and reliability, not detail). */
+export const TRACKED_FEATURES = [
+  'wallet',
+  'balance_check',
+  'transfer',
+  'goal',
+  'tontine',
+  'tontine_payment',
+  'planned_list',
+  'planned_item',
+  'event',
+] as const;
+
+/** The writes `feature_action_completed` names. */
+export const TRACKED_ACTIONS = [
+  'create',
+  'edit',
+  'delete',
+  'hide',
+  'pay',
+  'payout',
+  'buy',
+  'unbuy',
+  'postpone',
+  'reschedule',
+] as const;
+
+/** A slice measured by `feature_action_completed`. */
+export type TrackedFeature = (typeof TRACKED_FEATURES)[number];
+
+/** A write named by `feature_action_completed`. */
+export type TrackedAction = (typeof TRACKED_ACTIONS)[number];
+
 /** One drawer row, by its navigation key. */
 export type DrawerFeature = (typeof DRAWER_FEATURES)[number];
 
@@ -96,10 +129,13 @@ export const ANALYTICS_EVENTS = {
     action_type: oneOf(['save_plan', 'set_envelope', 'remove_envelope', 'cover_from']),
   },
 
-  // Failures of edits, deletes and other non-create writes
+  // Wallets, transfers, goals, tontines, planned purchases and events: one event per write.
+  feature_action_completed: { feature_name: oneOf(TRACKED_FEATURES), action_type: oneOf(TRACKED_ACTIONS) },
+
+  // Failures of edits, deletes and other non-create writes, and of every tracked feature write
   operation_failed: {
-    feature_name: oneOf(['expense', 'income', 'debt', 'budget']),
-    action_type: oneOf(['edit', 'delete', 'repay', 'adjust']),
+    feature_name: oneOf(['expense', 'income', 'debt', 'budget', ...TRACKED_FEATURES]),
+    action_type: oneOf(['edit', 'delete', 'repay', 'adjust', ...TRACKED_ACTIONS]),
     failure_reason_code: FAILURE,
   },
 

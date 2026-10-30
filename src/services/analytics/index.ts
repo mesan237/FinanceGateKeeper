@@ -7,6 +7,7 @@ export {
   setAnalyticsConsent,
   subscribeAnalyticsConsent,
   track,
+  trackedWrite,
   trackScreen,
 } from './analytics.service';
 export { screenNameFromSegments } from './analytics.sanitize';

@@ -25,6 +25,7 @@ import {
   setAnalyticsConsent,
   setAnalyticsProviderFactoryForTests,
   track,
+  trackedWrite,
   trackScreen,
 } from '../analytics.service';
 import { createFakeAnalyticsProvider, type FakeAnalyticsProvider } from '../__fixtures__/fakeAnalyticsProvider';
@@ -127,6 +128,45 @@ describe('track', () => {
     expect(() => track('expense_created', { entry_point: 'log_screen' })).not.toThrow();
     fake.failNext = true;
     expect(() => trackScreen('/budget')).not.toThrow();
+  });
+
+  it('reports a write as completed only after it resolves, and passes its result through', async () => {
+    let resolveWrite: (value: number) => void = () => {};
+    const pending = trackedWrite('goal', 'create', () => new Promise<number>((r) => (resolveWrite = r)));
+    expect(fake.captured).toEqual([]);
+
+    resolveWrite(5);
+
+    await expect(pending).resolves.toBe(5);
+    expect(fake.captured).toEqual([
+      {
+        event: 'feature_action_completed',
+        properties: { feature_name: 'goal', action_type: 'create', app_language: 'en' },
+      },
+    ]);
+  });
+
+  it('reports a failed write without its message and rethrows the original error', async () => {
+    const error = new Error('UNIQUE constraint failed: goals.name = Mariage');
+
+    await expect(trackedWrite('transfer', 'delete', () => Promise.reject(error))).rejects.toBe(error);
+
+    expect(fake.captured).toEqual([
+      {
+        event: 'operation_failed',
+        properties: {
+          feature_name: 'transfer',
+          action_type: 'delete',
+          failure_reason_code: 'save_error',
+          app_language: 'en',
+        },
+      },
+    ]);
+  });
+
+  it('still returns the write result when the provider throws', async () => {
+    fake.failNext = true;
+    await expect(trackedWrite('event', 'edit', async () => 'ok')).resolves.toBe('ok');
   });
 
   it('sends a screen only when the route changes, not on every call for the same route', () => {

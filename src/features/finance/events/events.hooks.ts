@@ -1,6 +1,8 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
+import { trackedWrite } from '@/services/analytics';
+
 import { createEvent, deleteEvent, getEventDetail, getEvents, updateEvent } from './events.service';
 import type { EventDetail, EventSummary, NewSpendingEvent } from './events.types';
 
@@ -33,7 +35,7 @@ export function useEvents() {
   /** Creates an event, re-reads the list and returns the new id. */
   const create = useCallback(
     async (input: NewSpendingEvent): Promise<number> => {
-      const id = await createEvent(input);
+      const id = await trackedWrite('event', 'create', () => createEvent(input));
       await refresh();
       return id;
     },
@@ -67,13 +69,13 @@ export function useEventDetail(id: number) {
 
   const update = useCallback(
     async (patch: NewSpendingEvent) => {
-      await updateEvent(id, patch);
+      await trackedWrite('event', 'edit', () => updateEvent(id, patch));
       await refresh();
     },
     [id, refresh],
   );
 
-  const remove = useCallback(() => deleteEvent(id), [id]);
+  const remove = useCallback(() => trackedWrite('event', 'delete', () => deleteEvent(id)), [id]);
 
   return { detail, loading, error, refresh, update, remove };
 }
