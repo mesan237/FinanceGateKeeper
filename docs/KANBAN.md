@@ -1241,7 +1241,7 @@ edges. Reminders mirror the debt ones and do not check the notifications setting
 
 ---
 
-### VS-40: Financial Integrity — Budget Checks, Shared Health, Fixed-Cost Projection 🔄 In Progress
+### VS-40: Financial Integrity — Budget Checks, Shared Health, Fixed-Cost Projection ✅ Done
 
 **Priority:** Critical — Phase 1a of the progression plan
 **Blocked by:** VS-33 (Envelopes), VS-34 (Refocus)
@@ -1290,7 +1290,7 @@ debt payments that move money, refunds, the averaging divisor and month complete
 
 ---
 
-### VS-41: Your Typical Month — Fixed vs Variable Spending 🔄 In Progress
+### VS-41: Your Typical Month — Fixed vs Variable Spending ✅ Done
 
 **Priority:** High — user-requested; Phase 1b item #6 of the progression plan
 **Blocked by:** VS-40 (Financial integrity), VS-38 (Imprévus)
@@ -1336,7 +1336,7 @@ user say what is fixed.
 
 ---
 
-### VS-42: Wallet Integrity — Template Wallets and Balance Checks 🔄 In Progress
+### VS-42: Wallet Integrity — Template Wallets and Balance Checks ✅ Done
 
 **Priority:** Critical — Phase 1b items #1 and #2 (user choices 1.A, 2.A)
 **Blocked by:** VS-41 (stacked branch), VS-18 (Accounts)
@@ -1379,7 +1379,7 @@ balance has no effect on the balance (the check supersedes it).
 
 ---
 
-### VS-43: Edit and Remove Transfers 🔄 In Progress
+### VS-43: Edit and Remove Transfers ✅ Done
 
 **Priority:** High — Phase 1b item #3 (user choice 3.A)
 **Blocked by:** VS-42 (Wallet integrity)
@@ -1410,7 +1410,7 @@ user sees it, both wallet balances follow, and the change reaches the cloud.
 
 ---
 
-### VS-44: Debts That Move Money — Repayments and History 🔄 In Progress
+### VS-44: Debts That Move Money — Repayments and History ✅ Done
 
 **Priority:** High — Phase 1b item #4 (user choice 4.A)
 **Blocked by:** VS-43 (stacked branch), VS-11 (People ledger)
@@ -1452,7 +1452,7 @@ counts as income or spending.
 
 ---
 
-### VS-45: Refunds 🔄 In Progress
+### VS-45: Refunds ✅ Done
 
 **Priority:** Medium — Phase 1b item #5 (user choice 5.A); closes Phase 1b
 **Blocked by:** VS-44
@@ -1491,7 +1491,7 @@ month's imprévus total is not reduced (the month's spending is).
 
 ---
 
-### VS-46: Baseline and Provisional Guidance 🔄 In Progress
+### VS-46: Baseline and Provisional Guidance ✅ Done
 
 **Priority:** High — Phase 2 of the progression plan
 **Blocked by:** VS-41 (complete months), VS-42…VS-45 (Phase 1b)
@@ -1531,7 +1531,7 @@ reality — labelled provisional — once real months are logged.
 
 ---
 
-### VS-47: Budgeting with Real Cash Flow 🔄 In Progress
+### VS-47: Budgeting with Real Cash Flow ✅ Done
 
 **Priority:** High — Phase 3 of the progression plan
 **Blocked by:** VS-46 (income estimate), VS-42 (trustworthy wallet balances)
@@ -1572,7 +1572,7 @@ promised money apart.
 
 ---
 
-### VS-48: Goals in Real Wallets 🔄 In Progress
+### VS-48: Goals in Real Wallets ✅ Done
 
 **Priority:** High — Phase 4 of the progression plan (part 1 of 2; VS-49 links goals to the budget)
 **Blocked by:** VS-42 (trustworthy wallet balances), VS-43 (transfers), VS-46 (essentials estimate)
@@ -1606,7 +1606,7 @@ and see, from real balances, whether each is on track.
 
 ---
 
-### VS-49: Pay Yourself First and Safe to Spend 🔄 In Progress
+### VS-49: Pay Yourself First and Safe to Spend ✅ Done
 
 **Priority:** High — Phase 4 of the progression plan (part 2 of 2)
 **Blocked by:** VS-48 (goals), VS-47 (money view)
@@ -1636,7 +1636,7 @@ Budget tab says how much is truly free to spend.
 
 ---
 
-### VS-50: Emergency Reserve 🔄 In Progress
+### VS-50: Emergency Reserve ✅ Done
 
 **Priority:** High — after Phase 4, user decision 2026-10-18
 **Blocked by:** VS-48 (goals), VS-41 (complete months, fixed/variable), VS-46 (essentials estimate)
@@ -1672,7 +1672,7 @@ follows their real essential spending.
 
 ---
 
-### VS-51: Tontines 🔄 In Progress
+### VS-51: Tontines ✅ Done
 
 **Priority:** High — user decision 2026-10-18 (part 1 of 2; VS-52 adds committed money and reminders)
 **Blocked by:** VS-42 (wallet balances), VS-44 (the money-moving pattern of debts)
@@ -1707,7 +1707,7 @@ where they stand before and after their turn.
 
 ---
 
-### VS-52: Tontine Reminders and Committed Contributions 🔄 In Progress
+### VS-52: Tontine Reminders and Committed Contributions ✅ Done
 
 **Priority:** High — tontines part 2 of 2
 **Blocked by:** VS-51 (tontines), VS-47/49 (committed money, safe to spend), VS-39 (attention pattern)
@@ -1737,7 +1737,7 @@ tontine, and the Budget tab's committed money and safe to spend include it.
 
 ---
 
-### VS-53: Net Worth and Savings Rate 🔄 In Progress
+### VS-53: Net Worth and Savings Rate ✅ Done
 
 **Priority:** High — user decision 2026-10-21
 **Blocked by:** VS-42 (balance checks), VS-44 (debt repayments), VS-51 (tontines)
@@ -1772,7 +1772,7 @@ much of each month's income they kept — figures that stay put once a month clo
 
 ---
 
-### VS-54: Debt Terms and Instalments 🔄 In Progress
+### VS-54: Debt Terms and Instalments ✅ Done
 
 **Priority:** High — user decision 2026-10-21 (part 1 of 2; VS-55 adds instalment reminders)
 **Blocked by:** VS-44 (repayments), VS-47 (committed money), VS-53 (net worth)
@@ -1806,7 +1806,7 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
-### VS-55: Instalment Reminders 🔄 In Progress
+### VS-55: Instalment Reminders ✅ Done
 
 **Priority:** High — debt terms part 2 of 2
 **Blocked by:** VS-54 (instalments)
@@ -1829,7 +1829,7 @@ is followed instalment by instalment, with only what is due counted as committed
 
 ---
 
-### VS-56: Category Detail — Where the Money Went 🔄 In Progress
+### VS-56: Category Detail — Where the Money Went ✅ Done
 
 **Priority:** High — user request 2026-10-22
 **Blocked by:** VS-33 (envelopes), VS-41 (cost types), VS-45 (refunds)
@@ -1867,7 +1867,7 @@ and which purchases to cut.
 
 ---
 
-### VS-57: Quiet Daily Reminder 🔄 In Progress
+### VS-57: Quiet Daily Reminder ✅ Done
 
 **Priority:** High — user request 2026-10-22
 **Blocked by:** VS-08 (daily reminder)
@@ -1897,7 +1897,7 @@ on a day they forget.
 
 ---
 
-### VS-58: Starting Point — Your First Three Months 🔄 In Progress
+### VS-58: Starting Point — Your First Three Months ✅ Done
 
 **Priority:** High — user request 2026-10-22
 **Blocked by:** VS-41 (typical month), VS-56 (shared % chip)
@@ -1926,7 +1926,7 @@ how far their spending has moved since.
 
 ---
 
-### VS-59: Subcategory Detail 🔄 In Progress
+### VS-59: Subcategory Detail ✅ Done
 
 **Priority:** High — user request 2026-10-22
 **Blocked by:** VS-56 (category detail), VS-58 (starting point)
@@ -1954,7 +1954,7 @@ starting-point comparison shows subcategories too.
 
 ---
 
-### VS-60: Weekday Recurring Expenses 🔄 In Progress
+### VS-60: Weekday Recurring Expenses ✅ Done
 
 **Priority:** High — user request 2026-10-22 ("why" behind spending, part 1 of 2)
 **Blocked by:** VS-07 (recurring expenses)
@@ -1982,7 +1982,7 @@ rest of the category is what the user chooses. Part 2 is events (VS-61).
 
 ---
 
-### VS-61: Events — Why the Money Went 🔄 In Progress
+### VS-61: Events — Why the Money Went ✅ Done
 
 **Priority:** High — user request 2026-10-22 ("why" behind spending, part 2 of 2)
 **Blocked by:** VS-45 (refunds), VS-60
@@ -2011,7 +2011,7 @@ date, total only (no event budget yet); separate from planned lists.
 
 ---
 
-### VS-62: Why the Money Went 🔄 In Progress
+### VS-62: Why the Money Went ✅ Done
 
 **Priority:** High — user request 2026-10-22 ("why" behind spending, closes VS-60/61)
 **Blocked by:** VS-60 (weekdays), VS-61 (events)
@@ -2035,7 +2035,7 @@ surprises and everyday habits.
 
 ---
 
-### VS-63: My Path — Step-by-Step Journey 🔄 In Progress
+### VS-63: My Path — Step-by-Step Journey ✅ Done
 
 **Priority:** High — user request 2026-10-22 ("the app must feel like a step-by-step process")
 **Blocked by:** VS-58 (starting point), VS-46 (baseline facts)
@@ -2093,7 +2093,7 @@ what comes next; the dashboard shows the same in one card.
 
 ## UX REDESIGN (pre-release, plan in docs/ux-redesign/)
 
-### VS-66: One Name per Figure (UX-01) 🔄 In Progress
+### VS-66: One Name per Figure (UX-01) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1); decisions D1–D10 approved 2026-10-24
 **Blocked by:** —
@@ -2118,7 +2118,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** no two different figures share a key word, and no figure has two labels.
 
 ---
-### VS-67: Readable Green Text (UX-02) 🔄 In Progress
+### VS-67: Readable Green Text (UX-02) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1)
 **Blocked by:** —
@@ -2140,7 +2140,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every green text in the light theme reaches WCAG AA.
 
 ---
-### VS-68: Drawer Grouped by Purpose, Wallets Everywhere (UX-18) 🔄 In Progress
+### VS-68: Drawer Grouped by Purpose, Wallets Everywhere (UX-18) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decision D7)
 **Blocked by:** —
@@ -2162,7 +2162,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every drawer row opens a screen, and one word names a wallet everywhere.
 
 ---
-### VS-69: Green Fills That Carry White Labels (UX-02b) 🔄 In Progress
+### VS-69: Green Fills That Carry White Labels (UX-02b) ✅ Done
 
 **Priority:** P0 — release cut; approved 2026-10-24
 **Blocked by:** VS-67 (PRIMARY_TEXT)
@@ -2182,7 +2182,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** every white label on a green fill reaches WCAG AA.
 
 ---
-### VS-70: Home Leads with the Plan, or with What Was Spent (UX-04) 🔄 In Progress
+### VS-70: Home Leads with the Plan, or with What Was Spent (UX-04) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decision D2a)
 **Blocked by:** —
@@ -2205,7 +2205,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** Home and the Budget tab always agree on whether there is a plan.
 
 ---
-### VS-71: Observe Gives Feedback Before a Month Completes (UX-05/06/07) 🔄 In Progress
+### VS-71: Observe Gives Feedback Before a Month Completes (UX-05/06/07) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decisions D4a, D5a, D-arch-2)
 **Blocked by:** —
@@ -2231,7 +2231,7 @@ what comes next; the dashboard shows the same in one card.
 **Done when:** a user observing sees progress every day, and can repair a forgotten day honestly.
 
 ---
-### VS-72: First-Run Set-Up and a Checklist by Step (UX-08/09) 🔄 In Progress
+### VS-72: First-Run Set-Up and a Checklist by Step (UX-08/09) ✅ Done
 
 **Priority:** P0 — release cut (docs/ux-redesign/06 §12.1, decisions D10, D-arch-1)
 **Blocked by:** —
@@ -2261,7 +2261,7 @@ what comes next; the dashboard shows the same in one card.
 bills and estimates only when planning.
 
 ---
-### VS-73: One Daily Figure on Home and Budget (UX-11) 🔄 In Progress
+### VS-73: One Daily Figure on Home and Budget (UX-11) ✅ Done
 
 **Priority:** P1 — release cut (docs/ux-redesign/06 §12.1, decision D3)
 **Blocked by:** —
@@ -2286,7 +2286,7 @@ bills and estimates only when planning.
 **Done when:** Home and the Budget tab show the same amount a day for the same month.
 
 ---
-### VS-74: One Loading, Empty and Error Pattern on Every Tab (UX-16) 🔄 In Progress
+### VS-74: One Loading, Empty and Error Pattern on Every Tab (UX-16) ✅ Done
 
 **Priority:** P1 — release cut (docs/ux-redesign/06 §12.1, finding F-23)
 **Blocked by:** —
@@ -2315,7 +2315,7 @@ bills and estimates only when planning.
 **Done when:** every tab and card shows the same skeleton, empty-with-action and error-with-retry.
 
 ---
-### VS-75: The Step Sets Emphasis Across the App (UX-03 + UX-10, VS-64) 🔄 In Progress
+### VS-75: The Step Sets Emphasis Across the App (UX-03 + UX-10, VS-64) ✅ Done
 
 **Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, finding F-02)
 **Blocked by:** —
@@ -2344,7 +2344,7 @@ bills and estimates only when planning.
 **Done when:** a user observing is told why planning and goals come later, and can still use both.
 
 ---
-### VS-76: A Budget Tab That Reads in Five Figures (UX-13) 🔄 In Progress
+### VS-76: A Budget Tab That Reads in Five Figures (UX-13) ✅ Done
 
 **Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-04, F-07;
 money-view layout change approved)
@@ -2375,7 +2375,7 @@ money-view layout change approved)
 **Done when:** six figures or fewer stand before the category list, and each sum is one tap away.
 
 ---
-### VS-77: Reports in Three Groups, Stepper First (UX-14) 🔄 In Progress
+### VS-77: Reports in Three Groups, Stepper First (UX-14) ✅ Done
 
 **Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-05, F-06, F-07)
 **Blocked by:** —
@@ -2407,7 +2407,7 @@ money-view layout change approved)
 answers one question.
 
 ---
-### VS-78: Colours Mean One Thing Each (UX-15) 🔄 In Progress
+### VS-78: Colours Mean One Thing Each (UX-15) ✅ Done
 
 **Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, findings F-08, F-10)
 **Blocked by:** —
@@ -2439,7 +2439,7 @@ answers one question.
 across months.
 
 ---
-### VS-79: Free Cash Says How Fresh the Balances Are (UX-21) 🔄 In Progress
+### VS-79: Free Cash Says How Fresh the Balances Are (UX-21) ✅ Done
 
 **Priority:** P1 — release cut, "if time allows" (docs/ux-redesign/06 §12.1, R10, finding F-11)
 **Blocked by:** —
@@ -2467,7 +2467,7 @@ across months.
 **Done when:** with a wallet unchecked for over 30 days, free cash says so and offers the check.
 
 ---
-### VS-80: Each Screen Leads With What the Step Needs (UX-24) 🔄 In Progress
+### VS-80: Each Screen Leads With What the Step Needs (UX-24) ✅ Done
 
 **Priority:** P2 — after the release cut (docs/ux-redesign/04 §7.3, decision D2 option b)
 **Blocked by:** —
@@ -2497,7 +2497,7 @@ across months.
 **Done when:** users at each step see the lead table 04 §7.3 documents, and nothing hides.
 
 ---
-### VS-81: Where Variable Spending Has Room (UX-25, VS-65) 🔄 In Progress
+### VS-81: Where Variable Spending Has Room (UX-25, VS-65) ✅ Done
 
 **Priority:** P1 (docs/ux-redesign/06 UX-25; journey decision 3: suggestions only, on variable costs)
 **Blocked by:** —
@@ -2525,7 +2525,7 @@ across months.
 **Done when:** a user on Optimize sees where their own record shows room, and can open each category.
 
 ---
-### VS-82: Fixes From the First Device Build 🔄 In Progress
+### VS-82: Fixes From the First Device Build ✅ Done
 
 **Priority:** P0 — pre-release (found on the user's device, 2026-10-26)
 **Blocked by:** —
@@ -2565,7 +2565,7 @@ across months.
 and the Reports cards read clearly.
 
 ---
-### VS-83: Home's Wallets Card Says What Its Balances Are Worth (F-11) 🔄 In Progress
+### VS-83: Home's Wallets Card Says What Its Balances Are Worth (F-11) ✅ Done
 
 **Priority:** P1 — pre-release (docs/ux-redesign/02 F-11; the rest of UX-21)
 **Blocked by:** —
@@ -2588,7 +2588,7 @@ and the Reports cards read clearly.
 **Done when:** Home's wallet figures say when they were last confirmed, and nudge when they are not.
 
 ---
-### VS-84: Next for You on Home (04 §7.3, 05 §10.3) 🔄 In Progress
+### VS-84: Next for You on Home (04 §7.3, 05 §10.3) ✅ Done
 
 **Priority:** P1 — pre-release (the last open item of the UX redesign plan)
 **Blocked by:** —
@@ -2618,7 +2618,7 @@ and the Reports cards read clearly.
 
 ---
 
-### VS-85: PIN After the Set-Up 🔄 In Progress
+### VS-85: PIN After the Set-Up ✅ Done
 
 **Priority:** P1 — pre-release (first-run order)
 **Blocked by:** —
@@ -2644,7 +2644,7 @@ and the Reports cards read clearly.
 
 ---
 
-### VS-86: French by Default, FR | EN During Set-Up 🔄 In Progress
+### VS-86: French by Default, FR | EN During Set-Up ✅ Done
 
 **Priority:** P1 — pre-release (onboarding review, slice A)
 **Blocked by:** VS-85
@@ -2676,7 +2676,7 @@ set-up step without losing anything.
 
 ---
 
-### VS-87: The First Screen Sells a Budget Built on Real Spending 🔄 In Progress
+### VS-87: The First Screen Sells a Budget Built on Real Spending ✅ Done
 
 **Priority:** P1 — pre-release (onboarding review, slice B)
 **Blocked by:** VS-86
@@ -2708,7 +2708,7 @@ and the wallet step says where the data stays before asking for it.
 
 ---
 
-### VS-88: Reminders That Help, and Say When They Can't 🔄 In Progress
+### VS-88: Reminders That Help, and Say When They Can't ✅ Done
 
 **Priority:** P1 — pre-release (onboarding review, slice C)
 **Blocked by:** VS-86
@@ -2739,7 +2739,7 @@ reminder never sounds like a deadline.
 
 ---
 
-### VS-89: The First Day on Home Says What to Do 🔄 In Progress
+### VS-89: The First Day on Home Says What to Do ✅ Done
 
 **Priority:** P1 — pre-release (onboarding review, slice D)
 **Blocked by:** —
@@ -2763,7 +2763,7 @@ reminder never sounds like a deadline.
 
 ---
 
-### VS-90: Optional, Anonymous Product Analytics 🔄 In Progress
+### VS-90: Optional, Anonymous Product Analytics ✅ Done
 
 **Priority:** P2 — product insight (requested 2026-10-29)
 **Blocked by:** —
@@ -2801,7 +2801,7 @@ consent. Before release: PostHog project set up, EAS key set, policy published, 
 
 ---
 
-### VS-91: Income Sources the User Can Extend 🔄 In Progress
+### VS-91: Income Sources the User Can Extend ✅ Done
 
 **Priority:** P2 — logging accuracy (requested 2026-10-31)
 **Blocked by:** —
