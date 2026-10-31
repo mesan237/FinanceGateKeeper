@@ -23,6 +23,10 @@ export interface IncomeEntry {
   id: number;
   amount: number;
   date: string;
+  /**
+   * The icon and tint key (VS-91): a built-in source's key, else its parent's
+   * key, else the source's own name.
+   */
   source: string;
   sourceLabel: string;
   note: string | null;

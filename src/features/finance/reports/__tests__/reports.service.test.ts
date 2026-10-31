@@ -76,7 +76,7 @@ function income(amount: number, date: string): Income {
   return {
     id: 1,
     amount,
-    source: 'salary',
+    sourceId: 1,
     note: null,
     date,
     accountId: null,

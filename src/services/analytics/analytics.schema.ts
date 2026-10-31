@@ -52,6 +52,7 @@ export const TRACKED_FEATURES = [
   'planned_list',
   'planned_item',
   'event',
+  'income_source',
 ] as const;
 
 /** The writes `feature_action_completed` names. */

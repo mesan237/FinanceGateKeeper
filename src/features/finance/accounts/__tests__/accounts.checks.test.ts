@@ -53,8 +53,8 @@ async function spend(amount: number, date: string, accountId: number | null = MO
 
 async function earn(amount: number, date: string, createdAt = `${date}T12:00:00Z`) {
   await execute(
-    `INSERT INTO income (amount, source, date, account_id, created_at)
-     VALUES (?, 'salary', ?, ?, ?)`,
+    `INSERT INTO income (amount, source_id, date, account_id, created_at)
+     VALUES (?, 1, ?, ?, ?)`,
     [amount, date, MOMO, createdAt],
   );
 }

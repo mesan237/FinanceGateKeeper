@@ -48,11 +48,12 @@ function insertExpense(
   return result.lastInsertRowid as number;
 }
 
-function insertIncome(amount: number, source: string, date: string, note?: string): number {
+/** `sourceId` is an `income_sources` id: 1 salary, 2 freelance, 3 business, 6 e-commerce. */
+function insertIncome(amount: number, sourceId: number, date: string, note?: string): number {
   const stmt = sqlite.prepare(
-    `INSERT INTO income (amount, source, note, date, created_at) VALUES (?, ?, ?, ?, ?)`,
+    `INSERT INTO income (amount, source_id, note, date, created_at) VALUES (?, ?, ?, ?, ?)`,
   );
-  const result = stmt.run(amount, source, note ?? null, date, new Date().toISOString());
+  const result = stmt.run(amount, sourceId, note ?? null, date, new Date().toISOString());
   return result.lastInsertRowid as number;
 }
 
@@ -99,7 +100,7 @@ describe('getTransactionFeed — accounts & transfers (VS-18)', () => {
 describe('getTransactionFeed', () => {
   it('returns income and expense rows merged, newest-first', async () => {
     insertExpense(1000, 1, '2026-06-10');
-    insertIncome(50000, 'salary', '2026-06-12');
+    insertIncome(50000, 1, '2026-06-12');
     insertExpense(500, 1, '2026-06-08');
 
     const entries = await getTransactionFeed('2026-06');
@@ -112,7 +113,7 @@ describe('getTransactionFeed', () => {
 
   it('expense rows carry type "expense", income rows carry type "income"', async () => {
     insertExpense(1000, 1, '2026-06-10');
-    insertIncome(50000, 'salary', '2026-06-10');
+    insertIncome(50000, 1, '2026-06-10');
 
     const entries = await getTransactionFeed('2026-06');
 
@@ -135,7 +136,7 @@ describe('getTransactionFeed', () => {
   it('rows are scoped to the given monthISO; rows from other months are excluded', async () => {
     insertExpense(1000, 1, '2026-06-10');
     insertExpense(2000, 1, '2026-07-01');
-    insertIncome(50000, 'salary', '2026-05-30');
+    insertIncome(50000, 1, '2026-05-30');
 
     const entries = await getTransactionFeed('2026-06');
 
@@ -149,15 +150,30 @@ describe('getTransactionFeed', () => {
   });
 
   it('income sourceLabel is the human-readable string', async () => {
-    insertIncome(50000, 'salary', '2026-06-10');
-    insertIncome(30000, 'freelance', '2026-06-09');
-    insertIncome(20000, 'ecommerce', '2026-06-08');
+    insertIncome(50000, 1, '2026-06-10');
+    insertIncome(30000, 2, '2026-06-09');
+    insertIncome(20000, 6, '2026-06-08');
 
     const entries = await getTransactionFeed('2026-06');
 
     expect(entries).toHaveLength(3);
     const labels = entries.map((e) => (e.type === 'income' ? e.sourceLabel : null));
     expect(labels).toEqual(['Salary', 'Freelance', 'E-commerce']);
+  });
+
+  it('shows a source the user made by its name, with its parent’s icon key when it has one (VS-91)', async () => {
+    sqlite.prepare("INSERT INTO income_sources (name, parent_id, created_at) VALUES ('Taxi', 3, '2026-06-01')").run();
+    sqlite.prepare("INSERT INTO income_sources (name, parent_id, created_at) VALUES ('Pension', NULL, '2026-06-01')").run();
+    insertIncome(9000, 7, '2026-06-10');
+    insertIncome(8000, 8, '2026-06-09');
+
+    const entries = await getTransactionFeed('2026-06');
+
+    const income = entries.flatMap((e) => (e.type === 'income' ? [[e.sourceLabel, e.source]] : []));
+    expect(income).toEqual([
+      ['Taxi', 'business'],
+      ['Pension', 'Pension'],
+    ]);
   });
 
   it('ties on same date are broken by id DESC (newest insert first)', async () => {
@@ -182,7 +198,7 @@ describe('getLoggedDays (VS-57, VS-88)', () => {
   });
 
   it('does not count a day with only income or a transfer: it is not a logged day for Observe', async () => {
-    insertIncome(50_000, 'salary', '2026-08-02');
+    insertIncome(50_000, 1, '2026-08-02');
     insertTransfer(1, 2, 5_000, '2026-08-03');
 
     expect((await getLoggedDays('2026-08-01', '2026-08-05')).size).toBe(0);

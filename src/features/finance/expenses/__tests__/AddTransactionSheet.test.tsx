@@ -29,6 +29,12 @@ jest.mock('@/features/finance/budget/budget.envelope.hooks', () => ({
 }));
 
 
+jest.mock('@/features/finance/income/incomeSources.service', () => ({
+  getIncomeSources: jest.fn().mockResolvedValue([
+    { id: 1, key: 'salary', name: 'Salary', parentId: null, isHidden: false, sortOrder: 0 },
+  ]),
+}));
+
 jest.mock('@/features/finance/expenses/expenses.service', () => ({
   createExpense: jest.fn().mockResolvedValue(1),
   getQuickAddTemplates: jest.fn().mockResolvedValue([]),
@@ -114,7 +120,7 @@ describe('AddTransactionSheet', () => {
 
     fireEvent.press(screen.getByTestId('add-segment-income'));
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '350000');
-    fireEvent.press(screen.getByRole('button', { name: 'Salary' }));
+    fireEvent.press(await screen.findByRole('button', { name: 'Salary' }));
     fireEvent.press(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(mockedCreateIncome).toHaveBeenCalledTimes(1));
@@ -176,10 +182,10 @@ describe('AddTransactionSheet', () => {
   });
 
   describe('initialSegment (VS-26)', () => {
-    it('opens on the Income segment when initialSegment="income"', () => {
+    it('opens on the Income segment when initialSegment="income"', async () => {
       renderSheet({ initialSegment: 'income' });
       // Income panel is active without pressing the segment: its source pills render.
-      expect(screen.getByRole('button', { name: 'Salary' })).toBeTruthy();
+      expect(await screen.findByRole('button', { name: 'Salary' })).toBeTruthy();
     });
 
     it('defaults to the Expense segment when initialSegment is omitted', () => {
@@ -188,7 +194,7 @@ describe('AddTransactionSheet', () => {
       expect(screen.queryByRole('button', { name: 'Salary' })).toBeNull();
     });
 
-    it('reseeds to initialSegment each time the sheet reopens', () => {
+    it('reseeds to initialSegment each time the sheet reopens', async () => {
       const props = {
         visible: true,
         onClose: jest.fn(),
@@ -202,7 +208,7 @@ describe('AddTransactionSheet', () => {
       // Close then reopen — the effect reseeds to initialSegment.
       rerender(<AddTransactionSheet {...props} visible={false} />);
       rerender(<AddTransactionSheet {...props} visible={true} />);
-      expect(screen.getByRole('button', { name: 'Salary' })).toBeTruthy();
+      expect(await screen.findByRole('button', { name: 'Salary' })).toBeTruthy();
     });
   });
 });

@@ -20,7 +20,10 @@ export const CATEGORY_ICON_BY_NAME: Record<string, string> = {
 export const INCOME_SOURCE_ICON_MAP: Record<string, string> = {
   salary: '💼',
   freelance: '💻',
+  business: '🏢',
   ecommerce: '🏪',
+  gift: '🎁',
+  other: '💰',
 };
 
 export const AVATAR_PALETTE = [

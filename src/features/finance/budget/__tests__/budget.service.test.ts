@@ -114,9 +114,9 @@ describe('ensureMonthRow', () => {
 
 describe('getIncomeMonthlyTotal', () => {
   it('sums only income whose date is in the target month', async () => {
-    await createIncome({ amount: 350_000, source: 'salary', note: null, date: '2026-06-12' });
-    await createIncome({ amount: 75_000, source: 'freelance', note: null, date: '2026-06-20' });
-    await createIncome({ amount: 900_000, source: 'salary', note: null, date: '2026-07-01' });
+    await createIncome({ amount: 350_000, sourceId: 1, note: null, date: '2026-06-12' });
+    await createIncome({ amount: 75_000, sourceId: 2, note: null, date: '2026-06-20' });
+    await createIncome({ amount: 900_000, sourceId: 1, note: null, date: '2026-07-01' });
 
     expect(await getIncomeMonthlyTotal('2026-06')).toBe(425_000);
   });
@@ -127,7 +127,7 @@ describe('getIncomeMonthlyTotal', () => {
     // pending any more, and a real franc earned should never go unreported.
     await createIncome({
       amount: 300_000,
-      source: 'freelance',
+      sourceId: 2,
       note: null,
       date: '2026-06-20',
       allocationStatus: 'pending',
@@ -143,8 +143,8 @@ describe('getIncomeMonthlyTotal', () => {
 
 describe('getMonthlyBudget', () => {
   it('composes income in, expenses out, and what is left', async () => {
-    await createIncome({ amount: 350_000, source: 'salary', note: null, date: '2026-06-12' });
-    await createIncome({ amount: 75_000, source: 'freelance', note: null, date: '2026-06-20' });
+    await createIncome({ amount: 350_000, sourceId: 1, note: null, date: '2026-06-12' });
+    await createIncome({ amount: 75_000, sourceId: 2, note: null, date: '2026-06-20' });
     await spend('2026-06-10', 5_000);
     await spend('2026-06-15', 12_000);
 
@@ -170,7 +170,7 @@ describe('getMonthlyBudget', () => {
 describe('checkOverBudget', () => {
   /** 400,000 income and no explicit total — so the derived budget is 400,000. */
   async function seedJune(): Promise<void> {
-    await createIncome({ amount: 400_000, source: 'salary', note: null, date: '2026-06-12' });
+    await createIncome({ amount: 400_000, sourceId: 1, note: null, date: '2026-06-12' });
     await ensureMonthRow('2026-06');
   }
 

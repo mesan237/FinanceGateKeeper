@@ -32,6 +32,7 @@ import {
   setDefaultAccount,
   updateAccount,
 } from '@/features/finance/accounts/accounts.service';
+import { getAccountHistory } from '@/features/finance/accounts/accounts.balance';
 
 let sqlite: Database.Database;
 
@@ -63,8 +64,8 @@ afterEach(() => {
 
 async function insertIncome(amount: number, accountId: number | null, date = '2026-06-10') {
   await execute(
-    `INSERT INTO income (amount, source, note, date, account_id, created_at)
-     VALUES (?, 'salary', NULL, ?, ?, '2026-06-10T00:00:00Z')`,
+    `INSERT INTO income (amount, source_id, note, date, account_id, created_at)
+     VALUES (?, 1, NULL, ?, ?, '2026-06-10T00:00:00Z')`,
     [amount, date, accountId],
   );
 }
@@ -304,5 +305,19 @@ describe('getCashOnHand', () => {
 
     expect(await getCashOnHand()).toBe(75_000 + 40_000 + 60_000);
     expect(savings.id).toBeGreaterThan(3);
+  });
+});
+
+describe('getAccountHistory — income sources (VS-91)', () => {
+  it('names income by its source: a built-in in the app language, the user’s own by its name', async () => {
+    await execute("INSERT INTO income_sources (name, parent_id, created_at) VALUES ('Taxi', 3, '2026-06-01')");
+    await insertIncome(8000, 1, '2026-06-10');
+    await execute(
+      "INSERT INTO income (amount, source_id, date, account_id, created_at) VALUES (500, 7, '2026-06-11', 1, '2026-06-11')",
+    );
+
+    const labels = (await getAccountHistory(1)).filter((h) => h.kind === 'income').map((h) => h.label);
+
+    expect(labels).toEqual(['Taxi', 'Salary']);
   });
 });

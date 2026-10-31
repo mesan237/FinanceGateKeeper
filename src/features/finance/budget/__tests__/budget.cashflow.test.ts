@@ -55,7 +55,7 @@ async function estimate(value: number, at: string): Promise<void> {
 }
 
 async function receive(date: string, amount: number): Promise<void> {
-  await createIncome({ amount, source: 'salary', note: null, date });
+  await createIncome({ amount, sourceId: 1, note: null, date });
 }
 
 describe('getExpectedIncome', () => {

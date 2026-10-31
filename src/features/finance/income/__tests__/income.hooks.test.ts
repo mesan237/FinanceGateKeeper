@@ -38,7 +38,7 @@ const mockedDelete = deleteIncome as jest.MockedFunction<typeof deleteIncome>;
 const ROW: Income = {
   id: 1,
   amount: 350000,
-  source: 'salary',
+  sourceId: 1,
   note: null,
   date: '2026-06-12',
   accountId: null,
@@ -64,7 +64,7 @@ describe('useIncomeLog', () => {
     act(() => result.current.setAmount('350000'));
     expect(result.current.canSubmit).toBe(false); // no source yet
 
-    act(() => result.current.setSource('salary'));
+    act(() => result.current.setSource(1));
     expect(result.current.canSubmit).toBe(true);
   });
 
@@ -72,7 +72,7 @@ describe('useIncomeLog', () => {
     const { result } = renderHook(() => useIncomeLog());
     act(() => {
       result.current.setAmount('350000');
-      result.current.setSource('salary');
+      result.current.setSource(1);
       result.current.setNote('  June pay  ');
       result.current.setDate('2026-06-12');
     });
@@ -86,7 +86,7 @@ describe('useIncomeLog', () => {
     expect(mockedCreate).toHaveBeenCalledTimes(1);
     expect(mockedCreate).toHaveBeenCalledWith({
       amount: 350000,
-      source: 'salary',
+      sourceId: 1,
       note: 'June pay',
       date: '2026-06-12',
       accountId: null,
@@ -97,7 +97,7 @@ describe('useIncomeLog', () => {
     const { result } = renderHook(() => useIncomeLog());
     act(() => {
       result.current.setAmount('350000');
-      result.current.setSource('salary');
+      result.current.setSource(1);
       result.current.setNote('pay');
     });
 
@@ -138,9 +138,9 @@ describe('useIncomeHistory', () => {
 
   it('queries by source when a source filter is set', async () => {
     mockedBySource.mockResolvedValue([ROW]);
-    renderHook(() => useIncomeHistory({ source: 'salary' }));
+    renderHook(() => useIncomeHistory({ sourceId: 1 }));
 
-    await waitFor(() => expect(mockedBySource).toHaveBeenCalledWith('salary'));
+    await waitFor(() => expect(mockedBySource).toHaveBeenCalledWith(1));
     expect(mockedGetAll).not.toHaveBeenCalled();
   });
 
@@ -159,7 +159,7 @@ describe('useIncomeEdit (VS-20)', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.amount).toBe('350000');
-    expect(result.current.source).toBe('salary');
+    expect(result.current.source).toBe(1);
     expect(result.current.date).toBe('2026-06-12');
     expect(result.current.note).toBe('');
     expect(result.current.accountId).toBeNull();
@@ -182,7 +182,7 @@ describe('useIncomeEdit (VS-20)', () => {
 
     act(() => {
       result.current.setAmount('400000');
-      result.current.setSource('freelance');
+      result.current.setSource(2);
       result.current.setNote('  corrected  ');
       result.current.setDate('2026-06-13');
       result.current.setAccountId(2);
@@ -196,7 +196,7 @@ describe('useIncomeEdit (VS-20)', () => {
     expect(ok).toBe(true);
     expect(mockedUpdate).toHaveBeenCalledWith(1, {
       amount: 400000,
-      source: 'freelance',
+      sourceId: 2,
       note: 'corrected',
       date: '2026-06-13',
       accountId: 2,

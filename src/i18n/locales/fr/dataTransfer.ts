@@ -48,5 +48,6 @@ export const dataTransfer: Translation<typeof en> = {
     tontine_payments: 'Paiements de tontine',
     month_snapshots: 'Bilans de fin de mois',
     events: 'Événements',
+    income_sources: 'Sources de revenu',
   },
 };

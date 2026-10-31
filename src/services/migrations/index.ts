@@ -49,6 +49,7 @@ import { migration as debtTerms } from '@/services/migrations/047_debt_terms';
 import { migration as recurringWeekdays } from '@/services/migrations/048_recurring_weekdays';
 import { migration as events } from '@/services/migrations/049_events';
 import { migration as uiPreferences } from '@/services/migrations/050_ui_preferences';
+import { migration as incomeSources } from '@/services/migrations/051_income_sources';
 
 export const migrations: ReadonlyArray<Migration> = [
   createCategoriesTable,
@@ -101,4 +102,5 @@ export const migrations: ReadonlyArray<Migration> = [
   recurringWeekdays,
   events,
   uiPreferences,
+  incomeSources,
 ];

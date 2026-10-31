@@ -56,7 +56,10 @@ export const common = {
   incomeSources: {
     salary: 'Salary',
     freelance: 'Freelance',
+    business: 'Business / side business',
     ecommerce: 'E-commerce',
+    gift: 'Gift & family support',
+    other: 'Other',
   },
   /** The optional-analytics switch (VS-90), in the set-up and in Preferences. */
   analytics: {

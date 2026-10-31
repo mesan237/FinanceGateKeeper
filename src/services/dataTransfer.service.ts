@@ -1,5 +1,6 @@
 import { execute, query, type SqlBindValue } from '@/services/database';
 import { SYNCED_TABLES } from '@/services/migrations/017_add_sync_metadata';
+import { SEED_INCOME_SOURCES, seedIncomeSources } from '@/services/migrations/051_income_sources';
 import {
   ImportValidationError,
   type ExportPayload,
@@ -28,6 +29,18 @@ export async function exportData(): Promise<ExportPayload> {
     tables[table] = await query<Row>(`SELECT * FROM ${table}`);
   }
   return { version: EXPORT_VERSION, exportedAt: new Date().toISOString(), tables };
+}
+
+/**
+ * An income row from a backup made before VS-91 carries the old `source` tag
+ * (salary | freelance | ecommerce); this gives it the matching built-in
+ * `source_id` instead. Rows already on `source_id` are returned as they are.
+ */
+function upgradeIncomeRow(row: Row): Row {
+  if (row.source_id !== undefined || typeof row.source !== 'string') return row;
+  const { source, ...rest } = row;
+  const seed = SEED_INCOME_SOURCES.find((s) => s.key === source);
+  return { ...rest, source_id: seed?.id ?? null };
 }
 
 function assertValidPayload(payload: ExportPayload): void {
@@ -74,8 +87,9 @@ export async function importData(
         await execute(`DELETE FROM ${table}`);
       }
       for (const table of SYNCED_TABLES) {
-        const rows = payload.tables[table];
-        if (!rows || rows.length === 0) continue;
+        const stored = payload.tables[table];
+        if (!stored || stored.length === 0) continue;
+        const rows = table === 'income' ? stored.map(upgradeIncomeRow) : stored;
 
         const columns = Object.keys(rows[0]);
         const placeholders = columns.map(() => '?').join(', ');
@@ -87,6 +101,8 @@ export async function importData(
         }
         summary[table] = rows.length;
       }
+      // A backup made before VS-91 has no income sources; the built-ins come back.
+      await seedIncomeSources(execute);
       if (options.markPendingAt) await setAllPending(options.markPendingAt);
       await execute('COMMIT');
     } catch (e) {
