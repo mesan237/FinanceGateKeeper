@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 
-import type { IncomeSource } from '@/constants/incomeSources';
 import { elapsedSince, track } from '@/services/analytics';
 import { toISODate } from '@/utils/formatDate';
 
@@ -44,7 +43,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
   const setAmount = options?.amount ? options.amount.onChange : internalAmount[1];
   const note = options?.note ? options.note.value : internalNote[0];
   const setNote = options?.note ? options.note.onChange : internalNote[1];
-  const [source, setSource] = useState<IncomeSource | null>(null);
+  const [source, setSource] = useState<number | null>(null);
   const [date, setDate] = useState(() => toISODate(new Date()));
   const [accountId, setAccountId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +84,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
     try {
       const id = await incomeService.createIncome({
         amount: Math.trunc(numericAmount),
-        source,
+        sourceId: source,
         note: note.trim() ? note.trim() : null,
         date,
         accountId,
@@ -128,7 +127,7 @@ export function useIncomeLog(options?: UseIncomeLogOptions) {
  */
 export function useIncomeEdit(id: number) {
   const [amount, setAmount] = useState('');
-  const [source, setSource] = useState<IncomeSource | null>(null);
+  const [source, setSource] = useState<number | null>(null);
   const [note, setNote] = useState('');
   const [date, setDate] = useState('');
   const [accountId, setAccountId] = useState<number | null>(null);
@@ -149,7 +148,7 @@ export function useIncomeEdit(id: number) {
           return;
         }
         setAmount(String(income.amount));
-        setSource(income.source);
+        setSource(income.sourceId);
         setNote(income.note ?? '');
         setDate(income.date);
         setAccountId(income.accountId);
@@ -178,7 +177,7 @@ export function useIncomeEdit(id: number) {
     try {
       await incomeService.updateIncome(id, {
         amount: Math.trunc(numericAmount),
-        source,
+        sourceId: source,
         note: note.trim() ? note.trim() : null,
         date,
         accountId,
@@ -236,7 +235,7 @@ export function useIncomeHistory(filter?: IncomeFilter) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const source = filter?.source;
+  const sourceId = filter?.sourceId;
   const from = filter?.from;
   const to = filter?.to;
 
@@ -244,8 +243,8 @@ export function useIncomeHistory(filter?: IncomeFilter) {
     setLoading(true);
     try {
       let result: Income[];
-      if (source != null) {
-        result = await incomeService.getIncomeBySource(source);
+      if (sourceId != null) {
+        result = await incomeService.getIncomeBySource(sourceId);
       } else if (from != null && to != null) {
         result = await incomeService.getIncomeByDateRange(from, to);
       } else {
@@ -258,7 +257,7 @@ export function useIncomeHistory(filter?: IncomeFilter) {
     } finally {
       setLoading(false);
     }
-  }, [source, from, to]);
+  }, [sourceId, from, to]);
 
   useEffect(() => {
     void refresh();

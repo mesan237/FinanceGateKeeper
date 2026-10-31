@@ -17,13 +17,20 @@ jest.mock('@/features/finance/income/income.service', () => ({
   deleteIncome: (...args: unknown[]) => mockDeleteIncome(...args),
 }));
 
+jest.mock('@/features/finance/income/incomeSources.service', () => ({
+  getIncomeSources: jest.fn().mockResolvedValue([
+    { id: 1, key: 'salary', name: 'Salary', parentId: null, isHidden: false, sortOrder: 0 },
+    { id: 2, key: 'freelance', name: 'Freelance', parentId: null, isHidden: false, sortOrder: 1 },
+  ]),
+}));
+
 import { IncomeDetailScreen } from '@/features/finance/income/IncomeDetailScreen';
 import type { Income } from '@/features/finance/income/income.types';
 
 const PENDING_INCOME: Income = {
   id: 9,
   amount: 350000,
-  source: 'salary',
+  sourceId: 1,
   note: 'June pay',
   date: '2026-06-10',
   accountId: null,
@@ -47,6 +54,8 @@ describe('IncomeDetailScreen — pending income', () => {
     await waitFor(() => expect(screen.getByDisplayValue('350 000')).toBeTruthy());
     expect(screen.getByDisplayValue('June pay')).toBeTruthy();
     expect(screen.getByTestId('income-detail-date')).toBeTruthy();
+    const salary = await screen.findByRole('button', { name: 'Salary' });
+    expect(salary.props.accessibilityState.selected).toBe(true);
   });
 
   it('uses a back chevron, not a "Cancel" label — it is a drill-down (VS-26 M3)', async () => {

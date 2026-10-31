@@ -51,7 +51,7 @@ function all<T>(sql: string, ...params: unknown[]): T[] {
 
 function insertIncome(amount: number): void {
   run(
-    `INSERT INTO income (amount, source, date, created_at) VALUES (?, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z')`,
+    `INSERT INTO income (amount, source_id, date, created_at) VALUES (?, 1, '2026-06-01', '2026-06-01T00:00:00.000Z')`,
     amount,
   );
 }
@@ -115,7 +115,7 @@ describe('pullChanges', () => {
       {
         uuid: 'inc-1',
         amount: 7777,
-        source: 'freelance',
+        source_id: 'seed-income-source-freelance',
         note: null,
         date: '2026-06-05',
         created_at: '2026-06-05T00:00:00.000Z',
@@ -141,7 +141,7 @@ describe('pullChanges', () => {
       {
         uuid: 'inc-x',
         amount: 999,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
@@ -164,7 +164,7 @@ describe('pullChanges', () => {
       {
         uuid: 'inc-x',
         amount: 999,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
@@ -184,7 +184,7 @@ describe('pullChanges', () => {
       {
         uuid: 'old',
         amount: 1,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
@@ -193,7 +193,7 @@ describe('pullChanges', () => {
       {
         uuid: 'new',
         amount: 2,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-20',
         created_at: '2026-06-20T00:00:00.000Z',
@@ -369,7 +369,7 @@ describe('syncNow', () => {
       {
         uuid: 'i1',
         amount: 100,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
@@ -378,7 +378,7 @@ describe('syncNow', () => {
       {
         uuid: 'i2',
         amount: 200,
-        source: 'freelance',
+        source_id: 'seed-income-source-freelance',
         note: null,
         date: '2026-06-02',
         created_at: '2026-06-02T00:00:00.000Z',

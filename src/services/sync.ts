@@ -1,5 +1,6 @@
 import { execute, query, type SqlBindValue } from '@/services/database';
 import { SYNCED_TABLES, type SyncedTable } from '@/services/migrations/017_add_sync_metadata';
+import { seedIncomeSources } from '@/services/migrations/051_income_sources';
 import { applyCloudRow, sortForInsert, toCloudRow, type Row } from '@/services/sync.mapping';
 import { createSnapshot } from '@/services/snapshots.service';
 import { adoptCloudWallets } from '@/services/sync.wallets';
@@ -108,13 +109,14 @@ export async function pullChanges(): Promise<{ pulled: number }> {
 
 /**
  * True when no synced table holds a record the user made: only the default
- * categories and accounts a fresh install (or a reset) seeds. Seeded accounts
+ * categories, accounts and income sources a fresh install (or a reset) seeds. Seeded accounts
  * get random uuids, so a phone in this state must never push before pulling.
  */
 async function holdsOnlyInstallDefaults(): Promise<boolean> {
   for (const table of SYNCED_TABLES) {
     if (table === 'accounts') continue;
-    const where = table === 'categories' ? ' WHERE is_default = 0' : '';
+    const where =
+      table === 'categories' ? ' WHERE is_default = 0' : table === 'income_sources' ? ' WHERE key IS NULL' : '';
     const rows = await query<{ c: number }>(`SELECT COUNT(*) AS c FROM ${table}${where}`);
     if ((rows[0]?.c ?? 0) > 0) return false;
   }
@@ -216,6 +218,9 @@ async function replaceWithCloudRows(tables: Array<[SyncedTable, Row[]]>): Promis
       for (const table of [...SYNCED_TABLES].reverse()) {
         await execute(`DELETE FROM ${table}`);
       }
+      // The built-in income sources are only in the cloud once changed; income
+      // points at them by their fixed uuids, so put them back first (VS-91).
+      await seedIncomeSources(execute);
       for (const [table, rows] of tables) {
         for (const cloud of rows) {
           const updatedAt = cloud.updated_at;

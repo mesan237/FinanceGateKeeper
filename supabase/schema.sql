@@ -39,7 +39,7 @@ drop table if exists
   categories, funds, projects, accounts, expenses, income, allocations,
   category_budgets, fund_transactions, project_transactions,
   quick_add_templates, recurring_expenses, zero_days, debts, transfers,
-  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, month_snapshots, events, users
+  planned_lists, planned_items, balance_checks, debt_payments, baseline_facts, goals, tontines, tontine_payments, month_snapshots, events, income_sources, users
   cascade;
 
 drop function if exists set_updated_at() cascade;
@@ -124,11 +124,24 @@ create table expenses (
   updated_at     text not null
 );
 
+create table income_sources (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  key         text,            -- built-in key (salary, business, ...), or null = the user's own (VS-91)
+  name        text not null,
+  parent_id   text,            -- uuid of the parent source, or null (one level deep)
+  is_hidden   integer not null default 0,
+  sort_order  integer not null default 0,
+  created_at  text not null,
+  updated_at  text not null
+);
+
 create table income (
   uuid              text primary key,
   user_id           uuid not null default auth.uid(),
   amount            integer not null,
-  source            text not null,
+  source            text,       -- the pre-VS-91 tag; only older builds still send it
+  source_id         text,       -- uuid of the income source (VS-91)
   note              text,
   date              text not null,
   allocation_status text not null default 'allocated',
@@ -382,6 +395,24 @@ create table month_snapshots (
 );
 
 -- ----------------------------------------------------------------
+-- Income from older builds (VS-91): a phone that still pushes the old text tag
+-- (`source`) gets the matching built-in source's uuid in `source_id`.
+-- ----------------------------------------------------------------
+create or replace function income_source_id_from_tag() returns trigger
+  language plpgsql as $
+begin
+  if new.source_id is null and new.source is not null then
+    new.source_id := 'seed-income-source-' || new.source;
+  end if;
+  return new;
+end $;
+
+drop trigger if exists income_source_id_from_tag on income;
+create trigger income_source_id_from_tag
+  before insert or update on income
+  for each row execute function income_source_id_from_tag();
+
+-- ----------------------------------------------------------------
 -- Row-level security: each table is readable/writable only by its owner,
 -- plus an index backing the pull cursor (user_id, updated_at).
 -- ----------------------------------------------------------------
@@ -393,7 +424,7 @@ begin
     'category_budgets','fund_transactions','project_transactions',
     'quick_add_templates','recurring_expenses','zero_days','debts','transfers',
     'planned_lists','planned_items','balance_checks','debt_payments','baseline_facts','goals',
-    'tontines','tontine_payments','month_snapshots','events'
+    'tontines','tontine_payments','month_snapshots','events','income_sources'
   ]
   loop
     -- Defensive: ensure user_id exists even if an older table predates this run.

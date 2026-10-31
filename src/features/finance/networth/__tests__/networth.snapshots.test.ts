@@ -42,8 +42,8 @@ afterEach(() => {
 
 async function income(amount: number, date: string): Promise<void> {
   await execute(
-    `INSERT INTO income (amount, source, note, date, account_id, created_at)
-     VALUES (?, 'salary', NULL, ?, 1, '2026-08-01T00:00:00Z')`,
+    `INSERT INTO income (amount, source_id, note, date, account_id, created_at)
+     VALUES (?, 1, NULL, ?, 1, '2026-08-01T00:00:00Z')`,
     [amount, date],
   );
 }

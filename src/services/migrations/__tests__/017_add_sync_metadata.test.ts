@@ -43,8 +43,8 @@ describe('migration 017 — sync metadata columns', () => {
 describe('migration 017 — insert trigger', () => {
   it('stamps updated_at, marks pending, and assigns a uuid on a local insert', () => {
     sqlite
-      .prepare('INSERT INTO income (amount, source, date, created_at) VALUES (?,?,?,?)')
-      .run(1000, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z');
+      .prepare('INSERT INTO income (amount, source_id, date, created_at) VALUES (?,?,?,?)')
+      .run(1000, 1, '2026-06-01', '2026-06-01T00:00:00.000Z');
 
     const row = sqlite.prepare('SELECT uuid, updated_at, sync_status FROM income').get() as {
       uuid: string | null;
@@ -61,8 +61,8 @@ describe('migration 017 — insert trigger', () => {
 describe('migration 017 — update trigger', () => {
   it('re-stamps updated_at and re-marks pending when a data column changes', () => {
     sqlite
-      .prepare('INSERT INTO income (amount, source, date, created_at) VALUES (?,?,?,?)')
-      .run(1000, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z');
+      .prepare('INSERT INTO income (amount, source_id, date, created_at) VALUES (?,?,?,?)')
+      .run(1000, 1, '2026-06-01', '2026-06-01T00:00:00.000Z');
     // settle the row with an old timestamp (sync-only write — must not trigger)
     sqlite
       .prepare(`UPDATE income SET updated_at = '2000-01-01T00:00:00.000Z', sync_status = 'synced'`)
@@ -80,8 +80,8 @@ describe('migration 017 — update trigger', () => {
 
   it('does NOT re-arm when only sync_status changes (no push/pull loop)', () => {
     sqlite
-      .prepare('INSERT INTO income (amount, source, date, created_at) VALUES (?,?,?,?)')
-      .run(1000, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z');
+      .prepare('INSERT INTO income (amount, source_id, date, created_at) VALUES (?,?,?,?)')
+      .run(1000, 1, '2026-06-01', '2026-06-01T00:00:00.000Z');
     sqlite
       .prepare(`UPDATE income SET updated_at = '2000-01-01T00:00:00.000Z', sync_status = 'pending'`)
       .run();

@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 
-import { labelForSource } from '@/constants/incomeSources';
+import { isIncomeSourceKey, labelForIncomeSource } from '@/constants/incomeSources';
 import { displayCategoryName } from '@/i18n/categoryNames';
 import type { accounts as accountsCopy } from '@/i18n/locales/en/accounts';
 import { query } from '@/services/database';
@@ -172,8 +172,8 @@ interface HistoryRow {
  */
 export async function getAccountHistory(id: number): Promise<AccountHistoryEntry[]> {
   const rows = await query<HistoryRow>(
-    `SELECT 'income' AS kind, i.id AS ref_id, i.source AS label, i.amount AS amount, i.date AS date
-       FROM income i WHERE i.account_id = ?
+    `SELECT 'income' AS kind, i.id AS ref_id, COALESCE(s.key, s.name) AS label, i.amount AS amount, i.date AS date
+       FROM income i LEFT JOIN income_sources s ON i.source_id = s.id WHERE i.account_id = ?
      UNION ALL
      SELECT 'expense' AS kind, e.id AS ref_id, c.name AS label, e.amount AS amount, e.date AS date
        FROM expenses e LEFT JOIN categories c ON e.category_id = c.id WHERE e.account_id = ?
@@ -229,7 +229,9 @@ function history(
 function labelFor(row: HistoryRow): string {
   switch (row.kind) {
     case 'income':
-      return row.label ? labelForSource(row.label) : history('income');
+      // A built-in's key, or the name of a source the user made (VS-91).
+      if (!row.label) return history('income');
+      return labelForIncomeSource(isIncomeSourceKey(row.label) ? row.label : null, row.label);
     case 'expense':
       return row.label ? displayCategoryName(row.label) : history('expense');
     case 'transfer_out':

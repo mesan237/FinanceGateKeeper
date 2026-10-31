@@ -189,7 +189,7 @@ describe('getDashboardSnapshot', () => {
   it('populates budget and cashflow', async () => {
     await createIncome({
       amount: 100000,
-      source: 'salary',
+      sourceId: 1,
       note: null,
       date: TODAY,
       allocationStatus: 'allocated',
@@ -218,7 +218,7 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('treats income alone as no plan, as the Budget tab does (UX-04)', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: TODAY });
+    await createIncome({ amount: 100000, sourceId: 1, note: null, date: TODAY });
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
 
@@ -287,7 +287,7 @@ describe('getDashboardSnapshot', () => {
       `INSERT INTO baseline_facts (kind, value, source, created_at)
        VALUES ('monthly_income', 250000, 'user', '2026-06-01T08:00:00Z')`,
     );
-    await createIncome({ amount: 40000, source: 'freelance', note: null, date: TODAY });
+    await createIncome({ amount: 40000, sourceId: 2, note: null, date: TODAY });
 
     const state = await getDashboardSnapshot(MONTH, TODAY);
 
@@ -298,7 +298,7 @@ describe('getDashboardSnapshot', () => {
   it('returns yellow pace when >= 75% of expense budget spent with days remaining', async () => {
     await createIncome({
       amount: 100000,
-      source: 'salary',
+      sourceId: 1,
       note: null,
       date: TODAY,
       allocationStatus: 'allocated',
@@ -320,7 +320,7 @@ describe('getDashboardSnapshot', () => {
   it('returns red pace when over budget', async () => {
     await createIncome({
       amount: 100000,
-      source: 'salary',
+      sourceId: 1,
       note: null,
       date: TODAY,
       allocationStatus: 'allocated',
@@ -340,7 +340,7 @@ describe('getDashboardSnapshot', () => {
   });
 
   it('agrees with the Budget tab: a run-rate that overshoots is yellow even under 75% (VS-40)', async () => {
-    await createIncome({ amount: 100000, source: 'salary', note: null, date: '2026-06-01' });
+    await createIncome({ amount: 100000, sourceId: 1, note: null, date: '2026-06-01' });
     // 40% spent by the 8th projects to 150 000 against 100 000.
     await createExpense({
       amount: 40000,

@@ -16,6 +16,7 @@ are implemented.
 | **Repayment** | Money paid back on a debt, through an account or none. Moves account balances; never income or spending | Today (VS-44) | `debt.payments` |
 | **Refund** | Money back for a purchase: a negative expense row linked to it, in its category, dated when the money came back. Lowers that month's spending; never income | Today (VS-45) | `expenses.refunds` |
 | **Cash on hand** | Sum of all active wallet balances. Shown on the Budget tab for the current month only; never mixed into the budget | Today (VS-47) | `accounts.balance.getCashOnHand` |
+| **Income source** | Where income comes from: a built-in (Salary, Freelance, Business / side business with E-commerce under it, Gift & family support, Other) or one the user made, one level deep | Always | `income.incomeSources.service` (VS-91) |
 | **Month income** | Income dated in the month, all sources and wallets | Today | `budget.service.getIncomeMonthlyTotal` |
 | **Month spend** | Expenses dated in the month. Transfers are never spend | Today | `budget.service.getExpensesMonthlyTotal` |
 | **Fixed spend** (budget pace) | The recurring (auto-logged) part of month spend. Projected once, never extrapolated | Today (VS-40) | `budget.envelopes.getFixedSpendByCategory` |

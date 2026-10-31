@@ -49,7 +49,7 @@ afterEach(() => {
 async function logIncome(month: string, amount: number): Promise<void> {
   await createIncome({
     amount,
-    source: 'salary',
+    sourceId: 1,
     note: null,
     date: `${month}-01`,
   });

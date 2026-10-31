@@ -1,19 +1,25 @@
 import i18n from 'i18next';
 
-import { INCOME_SOURCE_VALUES } from '@/constants/incomeSources';
 import { execute, query } from '@/services/database';
 
 import type { Income, NewIncome, UpdateIncome } from './income.types';
+import { incomeSourceExists } from './incomeSources.service';
 
 /** A validation message in the active UI language — thrown errors reach the screen as-is. */
-function err(key: 'amountPositive' | 'unknownSource' | 'notFound', params?: Record<string, string>): string {
-  return i18n.t(`errors.${key}`, { ns: 'income', ...params });
+function err(key: 'amountPositive' | 'unknownSource' | 'notFound'): string {
+  return i18n.t(`errors.${key}`, { ns: 'income' });
+}
+
+/** Rejects a non-positive amount and a source id with no `income_sources` row. */
+async function validate(amount: number, sourceId: number): Promise<void> {
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error(err('amountPositive'));
+  if (!(await incomeSourceExists(sourceId))) throw new Error(err('unknownSource'));
 }
 
 interface IncomeRow {
   id: number;
   amount: number;
-  source: Income['source'];
+  source_id: number;
   note: string | null;
   date: string;
   account_id: number | null;
@@ -22,14 +28,14 @@ interface IncomeRow {
 }
 
 const INCOME_COLUMNS =
-  'id, amount, source, note, date, account_id, allocation_status, created_at';
+  'id, amount, source_id, note, date, account_id, allocation_status, created_at';
 const ORDER_BY_NEWEST = 'ORDER BY date DESC, created_at DESC';
 
 function mapIncome(row: IncomeRow): Income {
   return {
     id: row.id,
     amount: row.amount,
-    source: row.source,
+    sourceId: row.source_id,
     note: row.note,
     date: row.date,
     accountId: row.account_id,
@@ -42,25 +48,19 @@ function mapIncome(row: IncomeRow): Income {
  * Validates and inserts a new income row, returning the new id. Validation lives
  * here (not only in the form hook) so callers that bypass `useIncomeLog` — e.g.
  * VS-06's allocation trigger or a future Supabase sync — cannot write bad rows.
- * The `source` check defends the DB at runtime; TypeScript only checks at
- * compile time.
+ * The source check gives a readable message instead of a foreign-key error.
  *
- * @throws if `amount` is not a positive integer, or `source` is not a known value.
+ * @throws if `amount` is not a positive integer, or `sourceId` is not a known source.
  */
 export async function createIncome(input: NewIncome): Promise<number> {
-  if (!Number.isInteger(input.amount) || input.amount <= 0) {
-    throw new Error(err('amountPositive'));
-  }
-  if (!INCOME_SOURCE_VALUES.has(input.source)) {
-    throw new Error(err('unknownSource', { source: String(input.source) }));
-  }
+  await validate(input.amount, input.sourceId);
 
   await execute(
-    `INSERT INTO income (amount, source, note, date, account_id, allocation_status, created_at)
+    `INSERT INTO income (amount, source_id, note, date, account_id, allocation_status, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       input.amount,
-      input.source,
+      input.sourceId,
       input.note ?? null,
       input.date,
       input.accountId ?? null,
@@ -97,19 +97,14 @@ export async function getIncomeById(id: number): Promise<Income | null> {
  * @throws if the row does not exist or the patch is invalid.
  */
 export async function updateIncome(id: number, patch: UpdateIncome): Promise<void> {
-  if (!Number.isInteger(patch.amount) || patch.amount <= 0) {
-    throw new Error(err('amountPositive'));
-  }
-  if (!INCOME_SOURCE_VALUES.has(patch.source)) {
-    throw new Error(err('unknownSource', { source: String(patch.source) }));
-  }
+  await validate(patch.amount, patch.sourceId);
 
   const existing = await getIncomeById(id);
   if (!existing) throw new Error(err('notFound'));
 
   await execute(
-    `UPDATE income SET amount = ?, source = ?, date = ?, note = ?, account_id = ? WHERE id = ?`,
-    [patch.amount, patch.source, patch.date, patch.note ?? null, patch.accountId ?? null, id],
+    `UPDATE income SET amount = ?, source_id = ?, date = ?, note = ?, account_id = ? WHERE id = ?`,
+    [patch.amount, patch.sourceId, patch.date, patch.note ?? null, patch.accountId ?? null, id],
   );
 }
 
@@ -134,11 +129,13 @@ export async function getAllIncome(): Promise<Income[]> {
   return rows.map(mapIncome);
 }
 
-/** Returns income tagged with the given source, newest first. */
-export async function getIncomeBySource(source: Income['source']): Promise<Income[]> {
+/** Returns income on the given source or one of its subsources, newest first. */
+export async function getIncomeBySource(sourceId: number): Promise<Income[]> {
   const rows = await query<IncomeRow>(
-    `SELECT ${INCOME_COLUMNS} FROM income WHERE source = ? ${ORDER_BY_NEWEST}`,
-    [source],
+    `SELECT ${INCOME_COLUMNS} FROM income
+     WHERE source_id = ? OR source_id IN (SELECT id FROM income_sources WHERE parent_id = ?)
+     ${ORDER_BY_NEWEST}`,
+    [sourceId, sourceId],
   );
   return rows.map(mapIncome);
 }

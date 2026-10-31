@@ -8,7 +8,7 @@ export type Row = Record<string, unknown>;
  * references. The sync engine translates these between local integer ids (the
  * in-app currency) and portable `uuid`s (the cloud currency) on every push/pull,
  * so relationships survive a restore onto a device with different autoincrement
- * ids. `categories.parent_id` is self-referential.
+ * ids. `categories.parent_id` and `income_sources.parent_id` are self-referential.
  */
 export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
   categories: { parent_id: 'categories' },
@@ -21,7 +21,8 @@ export const FOREIGN_KEYS: Record<string, Record<string, string>> = {
     refund_of: 'expenses',
     event_id: 'events',
   },
-  income: { account_id: 'accounts' },
+  income_sources: { parent_id: 'income_sources' },
+  income: { account_id: 'accounts', source_id: 'income_sources' },
   category_budgets: { category_id: 'categories' },
   planned_items: {
     list_id: 'planned_lists',

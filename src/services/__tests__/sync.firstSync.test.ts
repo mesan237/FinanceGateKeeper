@@ -43,7 +43,7 @@ function count(sql: string): number {
 }
 function insertIncome(amount: number): void {
   run(
-    `INSERT INTO income (amount, source, date, created_at) VALUES (?, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z')`,
+    `INSERT INTO income (amount, source_id, date, created_at) VALUES (?, 1, '2026-06-01', '2026-06-01T00:00:00.000Z')`,
     amount,
   );
 }
@@ -132,7 +132,7 @@ describe('syncNow on a phone that has never synced', () => {
       {
         uuid: 'cloud-income',
         amount: 5000,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
@@ -172,8 +172,8 @@ describe('syncNow on a new phone that already holds a record (device build, 2026
     // Something recorded before the first sync, so the phone is not a fresh install.
     const { id: cashId } = sqlite.prepare(`SELECT id FROM accounts WHERE name = 'Cash'`).get() as { id: number };
     run(
-      `INSERT INTO income (amount, source, date, account_id, created_at)
-       VALUES (7000, 'salary', '2026-10-20', ?, '2026-10-20T08:00:00.000Z')`,
+      `INSERT INTO income (amount, source_id, date, account_id, created_at)
+       VALUES (7000, 1, '2026-10-20', ?, '2026-10-20T08:00:00.000Z')`,
       cashId,
     );
 

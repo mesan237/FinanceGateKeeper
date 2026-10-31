@@ -28,6 +28,12 @@ describe('getTransactionIcon', () => {
     expect(getTransactionIcon('income', undefined, 'ecommerce')).toBe('🏪');
   });
 
+  it('maps the VS-91 built-in sources: business, gift and other', () => {
+    expect(getTransactionIcon('income', undefined, 'business')).toBe('🏢');
+    expect(getTransactionIcon('income', undefined, 'gift')).toBe('🎁');
+    expect(getTransactionIcon('income', undefined, 'other')).toBe('💰');
+  });
+
   it('returns null for an unknown category name (signals fallback to avatar)', () => {
     expect(getTransactionIcon('expense', 'Zap')).toBeNull();
   });

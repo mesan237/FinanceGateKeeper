@@ -16,6 +16,8 @@ export const SYNCED_TABLES = [
   // points at its event (VS-61).
   'events',
   'expenses',
+  // Before `income`: an income row points at its source (VS-91).
+  'income_sources',
   'income',
   'allocations',
   'category_budgets',
@@ -57,6 +59,7 @@ const PROVISIONED_LATER: ReadonlyArray<string> = [
   'tontine_payments',
   'month_snapshots',
   'events',
+  'income_sources',
 ];
 
 const TABLES_PROVISIONED_HERE: ReadonlyArray<SyncedTable> = SYNCED_TABLES.filter(
@@ -96,7 +99,10 @@ export const DATA_COLUMNS: Record<SyncedTable, string[]> = {
     'is_recurring',
     'created_at',
   ],
+  // The pre-051 shape, used by this migration and 021. Migration 051 replaces
+  // `source` with `source_id` and rebuilds the trigger (`INCOME_DATA_COLUMNS`).
   income: ['amount', 'source', 'note', 'date', 'created_at'],
+  income_sources: ['key', 'name', 'parent_id', 'is_hidden', 'sort_order', 'created_at'],
   // `total_budget` is deliberately absent: migration 027 adds the column, so
   // this migration's trigger cannot reference it. Migration 028 recreates the
   // trigger with it appended (the `account_id` precedent above).

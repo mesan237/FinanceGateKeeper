@@ -59,7 +59,10 @@ export const common: Translation<typeof en> = {
   incomeSources: {
     salary: 'Salaire',
     freelance: 'Freelance',
+    business: 'Activité / commerce',
     ecommerce: 'E-commerce',
+    gift: 'Don & soutien familial',
+    other: 'Autre',
   },
   analytics: {
     title: 'Aider à améliorer l’application',

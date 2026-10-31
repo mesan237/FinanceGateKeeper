@@ -36,7 +36,7 @@ let sqlite: Database.Database;
 function newIncome(overrides: Partial<NewIncome> = {}): NewIncome {
   return {
     amount: 350000,
-    source: 'salary',
+    sourceId: 1,
     note: null,
     date: '2026-06-12',
     ...overrides,
@@ -75,12 +75,12 @@ describe('account attribution (VS-18)', () => {
 
 describe('createIncome / getAllIncome', () => {
   it('creates an income and includes it in getAllIncome', async () => {
-    const id = await createIncome(newIncome({ amount: 350000, source: 'salary' }));
+    const id = await createIncome(newIncome({ amount: 350000, sourceId: 1 }));
     expect(id).toBeGreaterThan(0);
 
     const all = await getAllIncome();
     expect(all).toHaveLength(1);
-    expect(all[0]).toMatchObject({ id, amount: 350000, source: 'salary', date: '2026-06-12' });
+    expect(all[0]).toMatchObject({ id, amount: 350000, sourceId: 1, date: '2026-06-12' });
   });
 
   it('persists amounts as integers (no decimal coercion)', async () => {
@@ -107,31 +107,37 @@ describe('createIncome / getAllIncome', () => {
     expect(await getAllIncome()).toHaveLength(0);
   });
 
-  it('rejects an unknown source via the runtime guard, before the DB CHECK', async () => {
-    // Asserting the guard's own message (not just any throw) proves the runtime
-    // INCOME_SOURCE_VALUES check rejected it — the DB CHECK constraint would
-    // surface a different SQLite error. This locks Design Decision #4.
-    await expect(
-      createIncome(newIncome({ source: 'gift' as unknown as NewIncome['source'] })),
-    ).rejects.toThrow(/Unknown income source/);
+  it('rejects a source that does not exist, before the foreign key', async () => {
+    // The guard's own message (not a SQLite error) proves the service checked it.
+    await expect(createIncome(newIncome({ sourceId: 99 }))).rejects.toThrow(/Unknown income source/);
     expect(await getAllIncome()).toHaveLength(0);
   });
 });
 
 describe('getIncomeBySource', () => {
   it('returns only rows for the given source', async () => {
-    await createIncome(newIncome({ source: 'salary' }));
-    await createIncome(newIncome({ source: 'freelance' }));
-    await createIncome(newIncome({ source: 'salary' }));
+    await createIncome(newIncome({ sourceId: 1 }));
+    await createIncome(newIncome({ sourceId: 2 }));
+    await createIncome(newIncome({ sourceId: 1 }));
 
-    const salary = await getIncomeBySource('salary');
+    const salary = await getIncomeBySource(1);
     expect(salary).toHaveLength(2);
-    expect(salary.every((r) => r.source === 'salary')).toBe(true);
+    expect(salary.every((r) => r.sourceId === 1)).toBe(true);
+  });
+
+  it('includes the subsources of a top-level source (VS-91)', async () => {
+    await createIncome(newIncome({ sourceId: 3 }));
+    await createIncome(newIncome({ sourceId: 6 }));
+    await createIncome(newIncome({ sourceId: 1 }));
+
+    const business = await getIncomeBySource(3);
+    expect(business.map((r) => r.sourceId).sort()).toEqual([3, 6]);
+    expect((await getIncomeBySource(6)).map((r) => r.sourceId)).toEqual([6]);
   });
 
   it('returns empty when no rows match the source', async () => {
-    await createIncome(newIncome({ source: 'salary' }));
-    expect(await getIncomeBySource('ecommerce')).toEqual([]);
+    await createIncome(newIncome({ sourceId: 1 }));
+    expect(await getIncomeBySource(6)).toEqual([]);
   });
 });
 
@@ -153,8 +159,8 @@ describe('getIncomeByDateRange', () => {
 
 describe('getMonthlyTotal', () => {
   it('sums amounts across mixed sources within the same month', async () => {
-    await createIncome(newIncome({ amount: 350000, source: 'salary', date: '2026-06-12' }));
-    await createIncome(newIncome({ amount: 75000, source: 'freelance', date: '2026-06-20' }));
+    await createIncome(newIncome({ amount: 350000, sourceId: 1, date: '2026-06-12' }));
+    await createIncome(newIncome({ amount: 75000, sourceId: 2, date: '2026-06-20' }));
 
     expect(await getMonthlyTotal('2026-06')).toBe(425000);
   });
@@ -199,7 +205,7 @@ describe('allocation status', () => {
 function patchFrom(overrides: Partial<UpdateIncome> = {}): UpdateIncome {
   return {
     amount: 350000,
-    source: 'salary',
+    sourceId: 1,
     date: '2026-06-12',
     note: null,
     accountId: null,
@@ -209,13 +215,13 @@ function patchFrom(overrides: Partial<UpdateIncome> = {}): UpdateIncome {
 
 describe('getIncomeById (VS-20)', () => {
   it('returns the mapped row with camelCase fields', async () => {
-    const id = await createIncome(newIncome({ amount: 75000, source: 'freelance', accountId: 1 }));
+    const id = await createIncome(newIncome({ amount: 75000, sourceId: 2, accountId: 1 }));
 
     const row = await getIncomeById(id);
     expect(row).toMatchObject({
       id,
       amount: 75000,
-      source: 'freelance',
+      sourceId: 2,
       date: '2026-06-12',
       accountId: 1,
       allocationStatus: 'allocated',
@@ -233,12 +239,12 @@ describe('updateIncome (VS-20)', () => {
 
     await updateIncome(
       id,
-      patchFrom({ amount: 2500, source: 'ecommerce', date: '2026-06-15', note: 'fixed', accountId: 1 }),
+      patchFrom({ amount: 2500, sourceId: 6, date: '2026-06-15', note: 'fixed', accountId: 1 }),
     );
 
     expect(await getIncomeById(id)).toMatchObject({
       amount: 2500,
-      source: 'ecommerce',
+      sourceId: 6,
       date: '2026-06-15',
       note: 'fixed',
       accountId: 1,
@@ -258,7 +264,7 @@ describe('updateIncome (VS-20)', () => {
 
     await expect(updateIncome(id, patchFrom({ amount: 0 }))).rejects.toThrow();
     await expect(
-      updateIncome(id, patchFrom({ source: 'gift' as unknown as UpdateIncome['source'] })),
+      updateIncome(id, patchFrom({ sourceId: 99 })),
     ).rejects.toThrow(/Unknown income source/);
     expect((await getIncomeById(id))?.amount).toBe(1000);
   });
@@ -287,16 +293,16 @@ describe('updateIncome (VS-20)', () => {
   });
 
   it('accepts a metadata-only patch', async () => {
-    const id = await createIncome(newIncome({ amount: 1000, source: 'salary' }));
+    const id = await createIncome(newIncome({ amount: 1000, sourceId: 1 }));
 
     await updateIncome(
       id,
-      patchFrom({ amount: 1000, source: 'freelance', note: 'recategorised', accountId: 1 }),
+      patchFrom({ amount: 1000, sourceId: 2, note: 'recategorised', accountId: 1 }),
     );
 
     expect(await getIncomeById(id)).toMatchObject({
       amount: 1000,
-      source: 'freelance',
+      sourceId: 2,
       note: 'recategorised',
       accountId: 1,
     });

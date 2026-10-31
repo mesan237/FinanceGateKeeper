@@ -1,9 +1,4 @@
-import type { IncomeSource } from '@/constants/incomeSources';
-
-// Re-exported so this slice's types have their documented home here, while the
-// enum's single source of truth stays in `@/constants/incomeSources` (see that
-// file for why it lives in constants rather than the feature).
-export type { IncomeSource };
+import type { IncomeSourceKey } from '@/constants/incomeSources';
 
 /**
  * Where an income row sits in the allocation flow (VS-19).
@@ -14,11 +9,27 @@ export type { IncomeSource };
  */
 export type IncomeAllocationStatus = 'allocated' | 'pending';
 
+/**
+ * Where income comes from (VS-91): a built-in (it has a `key`, shown in the
+ * active language) or one the user made (no key, shown by `name`). One level
+ * deep: a subsource has a top-level `parentId`.
+ */
+export interface IncomeSource {
+  id: number;
+  key: IncomeSourceKey | null;
+  name: string;
+  parentId: number | null;
+  /** Off the picker; income already logged on it keeps it. */
+  isHidden: boolean;
+  sortOrder: number;
+}
+
 /** A persisted income row. */
 export interface Income {
   id: number;
   amount: number;
-  source: IncomeSource;
+  /** The `income_sources` row, a top-level source or a subsource (VS-91). */
+  sourceId: number;
   note: string | null;
   date: string;
   /** Destination wallet, or null for legacy/unattributed income (VS-18). */
@@ -44,11 +55,12 @@ export type NewIncome = Omit<Income, 'id' | 'createdAt' | 'accountId' | 'allocat
  * editable field — the allocated-row lock compares `amount`/`date` against the
  * stored row, which is only meaningful when the caller states both explicitly.
  */
-export type UpdateIncome = Pick<Income, 'amount' | 'source' | 'date' | 'note' | 'accountId'>;
+export type UpdateIncome = Pick<Income, 'amount' | 'sourceId' | 'date' | 'note' | 'accountId'>;
 
 /** Filter applied to the income history. All fields are optional. */
 export interface IncomeFilter {
-  source?: IncomeSource;
+  /** A source and its subsources. */
+  sourceId?: number;
   from?: string;
   to?: string;
 }

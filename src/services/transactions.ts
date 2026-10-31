@@ -1,4 +1,4 @@
-import { labelForSource } from '@/constants/incomeSources';
+import { labelForIncomeSource } from '@/constants/incomeSources';
 import { query } from '@/services/database';
 import type { TransactionEntry } from '@/types/transactions';
 
@@ -12,7 +12,9 @@ interface UnifiedRow {
   subcategory_id: number | null;
   subcategory_label: string | null;
   note: string | null;
-  source: string | null;
+  source_key: string | null;
+  source_name: string | null;
+  parent_key: string | null;
   account_id: number | null;
   account_label: string | null;
   is_unplanned: number;
@@ -31,8 +33,9 @@ interface TransferRow {
  * Returns all income, expense, and transfer rows for a calendar month, sorted
  * newest-first (date DESC, id DESC as a stable tie-break). Expense rows have
  * their category label resolved via JOIN; income rows have a human-readable
- * sourceLabel; both carry their source/destination account name (null for
- * legacy rows logged before accounts existed). Transfer rows name both wallets.
+ * sourceLabel from `income_sources` (VS-91); both carry their source/destination
+ * account name (null for legacy rows logged before accounts existed). Transfer
+ * rows name both wallets.
  *
  * @param monthISO YYYY-MM string, e.g. "2026-06".
  */
@@ -50,7 +53,9 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
        e.subcategory_id AS subcategory_id,
        sc.name          AS subcategory_label,
        e.note           AS note,
-       NULL             AS source,
+       NULL             AS source_key,
+       NULL             AS source_name,
+       NULL             AS parent_key,
        e.account_id     AS account_id,
        ea.name          AS account_label,
        e.is_unplanned   AS is_unplanned,
@@ -71,12 +76,16 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
        NULL     AS subcategory_id,
        NULL     AS subcategory_label,
        i.note   AS note,
-       i.source AS source,
+       s.key    AS source_key,
+       s.name   AS source_name,
+       ps.key   AS parent_key,
        i.account_id AS account_id,
        ia.name      AS account_label,
        0            AS is_unplanned,
        NULL         AS refund_of
      FROM income i
+     JOIN income_sources s ON i.source_id = s.id
+     LEFT JOIN income_sources ps ON s.parent_id = ps.id
      LEFT JOIN accounts ia ON i.account_id = ia.id
      WHERE i.date LIKE ?`,
     [pattern, pattern],
@@ -110,14 +119,15 @@ export async function getTransactionFeed(monthISO: string): Promise<TransactionE
         refundOf: row.refund_of,
       };
     }
-    const source = row.source!;
+    const name = row.source_name!;
     return {
       type: 'income',
       id: row.id,
       amount: row.amount,
       date: row.date,
-      source,
-      sourceLabel: labelForSource(source),
+      // The icon/tint key: a built-in's own key, else its parent's, else the name.
+      source: row.source_key ?? row.parent_key ?? name,
+      sourceLabel: labelForIncomeSource(row.source_key, name),
       note: row.note,
       accountId: row.account_id,
       accountLabel: row.account_label,

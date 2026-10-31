@@ -27,7 +27,8 @@
 --      transfers.deleted_at 038, debts.account_id/deleted_at 039,
 --      expenses.refund_of 040, allocations.surplus_seen 042,
 --      goals.target_months 044, debts terms and debt_payments.instalment 047,
---      expenses.event_id 049).
+--      expenses.event_id 049, income.source_id 051 — with the trigger and
+--      backfill that map the old text tag to a built-in source).
 --   4. Applies owner-only RLS and the pull-cursor index to every table.
 
 -- ----------------------------------------------------------------
@@ -41,7 +42,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments', 'month_snapshots', 'events'
+    'tontines', 'tontine_payments', 'month_snapshots', 'events', 'income_sources'
   ]
   loop
     if to_regclass('public.' || t) is not null and not exists (
@@ -123,11 +124,24 @@ create table if not exists expenses (
   updated_at     text not null
 );
 
+create table if not exists income_sources (
+  uuid        text primary key,
+  user_id     uuid not null default auth.uid(),
+  key         text,            -- built-in key (salary, business, ...), or null = the user's own (VS-91)
+  name        text not null,
+  parent_id   text,            -- uuid of the parent source, or null (one level deep)
+  is_hidden   integer not null default 0,
+  sort_order  integer not null default 0,
+  created_at  text not null,
+  updated_at  text not null
+);
+
 create table if not exists income (
   uuid              text primary key,
   user_id           uuid not null default auth.uid(),
   amount            integer not null,
-  source            text not null,
+  source            text,       -- the pre-VS-91 tag; only older builds still send it
+  source_id         text,       -- uuid of the income source (VS-91)
   note              text,
   date              text not null,
   allocation_status text not null default 'allocated',
@@ -417,6 +431,29 @@ alter table debts                add column if not exists instalment_frequency t
 alter table debts                add column if not exists first_instalment_date text;
 alter table debt_payments        add column if not exists instalment integer;
 alter table expenses             add column if not exists event_id text;
+alter table income               add column if not exists source_id text;
+alter table income               alter column source drop not null;
+
+-- ----------------------------------------------------------------
+-- Income from older builds (VS-91): a phone that still pushes the old text tag
+-- (`source`) gets the matching built-in source's uuid in `source_id`.
+-- ----------------------------------------------------------------
+create or replace function income_source_id_from_tag() returns trigger
+  language plpgsql as $
+begin
+  if new.source_id is null and new.source is not null then
+    new.source_id := 'seed-income-source-' || new.source;
+  end if;
+  return new;
+end $;
+
+drop trigger if exists income_source_id_from_tag on income;
+create trigger income_source_id_from_tag
+  before insert or update on income
+  for each row execute function income_source_id_from_tag();
+
+update income set source_id = 'seed-income-source-' || source
+  where source_id is null and source is not null;
 
 -- ----------------------------------------------------------------
 -- 4. Owner-only RLS and the pull-cursor index (same as schema.sql).
@@ -429,7 +466,7 @@ begin
     'income', 'allocations', 'category_budgets', 'fund_transactions', 'project_transactions',
     'quick_add_templates', 'recurring_expenses', 'zero_days', 'debts', 'planned_lists',
     'planned_items', 'transfers', 'balance_checks', 'debt_payments', 'baseline_facts', 'goals',
-    'tontines', 'tontine_payments', 'month_snapshots', 'events'
+    'tontines', 'tontine_payments', 'month_snapshots', 'events', 'income_sources'
   ]
   loop
     execute format('alter table %I add column if not exists user_id uuid not null default auth.uid();', t);

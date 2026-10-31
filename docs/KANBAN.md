@@ -2801,6 +2801,45 @@ consent. Before release: PostHog project set up, EAS key set, policy published, 
 
 ---
 
+### VS-91: Income Sources the User Can Extend 🔄 In Progress
+
+**Priority:** P2 — logging accuracy (requested 2026-10-31)
+**Blocked by:** —
+
+**Scope:**
+
+- Migration 051: `income_sources` (key, name, parent_id, is_hidden, sort_order; synced) seeded with
+  fixed ids and uuids `seed-income-source-<key>`: Salary, Freelance, Business / side business,
+  Gift & family support, Other, and E-commerce under Business. `income.source` (CHECK to three tags)
+  becomes `source_id`: table rebuilt, every row kept with its ids and sync state; e-commerce income
+  lands under Business.
+- Income slice: `incomeSources.service` (list, create one level deep, rename the user's own, hide/show;
+  names unique among siblings, built-in labels included), `useIncomeSources`, picker with subsources,
+  *New source* / *Add under …*, a Gift & family support hint (a loan is a debt; money passed on is not
+  income), and *Manage sources* (`/income/sources`). Writes tracked as `income_source`.
+- Shared readers: the Transactions feed and wallet history name income by its source; a source the
+  user made takes its parent's icon.
+- Sync and backups: `income_sources` before `income`; FKs mapped; built-ins count as install defaults;
+  a cloud restore and a backup import put the built-ins back, and an old backup's tags become source
+  ids. Supabase patch 053 (folded into 037 and schema.sql): table, `income.source_id`, a trigger that
+  fills it from older builds' tag, and a backfill.
+
+**TDD Anchor:**
+
+- Test: migration seeds the six built-ins and moves salary/freelance/ecommerce income to ids 1/2/6
+  with ids, uuids and sync state kept; changing a source marks the row pending.
+- Test: names are trimmed, required and unique among siblings; no subsource of a subsource; built-ins
+  cannot be renamed; hiding marks the source for sync.
+- Test: picker shows visible sources, the subsources of the picked one, a hidden source in use, the
+  gift hint; adds a source or a subsource and selects it; a refused name keeps the form open.
+- Test: custom sources push with parent uuids and restore linked; built-ins are not pushed until
+  changed; a pre-VS-91 backup imports.
+
+**Done when:** a user can log income from "Gift from my brother" or a shop under Business, and old
+income, backups and cloud data keep their sources. Before release: run Supabase patch 053.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

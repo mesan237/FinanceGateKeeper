@@ -64,8 +64,8 @@ beforeEach(async () => {
   cloud.__reset();
   cloud.__setSession({ user: { id: 'u1' } });
   run(
-    `INSERT INTO income (amount, source, date, created_at, uuid, updated_at, sync_status)
-     VALUES (100, 'salary', '2026-06-01', '2026-06-01T00:00:00.000Z',
+    `INSERT INTO income (amount, source_id, date, created_at, uuid, updated_at, sync_status)
+     VALUES (100, 1, '2026-06-01', '2026-06-01T00:00:00.000Z',
              'inc-local', '2026-06-01T00:00:00.000Z', 'synced')`,
   );
 });
@@ -104,7 +104,7 @@ describe('edits made while a sync is running', () => {
       {
         uuid: 'inc-local',
         amount: 999,
-        source: 'salary',
+        source_id: 'seed-income-source-salary',
         note: null,
         date: '2026-06-01',
         created_at: '2026-06-01T00:00:00.000Z',
