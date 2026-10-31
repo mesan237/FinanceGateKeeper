@@ -80,6 +80,10 @@ device with different ids. The translation happens on every push/pull
 
 Default categories (seeded identically on every install) get **deterministic**
 uuids (`seed-category-<id>`) so they don't duplicate across devices on first sync.
+The built-in income sources (VS-91) do the same with `seed-income-source-<key>`. They
+start synced, so they are pushed only once the user changes one (hides it), and a
+restore or a backup import puts them back before income is applied
+(`seedIncomeSources` in migration 051).
 
 Each synced table also carries:
 
@@ -180,6 +184,13 @@ item on the others while they keep the expense. **Before installing a build with
 (or patch 037, which includes it) in the Supabase SQL editor. It is non-destructive and idempotent. Until the tables
 exist, every sync from that build fails, because a Supabase error on any synced
 table fails the whole sync.
+
+Income sources (VS-91) add `income_sources`, before `income` in `SYNCED_TABLES`; an
+income row points at its source by uuid (`source_id`). Older builds pushed a text tag
+(`source`) instead; the cloud keeps that column and a trigger fills `source_id` from it.
+**Before installing a build with migration 051, run
+[`supabase/patches/053_income_sources.sql`](../supabase/patches/053_income_sources.sql)**
+(or patch 037, which includes it). It also fills `source_id` on income already in the cloud.
 
 **Not synced:**
 
