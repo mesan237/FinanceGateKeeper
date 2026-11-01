@@ -31,7 +31,10 @@ export function snapshotTimeLabel(createdAt: string): string {
 
 export interface SnapshotListProps {
   snapshots: SnapshotInfo[];
+  /** A snapshot action is running: shows the spinner and blocks the list. */
   busy: boolean;
+  /** Blocks the list without a spinner, while a cloud action is running. */
+  disabled?: boolean;
   onCreate: () => void;
   onRestore: (snapshot: SnapshotInfo) => void;
   onDelete: (snapshot: SnapshotInfo) => void;
@@ -41,9 +44,17 @@ export interface SnapshotListProps {
  * The on-phone half of Backup & Restore: "Take a snapshot now" and the
  * snapshots newest first, each with its kind, time, size and Restore/Delete.
  */
-export function SnapshotList({ snapshots, busy, onCreate, onRestore, onDelete }: SnapshotListProps) {
+export function SnapshotList({
+  snapshots,
+  busy,
+  disabled = false,
+  onCreate,
+  onRestore,
+  onDelete,
+}: SnapshotListProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation('backup');
+  const blocked = busy || disabled;
 
   return (
     <SectionCard icon="backup" title={t('local.title')} subtitle={t('local.subtitle')}>
@@ -53,6 +64,7 @@ export function SnapshotList({ snapshots, busy, onCreate, onRestore, onDelete }:
         variant="secondary"
         onPress={onCreate}
         loading={busy}
+        disabled={blocked}
       />
       {snapshots.length === 0 ? <Typography variant="muted">{t('local.empty')}</Typography> : null}
       {snapshots.map((s) => (
@@ -71,7 +83,7 @@ export function SnapshotList({ snapshots, busy, onCreate, onRestore, onDelete }:
             label={t('local.restore')}
             variant="secondary"
             compact
-            disabled={busy}
+            disabled={blocked}
             onPress={() => onRestore(s)}
           />
           <IconButton
@@ -79,7 +91,7 @@ export function SnapshotList({ snapshots, busy, onCreate, onRestore, onDelete }:
             icon="delete"
             tone="danger"
             accessibilityLabel={t('local.delete')}
-            disabled={busy}
+            disabled={blocked}
             onPress={() => onDelete(s)}
           />
         </View>

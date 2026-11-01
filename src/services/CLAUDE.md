@@ -48,6 +48,9 @@ Implemented in VS-15 — full detail in [docs/CLOUD-SYNC.md](../../docs/CLOUD-SY
 - On pull: fetch records where `updated_at > lastPulledAt` (cursor in `sync_meta`), upsert locally
   (uuids → FK ids) when the incoming row is strictly newer.
 - Conflict resolution: local always wins (last-write-wins; local breaks ties).
+- `syncActivity.ts`: `syncNow`, `restoreFromCloud` and `restoreSnapshot` run one at a time on the
+  one SQLite connection (`runExclusive`). A `syncNow` during a sync joins it, and `useCloudSync`
+  reports any sync as `syncing`, whoever started it.
 - Sync triggers: on app open and foreground (`useBackgroundSync`) and manual "Sync Now". `users` is
   excluded from sync.
 - `restoreFromCloud` replaces local data with the cloud copy (VS-37). `snapshots.service.ts` keeps

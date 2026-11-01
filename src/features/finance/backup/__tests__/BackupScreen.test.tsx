@@ -6,6 +6,13 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush, back: jest.fn() }),
 }));
 
+const mockUsePreventRemove = jest.fn();
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  usePreventRemove: (prevent: boolean, callback: () => void) =>
+    mockUsePreventRemove(prevent, callback),
+}));
+
 const mockOpenURL = jest.fn();
 jest.mock('expo-linking', () => ({ openURL: (url: string) => mockOpenURL(url) }));
 
@@ -18,9 +25,10 @@ jest.mock('@/components/Toast', () => {
 const mockCloud = {
   userEmail: null as string | null,
   signedIn: false,
-  status: 'idle' as const,
+  status: 'idle' as 'idle' | 'syncing' | 'error',
   lastSyncedAt: null as string | null,
   error: null as string | null,
+  authAction: null as 'sign-in' | 'sign-up' | 'sign-out' | null,
   signIn: jest.fn(),
   signUp: jest.fn(),
   signOut: jest.fn(),
@@ -38,9 +46,10 @@ const mockSnapshots = {
   remove: jest.fn(),
 };
 const mockCloudRestore = jest.fn();
+let mockIsRestoring = false;
 jest.mock('../backup.hooks', () => ({
   useSnapshots: () => mockSnapshots,
-  useCloudRestore: () => ({ restore: mockCloudRestore, isRestoring: false }),
+  useCloudRestore: () => ({ restore: mockCloudRestore, isRestoring: mockIsRestoring }),
 }));
 
 import { BackupScreen } from '@/features/finance/backup/BackupScreen';
@@ -69,6 +78,9 @@ beforeEach(() => {
   mockCloud.userEmail = null;
   mockCloud.lastSyncedAt = null;
   mockCloud.error = null;
+  mockCloud.status = 'idle';
+  mockCloud.authAction = null;
+  mockIsRestoring = false;
 });
 
 function signIn() {
@@ -294,5 +306,152 @@ describe('BackupScreen — one restore at a time', () => {
     render(<BackupScreen />);
 
     expect(screen.getByTestId('backup-cloud-restore')).toBeDisabled();
+  });
+});
+
+describe('BackupScreen — leaving the screen', () => {
+  function lastPreventRemove() {
+    const calls = mockUsePreventRemove.mock.calls;
+    return calls[calls.length - 1] as [boolean, () => void];
+  }
+
+  it('lets the user leave when nothing is running', () => {
+    render(<BackupScreen />);
+
+    expect(lastPreventRemove()[0]).toBe(false);
+  });
+
+  it('holds the user on the screen during a cloud restore and says why', () => {
+    signIn();
+    mockIsRestoring = true;
+    render(<BackupScreen />);
+
+    const [prevent, onBlocked] = lastPreventRemove();
+    expect(prevent).toBe(true);
+    onBlocked();
+    expect(mockShow).toHaveBeenCalledWith('Please wait until this finishes.');
+  });
+
+  it('holds the user on the screen during a snapshot action', () => {
+    mockSnapshots.isBusy = true;
+    render(<BackupScreen />);
+
+    expect(lastPreventRemove()[0]).toBe(true);
+  });
+
+  it('holds the user on the screen during a sign-in', () => {
+    mockCloud.authAction = 'sign-in';
+    render(<BackupScreen />);
+
+    expect(lastPreventRemove()[0]).toBe(true);
+  });
+
+  it('never traps the user behind a sync, which finishes on its own', () => {
+    signIn();
+    mockCloud.status = 'syncing';
+    render(<BackupScreen />);
+
+    expect(lastPreventRemove()[0]).toBe(false);
+  });
+});
+
+describe('BackupScreen — a sync started elsewhere', () => {
+  it('rereads the snapshot list when a sync ends, since it may have restored', () => {
+    signIn();
+    mockCloud.status = 'syncing';
+    const view = render(<BackupScreen />);
+    expect(mockSnapshots.refresh).not.toHaveBeenCalled();
+
+    mockCloud.status = 'idle';
+    view.rerender(<BackupScreen />);
+
+    expect(mockSnapshots.refresh).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('BackupScreen — while a cloud action runs', () => {
+  function expectSnapshotsDisabled() {
+    expect(screen.getByTestId('backup-snapshot-now')).toBeDisabled();
+    expect(screen.getByTestId(`backup-snapshot-restore-${DAILY.id}`)).toBeDisabled();
+    expect(screen.getByTestId(`backup-snapshot-delete-${DAILY.id}`)).toBeDisabled();
+  }
+
+  it('shows the sign-in loading and disables everything else', () => {
+    mockCloud.authAction = 'sign-in';
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-cloud-sign-in')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: true }),
+    );
+    expect(screen.getByTestId('backup-cloud-sign-up')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-email').props.editable).toBe(false);
+    expect(screen.getByTestId('backup-cloud-password').props.editable).toBe(false);
+    expectSnapshotsDisabled();
+  });
+
+  it('shows the sign-up loading and disables sign-in', () => {
+    mockCloud.authAction = 'sign-up';
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-cloud-sign-up')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: true }),
+    );
+    expect(screen.getByTestId('backup-cloud-sign-in')).toBeDisabled();
+  });
+
+  it('disables every other action during a cloud restore', () => {
+    signIn();
+    mockIsRestoring = true;
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-cloud-restore')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: true }),
+    );
+    expect(screen.getByTestId('backup-cloud-now')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-sign-out')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-delete-account')).toBeDisabled();
+    expectSnapshotsDisabled();
+  });
+
+  it('shows the backup loading and disables every other action during a sync', () => {
+    signIn();
+    mockCloud.status = 'syncing';
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-cloud-now')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: true }),
+    );
+    expect(screen.getByTestId('backup-cloud-restore')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-sign-out')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-delete-account')).toBeDisabled();
+    expectSnapshotsDisabled();
+  });
+
+  it('shows the sign-out loading and disables every other action', () => {
+    signIn();
+    mockCloud.authAction = 'sign-out';
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-cloud-sign-out')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: true }),
+    );
+    expect(screen.getByTestId('backup-cloud-now')).toBeDisabled();
+    expect(screen.getByTestId('backup-cloud-restore')).toBeDisabled();
+    expectSnapshotsDisabled();
+  });
+
+  it('keeps the snapshot spinner to snapshot actions', () => {
+    mockCloud.authAction = 'sign-in';
+    render(<BackupScreen />);
+
+    expect(screen.getByTestId('backup-snapshot-now')).toHaveProp(
+      'accessibilityState',
+      expect.objectContaining({ busy: false }),
+    );
   });
 });

@@ -17,7 +17,7 @@ export interface CloudBackupCardProps {
   /** When the cloud copy was last updated; overrides `cloud.lastSyncedAt` after a restore. */
   lastBackupAt: string | null;
   restoring: boolean;
-  /** Disables both actions while a snapshot action is running. */
+  /** Disables every action while a snapshot action is running. */
   disabled?: boolean;
   onRestore: () => void;
 }
@@ -41,6 +41,11 @@ export function CloudBackupCard({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
+  const { authAction } = cloud;
+  const syncing = cloud.status === 'syncing';
+  // One cloud action at a time: the one running shows a spinner, the others are disabled.
+  const blocked = disabled || restoring || syncing || authAction !== null;
+
   if (!cloud.signedIn) {
     return (
       <SectionCard icon="cloud" title={t('cloud.title')} subtitle={t('cloud.signedOut')}>
@@ -51,6 +56,7 @@ export function CloudBackupCard({
           placeholder={t('cloud.email')}
           autoCapitalize="none"
           keyboardType="email-address"
+          editable={authAction === null}
           accessibilityLabel={t('cloud.emailLabel')}
         />
         <TextInput
@@ -59,6 +65,7 @@ export function CloudBackupCard({
           onChangeText={setPassword}
           placeholder={t('cloud.password')}
           secureTextEntry
+          editable={authAction === null}
           accessibilityLabel={t('cloud.passwordLabel')}
         />
         {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
@@ -66,6 +73,8 @@ export function CloudBackupCard({
           testID="backup-cloud-sign-in"
           label={t('cloud.signIn')}
           onPress={() => void cloud.signIn(email, password)}
+          loading={authAction === 'sign-in'}
+          disabled={blocked}
         />
         <Button
           testID="backup-cloud-sign-up"
@@ -73,12 +82,13 @@ export function CloudBackupCard({
           variant="secondary"
           compact
           onPress={() => void cloud.signUp(email, password)}
+          loading={authAction === 'sign-up'}
+          disabled={blocked}
         />
       </SectionCard>
     );
   }
 
-  const syncing = cloud.status === 'syncing';
   return (
     <SectionCard icon="cloud" title={t('cloud.title')} subtitle={t('cloud.subtitle')}>
       <Typography variant="muted">
@@ -89,14 +99,13 @@ export function CloudBackupCard({
           ? t('cloud.lastBackup', { date: formatDateLong(lastBackupAt) })
           : t('cloud.neverBackedUp')}
       </Typography>
-      {cloud.status === 'error' && cloud.error ? (
-        <Typography style={styles.error}>{cloud.error}</Typography>
-      ) : null}
+      {cloud.error ? <Typography style={styles.error}>{cloud.error}</Typography> : null}
       <Button
         testID="backup-cloud-now"
-        label={syncing ? t('cloud.backingUp') : t('cloud.backUpNow')}
+        label={t('cloud.backUpNow')}
         onPress={() => void cloud.syncNow()}
-        disabled={syncing || restoring || disabled}
+        loading={syncing}
+        disabled={blocked}
       />
       <Button
         testID="backup-cloud-restore"
@@ -104,7 +113,7 @@ export function CloudBackupCard({
         variant="secondary"
         onPress={onRestore}
         loading={restoring}
-        disabled={syncing || disabled}
+        disabled={blocked}
       />
       <Button
         testID="backup-cloud-sign-out"
@@ -112,14 +121,16 @@ export function CloudBackupCard({
         variant="secondary"
         compact
         onPress={() => void cloud.signOut()}
-        disabled={syncing || restoring}
+        loading={authAction === 'sign-out'}
+        disabled={blocked}
       />
       <Button
         testID="backup-cloud-delete-account"
         label={t('cloud.deleteAccount')}
-        variant="ghost"
+        variant="danger"
         compact
         onPress={() => void Linking.openURL(ACCOUNT_DELETION_URL)}
+        disabled={blocked}
       />
       <Typography variant="muted">{t('cloud.deleteAccountNote')}</Typography>
     </SectionCard>

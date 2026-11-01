@@ -2,6 +2,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 
 import { exportData, importData } from '@/services/dataTransfer.service';
 import type { SnapshotFile, SnapshotInfo, SnapshotReason } from '@/services/snapshots.types';
+import { runExclusive } from '@/services/syncActivity';
 import { toISODate } from '@/utils/formatDate';
 
 export type { SnapshotInfo, SnapshotReason };
@@ -150,10 +151,12 @@ export async function deleteSnapshot(id: string): Promise<void> {
  * next sync pushes it and the cloud converges on the restored data. Rows that
  * exist only in the cloud stay there; the sync engine sends no deletions.
  */
-export async function restoreSnapshot(id: string, now: Date = new Date()): Promise<void> {
-  const content = readSnapshotFile(snapshotFile(id));
-  if (!content) throw new Error(`Unreadable snapshot: ${id}`);
+export function restoreSnapshot(id: string, now: Date = new Date()): Promise<void> {
+  return runExclusive(async () => {
+    const content = readSnapshotFile(snapshotFile(id));
+    if (!content) throw new Error(`Unreadable snapshot: ${id}`);
 
-  await createSnapshot('before-restore', now, id);
-  await importData(content, { markPendingAt: now.toISOString() });
+    await createSnapshot('before-restore', now, id);
+    await importData(content, { markPendingAt: now.toISOString() });
+  });
 }

@@ -3,6 +3,7 @@ import { SYNCED_TABLES, type SyncedTable } from '@/services/migrations/017_add_s
 import { seedIncomeSources } from '@/services/migrations/051_income_sources';
 import { applyCloudRow, sortForInsert, toCloudRow, type Row } from '@/services/sync.mapping';
 import { createSnapshot } from '@/services/snapshots.service';
+import { runExclusive, runSingleSync } from '@/services/syncActivity';
 import { adoptCloudWallets } from '@/services/sync.wallets';
 import type { CloudRestoreError, CloudRestoreResult, SyncResult } from '@/services/sync.types';
 import { getCurrentUserId, supabase } from '@/services/supabase';
@@ -146,9 +147,14 @@ async function restoreIfFreshInstall(): Promise<number | null> {
  * (see `restoreIfFreshInstall`); on any other first sync, merges the starter
  * wallets into the cloud ones before pushing (see `adoptCloudWallets`). Returns
  * `{ ok: false }` (never throws) when signed out or when the cloud is
- * unreachable, so callers can surface the state without try/catch.
+ * unreachable, so callers can surface the state without try/catch. A call made
+ * during a sync joins it.
  */
-export async function syncNow(): Promise<SyncResult> {
+export function syncNow(): Promise<SyncResult> {
+  return runSingleSync(runFullSync);
+}
+
+async function runFullSync(): Promise<SyncResult> {
   const userId = await getCurrentUserId();
   if (!userId) {
     return {
@@ -250,9 +256,14 @@ async function replaceWithCloudRows(tables: Array<[SyncedTable, Row[]]>): Promis
  * the phone untouched. Then a "before restore" snapshot of the local data is
  * taken (local changes never pushed are otherwise lost), the local tables are
  * cleared and refilled from the cloud, and the pull cursor moves to the newest
- * cloud row. Never throws: failures come back as `{ ok: false, error }`.
+ * cloud row. Never throws: failures come back as `{ ok: false, error }`. Waits
+ * for a running sync first.
  */
-export async function restoreFromCloud(): Promise<CloudRestoreResult> {
+export function restoreFromCloud(): Promise<CloudRestoreResult> {
+  return runExclusive(replaceFromCloud);
+}
+
+async function replaceFromCloud(): Promise<CloudRestoreResult> {
   const fail = async (error: CloudRestoreError, e?: unknown): Promise<CloudRestoreResult> => ({
     ok: false,
     restored: 0,

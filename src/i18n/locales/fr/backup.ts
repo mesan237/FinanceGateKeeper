@@ -20,7 +20,6 @@ export const backup: Translation<typeof en> = {
     lastBackup: 'Dernière sauvegarde le {{date}}',
     neverBackedUp: 'Pas encore sauvegardé.',
     backUpNow: 'Sauvegarder maintenant',
-    backingUp: 'Sauvegarde…',
     restore: 'Restaurer depuis le cloud',
     deleteAccount: 'Supprimer mon compte',
     deleteAccountNote:
@@ -65,6 +64,7 @@ export const backup: Translation<typeof en> = {
     restoreFailed: 'La restauration a échoué. Vos données n’ont pas été modifiées.',
     deleted: 'Copie supprimée.',
     deleteFailed: 'Impossible de supprimer la copie.',
+    waitForAction: 'Veuillez patienter jusqu’à la fin de l’opération.',
   },
   cloudErrors: {
     notSignedIn: 'Connectez-vous d’abord à un compte cloud.',

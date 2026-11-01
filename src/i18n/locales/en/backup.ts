@@ -16,7 +16,6 @@ export const backup = {
     lastBackup: 'Last backup {{date}}',
     neverBackedUp: 'Not backed up yet.',
     backUpNow: 'Back up now',
-    backingUp: 'Backing up…',
     restore: 'Restore from cloud',
     deleteAccount: 'Delete my account',
     deleteAccountNote:
@@ -61,6 +60,7 @@ export const backup = {
     restoreFailed: 'Restore failed. Your data was not changed.',
     deleted: 'Snapshot deleted.',
     deleteFailed: 'Could not delete the snapshot.',
+    waitForAction: 'Please wait until this finishes.',
   },
   cloudErrors: {
     notSignedIn: 'Sign in to a cloud account first.',

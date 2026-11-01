@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { usePreventRemove } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet } from 'react-native';
 
@@ -25,6 +26,8 @@ const CLOUD_ERROR_KEYS = {
  * restore from cloud, sign out) and the automatic on-phone snapshots (take one, restore one, delete one).
  * Every restore and delete goes through a confirm modal first, and every
  * restore saves a "before restore" snapshot, so it can be undone from the list.
+ * The user stays here until a restore, snapshot or account action ends; a sync
+ * does not hold them, since it runs in the background anyway.
  */
 export function BackupScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -36,6 +39,20 @@ export function BackupScreen() {
   const [pending, setPending] = useState<PendingAction | null>(null);
   // `useCloudSync` reads the backup time once on mount; a cloud restore moves it.
   const [restoredSyncAt, setRestoredSyncAt] = useState<string | null>(null);
+
+  const syncing = cloud.status === 'syncing';
+  const wasSyncing = useRef(syncing);
+  const { refresh } = snapshots;
+  useEffect(() => {
+    // A first sync on a fresh phone restores, which adds a "before restore" snapshot.
+    if (wasSyncing.current && !syncing) void refresh();
+    wasSyncing.current = syncing;
+  }, [syncing, refresh]);
+
+  usePreventRemove(
+    cloudRestore.isRestoring || snapshots.isBusy || cloud.authAction !== null,
+    () => show(t('toasts.waitForAction')),
+  );
 
   const handleCreate = async () => {
     const ok = await snapshots.create();
@@ -85,7 +102,8 @@ export function BackupScreen() {
 
       <SnapshotList
         snapshots={snapshots.snapshots}
-        busy={snapshots.isBusy || cloudRestore.isRestoring}
+        busy={snapshots.isBusy}
+        disabled={cloudRestore.isRestoring || syncing || cloud.authAction !== null}
         onCreate={() => void handleCreate()}
         onRestore={(snapshot) => setPending({ kind: 'restore-snapshot', snapshot })}
         onDelete={(snapshot) => setPending({ kind: 'delete-snapshot', snapshot })}

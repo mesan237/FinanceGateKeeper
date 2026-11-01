@@ -25,6 +25,7 @@ import {
   listSnapshots,
   restoreSnapshot,
 } from '@/services/snapshots.service';
+import { runExclusive } from '@/services/syncActivity';
 
 let sqlite: Database.Database;
 
@@ -222,6 +223,24 @@ describe('restoreSnapshot', () => {
 
     await restoreSnapshot(newest.id, at(3));
     expect(await expenseAmounts()).toEqual([1500, 2000]);
+  });
+
+  it('waits for a running sync or restore before touching the data', async () => {
+    const snapshot = await createSnapshot('manual', at(1));
+    const before = await listSnapshots();
+    let finishRunning: () => void = () => undefined;
+    const running = runExclusive(
+      () => new Promise<void>((resolve) => (finishRunning = resolve)),
+    );
+
+    const restore = restoreSnapshot(snapshot.id, at(2));
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(await listSnapshots()).toEqual(before);
+
+    finishRunning();
+    await running;
+    await restore;
+    expect((await listSnapshots()).length).toBe(before.length + 1);
   });
 
   it('keeps the restored snapshot even when it is the oldest safety copy', async () => {
