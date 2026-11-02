@@ -113,7 +113,7 @@ export async function createExpense(input: NewExpense): Promise<number> {
       input.accountId ?? null,
       input.isUnplanned ? 1 : 0,
       input.eventId ?? null,
-      new Date().toISOString(),
+      input.createdAt ?? new Date().toISOString(),
     ],
   );
 

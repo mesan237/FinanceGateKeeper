@@ -78,10 +78,9 @@ export const accounts = {
   },
   opening: {
     a11y: 'What {{name}} holds today, in FCFA',
-    placeholder: "Blank if you don't know",
-    hint: 'You can add, rename or correct wallets later in Wallets.',
+    placeholder: 'FCFA',
     save: 'Save and continue',
-    later: 'Not now',
+    later: 'Later',
   },
   transfer: {
     title: 'Log transfer',

@@ -45,6 +45,7 @@ Other: Miscellaneous
 - `RecurringExpensesScreen.tsx` — Manage recurring list
 - `CategoryManager.tsx` — CRUD for categories/subcategories
 - `ZeroDayPrompt.tsx` — Confirmation modal
+- `FirstExpenseStep.tsx` — The first expense or no-spend day during set-up (VS-92), injected into onboarding by the root layout. Saved as already paid, so it does not come off the wallet figures just confirmed
 - `TransactionList.tsx` — Filterable chronological list
 - `CategoryPicker.tsx` — Selector used in forms
 - `expenses.hooks.ts` — useExpenseLog, useTransactions, useQuickAdd, useRecurring, useCategories, useZeroDay

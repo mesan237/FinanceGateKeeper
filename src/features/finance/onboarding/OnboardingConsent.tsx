@@ -8,13 +8,14 @@ import { SPACING } from '@/constants/layout';
 import { useAnalyticsConsent } from '@/hooks/useAnalyticsConsent';
 
 /**
- * The optional-analytics switch on the set-up's first step (VS-90). Off by
+ * The optional-analytics switch on the set-up's wallets step (VS-90, VS-92). Off by
  * default: nothing is sent unless the user turns it on, and the same choice
  * shows in Preferences, where it can be changed at any time. A failed save
  * leaves the switch off, so it never claims a choice that was not kept.
  */
 export function OnboardingConsent() {
   const { t } = useTranslation('common');
+  const { t: tOnboarding } = useTranslation('onboarding');
   const { enabled, setEnabled } = useAnalyticsConsent('onboarding');
 
   const toggle = (next: boolean) => {
@@ -26,7 +27,7 @@ export function OnboardingConsent() {
       <View style={styles.text}>
         <Typography variant="label">{t('analytics.title')}</Typography>
         <Typography variant="muted" style={styles.body}>
-          {t('analytics.body')}
+          {tOnboarding('wallets.consentBody')}
         </Typography>
       </View>
       <Toggle

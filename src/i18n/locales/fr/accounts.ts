@@ -81,8 +81,7 @@ export const accounts: Translation<typeof en> = {
   },
   opening: {
     a11y: 'Ce que contient {{name}} aujourd’hui, en FCFA',
-    placeholder: 'Vide si vous ne savez pas',
-    hint: 'Vous pourrez ajouter, renommer ou corriger vos portefeuilles plus tard dans Portefeuilles.',
+    placeholder: 'FCFA',
     save: 'Enregistrer et continuer',
     later: 'Plus tard',
   },

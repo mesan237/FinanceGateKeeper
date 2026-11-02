@@ -25,6 +25,8 @@ import {
   removeBalanceCheck,
 } from '@/features/finance/accounts/accounts.checks';
 
+import { createExpense } from '@/features/finance/expenses/expenses.service';
+
 let sqlite: Database.Database;
 
 beforeEach(async () => {
@@ -148,6 +150,37 @@ describe('getUnassignedSpending', () => {
     await spend(9_000, '2026-10-03', MOMO);
 
     expect(await getUnassignedSpending()).toEqual({ count: 2, total: 7_000 });
+  });
+});
+
+describe('a first entry saved as already paid (VS-92)', () => {
+  it('leaves the balance confirmed just before it, while a normal expense still comes off', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    await confirmBalance(MOMO, 10_000, today);
+
+    const midnight = new Date(`${today}T00:00:00.000Z`).toISOString();
+    await createExpense({
+      amount: 500,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: today,
+      isRecurring: false,
+      accountId: MOMO,
+      createdAt: midnight,
+    });
+    expect(await getAccountBalance(MOMO)).toBe(10_000);
+
+    await createExpense({
+      amount: 200,
+      categoryId: 1,
+      subcategoryId: null,
+      note: null,
+      date: today,
+      isRecurring: false,
+      accountId: MOMO,
+    });
+    expect(await getAccountBalance(MOMO)).toBe(9_800);
   });
 });
 

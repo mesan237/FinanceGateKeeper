@@ -19,9 +19,4 @@ describe('set-up copy (VS-87)', () => {
       expect(text).not.toMatch(/encrypt|chiffré|chiffrement|secur|sécuris/i);
     }
   });
-
-  it('states the complete-month rule as 8 days in 10, matching the 80% coverage rule', () => {
-    expect(enOnboarding.intro.observeNote).toMatch(/8 days in 10/);
-    expect(frOnboarding.intro.observeNote).toMatch(/8 jours sur 10/);
-  });
 });

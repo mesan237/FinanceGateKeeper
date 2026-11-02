@@ -7,6 +7,7 @@ import { Typography } from '@/components/Typography';
 
 import { ACCOUNT_TYPE_ICON } from './accountIcons';
 import { useAccounts } from './accounts.hooks';
+import { displayAccountName } from './accounts.names';
 
 export interface AccountPickerProps {
   /** The selected account id, or null when none is chosen yet. */
@@ -17,6 +18,8 @@ export interface AccountPickerProps {
   label?: string;
   /** testID prefix; lets two pickers on one screen stay distinct (default "account-picker"). */
   testID?: string;
+  /** Text and arrow only, without the field's box (see `Select`). */
+  bare?: boolean;
 }
 
 /**
@@ -31,13 +34,14 @@ export function AccountPicker({
   onChange,
   label,
   testID = 'account-picker',
+  bare = false,
 }: AccountPickerProps) {
   const { accounts } = useAccounts();
   const { t } = useTranslation('accounts');
 
   const options: SelectOption[] = accounts.map((account) => ({
     key: String(account.id),
-    label: account.name,
+    label: displayAccountName(account),
     icon: ACCOUNT_TYPE_ICON[account.type],
     badge: account.isDefault ? t('picker.defaultBadge') : undefined,
   }));
@@ -52,6 +56,7 @@ export function AccountPicker({
 
       <Select
         testID={testID}
+        bare={bare}
         title={t('picker.title')}
         placeholder={t('picker.placeholder')}
         options={options}

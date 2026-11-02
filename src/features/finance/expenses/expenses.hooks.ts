@@ -45,7 +45,12 @@ export interface UseExpenseLogOptions {
   /** Lift `note` to a parent, same rationale as `amount`. */
   note?: ControlledField;
   /** Where the form is shown, for analytics (VS-90). Default the log screen. */
-  entryPoint?: 'log_screen' | 'add_sheet';
+  entryPoint?: 'log_screen' | 'add_sheet' | 'onboarding';
+  /**
+   * The purchase was paid before any wallet figure was just confirmed, so it is
+   * saved as of this morning and does not come off that figure (VS-92).
+   */
+  alreadyPaid?: boolean;
 }
 
 /**
@@ -75,6 +80,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
   const [attempted, setAttempted] = useState(false);
 
   const entryPoint = options?.entryPoint ?? 'log_screen';
+  const alreadyPaid = options?.alreadyPaid ?? false;
 
   const numericAmount = Number(amount);
   const amountValid = Number.isFinite(numericAmount) && numericAmount > 0;
@@ -116,6 +122,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
         accountId,
         isUnplanned,
         eventId,
+        createdAt: alreadyPaid ? new Date(new Date().setHours(0, 0, 0, 0)).toISOString() : undefined,
       });
       track('expense_created', {
         entry_point: entryPoint,
@@ -131,7 +138,7 @@ export function useExpenseLog(options?: UseExpenseLogOptions) {
       setError(e instanceof Error ? e.message : i18n.t('errors.saveFailed', { ns: 'expenses' }));
       return null;
     }
-  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned, eventId, entryPoint]);
+  }, [canSubmit, categoryId, numericAmount, subcategoryId, note, date, accountId, isUnplanned, eventId, entryPoint, alreadyPaid]);
 
   return {
     amount,

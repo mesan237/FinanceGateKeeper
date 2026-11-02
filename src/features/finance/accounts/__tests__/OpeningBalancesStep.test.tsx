@@ -68,7 +68,7 @@ describe('OpeningBalancesStep (UX-08)', () => {
     expect(mockedChecks.confirmBalance).not.toHaveBeenCalled();
   });
 
-  it('lets the wallets wait: "Not now" moves on without saving what was typed (VS-87)', async () => {
+  it('lets the wallets wait: "Later" moves on without saving what was typed (VS-87)', async () => {
     const onDone = jest.fn();
     render(<OpeningBalancesStep onDone={onDone} />);
 
@@ -79,9 +79,9 @@ describe('OpeningBalancesStep (UX-08)', () => {
     expect(mockedChecks.confirmBalance).not.toHaveBeenCalled();
   });
 
-  it('says a blank field is fine when the amount is unknown', async () => {
+  it('shows the currency as the placeholder', async () => {
     render(<OpeningBalancesStep onDone={jest.fn()} />);
-    expect((await screen.findByTestId('opening-balance-1')).props.placeholder).toBe("Blank if you don't know");
+    expect((await screen.findByTestId('opening-balance-1')).props.placeholder).toBe('FCFA');
   });
 
   it('refuses an amount that is not whole FCFA and stays on the step', async () => {
@@ -100,7 +100,7 @@ describe('OpeningBalancesStep (UX-08)', () => {
     await act(() => i18n.changeLanguage('fr'));
     try {
       render(<OpeningBalancesStep onDone={jest.fn()} />);
-      expect(await screen.findByLabelText('Ce que contient Cash aujourd’hui, en FCFA')).toBeTruthy();
+      expect(await screen.findByLabelText('Ce que contient Espèces aujourd’hui, en FCFA')).toBeTruthy();
     } finally {
       await act(() => i18n.changeLanguage('en'));
     }
