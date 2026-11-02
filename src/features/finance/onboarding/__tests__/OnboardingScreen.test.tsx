@@ -2,31 +2,60 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import React, { useState } from 'react';
 import { Pressable, Text, TextInput } from 'react-native';
 
-import { OnboardingScreen } from '@/features/finance/onboarding/OnboardingScreen';
+import { OnboardingScreen, type FirstEntryOutcome } from '@/features/finance/onboarding/OnboardingScreen';
 import i18n, { type AppLanguage } from '@/i18n';
 
 /** Stands in for the accounts slice's wallet step, which the routing layer injects. */
-function FakeWallets({ next }: { next: () => void }) {
+function FakeWallets({ next, notice }: { next: () => void; notice: React.ReactNode }) {
   return (
-    <Pressable testID="fake-wallets-save" onPress={next}>
+    <>
       <Text>wallet fields</Text>
-    </Pressable>
+      {notice}
+      <Pressable testID="fake-wallets-save" onPress={next}>
+        <Text>save wallets</Text>
+      </Pressable>
+    </>
   );
 }
 
-function renderScreen() {
+/** Stands in for the expenses slice's first entry, one button per way out. */
+function FakeFirstEntry({ done }: { done: (outcome: FirstEntryOutcome) => void }) {
+  return (
+    <>
+      <Text>first entry fields</Text>
+      <Pressable testID="fake-entry-logged" onPress={() => done('logged')}>
+        <Text>logged</Text>
+      </Pressable>
+      <Pressable testID="fake-entry-no-spend" onPress={() => done('noSpend')}>
+        <Text>no spend</Text>
+      </Pressable>
+      <Pressable testID="fake-entry-later" onPress={() => done('later')}>
+        <Text>later</Text>
+      </Pressable>
+    </>
+  );
+}
+
+function renderScreen(onReminder = jest.fn().mockResolvedValue(true)) {
   const onDone = jest.fn();
-  const onReminder = jest.fn().mockResolvedValue(true);
   render(
     <OnboardingScreen
       onDone={onDone}
       onReminder={onReminder}
-      renderWallets={(next) => <FakeWallets next={next} />}
+      renderWallets={(next, notice) => <FakeWallets next={next} notice={notice} />}
+      renderFirstEntry={(done) => <FakeFirstEntry done={done} />}
       language="en"
       onLanguage={jest.fn()}
     />,
   );
   return { onDone, onReminder };
+}
+
+/** Walks to the reminder through a logged first entry. */
+function goToReminder(entry = 'fake-entry-logged') {
+  fireEvent.press(screen.getByTestId('onboarding-next'));
+  fireEvent.press(screen.getByTestId('fake-wallets-save'));
+  fireEvent.press(screen.getByTestId(entry));
 }
 
 /** A wallet step that keeps what was typed, like the real one, to prove a language switch keeps it. */
@@ -50,6 +79,7 @@ function LanguageHarness() {
       onDone={jest.fn()}
       onReminder={jest.fn().mockResolvedValue(true)}
       renderWallets={(next) => <TypedWallets next={next} />}
+      renderFirstEntry={(done) => <FakeFirstEntry done={done} />}
       language={language}
       onLanguage={async (next) => {
         await i18n.changeLanguage(next);
@@ -67,6 +97,8 @@ describe('OnboardingScreen — language (VS-86)', () => {
     expect(screen.getByTestId('onboarding-language-en')).toBeTruthy();
     fireEvent.press(screen.getByTestId('fake-wallets-save'));
     expect(screen.getByTestId('onboarding-language-fr')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('fake-entry-logged'));
+    expect(screen.getByTestId('onboarding-language-en')).toBeTruthy();
   });
 
   it('switches the screen to French and keeps the step and the balances typed', async () => {
@@ -79,7 +111,7 @@ describe('OnboardingScreen — language (VS-86)', () => {
     });
 
     expect(screen.getByText('Que contiennent vos portefeuilles aujourd’hui ?')).toBeTruthy();
-    expect(screen.getByText('Étape 2 sur 3')).toBeTruthy();
+    expect(screen.getByText('2 / 3')).toBeTruthy();
     expect(screen.getByTestId('fake-wallet-input').props.value).toBe('15000');
     expect(screen.getByTestId('onboarding-language-fr').props.accessibilityState).toEqual(
       expect.objectContaining({ selected: true }),
@@ -88,8 +120,7 @@ describe('OnboardingScreen — language (VS-86)', () => {
 
   it('keeps the reminder time chosen when the language changes', async () => {
     render(<LanguageHarness />);
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+    goToReminder();
     fireEvent(screen.getByTestId('onboarding-reminder-time'), 'press');
     fireEvent(screen.getByTestId('time-picker'), 'onChange', { type: 'set' }, new Date(2026, 0, 1, 7, 15));
     expect(screen.getByText('07:15')).toBeTruthy();
@@ -98,42 +129,19 @@ describe('OnboardingScreen — language (VS-86)', () => {
       fireEvent.press(screen.getByTestId('onboarding-language-fr'));
     });
 
-    expect(screen.getByText('Étape 3 sur 3')).toBeTruthy();
+    expect(screen.getByText('C’est noté. Votre premier jour compte.')).toBeTruthy();
     expect(screen.getByText('07:15')).toBeTruthy();
   });
 });
 
-describe('OnboardingScreen — first-run set-up (UX-08)', () => {
-  it('opens on a budget built on real spending and three stages: now, after, then (VS-87)', () => {
+describe('OnboardingScreen — problem to action (VS-92)', () => {
+  it('opens on the problem, with an example month that has a gap in it', () => {
     renderScreen();
 
-    expect(screen.getByText('A budget built on what you really spend')).toBeTruthy();
-    for (const when of ['Now', 'After 3 complete months', 'Then']) {
-      expect(screen.getByText(when)).toBeTruthy();
-    }
-    for (const stage of ['Observe', 'Plan', 'Optimize']) {
-      expect(screen.getByText(stage)).toBeTruthy();
-    }
-    // The path's other two steps wait for My path.
-    expect(screen.queryByText('See')).toBeNull();
-    expect(screen.queryByText('Grow')).toBeNull();
-    expect(screen.getByText('Step 1 of 3')).toBeTruthy();
-  });
-
-  it('says when a month counts, and that a budget can be made right away', () => {
-    renderScreen();
-    expect(screen.getByText(/A month counts once 8 days in 10 are logged/)).toBeTruthy();
-    expect(screen.getByText(/You can make one now from your estimates/)).toBeTruthy();
-  });
-
-  it('marks only the stage the user starts with as current', () => {
-    renderScreen();
-    expect(screen.getByTestId('onboarding-stage-now').props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: true }),
-    );
-    expect(screen.getByTestId('onboarding-stage-after').props.accessibilityState).toEqual(
-      expect.objectContaining({ selected: false }),
-    );
+    expect(screen.getByText('You know what you earn. But where does the money go?')).toBeTruthy();
+    expect(screen.getByText('1 / 3')).toBeTruthy();
+    expect(screen.getByTestId('onboarding-example')).toBeTruthy();
+    expect(screen.getByText('Not noted?')).toBeTruthy();
   });
 
   it('asks what the wallets hold, through the injected step', () => {
@@ -142,38 +150,56 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
     fireEvent.press(screen.getByTestId('onboarding-next'));
 
     expect(screen.getByText('What do your wallets hold today?')).toBeTruthy();
+    expect(screen.getByText('2 / 3')).toBeTruthy();
     expect(screen.getByText('wallet fields')).toBeTruthy();
   });
 
-  it('moves to the reminder once the wallets are saved', () => {
+  it('puts the privacy line and the analytics switch under the wallet fields', () => {
+    renderScreen();
+    expect(screen.queryByTestId('onboarding-analytics')).toBeNull();
+
+    fireEvent.press(screen.getByTestId('onboarding-next'));
+
+    expect(screen.getByText(/Your data stays on this phone/)).toBeTruthy();
+    const tree = JSON.stringify(screen.toJSON());
+    expect(tree.indexOf('wallet fields')).toBeLessThan(tree.indexOf('Your data stays on this phone'));
+    expect(screen.getByTestId('onboarding-analytics')).toBeTruthy();
+  });
+
+  it('asks for a first expense once the wallets are saved', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('onboarding-next'));
 
     fireEvent.press(screen.getByTestId('fake-wallets-save'));
 
+    expect(screen.getByText('Note your first expense')).toBeTruthy();
+    expect(screen.getByText('3 / 3')).toBeTruthy();
+    expect(screen.getByText('first entry fields')).toBeTruthy();
+  });
+
+  it.each(['fake-entry-logged', 'fake-entry-no-spend'])('celebrates the first day after %s', (entry) => {
+    renderScreen();
+    goToReminder(entry);
+
+    expect(screen.getByTestId('onboarding-success')).toBeTruthy();
+    expect(screen.getByText('Noted. Your first day counts.')).toBeTruthy();
+    expect(screen.getByText(/On other days, the app says nothing/)).toBeTruthy();
+    expect(screen.queryByText('3 / 3')).toBeNull();
+    expect(screen.queryByTestId('onboarding-skip')).toBeNull();
+  });
+
+  it('claims nothing was noted when the first entry waits', () => {
+    renderScreen();
+    goToReminder('fake-entry-later');
+
+    expect(screen.queryByTestId('onboarding-success')).toBeNull();
+    expect(screen.queryByText('Noted. Your first day counts.')).toBeNull();
     expect(screen.getByText('Want a gentle reminder?')).toBeTruthy();
-  });
-
-  it('says where the data stays before any amount is asked for', () => {
-    renderScreen();
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-
-    expect(screen.getByText(/Your data stays on this phone/)).toBeTruthy();
-    // Rendered before the wallet fields, so it is read first.
-    const tree = JSON.stringify(screen.toJSON());
-    expect(tree.indexOf('Your data stays on this phone')).toBeLessThan(tree.indexOf('wallet fields'));
-  });
-
-  it('leaves the wallet step its own buttons: no second "Not now" in the footer', () => {
-    renderScreen();
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    expect(screen.queryByTestId('onboarding-later')).toBeNull();
   });
 
   it('sets the reminder at 21:00 by default, then finishes', async () => {
     const { onDone, onReminder } = renderScreen();
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+    goToReminder();
 
     fireEvent.press(screen.getByTestId('onboarding-remind'));
 
@@ -181,10 +207,9 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
     expect(onReminder).toHaveBeenCalledWith('21:00');
   });
 
-  it('finishes without a reminder on "No reminders"', () => {
+  it('finishes without a reminder on "No reminder"', () => {
     const { onDone, onReminder } = renderScreen();
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+    goToReminder();
 
     fireEvent.press(screen.getByTestId('onboarding-later'));
 
@@ -192,7 +217,7 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
     expect(onReminder).not.toHaveBeenCalled();
   });
 
-  it('can skip the whole set-up from any step', () => {
+  it('can skip the whole set-up from the numbered steps', () => {
     const { onDone } = renderScreen();
     fireEvent.press(screen.getByTestId('onboarding-next'));
 
@@ -201,29 +226,9 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('presents the reminder as optional help, sent only when nothing is logged (VS-88)', () => {
-    renderScreen();
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
-
-    expect(screen.getByText(/If no spending is logged by the time you pick/)).toBeTruthy();
-    expect(screen.getByText(/Tap "I spent nothing today"/)).toBeTruthy();
-    expect(screen.getByText(/turn it on later in Preferences/)).toBeTruthy();
-  });
-
   it('says so and waits when notifications are refused, instead of finishing as if reminders were on', async () => {
-    const onDone = jest.fn();
-    render(
-      <OnboardingScreen
-        onDone={onDone}
-        onReminder={jest.fn().mockResolvedValue(false)}
-        renderWallets={(next) => <FakeWallets next={next} />}
-        language="en"
-        onLanguage={jest.fn()}
-      />,
-    );
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+    const { onDone } = renderScreen(jest.fn().mockResolvedValue(false));
+    goToReminder();
 
     fireEvent.press(screen.getByTestId('onboarding-remind'));
 
@@ -237,18 +242,8 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
   });
 
   it('still finishes when the reminder cannot be saved', async () => {
-    const onDone = jest.fn();
-    render(
-      <OnboardingScreen
-        onDone={onDone}
-        onReminder={jest.fn().mockRejectedValue(new Error('denied'))}
-        renderWallets={(next) => <FakeWallets next={next} />}
-        language="en"
-        onLanguage={jest.fn()}
-      />,
-    );
-    fireEvent.press(screen.getByTestId('onboarding-next'));
-    fireEvent.press(screen.getByTestId('fake-wallets-save'));
+    const { onDone } = renderScreen(jest.fn().mockRejectedValue(new Error('denied')));
+    goToReminder();
 
     fireEvent.press(screen.getByTestId('onboarding-remind'));
 
@@ -259,10 +254,10 @@ describe('OnboardingScreen — first-run set-up (UX-08)', () => {
     await act(() => i18n.changeLanguage('fr'));
     try {
       renderScreen();
-      expect(screen.getByText('Un budget fondé sur vos vraies dépenses')).toBeTruthy();
-      expect(screen.getByText('Maintenant')).toBeTruthy();
-      expect(screen.getByText('Après 3 mois complets')).toBeTruthy();
-      expect(screen.getByText('Étape 1 sur 3')).toBeTruthy();
+      expect(screen.getByText('Vous savez ce que vous gagnez. Mais où part l’argent ?')).toBeTruthy();
+      expect(screen.getByText('Passer')).toBeTruthy();
+      expect(screen.getByText('Commencer')).toBeTruthy();
+      expect(screen.getByText('EXEMPLE')).toBeTruthy();
     } finally {
       await act(() => i18n.changeLanguage('en'));
     }

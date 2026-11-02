@@ -29,6 +29,8 @@ export interface SelectProps {
   title?: string;
   placeholder?: string;
   testID?: string;
+  /** Text and arrow only, without the field's box: for a row that has its own rule. */
+  bare?: boolean;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface SelectProps {
  * grew independently — reach for it whenever a form needs "pick one from a fixed
  * set" and the set is too long or too wordy to sit in a `SegmentedControl`.
  */
-export function Select({ options, value, onChange, title, placeholder, testID }: SelectProps) {
+export function Select({ options, value, onChange, title, placeholder, testID, bare = false }: SelectProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation();
   const emptyLabel = placeholder ?? t('fields.select');
@@ -58,7 +60,7 @@ export function Select({ options, value, onChange, title, placeholder, testID }:
         accessibilityLabel={title ? `${title}: ${selected?.label ?? emptyLabel}` : undefined}
         accessibilityState={{ expanded: open }}
         testID={testID ? `${testID}-trigger` : undefined}
-        style={styles.trigger}
+        style={bare ? styles.triggerBare : styles.trigger}
         onPress={() => setOpen(true)}
       >
         {selected ? (
@@ -133,6 +135,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
+  triggerBare: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   triggerContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   header: {
     flexDirection: 'row',

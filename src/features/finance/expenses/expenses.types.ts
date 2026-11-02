@@ -87,6 +87,8 @@ export type NewExpense = Omit<Expense, 'id' | 'createdAt' | 'accountId' | 'isUnp
   accountId?: number | null;
   isUnplanned?: boolean;
   eventId?: number | null;
+  /** When it counts as saved; default now. Earlier than a balance check keeps it off that figure (VS-92). */
+  createdAt?: string;
 };
 
 /** The fields `updateExpense` may change on an existing expense. */

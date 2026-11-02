@@ -20,9 +20,9 @@ const duration = { kind: 'duration' } as const;
 /** A route template: lowercase segments and `[param]` placeholders only. */
 const route = { kind: 'route' } as const;
 
-const EXPENSE_ENTRY = oneOf(['log_screen', 'add_sheet', 'quick_add']);
+const EXPENSE_ENTRY = oneOf(['log_screen', 'add_sheet', 'quick_add', 'onboarding']);
 const INCOME_ENTRY = oneOf(['log_screen', 'add_sheet']);
-const ONBOARDING_STEP = oneOf(['intro', 'wallets', 'reminder']);
+const ONBOARDING_STEP = oneOf(['intro', 'wallets', 'first_entry', 'reminder']);
 const FAILURE = oneOf(['save_error']);
 
 /** The drawer rows, by their navigation key (the `feature_entry_point_selected` features). */
@@ -86,7 +86,7 @@ export const ANALYTICS_EVENTS = {
   // Consent: sent once, right after the user opts in.
   analytics_enabled: { entry_point: oneOf(['onboarding', 'settings']) },
 
-  // Onboarding (only after an opt-in on its first step)
+  // Onboarding (only after an opt-in on its wallets step)
   onboarding_step_completed: { workflow_step: ONBOARDING_STEP },
   onboarding_completed: { reminder: oneOf(['on', 'blocked', 'later']) },
   onboarding_skipped: { workflow_step: ONBOARDING_STEP },

@@ -6,11 +6,12 @@ import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
 
 const Child = () => <Text>app-tree</Text>;
 
-/** What the routing layer injects: completion, the reminder step and the wallets step. */
+/** What the routing layer injects: completion, the reminder, the wallets and the first entry. */
 const STEPS = {
   onDone: jest.fn(),
   onReminder: jest.fn().mockResolvedValue(true),
   renderWallets: () => null,
+  renderFirstEntry: () => null,
   language: 'en' as const,
   onLanguage: jest.fn(),
 };

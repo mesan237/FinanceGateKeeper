@@ -35,6 +35,7 @@ import { PlannedReminderScheduler } from '@/features/finance/planned/PlannedRemi
 import { TontineReminderScheduler } from '@/features/finance/tontines/TontineReminderScheduler';
 import { MonthCloser } from '@/features/finance/networth/MonthCloser';
 import { RecurringAutoLogger } from '@/features/finance/expenses/RecurringAutoLogger';
+import { FirstExpenseStep } from '@/features/finance/expenses/FirstExpenseStep';
 import { ZeroDayGate } from '@/features/finance/expenses/ZeroDayGate';
 import { OnboardingGate } from '@/features/finance/onboarding/OnboardingGate';
 import { OpeningBalancesStep } from '@/features/finance/accounts/OpeningBalancesStep';
@@ -49,7 +50,8 @@ export default function RootLayout() {
   // expenses feature never imports the auth feature (see ISSUE-008 decision #2).
   // It likewise brokers the onboarding flag into OnboardingGate so the onboarding
   // feature stays presentational (see ISSUE-023), along with the set-up's two
-  // working steps: the reminder (auth) and the wallets (accounts) (UX-08).
+  // working steps: the reminder (auth), the wallets (accounts) and the first
+  // entry (expenses) (UX-08, VS-92).
   const { settings, loading: settingsLoading, completeOnboarding, enableReminder, setLanguage } =
     useAppSettings();
 
@@ -104,7 +106,8 @@ export default function RootLayout() {
               complete={settings?.onboardingComplete ?? false}
               onDone={() => void completeOnboarding()}
               onReminder={enableReminder}
-              renderWallets={(next) => <OpeningBalancesStep onDone={next} />}
+              renderWallets={(next, notice) => <OpeningBalancesStep onDone={next} notice={notice} />}
+              renderFirstEntry={(done) => <FirstExpenseStep onDone={done} />}
               language={resolveLanguage(settings?.language ?? null)}
               onLanguage={setLanguage}
             >

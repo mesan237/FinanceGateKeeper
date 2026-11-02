@@ -123,6 +123,16 @@ export const expenses: Translation<typeof en> = {
       weekdays: 'Jours ouvrés',
     },
   },
+  firstEntry: {
+    amount: 'Montant',
+    placeholder: '0 FCFA',
+    category: 'Catégorie',
+    more: 'Autre…',
+    wallet: 'Portefeuille',
+    save: 'Enregistrer',
+    noSpend: 'Je n’ai rien dépensé aujourd’hui',
+    later: 'Plus tard',
+  },
   zeroDay: {
     title: "Vous n'avez rien dépensé aujourd'hui ?",
     body: 'Confirmez une journée sans dépense, ou notez ce que vous avez dépensé.',

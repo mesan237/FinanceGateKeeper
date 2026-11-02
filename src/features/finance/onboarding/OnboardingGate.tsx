@@ -15,7 +15,7 @@ export interface OnboardingGateProps extends OnboardingScreenProps {
  * until the flag resolves, the set-up while onboarding is incomplete, and the
  * app otherwise. It holds no state and reads no data — the routing layer
  * injects completion and the reminder step from the auth feature and the
- * wallets step from the accounts feature, so onboarding never imports another
+ * wallets and first-entry steps from their features, so onboarding never imports another
  * feature (mirrors the app-mode gating precedent, VS-08).
  */
 export function OnboardingGate({ ready, complete, children, ...steps }: OnboardingGateProps) {

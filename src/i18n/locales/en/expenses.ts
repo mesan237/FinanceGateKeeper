@@ -119,6 +119,17 @@ export const expenses = {
       weekdays: 'Weekdays',
     },
   },
+  /** The first expense, during set-up (VS-92). */
+  firstEntry: {
+    amount: 'Amount',
+    placeholder: '0 FCFA',
+    category: 'Category',
+    more: 'Other…',
+    wallet: 'Wallet',
+    save: 'Save',
+    noSpend: 'I spent nothing today',
+    later: 'Later',
+  },
   zeroDay: {
     title: 'Did you spend nothing today?',
     body: 'Confirm a zero-spend day, or log what you spent.',
