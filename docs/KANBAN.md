@@ -2840,6 +2840,37 @@ income, backups and cloud data keep their sources. Before release: run Supabase 
 
 ---
 
+### VS-92: Set-Up from Problem to First Entry ✅ Done
+
+**Priority:** P1 — first-run activation (the user's Proposal B, 2026-11-02)
+**Blocked by:** —
+
+**Scope:**
+
+- Set-up becomes B1 the problem (with an example month that has a gap), B2 wallets (privacy line and
+  analytics switch under the fields), B3 first expense or no-spend day, B3b success with the reminder
+  offer, then the existing PIN. The stage timeline, the complete-month note and the early-budget line
+  leave set-up; My path still explains them.
+- `expenses/FirstExpenseStep`, injected by the root layout like the wallets step: four everyday
+  categories, *Other…* for the rest, the default wallet, *I spent nothing today*, *Later*.
+- The first entry is saved as already paid (`created_at` at this morning), so it does not come off
+  the wallet figure confirmed one screen earlier. *Later* reaches the reminder without the success
+  claim.
+- `accounts.names.displayAccountName`: the seeded Cash wallet reads *Espèces* in French in set-up and
+  in the wallet picker. The Wallets screen and other lists still show the stored name.
+- Analytics: `first_entry` step, `onboarding` expense entry point; the switch moves to the wallets step.
+
+**TDD Anchor:**
+
+- Test: the steps run in order, the reminder shows success only after an expense or a no-spend day.
+- Test: Food is preselected, the default wallet is used, an empty amount stays on the step.
+- Test: an already-paid entry leaves a just-confirmed balance alone; a normal expense still comes off.
+- Test: nothing is sent while the switch is off; steps after the opt-in are recorded.
+
+**Done when:** a new user leaves set-up with a logged day and correct wallet balances. No migration.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

@@ -118,7 +118,7 @@ queue only ever holds allowlisted properties. Opting out empties it.
 
 - **Off by default (opt-in).** No SDK object is created and nothing is fetched until the user
   turns on *Help improve the app* (*Aider à améliorer l'application*). The switch is on the
-  set-up's first step and in **Preferences**.
+  set-up's wallets step and in **Preferences**.
 - The choice is stored on this phone only (`ui_preferences.analytics_consent`:
   `granted`/`denied`; absent = not asked). It is never synced, so each install asks for itself.
 - **Withdrawal** (switch off) takes effect at once: no new events are queued, the queued events
@@ -156,11 +156,11 @@ the user tried something. *Outcome* means the app confirmed the result.
 | `app_opened` | App launched (once per process), or returned from the background | outcome | `trigger`: `launch`/`foreground` | Active users, open frequency | root layout |
 | `screen_viewed` (sent as PostHog `$screen`) | The route changed | outcome | `screen_name`: route template, e.g. `/budget/category/[id]` | Feature discovery and reach. Budget, Reports, category detail, My path, weekly report and net worth views are read from here | every route |
 | `analytics_enabled` | The user turned the switch on | outcome | `entry_point`: `onboarding`/`settings` | Opt-in rate by place | set-up, Preferences |
-| `onboarding_step_completed` | Set-up step finished (intro *Start*, wallets saved, reminder answered) | outcome | `workflow_step`: `intro`/`wallets`/`reminder` | Set-up funnel | set-up |
+| `onboarding_step_completed` | Set-up step finished (wallets saved, first entry answered, reminder answered; the intro comes before the switch, so it is only sent to a user who already opted in) | outcome | `workflow_step`: `intro`/`wallets`/`first_entry`/`reminder` | Set-up funnel | set-up |
 | `onboarding_completed` | Set-up finished from the last step | outcome | `reminder`: `on`/`blocked`/`later` | Completion; reminder uptake | set-up |
 | `onboarding_skipped` | *Skip set-up* tapped | outcome | `workflow_step` where it was tapped | Where people bail out | set-up |
 | `expense_validation_failed` | Save tapped with a missing field | attempt | `entry_point`, `invalid_field`: `amount`/`category`/`amount_and_category` | Form friction | log screen, add sheet |
-| `expense_created` | Expense saved (service resolved) | outcome | `entry_point`: `log_screen`/`add_sheet`/`quick_add`; `marked_unplanned`, `linked_event`, `has_subcategory` (booleans); `operation_duration_ms` | Core-loop usage; entry point mix; adoption of imprévus, events, subcategories | log screen, add sheet, quick add |
+| `expense_created` | Expense saved (service resolved) | outcome | `entry_point`: `log_screen`/`add_sheet`/`quick_add`/`onboarding`; `marked_unplanned`, `linked_event`, `has_subcategory` (booleans); `operation_duration_ms` | Core-loop usage; entry point mix; adoption of imprévus, events, subcategories | log screen, add sheet, quick add |
 | `expense_creation_failed` | Expense save threw | outcome | `entry_point`, `failure_reason_code`: `save_error` | Save reliability | same |
 | `expense_edited` / `expense_deleted` | Edit / delete saved | outcome | none | Correction rate | expense detail |
 | `income_validation_failed` | Save tapped with a missing field | attempt | `entry_point`, `invalid_field`: `amount`/`source`/`amount_and_source` | Form friction | income log, add sheet |
@@ -208,7 +208,7 @@ rates count **events**. Every figure is only for users who opted in (see §9).
 
 **Funnels** (strict order, one count per user, conversion window as given):
 
-1. **Set-up** (window 1 day): `analytics_enabled` (onboarding) → step `intro` → step `wallets` →
+1. **Set-up** (window 1 day): `analytics_enabled` (onboarding) → step `wallets` → step `first_entry` →
    `onboarding_completed`. Break down `onboarding_skipped` by `workflow_step` to see where people
    leave.
 2. **Observe → Plan** (window 30 days): `analytics_enabled` → `expense_created` →
