@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import React from 'react';
 import { Modal as RNNativeModal, Text } from 'react-native';
 
@@ -15,6 +15,7 @@ import { SegmentedControl } from '@/components/SegmentedControl';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Typography } from '@/components/Typography';
+import i18n from '@/i18n';
 import { toISODate } from '@/utils/formatDate';
 
 describe('shared primitives', () => {
@@ -127,6 +128,121 @@ describe('AmountInput', () => {
     render(<AmountInput value="" onChangeText={onChangeText} />);
     fireEvent.changeText(screen.getByLabelText('Amount in FCFA'), '12 a3b4');
     expect(onChangeText).toHaveBeenCalledWith('1234');
+  });
+});
+
+describe('AmountInput — calculation (VS-93)', () => {
+  /** Plays a form: keeps the emitted digits, as every caller does. */
+  function Harness({ onAmount }: { onAmount: (value: string) => void }) {
+    const [value, setValue] = React.useState('');
+    return (
+      <>
+        <AmountInput
+          value={value}
+          onChangeText={(next) => {
+            setValue(next);
+            onAmount(next);
+          }}
+          testID="amount"
+        />
+        <TextInput testID="saved" value={value} onChangeText={() => undefined} />
+      </>
+    );
+  }
+
+  it('hands the form the total of a typed sum and shows it beneath', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent.changeText(screen.getByTestId('amount'), '350x2+200');
+
+    expect(screen.getByTestId('saved').props.value).toBe('900');
+    expect(screen.getByDisplayValue('350 × 2 + 200')).toBeTruthy();
+    expect(screen.getByTestId('amount-result')).toHaveTextContent('= 900 FCFA');
+  });
+
+  it('shows no result line for a plain amount', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent.changeText(screen.getByTestId('amount'), '1500');
+    expect(screen.queryByTestId('amount-result')).toBeNull();
+  });
+
+  it('offers operator keys while the field is focused', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    expect(screen.queryByTestId('amount-key-plus')).toBeNull();
+
+    fireEvent(screen.getByTestId('amount'), 'focus');
+    fireEvent.changeText(screen.getByTestId('amount'), '350');
+    fireEvent.press(screen.getByTestId('amount-key-times'));
+    fireEvent.changeText(screen.getByTestId('amount'), '350 × 3');
+
+    expect(screen.getByTestId('saved').props.value).toBe('1050');
+  });
+
+  it('collapses the sum to its total on "="', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent(screen.getByTestId('amount'), 'focus');
+    fireEvent.changeText(screen.getByTestId('amount'), '500+250');
+
+    fireEvent.press(screen.getByTestId('amount-key-equals'));
+
+    expect(screen.getByTestId('amount').props.value).toBe('750');
+    expect(screen.queryByTestId('amount-result')).toBeNull();
+    expect(screen.getByTestId('saved').props.value).toBe('750');
+  });
+
+  it('collapses the sum to its total when the field is left', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent(screen.getByTestId('amount'), 'focus');
+    fireEvent.changeText(screen.getByTestId('amount'), '1000+1000');
+
+    fireEvent(screen.getByTestId('amount'), 'blur');
+
+    expect(screen.getByDisplayValue('2 000')).toBeTruthy();
+    expect(screen.queryByTestId('amount-key-plus')).toBeNull();
+  });
+
+  it('marks a rounded total and hands over whole FCFA', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent.changeText(screen.getByTestId('amount'), '1000/3');
+    expect(screen.getByTestId('amount-result')).toHaveTextContent('≈ 333 FCFA');
+    expect(screen.getByTestId('saved').props.value).toBe('333');
+  });
+
+  it('hands over nothing for a sum with no valid total, and says so', () => {
+    render(<Harness onAmount={jest.fn()} />);
+    fireEvent.changeText(screen.getByTestId('amount'), '200-500');
+    expect(screen.getByTestId('saved').props.value).toBe('');
+    expect(screen.getByTestId('amount-result')).toHaveTextContent('No total above 0');
+  });
+
+  it('empties when the form clears its amount after a save', () => {
+    function Clearing() {
+      const [value, setValue] = React.useState('');
+      return (
+        <>
+          <AmountInput value={value} onChangeText={setValue} testID="amount" />
+          <Text onPress={() => setValue('')} testID="clear">
+            clear
+          </Text>
+        </>
+      );
+    }
+    render(<Clearing />);
+    fireEvent.changeText(screen.getByTestId('amount'), '300+300');
+    fireEvent.press(screen.getByTestId('clear'));
+    expect(screen.getByTestId('amount').props.value).toBe('');
+  });
+
+  it('reads in French', async () => {
+    await act(() => i18n.changeLanguage('fr'));
+    try {
+      render(<Harness onAmount={jest.fn()} />);
+      fireEvent(screen.getByTestId('amount'), 'focus');
+      expect(screen.getByLabelText('fois')).toBeTruthy();
+      fireEvent.changeText(screen.getByTestId('amount'), '200-500');
+      expect(screen.getByTestId('amount-result')).toHaveTextContent('Aucun total supérieur à 0');
+    } finally {
+      await act(() => i18n.changeLanguage('en'));
+    }
   });
 });
 

@@ -25,6 +25,14 @@ export const common: Translation<typeof en> = {
     previousMonth: 'Mois précédent',
     nextMonth: 'Mois suivant',
   },
+  calc: {
+    plus: 'plus',
+    minus: 'moins',
+    times: 'fois',
+    dividedBy: 'divisé par',
+    equals: 'égal : afficher le total',
+    noTotal: 'Aucun total supérieur à 0',
+  },
   states: {
     errorTitle: 'Impossible de charger',
     errorBody: 'Rien de ce que vous avez noté n’est perdu.',

@@ -22,6 +22,15 @@ export const common = {
     previousMonth: 'Previous month',
     nextMonth: 'Next month',
   },
+  /** The amount field's calculator (VS-93). */
+  calc: {
+    plus: 'plus',
+    minus: 'minus',
+    times: 'times',
+    dividedBy: 'divided by',
+    equals: 'equals: show the total',
+    noTotal: 'No total above 0',
+  },
   states: {
     errorTitle: "Couldn't load this",
     errorBody: 'Nothing you logged is lost.',

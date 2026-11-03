@@ -2871,6 +2871,31 @@ income, backups and cloud data keep their sources. Before release: run Supabase 
 
 ---
 
+### VS-93: Calculate in the Amount Field ✅ Done
+
+**Priority:** P2 — logging speed (requested 2026-11-03)
+**Blocked by:** —
+
+**Scope:**
+
+- `utils/amountExpression`: reads a plain amount or a sum ("350 × 2 + 200") with × and ÷ before
+  + and −, no `eval`; accepts x, *, / and - from phone keyboards; rounds to whole FCFA; no total
+  for zero, a negative result or a division by zero.
+- `components/AmountInput`: the total shows beneath a typed sum (≈ when rounded); while the field is
+  focused a + − × ÷ = row stands in for the keys number pads lack; "=" or leaving the field collapses
+  the sum to its total. Callers still receive the whole-FCFA digits, so all 20 money fields
+  (expenses, income, transfers, debts, budget, goals, tontines, planned) calculate with no change.
+
+**TDD Anchor:**
+
+- Test: precedence, keyboard signs, rounding, trailing operator, invalid totals.
+- Test: the form receives the total; keys append operators; "=" and blur collapse; a cleared form
+  empties the field; French labels.
+
+**Done when:** a user can type the day's taxis as a sum and save the total. No migration.
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```
