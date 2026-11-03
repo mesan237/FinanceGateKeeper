@@ -17,7 +17,7 @@ export interface KeyboardAwareFormProps {
  */
 export function KeyboardAwareForm({ children, contentContainerStyle }: KeyboardAwareFormProps) {
   return (
-    <KeyboardAvoider>
+    <KeyboardAvoider testID="keyboard-aware-form">
       <ScrollView
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"

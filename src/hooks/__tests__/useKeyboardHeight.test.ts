@@ -3,6 +3,11 @@ import { Keyboard, Platform } from 'react-native';
 
 import { useKeyboardHeight } from '@/hooks/useKeyboardHeight';
 
+/** A phone with three-button navigation: a 48 dp navigation bar. */
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 24, right: 0, bottom: 48, left: 0 }),
+}));
+
 type Handler = (event: { endCoordinates: { height: number } }) => void;
 
 let handlers: Record<string, Handler>;
@@ -27,21 +32,34 @@ describe('useKeyboardHeight', () => {
     expect(result.current).toBe(0);
   });
 
-  it('reports the keyboard height once it is shown, and 0 again when it hides', () => {
-    const show = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hide = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const { result } = renderHook(() => useKeyboardHeight());
-
-    act(() => handlers[show]({ endCoordinates: { height: 310 } }));
-    expect(result.current).toBe(310);
-
-    act(() => handlers[hide]({ endCoordinates: { height: 0 } }));
-    expect(result.current).toBe(0);
-  });
-
   it('stops listening when the component unmounts', () => {
     const { unmount } = renderHook(() => useKeyboardHeight());
     unmount();
     expect(removed).toHaveBeenCalledTimes(2);
+  });
+
+  // React Native reports the keyboard minus the system bars (ime − systemBars),
+  // but the app draws edge-to-edge, so the keyboard covers the navigation bar
+  // too. Leaving it out left the bottom of every sheet under the keyboard.
+  it('on Android, counts the navigation bar the keyboard covers', () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const { result } = renderHook(() => useKeyboardHeight());
+
+    act(() => handlers.keyboardDidShow({ endCoordinates: { height: 300 } }));
+    expect(result.current).toBe(348);
+
+    act(() => handlers.keyboardDidHide({ endCoordinates: { height: 0 } }));
+    expect(result.current).toBe(0);
+  });
+
+  it('on iOS, takes the reported height as it is', () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const { result } = renderHook(() => useKeyboardHeight());
+
+    act(() => handlers.keyboardWillShow({ endCoordinates: { height: 336 } }));
+    expect(result.current).toBe(336);
+
+    act(() => handlers.keyboardWillHide({ endCoordinates: { height: 0 } }));
+    expect(result.current).toBe(0);
   });
 });
