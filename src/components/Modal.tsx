@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useId } from 'react';
 import {
   BackHandler,
-  KeyboardAvoidingView,
   Modal as RNModal,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 } from 'react-native';
 
 import { SheetHostContext } from '@/components/BottomSheet';
+import { KeyboardAvoider } from '@/components/KeyboardAvoider';
 import { RADIUS } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 
@@ -101,13 +101,13 @@ interface DialogShellProps {
 
 /**
  * The dimmed backdrop and card of a dialog. The card is centred in whatever the
- * keyboard leaves free (`behavior="padding"` on both platforms — see
- * `KeyboardAvoider`), and scrolls when a tall form does not fit, so no field of
+ * keyboard leaves free (`KeyboardAvoider` pads by what the keyboard covers on
+ * screen), and scrolls when a tall form does not fit, so no field of
  * an edit dialog can end up behind the keyboard.
  */
 function DialogShell({ children, style, scrollStyle, cardStyle }: DialogShellProps) {
   return (
-    <KeyboardAvoidingView behavior="padding" style={style}>
+    <KeyboardAvoider style={style} testID="dialog-keyboard-avoider">
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -115,7 +115,7 @@ function DialogShell({ children, style, scrollStyle, cardStyle }: DialogShellPro
       >
         <View style={cardStyle}>{children}</View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAvoider>
   );
 }
 
