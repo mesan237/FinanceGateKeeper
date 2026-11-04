@@ -63,6 +63,11 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof MonthOverview
   return { onSetBudget };
 }
 
+/** Opens the month's details sheet from the card's "Details" link (VS-94). */
+function openDetails() {
+  fireEvent.press(screen.getByTestId('month-overview-details'));
+}
+
 describe('MonthOverviewCard', () => {
   describe('month header', () => {
     it('names the month in caps, without the year', () => {
@@ -180,11 +185,11 @@ describe('MonthOverviewCard', () => {
       expect(screen.getByTestId('month-overview-logging')).toHaveTextContent('1 of 1 day logged');
     });
 
-    it('shows the money that came in on its own line', () => {
+    it('keeps the money that came in for the details sheet (VS-94)', () => {
       renderCard({ summary: UNPLANNED });
-      expect(screen.getByTestId('month-overview-income')).toHaveTextContent(
-        'Money in this month: 100 000 FCFA',
-      );
+      expect(screen.queryByText('Money in')).toBeNull();
+      openDetails();
+      expect(screen.getByTestId('month-details-in')).toHaveTextContent('100 000 FCFA');
     });
 
     it('keeps planning one quiet tap away', () => {
@@ -201,14 +206,20 @@ describe('MonthOverviewCard', () => {
     });
   });
 
-  describe('cashflow row', () => {
-    it('renders money in and money out, and no net (UX-04)', () => {
+  describe('details sheet (VS-94)', () => {
+    it('keeps the card to one figure: money in and out wait behind "Details"', () => {
       renderCard();
-      expect(screen.getByText('In')).toBeTruthy();
-      expect(screen.getByText('Out')).toBeTruthy();
+      expect(screen.queryByText('Money in')).toBeNull();
+      expect(screen.queryByText('Money out')).toBeNull();
+    });
+
+    it('shows money in and money out, and no net (UX-04)', () => {
+      renderCard();
+      openDetails();
+      expect(screen.getByTestId('month-details-sheet')).toBeTruthy();
+      expect(screen.getByTestId('month-details-in')).toHaveTextContent('100 000 FCFA');
+      expect(screen.getByTestId('month-details-out')).toHaveTextContent('20 000 FCFA');
       expect(screen.queryByText('Net')).toBeNull();
-      expect(screen.getByText('100 000 FCFA')).toBeTruthy();
-      expect(screen.getByText('20 000 FCFA')).toBeTruthy();
     });
   });
 
@@ -223,7 +234,7 @@ describe('MonthOverviewCard', () => {
     expect(screen.getByText('SEPTEMBRE')).toBeTruthy();
     expect(screen.getByText('6 jours restants')).toBeTruthy();
     expect(screen.getByText('Reste au budget')).toBeTruthy();
-    expect(screen.getByText('Entrées')).toBeTruthy();
+    expect(screen.getByText('Détails')).toBeTruthy();
   });
 
   it('says "1 jour restant" on the penultimate day', async () => {
@@ -233,8 +244,10 @@ describe('MonthOverviewCard', () => {
   });
 
   describe('imprévus line', () => {
-    it('shows how many imprévus the month has and what they cost', () => {
+    it('shows how many imprévus the month has and what they cost, in the details', () => {
       renderCard({ unplanned: { count: 2, total: 10000 } });
+      expect(screen.queryByTestId('month-overview-unplanned')).toBeNull();
+      openDetails();
       expect(screen.getByTestId('month-overview-unplanned')).toHaveTextContent(
         '2 unexpected expenses · 10 000 FCFA',
       );
@@ -242,12 +255,14 @@ describe('MonthOverviewCard', () => {
 
     it('stays out of the way while the month has none', () => {
       renderCard({ unplanned: { count: 0, total: 0 } });
+      openDetails();
       expect(screen.queryByTestId('month-overview-unplanned')).toBeNull();
     });
 
     it('reads in French', async () => {
       await i18n.changeLanguage('fr');
       renderCard({ unplanned: { count: 1, total: 3000 } });
+      openDetails();
       expect(screen.getByTestId('month-overview-unplanned')).toHaveTextContent(
         '1 imprévu · 3 000 FCFA',
       );

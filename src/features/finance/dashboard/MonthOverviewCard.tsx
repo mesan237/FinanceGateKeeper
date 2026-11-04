@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -8,13 +8,14 @@ import { Pill, type PillTone } from '@/components/Pill';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
 import { FONT_FAMILY } from '@/constants/fonts';
-import { RADIUS, SPACING } from '@/constants/layout';
+import { SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { monthLabel } from '@/utils/monthMath';
 
 import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
 
+import { MonthDetailsSheet } from './MonthDetailsSheet';
 import { HeroNoteLine, PlanLeftLine } from './MonthOverviewLead';
 import type { HeroLead } from './dashboard.heroLead';
 import type { BudgetSummary, Cashflow, DayLogging, PaceLevel } from './dashboard.types';
@@ -35,7 +36,7 @@ export interface MonthOverviewCardProps {
   cashflow: Cashflow;
   /** Days logged so far this month; shown while the month has no plan (UX-04). */
   logging: DayLogging;
-  /** The month's imprévus; the line under the cashflow shows only when there are some. */
+  /** The month's imprévus; the details sheet names them only when there are some. */
   unplanned?: UnplannedTotals;
   /** Invoked by the "Plan a budget" link. The screen owns the navigation. */
   onSetBudget: () => void;
@@ -47,8 +48,7 @@ export interface MonthOverviewCardProps {
  * The dashboard's headline card: which month it is and how much of it is left,
  * then one figure that answers "where do I stand?".
  *
- *  - With a plan: what is left in it, paced on a bar with a status word, then
- *    the money in and out.
+ *  - With a plan: what is left in it, paced on a bar with a status word.
  *  - Without one, the figure is what was spent so far, with how many days are
  *    logged (UX-04). Income received alone is not a plan, whatever it sizes
  *    behind the scenes, and the path starts by observing, so no limit is shown
@@ -56,6 +56,9 @@ export interface MonthOverviewCardProps {
  *  - While observing (`lead.spentView`), the spent view leads even with a
  *    plan, and the plan shows as one line under it (UX-24). The step may add a
  *    note: the typical month on See, variable spending vs the start on Optimize.
+ *
+ * Money in and out and the month's imprévus wait behind "Details", in a sheet
+ * (VS-94): the card answers one question with one figure.
  */
 export function MonthOverviewCard({
   monthISO,
@@ -70,6 +73,7 @@ export function MonthOverviewCard({
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
   const { t } = useTranslation('dashboard');
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const hasPlan = summary.isPlanned;
   const planned = hasPlan && !lead?.spentView;
@@ -120,55 +124,54 @@ export function MonthOverviewCard({
             </Typography>
             <Typography variant="muted">{`${Math.round(summary.spentPct)}%`}</Typography>
           </View>
-          <Pill
-            label={pace.label}
-            tone={pace.tone}
-            testID="budget-pace-chip"
-            style={styles.paceChip}
-          />
-          <View style={styles.cashflowRow}>
-            <CashflowStat label={t('month.in')} value={cashflow.income} />
-            <View style={styles.divider} />
-            <CashflowStat label={t('month.out')} value={cashflow.expenses} />
-          </View>
         </>
       ) : (
         <>
           <Typography variant="muted" testID="month-overview-logging">
             {t('month.daysLogged', { logged: logging.loggedDays, count: logging.daysSoFar })}
           </Typography>
-          <Typography variant="muted" testID="month-overview-income" style={styles.incomeLine}>
-            {t('month.incomeLine', { amount: formatCurrency(cashflow.income) })}
-          </Typography>
-          {hasPlan ? (
-            <PlanLeftLine summary={summary} />
-          ) : (
-            <Pressable
-              testID="month-overview-set-budget"
-              accessibilityRole="button"
-              onPress={onSetBudget}
-              hitSlop={8}
-              style={({ pressed }) => [styles.planLink, pressed && styles.planLinkPressed]}
-            >
-              <Typography style={styles.planLinkText}>{t('month.planLink')}</Typography>
-            </Pressable>
-          )}
+          {hasPlan ? <PlanLeftLine summary={summary} /> : null}
         </>
       )}
 
       {lead?.note ? <HeroNoteLine note={lead.note} /> : null}
 
-      {unplanned && unplanned.count > 0 ? (
-        <View style={styles.unplannedRow}>
-          <View style={styles.unplannedDot} />
-          <Typography variant="muted" testID="month-overview-unplanned">
-            {t('month.unplanned', {
-              count: unplanned.count,
-              amount: formatCurrency(unplanned.total),
-            })}
-          </Typography>
-        </View>
-      ) : null}
+      {/* The status on the left (the pace, or planning one quiet tap away);
+          the way into the details on the right (VS-94). */}
+      <View style={styles.footer}>
+        {planned ? (
+          <Pill label={pace.label} tone={pace.tone} testID="budget-pace-chip" />
+        ) : !hasPlan ? (
+          <Pressable
+            testID="month-overview-set-budget"
+            accessibilityRole="button"
+            onPress={onSetBudget}
+            hitSlop={8}
+            style={({ pressed }) => pressed && styles.linkPressed}
+          >
+            <Typography style={styles.linkText}>{t('month.planLink')}</Typography>
+          </Pressable>
+        ) : (
+          <View />
+        )}
+        <Pressable
+          testID="month-overview-details"
+          accessibilityRole="button"
+          onPress={() => setDetailsOpen(true)}
+          hitSlop={8}
+          style={({ pressed }) => pressed && styles.linkPressed}
+        >
+          <Typography style={styles.linkText}>{t('month.details')}</Typography>
+        </Pressable>
+      </View>
+
+      <MonthDetailsSheet
+        visible={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        monthName={monthName.charAt(0).toUpperCase() + monthName.slice(1)}
+        cashflow={cashflow}
+        unplanned={unplanned}
+      />
     </Card>
   );
 }
@@ -178,17 +181,6 @@ function paceBarColor(pace: PaceLevel, c: ThemeColors): string {
   if (pace === 'red') return c.DANGER;
   if (pace === 'yellow') return c.WARNING;
   return c.SUCCESS;
-}
-
-/** One figure in the in/out/net row, with its caption above. */
-function CashflowStat({ label, value }: { label: string; value: number }) {
-  const styles = useThemedStyles(makeStyles);
-  return (
-    <View style={styles.cashflowCol}>
-      <Typography variant="muted">{label}</Typography>
-      <AnimatedCounter value={value} style={styles.cashflowAmount} />
-    </View>
-  );
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
@@ -221,57 +213,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'space-between',
     gap: SPACING.sm,
   },
-  paceChip: {
-    alignSelf: 'flex-start',
-    marginTop: SPACING.md,
-  },
-  incomeLine: {
-    marginTop: SPACING.xs,
-  },
-  planLink: {
-    alignSelf: 'flex-start',
-    marginTop: SPACING.md,
-  },
-  planLinkPressed: {
-    opacity: 0.6,
-  },
-  planLinkText: {
-    color: c.PRIMARY_TEXT,
-    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
-  },
-  cashflowRow: {
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING.lg,
-    paddingTop: SPACING.lg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.BORDER,
-  },
-  cashflowCol: {
-    flex: 1,
-    gap: SPACING.xs,
-  },
-  divider: {
-    width: StyleSheet.hairlineWidth,
-    alignSelf: 'stretch',
-    backgroundColor: c.BORDER,
-    marginHorizontal: SPACING.md,
-  },
-  unplannedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: SPACING.sm,
     marginTop: SPACING.md,
   },
-  unplannedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: RADIUS.full,
-    backgroundColor: c.KIND_UNEXPECTED,
+  linkPressed: {
+    opacity: 0.6,
   },
-  cashflowAmount: {
-    color: c.TEXT_PRIMARY,
-    fontSize: 16,
-    fontFamily: FONT_FAMILY.SPACE_GROTESK_SEMIBOLD,
+  linkText: {
+    color: c.PRIMARY_TEXT,
+    fontFamily: FONT_FAMILY.WORK_SANS_SEMIBOLD,
   },
 });

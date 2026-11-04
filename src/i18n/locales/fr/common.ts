@@ -13,6 +13,7 @@ export const common: Translation<typeof en> = {
     close: 'Fermer',
     back: 'Retour',
     clear: 'Effacer',
+    gotIt: 'Compris',
     retry: 'Réessayer',
   },
   fields: {

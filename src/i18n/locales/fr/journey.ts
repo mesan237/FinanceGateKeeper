@@ -4,8 +4,12 @@ import type { Translation } from '@/i18n/translation.types';
 /** French copy for the journey slice (VS-63). */
 export const journey: Translation<typeof en> = {
   title: 'Mon parcours',
-  intro: 'La maîtrise vient étape par étape : observer, comprendre, planifier, puis réduire.',
+  intro: 'La maîtrise vient étape par étape : observer, comprendre, planifier, puis réduire. Touchez une étape pour voir ce qu’elle contient.',
   stepOf: 'Étape {{number}} sur {{total}}',
+  newStep: 'Nouvelle étape',
+  roadmap: {
+    skippedLine: 'Passée — vous pouvez encore la terminer',
+  },
   status: {
     done: 'Terminée',
     skipped: 'Passée',
@@ -41,8 +45,6 @@ export const journey: Translation<typeof en> = {
   observe: {
     progress: '{{recorded}} mois complets sur {{needed}}',
     hint: 'Un mois compte dès que 80 % de ses jours sont notés, dépense ou journée sans dépense.',
-    card_one: '{{recorded}} mois sur {{needed}} · ce mois-ci : jours notés {{logged}} sur {{count}}',
-    card_other: '{{recorded}} mois sur {{needed}} · ce mois-ci : jours notés {{logged}} sur {{count}}',
     thisMonth_one: '{{month}} : jours notés {{logged}} sur {{count}}',
     thisMonth_other: '{{month}} : jours notés {{logged}} sur {{count}}',
     onTrack: 'En bonne voie : il lui faut {{needed}} jours notés sur {{days}}.',

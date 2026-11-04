@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Card } from '@/components/Card';
 import { ErrorState } from '@/components/ErrorState';
 import { Icon } from '@/components/Icon';
+import { Pill } from '@/components/Pill';
 import { Typography } from '@/components/Typography';
 import { SPACING, RADIUS } from '@/constants/layout';
 import { ICON_SIZE } from '@/constants/icons';
@@ -13,11 +14,14 @@ import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 
 import { JourneyCardSkeleton } from './JourneySkeleton';
 import { useJourney } from './journey.hooks';
+import { useNewStep } from './journey.seen';
 import { JOURNEY_STEPS } from './journey.steps';
 
 /**
- * The journey on the dashboard (VS-63): which step the user is on, its goal,
- * and five segments for the whole path. Tapping opens the "My path" tab.
+ * The journey on the dashboard (VS-63): which step the user is on and five
+ * segments for the whole path. Tapping opens the "My path" tab. The step's goal
+ * shows only while the step is new (VS-94): Home says what changed once, and
+ * the days logged are left to the month card above it.
  * Holds its place with a placeholder while loading, and shows the shared
  * error card with "Try again" when the journey cannot be read (UX-16).
  */
@@ -27,6 +31,7 @@ export function JourneyCard() {
   const router = useRouter();
   const { t } = useTranslation('journey');
   const { journey, loading, error, refresh } = useJourney();
+  const { isNew } = useNewStep(journey?.current ?? null);
 
   useFocusEffect(
     useCallback(() => {
@@ -55,19 +60,12 @@ export function JourneyCard() {
           <Typography variant="muted" style={styles.grow}>
             {t('stepOf', { number, total: JOURNEY_STEPS.length })}
           </Typography>
+          {isNew ? <Pill label={t('newStep')} tone="success" testID="journey-card-new" /> : null}
           <Icon name="forward" size={ICON_SIZE.sm} color={c.TEXT_MUTED} />
         </View>
         <Typography variant="subheading">{t(`steps.${journey.current}.title`)}</Typography>
-        <Typography variant="muted">{t(`steps.${journey.current}.goal`)}</Typography>
-        {journey.current === 'observe' ? (
-          <Typography>
-            {t('observe.card', {
-              ...journey.observe,
-              logged: journey.logging.loggedDays,
-              count: journey.logging.daysSoFar,
-            })}
-          </Typography>
-        ) : null}
+        {isNew ? <Typography variant="muted">{t(`steps.${journey.current}.goal`)}</Typography> : null}
+        {journey.current === 'observe' ? <Typography>{t('observe.progress', journey.observe)}</Typography> : null}
         {/* Recent days with nothing logged, which My path lets the user catch up (VS-89). */}
         {journey.current === 'observe' && journey.logging.missedDays.length > 0 ? (
           <Typography testID="journey-card-missed" style={styles.missed}>

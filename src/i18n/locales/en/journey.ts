@@ -1,8 +1,14 @@
 /** Copy for the journey slice: the "My path" tab and its dashboard card (VS-63). */
 export const journey = {
   title: 'My path',
-  intro: 'Control comes step by step: watch, understand, plan, then cut back.',
+  intro: 'Control comes step by step: watch, understand, plan, then cut back. Tap any step to see what it holds.',
   stepOf: 'Step {{number}} of {{total}}',
+  /** Home's path card, the first time a step is reached (VS-94). */
+  newStep: 'New step',
+  /** A closed step's one line on the roadmap (VS-94). */
+  roadmap: {
+    skippedLine: 'Skipped — you can still finish it',
+  },
   status: {
     done: 'Done',
     skipped: 'Skipped',
@@ -38,8 +44,6 @@ export const journey = {
   observe: {
     progress: '{{recorded}} of {{needed}} complete months',
     hint: 'A month counts once 80% of its days are logged, spending or a no-spend day.',
-    card_one: '{{recorded}} of {{needed}} months · this month {{logged}} of {{count}} day logged',
-    card_other: '{{recorded}} of {{needed}} months · this month {{logged}} of {{count}} days logged',
     thisMonth_one: '{{month}}: {{logged}} of {{count}} day logged',
     thisMonth_other: '{{month}}: {{logged}} of {{count}} days logged',
     onTrack: 'On track to count: it needs {{needed}} of its {{days}} days.',

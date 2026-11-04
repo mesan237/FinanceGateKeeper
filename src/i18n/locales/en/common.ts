@@ -11,6 +11,7 @@ export const common = {
     back: 'Back',
     retry: 'Try again',
     clear: 'Clear',
+    gotIt: 'Got it',
   },
   fields: {
     loading: 'Loading',
