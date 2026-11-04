@@ -30,9 +30,17 @@ New kinds need no migration, so the slice shipped without one and without a Supa
   `journey_reached` is raised. Correcting an old entry cannot send the user back.
 - **Skip ahead** only to the next step, after a warning (an extra one while still
   observing: the starting point gets less honest). Steps jumped over read "Skipped" and
-  still show their action, so they can be completed. Skips never go backwards.
-- **Locked steps are previews**, never hidden: their goal plus what the step before
-  unlocks.
+  still hold their action, so they can be completed. Skips never go backwards.
+- **Locked steps are previews**, never hidden: their row says what the step before
+  unlocks, and their sheet holds their goal.
+- **A roadmap, one step open** (VS-94): the path is one line of nodes. Only the current
+  step is open; every other step is one line that opens in `JourneyStepSheet` (goal,
+  status, a skipped step's work, the skip action). The skip warning replaces the sheet's
+  content: sheets are never stacked.
+- **"New step" once** (VS-94): `useNewStep` compares the step with the last one seen on
+  My path (`ui_preferences` key `journey.seenStep`, local only). Home's card shows *New
+  step* and the goal until My path is opened. The first step it meets is recorded
+  silently, so an old step is never called new.
 - Recording tools (logging, wallets, debts, tontines, transfers) are never gated.
 
 ## Cross-Feature
@@ -53,6 +61,9 @@ New kinds need no migration, so the slice shipped without one and without a Supa
 - `journey.steps.ts`: `JOURNEY_STEPS`, the order. Kept apart so screens read it without the database
 - `journey.hooks.ts`: `useJourney`
 - `journey.types.ts`
-- `JourneyScreen.tsx`: the "My path" tab, with the skip warning
+- `JourneyScreen.tsx`: the "My path" tab
+- `JourneyRoadmap.tsx`: the line of steps; only the current one open (VS-94)
+- `JourneyStepSheet.tsx`: a closed step in a sheet, with the skip warning (VS-94)
+- `journey.seen.ts`: `useNewStep`, the last step seen on My path (VS-94)
 - `JourneyStepDetail.tsx`: a step's progress and next action
 - `JourneyCard.tsx`: the dashboard card

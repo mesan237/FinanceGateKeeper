@@ -2896,6 +2896,38 @@ income, backups and cloud data keep their sources. Before release: run Supabase 
 
 ---
 
+### VS-94: Calmer Screens — One Thing at a Time 🔄 In Progress
+
+**Priority:** P2 — information density (requested 2026-11-04)
+**Blocked by:** —
+**Research:** [docs/ux-redesign/07-calmer-screens.md](ux-redesign/07-calmer-screens.md)
+
+**Scope:**
+
+- My path as a roadmap (`JourneyRoadmap`): a line of nodes (check, ring, lock, dashed for
+  skipped), green as far as reached. Only the current step is open; the others are one line
+  and open in `JourneyStepSheet` (goal, status, a skipped step's work, skip to the next step).
+  The skip warning replaces the sheet's content, so sheets are never stacked.
+- `components/FirstTimeHint`: a one-time line with *Got it*, remembered in `ui_preferences`
+  (`hint.<id>`), hidden until read and when unreadable. My path's intro uses it.
+- Home's month card: money in/out and the imprévus move to `MonthDetailsSheet` behind
+  *Details*; the pace chip (or *Plan a budget*) and *Details* share the footer row.
+- Home's path card: no repeated days logged; *New step* plus the goal only while the step is
+  newer than the last one seen on My path (`journey.useNewStep`, `journey.seenStep`).
+
+**TDD Anchor:**
+
+- Test: the hint shows once, hides once dismissed, never flashes, stays hidden when unreadable.
+- Test: useNewStep flags a newer step, records the first one silently, clears on markSeen.
+- Test: only the current step's goal is on the path; locked/done/skipped steps open in a
+  sheet; skip from the sheet with the warning; the path marks the step seen.
+- Test: the month card shows no In/Out until *Details*; the sheet has in, out and imprévus.
+
+**Done when:** Home leads with one figure per card and My path reads as a road with one open
+step. No migration (`ui_preferences` exists since migration 050).
+
+---
+
 ## DEPENDENCY GRAPH
 
 ```

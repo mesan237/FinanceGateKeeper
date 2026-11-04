@@ -19,6 +19,7 @@ Implementation still waits for a go-ahead per slice.
 | [04-strategy-onboarding-ia.md](04-strategy-onboarding-ia.md) | Observation → optimisation strategy, onboarding redesign, revised IA | 7, 8, 9 |
 | [05-screen-proposals.md](05-screen-proposals.md) | Screen-by-screen redesign with text wireframes | 10 |
 | [06-constraints-roadmap-validation.md](06-constraints-roadmap-validation.md) | Technical constraints, regression risk, roadmap, acceptance criteria, validation, open questions | 11, 12, 13, 14 |
+| [07-calmer-screens.md](07-calmer-screens.md) | Follow-up (2026-11-04, VS-94): bottom sheets, the path as a roadmap, one-time hints | — |
 
 Related documents this report builds on (not replaced): `docs/finance-gatekeeper-audit/`
 (financial logic, glossary, gap analysis, Oct 2026) and `docs/ux-audit/` (first-run audit,
