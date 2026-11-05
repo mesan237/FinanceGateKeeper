@@ -25,6 +25,12 @@ jest.mock('@/features/finance/journey/journey.logging', () => ({
   markNoSpendDay: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Which step was last seen, and the one-time hint, live on the phone (VS-94).
+jest.mock('@/services/uiPreferences', () => ({
+  getPreference: jest.fn(),
+  setPreference: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/features/finance/journey/journey.service', () => ({
   getJourney: jest.fn(),
   markPictureReviewed: jest.fn().mockResolvedValue(undefined),
@@ -40,12 +46,14 @@ import type {
   JourneyStepStatus,
   ObserveLogging,
 } from '@/features/finance/journey/journey.types';
+import * as prefs from '@/services/uiPreferences';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { toISODate } from '@/utils/formatDate';
 import { nextMonthISO } from '@/utils/monthMath';
 
 const mocked = service as jest.Mocked<typeof service>;
 const mockedLogging = logging as jest.Mocked<typeof logging>;
+const mockedPrefs = prefs as jest.Mocked<typeof prefs>;
 
 const LOGGING: ObserveLogging = {
   month: '2026-10',
@@ -82,7 +90,14 @@ function journeyAt(current: JourneyStepKey, overrides: Partial<Journey> = {}): J
 beforeEach(() => {
   jest.clearAllMocks();
   mocked.getJourney.mockResolvedValue(journeyAt('observe'));
+  mockedPrefs.getPreference.mockResolvedValue(null);
+  mockedPrefs.setPreference.mockResolvedValue(undefined);
 });
+
+/** Opens a step's sheet from its row on the roadmap (VS-94). */
+async function openStep(key: JourneyStepKey) {
+  fireEvent.press(await screen.findByTestId(`journey-step-${key}`));
+}
 
 describe('JourneyScreen (VS-63)', () => {
   describe('loading and error states (UX-16)', () => {
@@ -113,7 +128,70 @@ describe('JourneyScreen (VS-63)', () => {
     expect(await screen.findByText('Observe')).toBeTruthy();
     for (const title of ['See', 'Plan', 'Optimize', 'Grow']) expect(screen.getByText(title)).toBeTruthy();
     expect(screen.getByText('You are here')).toBeTruthy();
-    expect(screen.getAllByText('Locked')).toHaveLength(4);
+    expect(screen.getByLabelText('See, Locked')).toBeTruthy();
+    expect(screen.getByLabelText('Grow, Locked')).toBeTruthy();
+  });
+
+  describe('as a roadmap (VS-94)', () => {
+    it('opens only the step the user is on: other goals wait behind their row', async () => {
+      render(<JourneyScreen />);
+
+      expect(await screen.findByText(/Log everything for 3 complete months/)).toBeTruthy();
+      expect(screen.queryByText('Read what your first months really cost.')).toBeNull();
+    });
+
+    it('opens a locked step in a sheet with its goal and what it gives', async () => {
+      render(<JourneyScreen />);
+
+      await openStep('plan');
+
+      expect(screen.getByTestId('journey-step-sheet')).toBeTruthy();
+      expect(screen.getByText('Budget a month from your average and live it.')).toBeTruthy();
+    });
+
+    it('opens a passed step in a sheet that says it is done', async () => {
+      mocked.getJourney.mockResolvedValue(journeyAt('plan'));
+      render(<JourneyScreen />);
+
+      await openStep('observe');
+
+      expect(screen.getByTestId('journey-step-sheet-status')).toHaveTextContent('Done');
+    });
+
+    it('keeps the work of a skipped step in its sheet, where it can still be finished', async () => {
+      mocked.getJourney.mockResolvedValue(
+        journeyAt('see', {
+          steps: KEYS.map((key, i) => ({
+            key,
+            status: (i === 0 ? 'skipped' : i === 1 ? 'current' : 'locked') as JourneyStepStatus,
+          })),
+        }),
+      );
+      render(<JourneyScreen />);
+
+      await screen.findByTestId('journey-reviewed');
+      expect(screen.queryByText('1 of 3 complete months')).toBeNull();
+      await openStep('observe');
+      expect(screen.getByText('1 of 3 complete months')).toBeTruthy();
+    });
+
+    it('remembers the step as seen, so Home stops calling it new', async () => {
+      mocked.getJourney.mockResolvedValue(journeyAt('see'));
+      mockedPrefs.getPreference.mockImplementation(async (key) => (key === 'journey.seenStep' ? 'observe' : null));
+      render(<JourneyScreen />);
+
+      await waitFor(() => expect(mockedPrefs.setPreference).toHaveBeenCalledWith('journey.seenStep', 'see'));
+    });
+
+    it('explains the path once, then keeps it out of the way', async () => {
+      render(<JourneyScreen />);
+      expect(await screen.findByTestId('journey-intro')).toHaveTextContent(/step by step/);
+
+      fireEvent.press(screen.getByTestId('journey-intro-dismiss'));
+
+      expect(screen.queryByTestId('journey-intro')).toBeNull();
+      expect(mockedPrefs.setPreference).toHaveBeenCalledWith('hint.journey.intro', 'dismissed');
+    });
   });
 
   it('shows the months recorded while observing', async () => {
@@ -195,10 +273,11 @@ describe('JourneyScreen (VS-63)', () => {
     expect(await screen.findByText('Unlocks optimization: where to cut back.')).toBeTruthy();
   });
 
-  it('skips ahead to the next step after a warning', async () => {
+  it('skips ahead to the next step after a warning, in the same sheet', async () => {
     render(<JourneyScreen />);
 
-    fireEvent.press(await screen.findByTestId('journey-skip-see'));
+    await openStep('see');
+    fireEvent.press(screen.getByTestId('journey-skip-see'));
     expect(screen.getByText(/starting point less honest/)).toBeTruthy();
     fireEvent.press(screen.getByTestId('journey-skip-confirm'));
 
@@ -208,7 +287,8 @@ describe('JourneyScreen (VS-63)', () => {
   it('offers no skip on a step further than the next one', async () => {
     render(<JourneyScreen />);
 
-    await screen.findByTestId('journey-skip-see');
+    await openStep('plan');
+    expect(screen.getByTestId('journey-step-sheet')).toBeTruthy();
     expect(screen.queryByTestId('journey-skip-plan')).toBeNull();
   });
 
