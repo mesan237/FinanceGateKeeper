@@ -25,6 +25,11 @@ export const dashboard = {
     detailsTitle: '{{month}} so far',
     moneyIn: 'Money in',
     moneyOut: 'Money out',
+    /** Everyday spending vs the same day last month (VS-95). */
+    vsLastMonth: 'Everyday spending vs {{date}}',
+    everydayNow: 'Everyday spending so far',
+    everydayThen: 'By {{date}} last month',
+    everydayHint: 'Everyday spending leaves out fixed bills and imprévus, so a bill paid on a different day doesn’t skew it.',
     unplanned_one: '{{count}} unexpected expense · {{amount}}',
     unplanned_other: '{{count}} unexpected expenses · {{amount}}',
   },

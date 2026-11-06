@@ -312,3 +312,42 @@ describe('MonthOverviewCard — the lead by journey step (UX-24)', () => {
     expect(screen.getByTestId('month-overview-note')).toHaveTextContent('Votre mois type : ≈ 150 000 FCFA');
   });
 });
+
+describe('MonthOverviewCard — everyday spending vs last month (VS-95)', () => {
+  const VS = { current: 52_000, previous: 40_000, change: 30, lastMonthDate: '2026-08-05' };
+
+  it('says, in one line, how everyday spending compares with the same day last month', () => {
+    renderCard({ vsLastMonth: VS });
+    expect(screen.getByTestId('month-overview-vs-last')).toHaveTextContent(/^Everyday spending vs 5 Aug/);
+    expect(screen.getByTestId('month-overview-vs-last-chip')).toHaveTextContent('+30%');
+  });
+
+  it('shows a drop as a minus', () => {
+    renderCard({ vsLastMonth: { ...VS, current: 28_000, change: -30 } });
+    expect(screen.getByTestId('month-overview-vs-last-chip')).toHaveTextContent('−30%');
+  });
+
+  it('shows the line with or without a plan', () => {
+    renderCard({ summary: UNPLANNED, vsLastMonth: VS });
+    expect(screen.getByTestId('month-overview-vs-last')).toBeTruthy();
+  });
+
+  it('stays out of the way when there is nothing to compare with', () => {
+    renderCard({ vsLastMonth: null });
+    expect(screen.queryByTestId('month-overview-vs-last')).toBeNull();
+  });
+
+  it('keeps both amounts in the details sheet', () => {
+    renderCard({ vsLastMonth: VS });
+    openDetails();
+    expect(screen.getByTestId('month-details-everyday-now')).toHaveTextContent('52 000 FCFA');
+    expect(screen.getByTestId('month-details-everyday-then')).toHaveTextContent('40 000 FCFA');
+    expect(screen.getByText('By 5 Aug last month')).toBeTruthy();
+  });
+
+  it('reads in French', async () => {
+    await i18n.changeLanguage('fr');
+    renderCard({ vsLastMonth: VS });
+    expect(screen.getByTestId('month-overview-vs-last')).toHaveTextContent(/^Dépenses courantes vs le 5 août/);
+  });
+});

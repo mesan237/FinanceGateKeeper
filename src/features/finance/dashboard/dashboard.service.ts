@@ -6,6 +6,7 @@ import { getUnplannedTotals } from '@/features/finance/expenses/expenses.unplann
 import { isoDaysBefore, toISODate } from '@/utils/formatDate';
 import { daysInMonth, daysRemainingInMonth, lastDayOfMonth } from '@/utils/monthMath';
 
+import { getEverydayVsLastMonth } from './dashboard.lastMonth';
 import type {
   BudgetSummary,
   Cashflow,
@@ -78,8 +79,8 @@ export function daysSoFarInMonth(monthISO: string, todayISO: string): number {
 
 /**
  * Aggregates the dashboard state for `monthISO` — today's spending, zero-day
- * status, the budget and cashflow figures, the days logged so far, and the
- * month's imprévus.
+ * status, the budget and cashflow figures, the days logged so far, the
+ * month's imprévus, and everyday spending against the same day last month.
  *
  * Budget data used to be conditional on control mode; with learning mode gone
  * (VS-34) it always loads. Whether the month has a plan follows the Budget
@@ -93,12 +94,13 @@ export async function getDashboardSnapshot(
 ): Promise<DashboardState> {
   // One range query covers both the 7-day trend and today's total (its last bucket).
   const monthStart = `${monthISO}-01`;
-  const [recentExpenses, zeroDay, unplanned, loggedDates] = await Promise.all([
+  const [recentExpenses, zeroDay, unplanned, loggedDates, vsLastMonth] = await Promise.all([
     expensesService.getExpensesByDateRange(isoDaysBefore(todayISO, TREND_DAYS - 1), todayISO),
     expensesService.getDayActivityStatus(todayISO),
     getUnplannedTotals(monthStart, lastDayOfMonth(monthISO)),
     // Same "logged day" as complete months and the journey use (VS-41).
     getLoggedDates(monthStart, todayISO),
+    getEverydayVsLastMonth(monthISO, todayISO),
   ]);
 
   const spendingTrend = buildSpendingTrend(recentExpenses, todayISO);
@@ -150,5 +152,6 @@ export async function getDashboardSnapshot(
     logging,
     unplanned,
     safeDailySpend,
+    vsLastMonth,
   };
 }
