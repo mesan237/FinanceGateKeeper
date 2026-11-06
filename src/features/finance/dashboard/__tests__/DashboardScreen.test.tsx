@@ -71,6 +71,7 @@ const FULL_STATE: DashboardState = {
   logging: { loggedDays: 18, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
   safeDailySpend: 2167,
+  vsLastMonth: null,
 };
 
 const BARE_STATE: DashboardState = {
@@ -84,6 +85,7 @@ const BARE_STATE: DashboardState = {
   logging: { loggedDays: 0, daysSoFar: 23 },
   unplanned: { count: 0, total: 0 },
   safeDailySpend: null,
+  vsLastMonth: null,
 };
 
 function setupHooks(state: DashboardState | null, loading = false, error: string | null = null) {

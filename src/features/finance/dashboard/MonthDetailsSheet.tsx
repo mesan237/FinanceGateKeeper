@@ -9,10 +9,11 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { RADIUS, SPACING } from '@/constants/layout';
 import { useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDateShort } from '@/utils/formatDate';
 
 import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
 
-import type { Cashflow } from './dashboard.types';
+import type { Cashflow, EverydayVsLastMonth } from './dashboard.types';
 
 interface MonthDetailsSheetProps {
   visible: boolean;
@@ -21,14 +22,24 @@ interface MonthDetailsSheetProps {
   monthName: string;
   cashflow: Cashflow;
   unplanned?: UnplannedTotals;
+  /** Everyday spending now and by the same day last month (VS-95). */
+  vsLastMonth?: EverydayVsLastMonth | null;
 }
 
 /**
  * What Home's month card keeps one tap away (VS-94): the money in and out so
- * far, and the month's imprévus. The card itself answers one question, "where
+ * far, the month's imprévus, and the two amounts behind the card's
+ * "vs last month" chip (VS-95). The card itself answers one question, "where
  * do I stand?", with one figure.
  */
-export function MonthDetailsSheet({ visible, onClose, monthName, cashflow, unplanned }: MonthDetailsSheetProps) {
+export function MonthDetailsSheet({
+  visible,
+  onClose,
+  monthName,
+  cashflow,
+  unplanned,
+  vsLastMonth,
+}: MonthDetailsSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const { t } = useTranslation(['dashboard', 'common']);
 
@@ -48,6 +59,25 @@ export function MonthDetailsSheet({ visible, onClose, monthName, cashflow, unpla
             {formatCurrency(cashflow.expenses)}
           </Typography>
         </View>
+        {vsLastMonth ? (
+          <>
+            <View style={styles.line}>
+              <Typography style={styles.grow}>{t('month.everydayNow')}</Typography>
+              <Typography style={styles.amount} testID="month-details-everyday-now">
+                {formatCurrency(vsLastMonth.current)}
+              </Typography>
+            </View>
+            <View style={styles.line}>
+              <Typography style={styles.grow}>
+                {t('month.everydayThen', { date: formatDateShort(vsLastMonth.lastMonthDate) })}
+              </Typography>
+              <Typography style={styles.amount} testID="month-details-everyday-then">
+                {formatCurrency(vsLastMonth.previous)}
+              </Typography>
+            </View>
+            <Typography variant="muted">{t('month.everydayHint')}</Typography>
+          </>
+        ) : null}
         {unplanned && unplanned.count > 0 ? (
           <View style={styles.unplannedRow}>
             <View style={styles.unplannedDot} />

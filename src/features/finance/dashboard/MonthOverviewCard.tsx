@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AnimatedCounter } from '@/components/AnimatedCounter';
 import { Card } from '@/components/Card';
+import { ChangeChip } from '@/components/ChangeChip';
 import { Pill, type PillTone } from '@/components/Pill';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Typography } from '@/components/Typography';
@@ -11,6 +12,7 @@ import { FONT_FAMILY } from '@/constants/fonts';
 import { SPACING } from '@/constants/layout';
 import { useTheme, useThemedStyles, type ThemeColors } from '@/theme';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { formatDateShort } from '@/utils/formatDate';
 import { monthLabel } from '@/utils/monthMath';
 
 import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types';
@@ -18,7 +20,7 @@ import type { UnplannedTotals } from '@/features/finance/expenses/expenses.types
 import { MonthDetailsSheet } from './MonthDetailsSheet';
 import { HeroNoteLine, PlanLeftLine } from './MonthOverviewLead';
 import type { HeroLead } from './dashboard.heroLead';
-import type { BudgetSummary, Cashflow, DayLogging, PaceLevel } from './dashboard.types';
+import type { BudgetSummary, Cashflow, DayLogging, EverydayVsLastMonth, PaceLevel } from './dashboard.types';
 
 /** Chip tone per pace level; the wording comes from `dashboard.pace`. */
 const PACE_TONE: Record<PaceLevel, PillTone> = {
@@ -42,6 +44,8 @@ export interface MonthOverviewCardProps {
   onSetBudget: () => void;
   /** What the journey step leads with (UX-24); omitted, the plan alone decides. */
   lead?: HeroLead;
+  /** Everyday spending vs the same day last month (VS-95); null or omitted hides the line. */
+  vsLastMonth?: EverydayVsLastMonth | null;
 }
 
 /**
@@ -59,6 +63,9 @@ export interface MonthOverviewCardProps {
  *
  * Money in and out and the month's imprévus wait behind "Details", in a sheet
  * (VS-94): the card answers one question with one figure.
+ *
+ * One line compares everyday spending with the same day last month, as a
+ * +/− % chip (VS-95); its two amounts are in the sheet.
  */
 export function MonthOverviewCard({
   monthISO,
@@ -69,6 +76,7 @@ export function MonthOverviewCard({
   unplanned,
   onSetBudget,
   lead,
+  vsLastMonth,
 }: MonthOverviewCardProps) {
   const styles = useThemedStyles(makeStyles);
   const c = useTheme();
@@ -134,6 +142,15 @@ export function MonthOverviewCard({
         </>
       )}
 
+      {vsLastMonth ? (
+        <View style={styles.vsRow} testID="month-overview-vs-last">
+          <Typography variant="muted" style={styles.vsText}>
+            {t('month.vsLastMonth', { date: formatDateShort(vsLastMonth.lastMonthDate) })}
+          </Typography>
+          <ChangeChip change={vsLastMonth.change} testID="month-overview-vs-last-chip" />
+        </View>
+      ) : null}
+
       {lead?.note ? <HeroNoteLine note={lead.note} /> : null}
 
       {/* The status on the left (the pace, or planning one quiet tap away);
@@ -171,6 +188,7 @@ export function MonthOverviewCard({
         monthName={monthName.charAt(0).toUpperCase() + monthName.slice(1)}
         cashflow={cashflow}
         unplanned={unplanned}
+        vsLastMonth={vsLastMonth ?? null}
       />
     </Card>
   );
@@ -212,6 +230,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: SPACING.sm,
+  },
+  vsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  vsText: {
+    flex: 1,
   },
   footer: {
     flexDirection: 'row',

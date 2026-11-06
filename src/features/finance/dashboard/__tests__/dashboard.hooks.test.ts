@@ -25,6 +25,7 @@ const MOCK_STATE: DashboardState = {
   logging: { loggedDays: 0, daysSoFar: 0 },
   unplanned: { count: 0, total: 0 },
   safeDailySpend: null,
+  vsLastMonth: null,
 };
 
 describe('useDashboard', () => {

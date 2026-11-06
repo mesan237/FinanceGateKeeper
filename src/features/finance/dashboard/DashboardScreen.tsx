@@ -97,6 +97,7 @@ export function DashboardScreen() {
             cashflow={state.cashflow}
             logging={state.logging}
             unplanned={state.unplanned}
+            vsLastMonth={state.vsLastMonth}
             lead={heroLead(stage, state.budget.isPlanned, figures)}
             onSetBudget={() =>
               router.push({ pathname: '/budget/plan', params: { month: state.monthISO } })

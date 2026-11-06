@@ -36,6 +36,18 @@ export interface DayLogging {
   daysSoFar: number;
 }
 
+/**
+ * Everyday spending so far this month against the same point last month
+ * (VS-95). Whole FCFA; `change` in whole percent.
+ */
+export interface EverydayVsLastMonth {
+  current: number;
+  previous: number;
+  change: number;
+  /** The last day counted in last month, `YYYY-MM-DD`: today's day, or the month's end. */
+  lastMonthDate: string;
+}
+
 export interface DashboardState {
   /** The month this snapshot covers, `YYYY-MM`. */
   monthISO: string;
@@ -57,4 +69,6 @@ export interface DashboardState {
   /** The Budget tab's per-day figure: what is left in the plan over the days
    * left (UX-11). null when the month has no plan. */
   safeDailySpend: number | null;
+  /** Everyday spending vs the same day last month (VS-95); null when there is nothing to compare. */
+  vsLastMonth: EverydayVsLastMonth | null;
 }
