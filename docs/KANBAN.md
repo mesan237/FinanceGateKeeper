@@ -2896,7 +2896,7 @@ income, backups and cloud data keep their sources. Before release: run Supabase 
 
 ---
 
-### VS-94: Calmer Screens — One Thing at a Time 🔄 In Progress
+### VS-94: Calmer Screens — One Thing at a Time ✅ Done
 
 **Priority:** P2 — information density (requested 2026-11-04)
 **Blocked by:** —
@@ -2925,6 +2925,35 @@ income, backups and cloud data keep their sources. Before release: run Supabase 
 
 **Done when:** Home leads with one figure per card and My path reads as a road with one open
 step. No migration (`ui_preferences` exists since migration 050).
+
+---
+
+### VS-95: Everyday Spending vs the Same Day Last Month 🔄 In Progress
+
+**Priority:** P2 — feedback while the month runs (requested 2026-11-06)
+**Blocked by:** —
+
+**Decisions (user, 2026-11-06):** everyday spending only; one line in Home's month card.
+
+**Scope:**
+
+- `dashboard.lastMonth.getEverydayVsLastMonth`: this month 1st → today against last month
+  1st → the same day (its last day when shorter). Counts `spendKindOf === 'variable'` only
+  (no fixed categories, auto-logged bills or imprévus); refunds net out. Null before the 3rd
+  (`MIN_DAY_TO_COMPARE`) and when last month had no everyday spending by then.
+- `DashboardState.vsLastMonth`; Home's month card shows *Everyday spending vs 5 Oct* with
+  the shared `ChangeChip` (red above +10%, green below −10%, neutral between), with or
+  without a plan. `MonthDetailsSheet` shows both amounts and why bills are left out.
+
+**TDD Anchor:**
+
+- Test: +30% / −30%; null without a basis; fixed, recurring and imprévus left out; refunds
+  net; shorter previous month; nothing before the 3rd.
+- Test: the card line and chip, minus sign, shown without a plan, hidden when null; sheet
+  amounts; French.
+
+**Done when:** on the 5th, Home says how everyday spending compares with the 5th of last
+month. No migration.
 
 ---
 
